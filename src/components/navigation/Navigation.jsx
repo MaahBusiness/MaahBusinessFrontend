@@ -6,8 +6,12 @@ const Navbar = () => {
     <nav className="navbar">
       <div className="nav-content">
         <ul>
-          <li><Link to="/login">Login</Link></li>
-          <li><Link to="/signup">Sign Up</Link></li>
+          <li>
+            <Link to="/login">Login</Link>
+          </li>
+          <li>
+            <Link to="/signup">Sign Up</Link>
+          </li>
         </ul>
       </div>
     </nav>

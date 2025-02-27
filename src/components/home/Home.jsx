@@ -3,7 +3,7 @@ import img from "../../assets/pexels-cottonbro-7019213.jpg";
 import { useNavigate } from "react-router-dom";
 
 const Home = () => {
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
 
   return (
     <div>
