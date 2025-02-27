@@ -5,10 +5,10 @@
   display: flex;
   justify-content: end;
   align-items: center;
-  position: fixed;  /* Keeps the navbar fixed at the top */
-  top: 0;           /* Position it at the very top */
-  width: 100%;      /* Make it span the entire width */
-  z-index: 1000;    /* Ensures it stays above other content */
+  position: fixed; /* Keeps the navbar fixed at the top */
+  top: 0; /* Position it at the very top */
+  width: 100%; /* Make it span the entire width */
+  z-index: 1000; /* Ensures it stays above other content */
 }
 
 .nav-content ul {
