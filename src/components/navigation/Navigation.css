@@ -5,10 +5,10 @@
   display: flex;
   justify-content: end;
   align-items: center;
-  position: fixed; /* Keeps the navbar fixed at the top */
-  top: 0; /* Position it at the very top */
-  width: 100%; /* Make it span the entire width */
-  z-index: 1000; /* Ensures it stays above other content */
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 1000;
 }
 
 .nav-content ul {
@@ -29,7 +29,13 @@
   text-decoration: underline;
 }
 
-/* Add padding to the body to prevent content from hiding behind the navbar */
 body {
-  padding-top: 60px; /* Adjust based on your navbar height */
+  padding-top: 60px;
+}
+.nav-content ul li a svg {
+  color: white;
+}
+
+.nav-content ul li a:hover svg {
+  color: #ddd;
 }

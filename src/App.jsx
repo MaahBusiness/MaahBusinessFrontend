@@ -16,6 +16,10 @@ import Category from "./components/Category/Category";
 import SubCategory from "./components/Subcategory/Subcategory";
 import Dashboard from "./components/Dashboard/Dashboard";
 import ProductDetail from "./components/Products/ProductDetail";
+import Invoice from "./components/invoice/Invoice";
+import ProfileLayout from "./components/Profile/ProfileLayout";
+import ProfileInfo from "./components/Profile/ProfileInfo";
+import ChangePassword from "./components/Profile/ChangePassword";
 
 const Layout = () => (
   <div>
@@ -41,6 +45,13 @@ const App = () => {
               <Route path="/reports" element={<Reports />} />
               <Route path="/category" element={<Category />} />
               <Route path="/subcategory" element={<SubCategory />} />
+              <Route path="/Invoice" element={<Invoice />} />
+
+              {/* Profile routes */}
+              <Route path="/profile" element={<ProfileLayout />}>
+                <Route path="info" element={<ProfileInfo />} />
+                <Route path="change-password" element={<ChangePassword />} />
+              </Route>
             </Route>
           </Routes>
         </div>

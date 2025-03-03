@@ -17,6 +17,7 @@
 
 .header button {
   width: 35%;
+  background: #007bff;
 }
 
 /* Headings */
@@ -45,8 +46,8 @@ h3 {
   border-radius: 8px;
   box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3);
   text-align: center;
-  width: 350px;
-  height: 350px;
+  max-width: 350px;
+  max-height: 350px;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -93,19 +94,19 @@ h3 {
 .category-card {
   color: #fff;
   width: 150px;
-  padding: .4em;
+  padding: 0.4em;
   background: #014288;
   border-radius: 6px;
   text-align: center;
   cursor: pointer;
 }
 
-h3{
+h3 {
   color: #fff;
   font-size: 1.3rem;
-  margin-bottom: .5em;
+  margin-bottom: 0.5em;
 }
 
-.title{
+.title {
   color: #000;
 }

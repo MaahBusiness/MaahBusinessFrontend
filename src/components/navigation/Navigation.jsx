@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { FaUserCircle } from "react-icons/fa";
 import "./Navigation.css";
 
 const Navbar = () => {
@@ -11,6 +12,11 @@ const Navbar = () => {
           </li>
           <li>
             <Link to="/signup">Sign Up</Link>
+          </li>
+          <li>
+            <Link to="/profile/info">
+              <FaUserCircle size={28} title="Profile" />
+            </Link>
           </li>
         </ul>
       </div>

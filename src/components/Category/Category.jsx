@@ -72,7 +72,8 @@ const Category = () => {
           <div
             key={category.id}
             className={`category-card ${selectedCategory?.id === category.id ? "active" : ""}`}
-            onClick={() => setSelectedCategory(category)}>
+            onClick={() => setSelectedCategory(category)}
+          >
             <h3>{category.name}</h3>
             <p>{category.description}</p>
           </div>
