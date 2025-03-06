@@ -50,6 +50,36 @@
   font-weight: bold;
 }
 
+.invoice-products {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #e9ecef;
+  border-radius: 6px;
+}
+
+.invoice-products h4 {
+  margin-bottom: 10px;
+  font-size: 1.1rem;
+  color: #014288;
+}
+
+.product-item {
+  border-bottom: 1px solid #ccc;
+  padding: 10px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+}
+
+.product-item:last-child {
+  border-bottom: none;
+}
+
+.product-item p {
+  margin: 0;
+}
+
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -157,8 +187,8 @@ label input {
 
 .cancel-btn,
 .create-btn {
-  width: 50%;
-  padding: 10px 0;
+  width: 48%;
+  padding: 1em;
   border: none;
   border-radius: 6px;
   font-size: 1rem;
@@ -166,11 +196,11 @@ label input {
 }
 
 .cancel-btn {
-  background: gray;
+  background: #dc3545;
   color: white;
 }
 
 .create-btn {
-  background: rgb(67, 240, 24);
+  background: #28a745;
   color: white;
 }

@@ -9,11 +9,12 @@ export default function Invoice() {
   const [tax, setTax] = useState(0);
   const [advancePaid, setAdvancePaid] = useState(0);
   const [lines, setLines] = useState([
-    { product_id: "product-1", quantity: 1, discount: 0 },
+    { product_id: "product-1", quantity: 1, price: 100, discount: 0 },
   ]);
 
+  // Calculate subtotal based on line prices
   const subtotal = lines.reduce(
-    (sum, item) => sum + item.quantity * 100 * (1 - item.discount / 100),
+    (sum, item) => sum + item.quantity * item.price * (1 - item.discount / 100),
     0,
   );
   const taxAmount = subtotal * (tax / 100);
@@ -21,7 +22,15 @@ export default function Invoice() {
   const remaining = total - advancePaid;
 
   const handleAddLine = () => {
-    setLines([...lines, { product_id: "product-2", quantity: 1, discount: 0 }]);
+    setLines([
+      ...lines,
+      {
+        product_id: `product-${lines.length + 1}`,
+        quantity: 1,
+        price: 100,
+        discount: 0,
+      },
+    ]);
   };
 
   const handleCreateInvoice = () => {
@@ -47,7 +56,9 @@ export default function Invoice() {
     setReason("");
     setTax(0);
     setAdvancePaid(0);
-    setLines([{ product_id: "product-1", quantity: 1, discount: 0 }]);
+    setLines([
+      { product_id: "product-1", quantity: 1, price: 100, discount: 0 },
+    ]);
   };
 
   return (
@@ -63,7 +74,6 @@ export default function Invoice() {
         <div className="modal-overlay">
           <div className="modal modal2">
             <div className="modal-title">
-              {" "}
               <h2>Create New Invoice</h2>
             </div>
             <div className="modal_content">
@@ -106,10 +116,11 @@ export default function Invoice() {
                   className="input"
                 />
               </label>
+
               {lines.map((line, index) => (
                 <div key={index} className="line-item">
                   <label>
-                    Product ID:
+                    Product Name:
                     <input
                       type="text"
                       value={line.product_id}
@@ -119,6 +130,20 @@ export default function Invoice() {
                         setLines(updatedLines);
                       }}
                       className="input small"
+                    />
+                  </label>
+
+                  <label>
+                    Price (XFA):
+                    <input
+                      type="number"
+                      value={line.price}
+                      onChange={(e) => {
+                        const updatedLines = [...lines];
+                        updatedLines[index].price = Number(e.target.value);
+                        setLines(updatedLines);
+                      }}
+                      className="input tiny"
                     />
                   </label>
 
@@ -185,6 +210,20 @@ export default function Invoice() {
             <p>
               <strong>Client:</strong> {invoice.client_name}
             </p>
+            <p>
+              <strong>Reason:</strong> {invoice.reason}
+            </p>
+            <p>
+              <strong>Products:</strong>
+            </p>
+            <ul>
+              {invoice.lines.map((line, idx) => (
+                <li key={idx}>
+                  {line.product_id} - {line.quantity} x {line.price} XFA (
+                  {line.discount}% off)
+                </li>
+              ))}
+            </ul>
             <p>
               <strong>Total:</strong> {invoice.total} XFA
             </p>

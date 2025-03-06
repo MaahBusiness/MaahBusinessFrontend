@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import "./Profile.css";
 
 const ProfileInfo = () => {
@@ -57,10 +57,10 @@ const ProfileInfo = () => {
             </div>
 
             <div>
-              <label>Phone Number:</label>
+              <label>Number:</label>
               <input
                 type="text"
-                name="number"
+                name="phone number"
                 value={user.number}
                 onChange={handleChange}
                 required
@@ -79,7 +79,9 @@ const ProfileInfo = () => {
             </div>
 
             <button type="submit">Save Changes</button>
-            <button type="button" onClick={() => setIsEditing(false)}>Cancel</button>
+            <button type="button" onClick={() => setIsEditing(false)}>
+              Cancel
+            </button>
           </form>
         ) : (
           <>

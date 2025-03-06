@@ -20,6 +20,8 @@ import Invoice from "./components/invoice/Invoice";
 import ProfileLayout from "./components/Profile/ProfileLayout";
 import ProfileInfo from "./components/Profile/ProfileInfo";
 import ChangePassword from "./components/Profile/ChangePassword";
+import ForgotPassword from "./components/login/ForgotPassword";
+import ResetPassword from "./components/login/ResetPassword";
 
 const Layout = () => (
   <div>
@@ -37,6 +39,8 @@ const App = () => {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password/:token" element={<ResetPassword />} />
             <Route path="/ProductDetail" element={<ProductDetail />} />
             <Route element={<Layout />}>
               <Route path="/" element={<Home />} />
@@ -47,7 +51,6 @@ const App = () => {
               <Route path="/subcategory" element={<SubCategory />} />
               <Route path="/Invoice" element={<Invoice />} />
 
-              {/* Profile routes */}
               <Route path="/profile" element={<ProfileLayout />}>
                 <Route path="info" element={<ProfileInfo />} />
                 <Route path="change-password" element={<ChangePassword />} />

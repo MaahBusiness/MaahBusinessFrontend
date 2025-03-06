@@ -15,7 +15,7 @@ const Login = () => {
       <h2>Login</h2>
       <form onSubmit={Submit}>
         <input
-          type="email "
+          type="email"
           placeholder="Enter Username"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -28,9 +28,15 @@ const Login = () => {
         />
         <button type="submit">Login</button>
         <p>
-          i dont have an account!{" "}
+          I don't have an account!{" "}
           <Link to="/signup">
-            <span>sign up</span>
+            <span>Sign up</span>
+          </Link>
+        </p>
+        <p>
+          Forgot your password?{" "}
+          <Link to="/forgot-password">
+            <span>Reset it</span>
           </Link>
         </p>
       </form>
