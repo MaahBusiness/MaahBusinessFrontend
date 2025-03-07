@@ -11,6 +11,7 @@ export default function Invoice() {
   const [lines, setLines] = useState([
     { product_id: "product-1", quantity: 1, price: 100, discount: 0 },
   ]);
+  const [currentEditingIndex, setCurrentEditingIndex] = useState(null);
 
   // Calculate subtotal based on line prices
   const subtotal = lines.reduce(
@@ -20,6 +21,8 @@ export default function Invoice() {
   const taxAmount = subtotal * (tax / 100);
   const total = subtotal + taxAmount;
   const remaining = total - advancePaid;
+  const refund = advancePaid > total ? advancePaid - total : 0;
+  const status = remaining > 0 ? "PENDING" : "COMPLETED";
 
   const handleAddLine = () => {
     setLines([
@@ -33,11 +36,11 @@ export default function Invoice() {
     ]);
   };
 
-  const handleCreateInvoice = () => {
+  const handleCreateOrUpdateInvoice = () => {
     const newInvoice = {
       client_name: clientName,
       tax,
-      status: "COMPLETED",
+      status,
       reason,
       due_date: "2025-03-03",
       advance_paid: advancePaid,
@@ -45,10 +48,32 @@ export default function Invoice() {
       subtotal,
       total,
       remaining,
+      refund,
     };
-    setInvoices([...invoices, newInvoice]);
+
+    if (currentEditingIndex !== null) {
+      // Update existing invoice
+      const updatedInvoices = [...invoices];
+      updatedInvoices[currentEditingIndex] = newInvoice;
+      setInvoices(updatedInvoices);
+    } else {
+      // Create new invoice
+      setInvoices([...invoices, newInvoice]);
+    }
+
     resetForm();
     setShowModal(false);
+  };
+
+  const handleEditInvoice = (index) => {
+    const invoiceToEdit = invoices[index];
+    setClientName(invoiceToEdit.client_name);
+    setReason(invoiceToEdit.reason);
+    setTax(invoiceToEdit.tax);
+    setAdvancePaid(invoiceToEdit.advance_paid);
+    setLines(invoiceToEdit.lines);
+    setCurrentEditingIndex(index);
+    setShowModal(true);
   };
 
   const resetForm = () => {
@@ -59,6 +84,7 @@ export default function Invoice() {
     setLines([
       { product_id: "product-1", quantity: 1, price: 100, discount: 0 },
     ]);
+    setCurrentEditingIndex(null);
   };
 
   return (
@@ -71,12 +97,16 @@ export default function Invoice() {
       </div>
 
       {showModal && (
-        <div className="modal-overlay">
+        <div className="modal-overlayy">
           <div className="modal modal2">
             <div className="modal-title">
-              <h2>Create New Invoice</h2>
+              <h2>
+                {currentEditingIndex !== null
+                  ? "Edit Invoice"
+                  : "Create New Invoice"}
+              </h2>
             </div>
-            <div className="modal_content">
+            <div className="modal_content1">
               <label>
                 Client Name:
                 <input
@@ -101,8 +131,9 @@ export default function Invoice() {
                 Tax %:
                 <input
                   type="number"
+                  min="0"
                   value={tax}
-                  onChange={(e) => setTax(Number(e.target.value))}
+                  onChange={(e) => setTax(Math.max(0, Number(e.target.value)))}
                   className="input"
                 />
               </label>
@@ -111,8 +142,11 @@ export default function Invoice() {
                 Advance Paid:
                 <input
                   type="number"
+                  min="0"
                   value={advancePaid}
-                  onChange={(e) => setAdvancePaid(Number(e.target.value))}
+                  onChange={(e) =>
+                    setAdvancePaid(Math.max(0, Number(e.target.value)))
+                  }
                   className="input"
                 />
               </label>
@@ -132,48 +166,6 @@ export default function Invoice() {
                       className="input small"
                     />
                   </label>
-
-                  <label>
-                    Price (XFA):
-                    <input
-                      type="number"
-                      value={line.price}
-                      onChange={(e) => {
-                        const updatedLines = [...lines];
-                        updatedLines[index].price = Number(e.target.value);
-                        setLines(updatedLines);
-                      }}
-                      className="input tiny"
-                    />
-                  </label>
-
-                  <label>
-                    Qty:
-                    <input
-                      type="number"
-                      value={line.quantity}
-                      onChange={(e) => {
-                        const updatedLines = [...lines];
-                        updatedLines[index].quantity = Number(e.target.value);
-                        setLines(updatedLines);
-                      }}
-                      className="input tiny"
-                    />
-                  </label>
-
-                  <label>
-                    Discount %:
-                    <input
-                      type="number"
-                      value={line.discount}
-                      onChange={(e) => {
-                        const updatedLines = [...lines];
-                        updatedLines[index].discount = Number(e.target.value);
-                        setLines(updatedLines);
-                      }}
-                      className="input tiny"
-                    />
-                  </label>
                 </div>
               ))}
 
@@ -182,9 +174,11 @@ export default function Invoice() {
               </button>
 
               <div className="totals">
-                <p>Subtotal: {subtotal} XFA</p>
-                <p>Total (Tax): {total} XFA</p>
-                <p>Remaining: {remaining} XFA</p>
+                <p>Subtotal: {subtotal.toFixed(2)} XFA</p>
+                <p>Total (Tax): {total.toFixed(2)} XFA</p>
+                <p>Remaining: {remaining.toFixed(2)} XFA</p>
+                {refund > 0 && <p>Refund: {refund.toFixed(2)} XFA</p>}
+                <p>Status: {status}</p>
               </div>
 
               <div className="modal-actions">
@@ -194,8 +188,11 @@ export default function Invoice() {
                 >
                   Cancel
                 </button>
-                <button className="create-btn" onClick={handleCreateInvoice}>
-                  Create
+                <button
+                  className="create-btn"
+                  onClick={handleCreateOrUpdateInvoice}
+                >
+                  {currentEditingIndex !== null ? "Update" : "Create"}
                 </button>
               </div>
             </div>
@@ -205,36 +202,54 @@ export default function Invoice() {
 
       <div className="invoice-list">
         <h2 className="subtitle">Created Invoices</h2>
-        {invoices.map((invoice, index) => (
-          <div key={index} className="invoice-card">
-            <p>
-              <strong>Client:</strong> {invoice.client_name}
-            </p>
-            <p>
-              <strong>Reason:</strong> {invoice.reason}
-            </p>
-            <p>
-              <strong>Products:</strong>
-            </p>
-            <ul>
-              {invoice.lines.map((line, idx) => (
-                <li key={idx}>
-                  {line.product_id} - {line.quantity} x {line.price} XFA (
-                  {line.discount}% off)
-                </li>
-              ))}
-            </ul>
-            <p>
-              <strong>Total:</strong> {invoice.total} XFA
-            </p>
-            <p>
-              <strong>Status:</strong> {invoice.status}
-            </p>
-            <p>
-              <strong>Due Date:</strong> {invoice.due_date}
-            </p>
-          </div>
-        ))}
+        {invoices.length === 0 ? (
+          <p>No invoices created yet.</p>
+        ) : (
+          invoices.map((invoice, index) => (
+            <div key={index} className="invoice-card">
+              <p>
+                <strong>Client:</strong> {invoice.client_name}
+              </p>
+              <p>
+                <strong>Reason:</strong> {invoice.reason}
+              </p>
+              <p>
+                <strong>Products:</strong>
+              </p>
+              <ul>
+                {invoice.lines.map((line, idx) => (
+                  <li key={idx}>
+                    {line.product_id} - {line.quantity} x {line.price} XFA (
+                    {line.discount}% off)
+                  </li>
+                ))}
+              </ul>
+              <p>
+                <strong>Total:</strong> {invoice.total.toFixed(2)} XFA
+              </p>
+              <p>
+                <strong>Remaining:</strong> {invoice.remaining.toFixed(2)} XFA
+              </p>
+              <p>
+                <strong>Status:</strong> {invoice.status}
+              </p>
+              <p>
+                <strong>Due Date:</strong> {invoice.due_date}
+              </p>
+              {invoice.refund > 0 && (
+                <p>
+                  <strong>Refund:</strong> {invoice.refund.toFixed(2)} XFA
+                </p>
+              )}
+              <button
+                className="edit-btn"
+                onClick={() => handleEditInvoice(index)}
+              >
+                Edit
+              </button>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

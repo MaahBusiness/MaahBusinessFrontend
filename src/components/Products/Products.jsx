@@ -6,6 +6,7 @@ import "./products.css";
 const Product = () => {
   const [products, setProducts] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(""); // ❗️ For error handling
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -40,6 +41,17 @@ const Product = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    // 🔍 Check if product name already exists
+    const nameExists = products.some(
+      (product) => product.name.toLowerCase() === formData.name.toLowerCase(),
+    );
+
+    if (nameExists) {
+      setErrorMessage("A product with this name already exists.");
+      return;
+    }
+
     fetch("http://localhost:5000/products", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -50,6 +62,7 @@ const Product = () => {
       .catch((error) => console.error("Error adding product:", error));
 
     setShowForm(false);
+    setErrorMessage(""); // Reset error message
     setFormData({
       name: "",
       description: "",
@@ -86,9 +99,15 @@ const Product = () => {
                 <input
                   name="name"
                   value={formData.name}
-                  onChange={handleChange}
+                  onChange={(e) => {
+                    handleChange(e);
+                    setErrorMessage(""); // Clear error when editing name
+                  }}
                   required
                 />
+                {errorMessage && (
+                  <p className="error-message">{errorMessage}</p>
+                )}
               </div>
               <div className="form-group">
                 <label>Description:</label>
@@ -216,7 +235,10 @@ const Product = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setShowForm(false)}
+                  onClick={() => {
+                    setShowForm(false);
+                    setErrorMessage("");
+                  }}
                   className="Cancel"
                 >
                   Cancel
