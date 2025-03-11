@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
-import ProductDetail from "./ProductDetail";
+
 
 import "./products.css";
 
 const Product = () => {
   const [products, setProducts] = useState([]);
   const [showForm, setShowForm] = useState(false);
-  const [errorMessage, setErrorMessage] = useState(""); // ❗️ For error handling
+  const [errorMessage, setErrorMessage] = useState(""); 
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -101,7 +101,7 @@ const Product = () => {
                   value={formData.name}
                   onChange={(e) => {
                     handleChange(e);
-                    setErrorMessage(""); // Clear error when editing name
+                    setErrorMessage(""); 
                   }}
                   required
                 />
@@ -249,7 +249,7 @@ const Product = () => {
         </div>
       )}
       <div>
-        <ProductDetail />
+    
       </div>
     </div>
   );
