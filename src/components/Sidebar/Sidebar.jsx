@@ -24,6 +24,9 @@ const Sidebar = () => {
         <li>
           <Link to="/subcategory">SubCategory</Link>
         </li>
+        <li>
+          <Link to="/Invoice">Invoice</Link>
+        </li>
       </ul>
     </div>
   );
