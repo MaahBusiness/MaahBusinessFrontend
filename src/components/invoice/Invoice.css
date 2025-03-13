@@ -33,7 +33,6 @@
   background-color: #0056b3;
 }
 
-
 .modal-overllay {
   position: fixed;
   top: 0;
@@ -53,13 +52,13 @@
   border-radius: 10px;
   width: 100%;
   max-width: 600px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2); 
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
-.modal_content{
+.modal_content {
   display: grid;
-  grid-template-columns:repeat(2,1fr);
+  grid-template-columns: repeat(2, 1fr);
   align-items: center;
-gap: 5px;
+  gap: 5px;
   justify-content: center;
 }
 
@@ -78,21 +77,20 @@ gap: 5px;
   width: 100%;
   max-width: 100px;
   padding: 8px 12px;
- margin: 0;
+  margin: 0;
   border: 1px solid #ccc;
   border-radius: 6px;
 }
 
-.modal_content button{
-height: 10vh;
-width: 70%;
+.modal_content button {
+  height: 10vh;
+  width: 70%;
   background-color: #007bff;
   color: #fff;
   border: none;
   border-radius: 6px;
   cursor: pointer;
 }
-
 
 .totals {
   margin-top: 20px;

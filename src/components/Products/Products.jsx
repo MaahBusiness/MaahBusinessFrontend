@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
 
-
 import "./products.css";
 
 const Product = () => {
   const [products, setProducts] = useState([]);
   const [showForm, setShowForm] = useState(false);
-  const [errorMessage, setErrorMessage] = useState(""); 
+  const [errorMessage, setErrorMessage] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -23,13 +22,6 @@ const Product = () => {
     category_id: "",
     subcategory_id: "",
   });
-
-  useEffect(() => {
-    fetch("http://localhost:5000/products")
-      .then((res) => res.json())
-      .then((data) => setProducts(data))
-      .catch((error) => console.error("Error fetching products:", error));
-  }, []);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -62,7 +54,7 @@ const Product = () => {
       .catch((error) => console.error("Error adding product:", error));
 
     setShowForm(false);
-    setErrorMessage(""); // Reset error message
+    setErrorMessage("");
     setFormData({
       name: "",
       description: "",
@@ -101,7 +93,7 @@ const Product = () => {
                   value={formData.name}
                   onChange={(e) => {
                     handleChange(e);
-                    setErrorMessage(""); 
+                    setErrorMessage("");
                   }}
                   required
                 />
@@ -248,9 +240,7 @@ const Product = () => {
           </div>
         </div>
       )}
-      <div>
-    
-      </div>
+      <div></div>
     </div>
   );
 };

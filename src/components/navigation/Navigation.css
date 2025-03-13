@@ -1,42 +1,128 @@
 .navbar {
-  background-color: #0b3899;
-  color: white;
-  padding: 1.5em;
+  background-color: #16213e;
+  color: #e0e0e0;
+  padding: 1em 2em;
   display: flex;
-  justify-content: end;
+  justify-content: space-between;
   align-items: center;
   position: fixed;
   top: 0;
   width: 100%;
-  z-index: 1000;
+  z-index: 100;
+  border-bottom: 1px solid #0f3460;
+}
+
+.nav-brand {
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.nav-brand a {
+  color: #e94560;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.nav-brand a:hover {
+  color: #ef6c89;
 }
 
 .nav-content ul {
   list-style: none;
   display: flex;
   align-items: center;
+  margin: 0;
+  padding: 0;
 }
 
 .nav-content ul li {
-  margin-left: 20px;
+  margin-left: 25px;
 }
 
 .nav-content ul li a {
   text-decoration: none;
-  color: white;
+  color: #e0e0e0;
+  font-weight: 500;
+  padding: 0.5em 0;
+  position: relative;
+  transition: color 0.2s ease;
+}
+
+.nav-content ul li a::after {
+  content: "";
+  position: absolute;
+  width: 0;
+  height: 2px;
+  bottom: 0;
+  left: 0;
+  background-color: #e94560;
+  transition: width 0.3s ease;
 }
 
 .nav-content ul li a:hover {
-  text-decoration: underline;
+  color: #e94560;
+  text-decoration: none;
 }
 
-body {
-  padding-top: 60px;
+.nav-content ul li a:hover::after {
+  width: 100%;
 }
+
+.signup-link {
+  background-color: #e94560;
+  color: white !important;
+  padding: 0.5em 1em !important;
+  border-radius: 4px;
+  transition: background-color 0.2s ease !important;
+}
+
+.signup-link:hover {
+  background-color: #ef6c89;
+  color: white !important;
+}
+
+.signup-link::after {
+  display: none !important;
+}
+
+.profile-icon a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .nav-content ul li a svg {
-  color: white;
+  color: #e0e0e0;
+  transition:
+    color 0.2s ease,
+    transform 0.2s ease;
 }
 
 .nav-content ul li a:hover svg {
-  color: #ddd;
+  color: #e94560;
+  transform: scale(1.1);
+}
+
+body {
+  padding-top: 70px;
+  margin: 0;
+  background-color: #1a1a2e;
+}
+
+@media (max-width: 768px) {
+  .navbar {
+    padding: 1em;
+  }
+
+  .nav-brand {
+    font-size: 1.2rem;
+  }
+
+  .nav-content ul li {
+    margin-left: 15px;
+  }
+
+  .signup-link {
+    padding: 0.4em 0.8em !important;
+  }
 }

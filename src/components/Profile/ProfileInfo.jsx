@@ -4,7 +4,7 @@ import "./Profile.css";
 const ProfileInfo = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [user, setUser] = useState({
-    name: "John paul",
+    name: "John Paul",
     email: "johnpaul@example.com",
     number: "+237 677 977 899",
     role: "Admin",
@@ -19,7 +19,7 @@ const ProfileInfo = () => {
     }));
   };
 
-  // Handle save changes (simulating saving)
+  // Handle save changes
   const handleSave = (e) => {
     e.preventDefault();
     setIsEditing(false);
@@ -28,16 +28,27 @@ const ProfileInfo = () => {
   };
 
   return (
-    <div className="profile-container">
-      <div className="profile-info">
-        <h2>User Profile</h2>
+    <div className="profile-info-container">
+      <div className="profile-card">
+        <div className="profile-card-header">
+          <h3>User Profile</h3>
+          {!isEditing && (
+            <button
+              onClick={() => setIsEditing(true)}
+              className="profile-edit-button"
+            >
+              Edit Profile
+            </button>
+          )}
+        </div>
 
         {isEditing ? (
-          <form onSubmit={handleSave} className="profile-edit-form">
-            <div>
-              <label>Name:</label>
+          <form onSubmit={handleSave} className="profile-form">
+            <div className="form-group">
+              <label htmlFor="name">Name</label>
               <input
                 type="text"
+                id="name"
                 name="name"
                 value={user.name}
                 onChange={handleChange}
@@ -45,10 +56,11 @@ const ProfileInfo = () => {
               />
             </div>
 
-            <div>
-              <label>Email:</label>
+            <div className="form-group">
+              <label htmlFor="email">Email</label>
               <input
                 type="email"
+                id="email"
                 name="email"
                 value={user.email}
                 onChange={handleChange}
@@ -56,51 +68,68 @@ const ProfileInfo = () => {
               />
             </div>
 
-            <div>
-              <label>Number:</label>
+            <div className="form-group">
+              <label htmlFor="number">Phone Number</label>
               <input
                 type="text"
-                name="phone number"
+                id="number"
+                name="number"
                 value={user.number}
                 onChange={handleChange}
                 required
               />
             </div>
 
-            <div>
-              <label>Role:</label>
+            <div className="form-group">
+              <label htmlFor="role">Role</label>
               <input
                 type="text"
+                id="role"
                 name="role"
                 value={user.role}
                 onChange={handleChange}
                 required
+                disabled
+                className="input-disabled"
               />
+              <small>Role cannot be changed</small>
             </div>
 
-            <button type="submit">Save Changes</button>
-            <button type="button" onClick={() => setIsEditing(false)}>
-              Cancel
-            </button>
+            <div className="form-actions">
+              <button type="submit" className="btn-save">
+                Save Changes
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsEditing(false)}
+                className="btn-cancel"
+              >
+                Cancel
+              </button>
+            </div>
           </form>
         ) : (
-          <>
-            <p>
-              <strong>Name:</strong> {user.name}
-            </p>
-            <p>
-              <strong>Email:</strong> {user.email}
-            </p>
-            <p>
-              <strong>Phone Number:</strong> {user.number}
-            </p>
-            <p className="role">
-              <strong>Role:</strong> {user.role}
-            </p>
-            <button onClick={() => setIsEditing(true)} className="edit-button">
-              Edit Profile
-            </button>
-          </>
+          <div className="profile-details">
+            <div className="profile-detail-item">
+              <span className="detail-label">Name</span>
+              <span className="detail-value">{user.name}</span>
+            </div>
+
+            <div className="profile-detail-item">
+              <span className="detail-label">Email</span>
+              <span className="detail-value">{user.email}</span>
+            </div>
+
+            <div className="profile-detail-item">
+              <span className="detail-label">Phone Number</span>
+              <span className="detail-value">{user.number}</span>
+            </div>
+
+            <div className="profile-detail-item">
+              <span className="detail-label">Role</span>
+              <span className="detail-value role-badge">{user.role}</span>
+            </div>
+          </div>
         )}
       </div>
     </div>
