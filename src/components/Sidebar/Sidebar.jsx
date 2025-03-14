@@ -31,9 +31,6 @@ const Sidebar = () => {
           <li className={isActive("/category") ? "active" : ""}>
             <Link to="/category">Category</Link>
           </li>
-          <li className={isActive("/subcategory") ? "active" : ""}>
-            <Link to="/subcategory">SubCategory</Link>
-          </li>
           <li className={isActive("/Invoice") ? "active" : ""}>
             <Link to="/Invoice">Invoice</Link>
           </li>

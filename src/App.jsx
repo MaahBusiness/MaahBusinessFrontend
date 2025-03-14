@@ -13,9 +13,7 @@ import Signup from "./components/signup/Signup";
 import Products from "./components/Products/Products";
 import Reports from "./components/Reports/Reports";
 import Category from "./components/Category/Category";
-import SubCategory from "./components/Subcategory/Subcategory";
 import Dashboard from "./components/Dashboard/Dashboard";
-import ProductDetail from "./components/Products/ProductDetail";
 import Invoice from "./components/invoice/Invoice";
 import ProfileLayout from "./components/Profile/ProfileLayout";
 import ProfileInfo from "./components/Profile/ProfileInfo";
@@ -41,14 +39,12 @@ const App = () => {
             <Route path="/signup" element={<Signup />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password/:token" element={<ResetPassword />} />
-            <Route path="/ProductDetail" element={<ProductDetail />} />
             <Route element={<Layout />}>
               <Route path="/" element={<Home />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/products" element={<Products />} />
               <Route path="/reports" element={<Reports />} />
               <Route path="/category" element={<Category />} />
-              <Route path="/subcategory" element={<SubCategory />} />
               <Route path="/Invoice" element={<Invoice />} />
 
               <Route path="/profile" element={<ProfileLayout />}>
