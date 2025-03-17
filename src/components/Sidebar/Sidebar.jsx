@@ -1,42 +1,75 @@
+import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import {
+  FaBars,
+  FaTimes,
+  FaHome,
+  FaTachometerAlt,
+  FaBoxOpen,
+  FaChartBar,
+  FaListAlt,
+  FaFileInvoice,
+} from "react-icons/fa";
 import "./sidebar.css";
 
 const Sidebar = () => {
   const location = useLocation();
+  const [isOpen, setIsOpen] = useState(window.innerWidth > 768);
 
-  // Function to check if a link is active
-  const isActive = (path) => {
-    return location.pathname === path;
+  const toggleSidebar = () => {
+    setIsOpen(!isOpen);
   };
 
+  const isActive = (path) => location.pathname === path;
+
   return (
-    <div className="sidebar">
-      <div className="sidebar-header">
-        <h2>Dashboard</h2>
+    <>
+      {/* Sidebar Toggle Button - Only appears on mobile */}
+      <button className="sidebar-toggle" onClick={toggleSidebar}>
+        {isOpen ? <FaTimes /> : <FaBars />}
+      </button>
+
+      {/* Sidebar */}
+      <div className={`sidebar ${isOpen ? "open" : ""}`}>
+        <div className="sidebar-header">
+          <h2>Dashboard</h2>
+        </div>
+        <div className="sidebar-content">
+          <ul>
+            <li className={isActive("/") ? "active" : ""}>
+              <Link to="/" onClick={toggleSidebar}>
+                <FaHome className="icon" /> Home
+              </Link>
+            </li>
+            <li className={isActive("/dashboard") ? "active" : ""}>
+              <Link to="/dashboard" onClick={toggleSidebar}>
+                <FaTachometerAlt className="icon" /> Dashboard
+              </Link>
+            </li>
+            <li className={isActive("/products") ? "active" : ""}>
+              <Link to="/products" onClick={toggleSidebar}>
+                <FaBoxOpen className="icon" /> Products
+              </Link>
+            </li>
+            <li className={isActive("/reports") ? "active" : ""}>
+              <Link to="/reports" onClick={toggleSidebar}>
+                <FaChartBar className="icon" /> Reports
+              </Link>
+            </li>
+            <li className={isActive("/category") ? "active" : ""}>
+              <Link to="/category" onClick={toggleSidebar}>
+                <FaListAlt className="icon" /> Category
+              </Link>
+            </li>
+            <li className={isActive("/Invoice") ? "active" : ""}>
+              <Link to="/Invoice" onClick={toggleSidebar}>
+                <FaFileInvoice className="icon" /> Invoice
+              </Link>
+            </li>
+          </ul>
+        </div>
       </div>
-      <div className="sidebar-content">
-        <ul>
-          <li className={isActive("/") ? "active" : ""}>
-            <Link to="/">Home</Link>
-          </li>
-          <li className={isActive("/dashboard") ? "active" : ""}>
-            <Link to="/dashboard">Dashboard</Link>
-          </li>
-          <li className={isActive("/products") ? "active" : ""}>
-            <Link to="/products">Products</Link>
-          </li>
-          <li className={isActive("/reports") ? "active" : ""}>
-            <Link to="/reports">Reports</Link>
-          </li>
-          <li className={isActive("/category") ? "active" : ""}>
-            <Link to="/category">Category</Link>
-          </li>
-          <li className={isActive("/Invoice") ? "active" : ""}>
-            <Link to="/Invoice">Invoice</Link>
-          </li>
-        </ul>
-      </div>
-    </div>
+    </>
   );
 };
 

@@ -11,6 +11,7 @@ const Home = () => {
         <div className="hero_context">
           <h1>Welcome to Stock Management System</h1>
           <p>
+            {" "}
             Manage your inventory efficiently with real-time tracking, easy
             updates, and seamless stock management. Get started today!
           </p>

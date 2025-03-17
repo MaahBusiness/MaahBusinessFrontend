@@ -1,7 +1,7 @@
 /* dashboard.css */
 .dashboard {
   padding: 20px;
-  width: 60%;
+  width: 65%;
   color: #e0e0e0;
   margin: 1em auto;
   background-color: #1a1a2e;
@@ -11,7 +11,7 @@
   font-size: 28px;
   font-weight: 600;
   color: #e94560;
-  margin: 1em auto;
+  margin: 1.1em auto;
 }
 
 .dashboard-header {
@@ -32,44 +32,29 @@
   color: #e0e0e0;
   font-size: 0.875rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  transition: all 0.2s ease;
-}
-
-.time-select:focus {
-  border-color: #e94560;
-  box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.2);
-  outline: none;
 }
 
 .dashboard-cards {
   display: flex;
   gap: 1.2em;
-  align-items: stretch;
+  padding: 0 2em;
+  align-items: center;
   justify-content: center;
-  margin-bottom: 28px;
-  flex-wrap: wrap;
+  width: 100%;
+  margin: 1em auto;
 }
 
 .card {
   border-radius: 10px;
-  padding: 24px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  padding: 20px;
+  height: 20vh;
   display: flex;
   align-items: center;
   flex-direction: column;
-  width: 40%;
+  width: 60%;
   background-color: #16213e;
   border: 1px solid #0f3460;
   position: relative;
-  overflow: hidden;
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-.card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.25);
 }
 
 .card h3 {
@@ -80,61 +65,29 @@
 }
 
 .card-value {
-  font-size: 1.8rem;
+  font-size: 1.3rem;
   font-weight: 700;
   color: #e94560;
   margin: 0.5rem 0;
-}
-
-.trend {
-  font-size: 0.8rem;
-  display: flex;
-  align-items: center;
-  font-weight: 500;
-}
-
-.trend.up {
-  color: #06d6a0;
-}
-
-.trend.down {
-  color: #ef476f;
-}
-
-.trend.up::before {
-  content: "↑ ";
-  margin-right: 0.25rem;
-}
-
-.trend.down::before {
-  content: "↓ ";
-  margin-right: 0.25rem;
 }
 
 .charts-container {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 24px;
-  margin-bottom: 28px;
 }
 
 .chart {
   background: linear-gradient(135deg, #0f3460 0%, #16213e 100%);
   border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  padding: 1.2em;
   border: 1px solid #0f3460;
-  transition: transform 0.2s ease;
-}
-
-.chart:hover {
-  transform: translateY(-3px);
+  margin-bottom: 3em;
 }
 
 .chart h3 {
-  margin-bottom: 1.2em;
   color: #e94560;
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 600;
   margin-top: 0;
   letter-spacing: 0.3px;
@@ -144,7 +97,6 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 24px;
-  margin-bottom: 28px;
 }
 
 .recent-sales {
@@ -168,6 +120,8 @@
 .sale-info {
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .sale-name {
@@ -175,6 +129,9 @@
   color: #e0e0e0;
   margin: 0;
   font-size: 1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .sale-date {
@@ -188,6 +145,7 @@
   font-weight: 600;
   color: #06d6a0;
   margin: 0;
+  white-space: nowrap;
 }
 
 .top-products {
@@ -213,16 +171,22 @@
   height: 40px;
   border-radius: 4px;
   margin-right: 14px;
+  flex-shrink: 0;
 }
 
 .product-info {
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .product-name {
   font-size: 0.95rem;
   font-weight: 500;
   color: #e0e0e0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .product-sold {
@@ -233,6 +197,7 @@
 .product-revenue {
   font-size: 0.95rem;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .additional-charts {
@@ -242,13 +207,22 @@
   margin-bottom: 28px;
 }
 
-@media (max-width: 1024px) {
-  .charts-container,
-  .secondary-charts,
-  .additional-charts {
-    grid-template-columns: 1fr;
+/* Responsive styles */
+@media (max-width: 1200px) {
+  .dashboard {
+    width: 80%;
   }
 
+  .dashboard-header {
+    width: 85%;
+  }
+
+  .secondary-charts {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 992px) {
   .dashboard {
     width: 90%;
   }
@@ -256,14 +230,136 @@
   .dashboard-header {
     width: 90%;
   }
+
+  .card {
+    width: 45%;
+  }
+
+  .dashboard-cards {
+    flex-wrap: wrap;
+  }
 }
 
 @media (max-width: 768px) {
-  .dashboard-cards {
+  .dashboard {
+    width: 95%;
+    padding: 15px;
+  }
+
+  .dashboard-header {
+    width: 100%;
     flex-direction: column;
   }
 
+  .time-select {
+    width: 100%;
+  }
+
+  .dashboard-cards {
+    flex-direction: column;
+    padding: 0 1em;
+  }
+
   .card {
-    width: 80%;
+    width: 100%;
+    height: auto;
+    min-height: 150px;
+  }
+
+  .charts-container {
+    grid-template-columns: 1fr;
+  }
+
+  .secondary-charts {
+    grid-template-columns: 1fr;
+  }
+
+  .additional-charts {
+    grid-template-columns: 1fr;
+  }
+
+  .chart {
+    margin-bottom: 2em;
+  }
+}
+
+@media (max-width: 576px) {
+  .dashboard {
+    width: 100%;
+    padding: 10px;
+  }
+
+  .dashboard h2 {
+    font-size: 22px;
+  }
+
+  .card {
+    padding: 15px;
+    min-height: 120px;
+  }
+
+  .card h3 {
+    font-size: 1rem;
+  }
+
+  .card-value {
+    font-size: 1.2rem;
+  }
+
+  .chart {
+    padding: 1em;
+  }
+
+  .chart h3 {
+    font-size: 0.9rem;
+  }
+
+  .sale-name,
+  .product-name {
+    font-size: 0.9rem;
+  }
+
+  .sale-date,
+  .product-sold {
+    font-size: 0.7rem;
+  }
+
+  .sale-amount,
+  .product-revenue {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .dashboard h2 {
+    font-size: 20px;
+  }
+
+  .card {
+    padding: 12px;
+    min-height: 100px;
+  }
+
+  .card h3 {
+    font-size: 0.9rem;
+    margin-bottom: 5px;
+  }
+
+  .card-value {
+    font-size: 1.1rem;
+  }
+
+  .chart {
+    padding: 0.8em;
+    margin-bottom: 1.5em;
+  }
+
+  .product-color {
+    height: 30px;
+  }
+
+  .sale-item,
+  .product-item {
+    padding: 0.6rem 0;
   }
 }

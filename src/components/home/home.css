@@ -4,33 +4,36 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-
   min-height: 80vh;
 }
 
 .hero_context {
   width: 70%;
+  display: flex;
+  flex-direction: column;
 }
 
 .hero_context h1 {
   font-size: 2.5rem;
   font-weight: bold;
   margin-bottom: 0.5em;
+  color: #e94560;
 }
 
 .hero_context p {
   font-size: 1.1rem;
   margin-bottom: 0.8em;
   line-height: 1.7;
-  color: #2c2c2c;
+  color: #fff;
+  text-align: start;
 }
 
 .btn {
-  padding: 0.5em 0.8em;
+  padding: 1em 0.8em;
   font-size: 1rem;
   background-color: #0b3899;
   color: white;
-  width: 30%;
+  width: 35%;
   border: none;
   cursor: pointer;
   border-radius: 10px;
@@ -38,9 +41,8 @@
 }
 
 .hero_image {
-  width: 80%;
+  width: 70%;
   height: auto;
-  border-radius: 10px;
 }
 .hero_image img {
   width: 100%;

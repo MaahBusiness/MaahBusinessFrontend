@@ -24,7 +24,7 @@ const Signup = () => {
         <input
           type="text"
           name="name"
-          placeholder="Name"
+          placeholder="Enter Name"
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           required
@@ -32,21 +32,21 @@ const Signup = () => {
         <input
           type="email"
           name="email"
-          placeholder="Email"
+          placeholder="Enter Email"
           value={formData.email}
           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
         />
         <input
           type="number"
           name="phone"
-          placeholder="Phone Num"
+          placeholder="Enter Phone Num"
           value={formData.phone}
           onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
         />
         <input
           type="password"
           name="password"
-          placeholder="Password"
+          placeholder="Enter Password"
           required
           value={formData.password}
           onChange={(e) =>

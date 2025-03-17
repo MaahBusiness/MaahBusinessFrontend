@@ -5,9 +5,7 @@ import "./Navigation.css";
 const Navbar = () => {
   return (
     <nav className="navbar">
-      <div className="nav-brand">
-        <Link to="/">Stock Manager</Link>
-      </div>
+      <div className="nav-brand"></div>
       <div className="nav-content">
         <ul>
           <li>

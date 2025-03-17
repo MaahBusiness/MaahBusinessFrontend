@@ -1,7 +1,7 @@
 /* Profile Layout and Shared Styles */
 .profile-layout {
   padding: 2rem;
-  max-width: 900px;
+  width: 50%;
   margin: 0 auto;
   color: #e0e0e0;
 }
@@ -313,6 +313,7 @@
 @media (max-width: 768px) {
   .profile-layout {
     padding: 1rem;
+    width: 90%;
   }
 
   .profile-nav {
