@@ -10,3 +10,23 @@ select {
   color: white;
   border-radius: 1em;
 }
+.signup {
+  display: block;
+}
+.signup p {
+  margin: 1em auto;
+  font-size: 0.8rem;
+}
+.signup h2 {
+  margin: 0.7em auto;
+  color: #e94560;
+}
+.signupbtn {
+  margin: 0.6em auto;
+  padding: 1.3em;
+  background: #e94560;
+  color: #fff;
+  font-weight: bold;
+  width: 100%;
+  border-radius: 0.8em;
+}

@@ -32,6 +32,21 @@
   color: #e0e0e0;
   font-size: 0.875rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition:
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+  cursor: pointer;
+}
+
+.time-select:hover {
+  border-color: #e94560;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.time-select:focus {
+  border-color: #e94560;
+  box-shadow: 0 0 0 2px rgba(233, 69, 96, 0.3);
+  outline: none;
 }
 
 .dashboard-cards {
@@ -55,6 +70,22 @@
   background-color: #16213e;
   border: 1px solid #0f3460;
   position: relative;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease,
+    border-color 0.3s ease;
+  cursor: pointer;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+  border-color: #e94560;
+}
+
+.card:active {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
 }
 
 .card h3 {
@@ -71,6 +102,22 @@
   margin: 0.5rem 0;
 }
 
+.trend {
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 500;
+}
+
+.trend.up {
+  color: #06d6a0;
+}
+
+.trend.down {
+  color: #ef476f;
+}
+
 .charts-container {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -83,6 +130,16 @@
   padding: 1.2em;
   border: 1px solid #0f3460;
   margin-bottom: 3em;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease,
+    border-color 0.3s ease;
+}
+
+.chart:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  border-color: #e94560;
 }
 
 .chart h3 {
@@ -111,6 +168,21 @@
   align-items: center;
   padding: 0.8rem 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition:
+    transform 0.2s ease,
+    padding 0.2s ease;
+  cursor: pointer;
+}
+
+.sale-item:hover {
+  transform: translateX(5px);
+  padding-left: 5px;
+  background-color: rgba(15, 52, 96, 0.5);
+  border-radius: 4px;
+}
+
+.sale-item:active {
+  background-color: rgba(15, 52, 96, 0.7);
 }
 
 .sale-item:last-child {
@@ -160,6 +232,21 @@
   align-items: center;
   padding: 10px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition:
+    transform 0.2s ease,
+    padding 0.2s ease;
+  cursor: pointer;
+}
+
+.product-item:hover {
+  transform: translateX(5px);
+  padding-left: 5px;
+  background-color: rgba(15, 52, 96, 0.5);
+  border-radius: 4px;
+}
+
+.product-item:active {
+  background-color: rgba(15, 52, 96, 0.7);
 }
 
 .product-item:last-child {
@@ -172,6 +259,11 @@
   border-radius: 4px;
   margin-right: 14px;
   flex-shrink: 0;
+  transition: width 0.2s ease;
+}
+
+.product-item:hover .product-color {
+  width: 6px;
 }
 
 .product-info {

@@ -114,17 +114,6 @@
   flex: 1;
   color: #e0e0e0;
 }
-
-.role-badge {
-  display: inline-block;
-  background-color: #e94560;
-  color: white;
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
 /* Form Styles */
 .profile-form {
   padding: 1.5rem;

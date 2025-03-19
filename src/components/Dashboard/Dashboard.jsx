@@ -31,30 +31,32 @@ const Dashboard = () => {
   const [timePeriod, setTimePeriod] = useState("monthly");
   const [totalCustomers, setTotalCustomers] = useState(2543);
 
+  // Update the salesData array to have more realistic values that match the monthly revenue
   const salesData = [
     { name: "Jan", sales: 4000, target: 5000 },
-    { name: "Feb", sales: 2000, target: 5000 },
-    { name: "Mar", sales: 6000, target: 5000 },
+    { name: "Feb", sales: 3000, target: 5000 },
+    { name: "Mar", sales: 5000, target: 5000 },
     { name: "Apr", sales: 4500, target: 5000 },
     { name: "May", sales: 6000, target: 5000 },
-    { name: "Jun", sales: 8500, target: 5000 },
-    { name: "Jul", sales: 6000, target: 5000 },
+    { name: "Jun", sales: 5500, target: 5000 },
+    { name: "Jul", sales: 7000, target: 5000 },
   ];
 
   const productPerformance = [
-    { name: "Product A", value: 2460, fill: "#FF6384" },
-    { name: "Product B", value: 1360, fill: "#36A2EB" },
+    { name: "Product A", value: 23460, fill: "#FF6384" },
+    { name: "Product D", value: 15000, fill: "#4BC0C0" },
     { name: "Product C", value: 1950, fill: "#FFCE56" },
-    { name: "Product D", value: 1500, fill: "#4BC0C0" },
+    { name: "Product B", value: 1360, fill: "#36A2EB" },
     { name: "Product E", value: 1000, fill: "#9966FF" },
-  ];
+  ].sort((a, b) => b.value - a.value);
 
   const stockStatus = [
     { name: "In Stock", value: 65, fill: "#4CAF50" },
     { name: "Low Stock", value: 25, fill: "#FFC107" },
     { name: "Out of Stock", value: 10, fill: "#F44336" },
-  ];
+  ].sort((a, b) => b.value - a.value);
 
+  // Update the recentSales array to use XFA currency to match the rest of the dashboard
   const recentSales = [
     {
       name: "John Doe",
@@ -64,23 +66,24 @@ const Dashboard = () => {
     },
     {
       name: "Jane Smith",
-      amount: "12050",
+      amount: "12,050.00",
       date: "5 hours ago",
       avatar: "/placeholder.svg?height=40&width=40",
     },
     {
       name: "Bob Johnson",
-      amount: " 7520 ",
+      amount: "7,520.00",
       date: "1 day ago",
       avatar: "/placeholder.svg?height=40&width=40",
     },
   ];
 
+  // Update the topProducts array to use XFA currency and format numbers properly
   const topProducts = [
-    { name: "Product A", sold: 123, revenue: "2460", color: "#FF6384" },
-    { name: "Product C", sold: 98, revenue: "1950", color: "#FFCE56" },
-    { name: "Product B", sold: 75, revenue: "1360", color: "#36A2EB" },
-  ];
+    { name: "Product A", sold: 123, revenue: "2,460.00", color: "#FF6384" },
+    { name: "Product C", sold: 98, revenue: "1,950.00", color: "#FFCE56" },
+    { name: "Product B", sold: 75, revenue: "1,360.00", color: "#36A2EB" },
+  ].sort((a, b) => b.sold - a.sold);
 
   const monthlyRevenue = [
     { month: "Jan", revenue: 4000 },
@@ -90,7 +93,7 @@ const Dashboard = () => {
     { month: "May", revenue: 6000 },
     { month: "Jun", revenue: 5500 },
     { month: "Jul", revenue: 7000 },
-  ];
+  ].sort((a, b) => b.revenue - a.revenue);
 
   const salesByCategory = [
     { name: "Electronics", value: 70, fill: "#FF6384" },
@@ -98,7 +101,7 @@ const Dashboard = () => {
     { name: "Home", value: 40, fill: "#FFCE56" },
     { name: "Sports", value: 30, fill: "#4BC0C0" },
     { name: "Books", value: 20, fill: "#9966FF" },
-  ];
+  ].sort((a, b) => b.value - a.value);
 
   return (
     <div className="dashboard">
@@ -119,22 +122,34 @@ const Dashboard = () => {
       <div className="dashboard-cards">
         <div className="card">
           <h3>Total Revenue</h3>
-          <p className="card-value">${totalAmount}</p>
+          <p className="card-value">XFA {totalAmount.toLocaleString()}</p>
+          <div className="trend up">
+            <span>↑</span> 20.1% from last month
+          </div>
         </div>
 
         <div className="card">
           <h3>Products in Stock</h3>
-          <p className="card-value">{totalProducts}</p>
+          <p className="card-value">{totalProducts.toLocaleString()}</p>
+          <div className="trend up">
+            <span>↑</span> 12 since last week
+          </div>
         </div>
 
         <div className="card">
           <h3>Sales</h3>
-          <p className="card-value">+{totalInvoices}</p>
+          <p className="card-value">+{totalInvoices.toLocaleString()}</p>
+          <div className="trend up">
+            <span>↑</span> 201 since last month
+          </div>
         </div>
 
         <div className="card">
           <h3>Total Customers</h3>
-          <p className="card-value">{totalCustomers}</p>
+          <p className="card-value">{totalCustomers.toLocaleString()}</p>
+          <div className="trend up">
+            <span>↑</span> 18 this week
+          </div>
         </div>
       </div>
 
@@ -256,7 +271,8 @@ const Dashboard = () => {
                   <p className="sale-name">{sale.name}</p>
                   <p className="sale-date">{sale.date}</p>
                 </div>
-                <p className="sale-amount">${sale.amount}</p>
+                {/* Update the sale amount display to use XFA instead of $ */}
+                <p className="sale-amount">XFA {sale.amount}</p>
               </div>
             ))}
           </div>
@@ -275,11 +291,12 @@ const Dashboard = () => {
                   <div className="product-name">{product.name}</div>
                   <div className="product-sold">{product.sold} units sold</div>
                 </div>
+                {/* Update the product revenue display to use XFA instead of $ */}
                 <div
                   className="product-revenue"
                   style={{ color: product.color }}
                 >
-                  ${product.revenue}
+                  XFA {product.revenue}
                 </div>
               </div>
             ))}

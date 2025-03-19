@@ -19,16 +19,18 @@ const Signup = () => {
 
   return (
     <div>
-      <form onSubmit={handleSubmit} className="login">
+      <form onSubmit={handleSubmit} className="login signup">
         <h2>Sign Up</h2>
+        <p className="Lab"> Enter UserName </p>
         <input
           type="text"
           name="name"
-          placeholder="Enter Name"
+          placeholder="Enter Username"
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           required
         />
+        <p className="Lab"> Enter Email </p>
         <input
           type="email"
           name="email"
@@ -36,13 +38,15 @@ const Signup = () => {
           value={formData.email}
           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
         />
+        <p className="Lab"> Enter Number </p>
         <input
           type="number"
           name="phone"
-          placeholder="Enter Phone Num"
+          placeholder="Enter Phone"
           value={formData.phone}
           onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
         />
+        <p className="Lab"> Enter Password </p>
         <input
           type="password"
           name="password"
@@ -53,6 +57,7 @@ const Signup = () => {
             setFormData({ ...formData, password: e.target.value })
           }
         />
+        <p className="Lab"> Select Role </p>
         <select
           name="role"
           value={formData.role}
@@ -65,7 +70,9 @@ const Signup = () => {
           <option value="wholesale_client">Wholesale Client</option>
           <option value="sales_agent">Sales Agent</option>
         </select>
-        <button type="submit">Register</button>
+        <button type="submit" className="signupbtn">
+          Register
+        </button>
       </form>
 
       {is_register && <p>Registration Successful!</p>}

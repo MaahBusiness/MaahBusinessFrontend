@@ -7,7 +7,6 @@ import {
   Edit,
   Trash2,
   Search,
-  Filter,
   Grid,
   List,
   Check,
@@ -19,7 +18,7 @@ const Product = () => {
   const [showForm, setShowForm] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
-  const [viewMode, setViewMode] = useState("grid"); // grid or list
+  const [viewMode, setViewMode] = useState("grid");
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);

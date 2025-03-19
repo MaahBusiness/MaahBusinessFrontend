@@ -8,8 +8,6 @@ import {
   Trash2,
   X,
   Check,
-  ChevronDown,
-  ChevronUp,
   FileText,
   DollarSign,
   Calendar,
@@ -22,8 +20,6 @@ import {
 import {
   BarChart,
   Bar,
-  LineChart,
-  Line,
   PieChart,
   Pie,
   Cell,
@@ -67,7 +63,7 @@ const Invoice = () => {
   const [reason, setReason] = useState("");
   const [tax, setTax] = useState(0);
   const [advancePaid, setAdvancePaid] = useState(0);
-  const [dueDate, setDueDate] = useState("");
+
   const [lines, setLines] = useState([
     { product_id: "", name: "", quantity: 1, price: 0, discount: 0 },
   ]);
@@ -244,11 +240,6 @@ const Invoice = () => {
       return;
     }
 
-    if (!dueDate) {
-      setFormError("Due date is required");
-      return;
-    }
-
     // Validate line items
     const invalidLines = lines.filter(
       (line) => !line.product_id || line.quantity <= 0,
@@ -271,7 +262,7 @@ const Invoice = () => {
       reason,
       tax,
       status,
-      due_date: dueDate,
+
       date_created:
         currentEditingIndex !== null
           ? invoices[currentEditingIndex].date_created
@@ -309,7 +300,7 @@ const Invoice = () => {
     setReason(invoice.reason || "");
     setTax(invoice.tax);
     setAdvancePaid(invoice.advance_paid);
-    setDueDate(invoice.due_date);
+
     setLines(invoice.lines);
     setCurrentEditingIndex(index);
     setFormError("");
@@ -339,7 +330,7 @@ const Invoice = () => {
     setReason("");
     setTax(0);
     setAdvancePaid(0);
-    setDueDate("");
+
     setLines([
       { product_id: "", name: "", quantity: 1, price: 0, discount: 0 },
     ]);
@@ -742,9 +733,8 @@ const Invoice = () => {
                     <input
                       id="due-date"
                       type="date"
-                      value={dueDate}
-                      onChange={(e) => setDueDate(e.target.value)}
-                      className={formError && !dueDate ? "input-error" : ""}
+                      onChange={(e) => e.target.value}
+                      className={formError ? "input-error" : ""}
                     />
                   </div>
                 </div>
