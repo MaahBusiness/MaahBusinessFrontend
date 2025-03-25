@@ -67,3 +67,9 @@ p span {
   text-decoration: underline;
   cursor: pointer;
 }
+.error {
+  color: red;
+  font-size: 1rem;
+  margin-top: 1em;
+  text-align: center;
+}

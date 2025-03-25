@@ -44,7 +44,7 @@ const Reports = () => {
           id: reportId,
           date_generated: generatedDate.toISOString(),
           report_data: {
-            total_sales: 11,
+            total_sales: 20,
             total_revenue: 1110600,
             products_sold: [
               {
@@ -60,7 +60,7 @@ const Reports = () => {
             ],
           },
           report_type: "sales",
-          generated_by: "hypolit",
+          generated_by: "Admin",
           date_range: {
             start: startDate || null,
             end: endDate || null,
@@ -74,20 +74,19 @@ const Reports = () => {
           id: reportId,
           date_generated: generatedDate.toISOString(),
           report_data: {
-            total_products: 10,
-            expired_products: 1,
+            total_products: 15,
+            expired_products: 8,
             near_expiry_count: 1,
-            low_stock_products: 1,
+            low_stock_products: 3,
           },
           report_type: "inventory",
-          generated_by: "hypolit",
+          generated_by: "Admin",
           date_range: {
             start: startDate || null,
             end: endDate || null,
           },
         };
 
-        // Save the report and update state
         saveReport(mockInventoryReport);
         setReport(mockInventoryReport);
       }
@@ -116,7 +115,7 @@ const Reports = () => {
 
   // Delete a saved report
   const deleteReport = (reportId, e) => {
-    e.stopPropagation(); // Prevent triggering the load report action
+    e.stopPropagation();
     const updatedReports = savedReports.filter((r) => r.id !== reportId);
     setSavedReports(updatedReports);
     localStorage.setItem("savedReports", JSON.stringify(updatedReports));
@@ -417,9 +416,7 @@ const Reports = () => {
           <div className="dashboard-card">
             <div className="dashboard-header">
               <h2 className="dashboard-title">Report Dashboard</h2>
-              <p className="dashboard-description">
-                Visual representation of report data
-              </p>
+              <p className="dashboard-description"></p>
             </div>
             <div className="dashboard-content">
               <div className="dashboard-tabs">

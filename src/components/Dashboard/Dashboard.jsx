@@ -43,11 +43,11 @@ const Dashboard = () => {
   ];
 
   const productPerformance = [
-    { name: "Product A", value: 23460, fill: "#FF6384" },
-    { name: "Product D", value: 15000, fill: "#4BC0C0" },
-    { name: "Product C", value: 1950, fill: "#FFCE56" },
+    { name: "Product A", value: 2346, fill: "#FF6384" },
+    { name: "Product C", value: 2050, fill: "#FFCE56" },
+    { name: "Product D", value: 1500, fill: "#4BC0C0" },
     { name: "Product B", value: 1360, fill: "#36A2EB" },
-    { name: "Product E", value: 1000, fill: "#9966FF" },
+    { name: "Product E", value: 1200, fill: "#9966FF" },
   ].sort((a, b) => b.value - a.value);
 
   const stockStatus = [
@@ -107,49 +107,27 @@ const Dashboard = () => {
     <div className="dashboard">
       <div className="dashboard-header">
         <h2>Dashboard</h2>
-        <select
-          value={timePeriod}
-          onChange={(e) => setTimePeriod(e.target.value)}
-          className="time-select"
-        >
-          <option value="daily">Today</option>
-          <option value="weekly">This Week</option>
-          <option value="monthly">This Month</option>
-          <option value="yearly">This Year</option>
-        </select>
       </div>
 
       <div className="dashboard-cards">
         <div className="card">
           <h3>Total Revenue</h3>
           <p className="card-value">XFA {totalAmount.toLocaleString()}</p>
-          <div className="trend up">
-            <span>↑</span> 20.1% from last month
-          </div>
         </div>
 
         <div className="card">
           <h3>Products in Stock</h3>
           <p className="card-value">{totalProducts.toLocaleString()}</p>
-          <div className="trend up">
-            <span>↑</span> 12 since last week
-          </div>
         </div>
 
         <div className="card">
           <h3>Sales</h3>
           <p className="card-value">+{totalInvoices.toLocaleString()}</p>
-          <div className="trend up">
-            <span>↑</span> 201 since last month
-          </div>
         </div>
 
         <div className="card">
           <h3>Total Customers</h3>
           <p className="card-value">{totalCustomers.toLocaleString()}</p>
-          <div className="trend up">
-            <span>↑</span> 18 this week
-          </div>
         </div>
       </div>
 

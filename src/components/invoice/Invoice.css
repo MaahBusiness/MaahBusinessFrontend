@@ -251,20 +251,21 @@
   display: flex;
   flex-direction: column;
   gap: 2rem;
-  width: 90%;
+  width: 70%;
   margin: 0 auto;
 }
 
 .analytics-summary {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(3, 1fr));
+  gap: 1rem;
 }
 
 .summary-card {
   background-color: #16213e;
   border-radius: 0.75rem;
   padding: 1.5rem;
+  width: 50%;
   display: flex;
   flex-direction: column;
   align-items: center;

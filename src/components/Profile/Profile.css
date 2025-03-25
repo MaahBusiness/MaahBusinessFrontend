@@ -175,6 +175,10 @@
   gap: 1rem;
   margin-top: 2rem;
 }
+.logout-button {
+  background: #d63d57;
+  color: #fff;
+}
 
 /* Button Styles */
 .profile-edit-button,

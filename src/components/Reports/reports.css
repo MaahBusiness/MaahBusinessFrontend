@@ -60,10 +60,6 @@
   gap: 16px;
 }
 
-.form-group {
-  margin-bottom: 16px;
-}
-
 .form-label {
   display: block;
   margin-bottom: 8px;
@@ -459,12 +455,6 @@
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.dashboard-header {
-  padding: 16px;
-  border-bottom: 1px solid #0f3460;
-  background-color: #0f3460;
-}
-
 .dashboard-title {
   color: #e94560;
   font-size: 18px;
@@ -746,16 +736,13 @@
   .report-results-header,
   .dashboard-header {
     padding: 12px;
+    display: flex;
   }
 
   .form-content,
   .results-content,
   .dashboard-content {
     padding: 12px;
-  }
-
-  .form-group {
-    margin-bottom: 12px;
   }
 
   .form-label {

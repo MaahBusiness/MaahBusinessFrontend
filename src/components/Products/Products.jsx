@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import axios from "axios";
 import {
   X,
   Plus,
@@ -44,6 +45,7 @@ const Product = () => {
   // Fetch products on component mount
   useEffect(() => {
     fetchProducts();
+    fetchData();
   }, []);
 
   const fetchProducts = () => {
@@ -253,6 +255,16 @@ const Product = () => {
     }
   };
 
+  const fetchData = async () => {
+    try {
+      const response = await axios.get(
+        "http://127.0.0.1:8000/api/v1/product/products/",
+      );
+      console.log(response.data);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  };
   return (
     <div className="product-container">
       <div className="product-header">

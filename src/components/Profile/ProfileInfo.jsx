@@ -1,16 +1,80 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./Profile.css";
+import { useNavigate } from "react-router-dom";
 
 const ProfileInfo = () => {
+  // State to manage user information and page state
   const [isEditing, setIsEditing] = useState(false);
   const [user, setUser] = useState({
-    name: "John Paul",
-    email: "johnpaul@example.com",
-    number: "+237 677 977 899",
-    role: "Admin",
+    id: "",
+    username: "",
+    email: "",
+    phone_number: "",
+    role: "",
+    is_active: false,
   });
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+  const navigate = useNavigate();
 
-  // Handle input change
+  // Fetch user data when component mounts
+  useEffect(() => {
+    const fetchUserData = async () => {
+      // Get token from local storage
+      const token = localStorage.getItem("token");
+
+      // Redirect to login if no token
+      if (!token) {
+        navigate("/login");
+        return;
+      }
+
+      try {
+        // Fetch user information
+        const response = await fetch(
+          "http://localhost:8000/api/v1/user-info/",
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`, // Corrected Bearer token
+            },
+          },
+        );
+
+        // Handle response
+        if (!response.ok) {
+          // Throw error if response is not successful
+          const errorData = await response.json();
+          throw new Error(errorData.detail || "Failed to fetch user data");
+        }
+
+        // Parse user data
+        const userData = await response.json();
+
+        // Update user state with fetched data
+        setUser(userData);
+        setErrorMessage("");
+      } catch (error) {
+        // Handle errors
+        setErrorMessage(error.message);
+
+        // If unauthorized, remove token and redirect to login
+        if (error.message.includes("Unauthorized")) {
+          localStorage.removeItem("token");
+          navigate("/login");
+        }
+      } finally {
+        // Set loading to false
+        setIsLoading(false);
+      }
+    };
+
+    // Call fetch function
+    fetchUserData();
+  }, [navigate]);
+
+  // Handle input changes in edit mode
   const handleChange = (e) => {
     const { name, value } = e.target;
     setUser((prevUser) => ({
@@ -19,13 +83,60 @@ const ProfileInfo = () => {
     }));
   };
 
-  // Handle save changes
-  const handleSave = (e) => {
+  // Handle save profile changes
+  const handleSave = async (e) => {
     e.preventDefault();
-    setIsEditing(false);
-    // Here, you could send the updated user data to an API or database
-    console.log("Profile updated:", user);
+    setIsLoading(true);
+
+    // Get token from local storage
+    const token = localStorage.getItem("token");
+
+    try {
+      // Send update request
+      const response = await fetch(
+        "http://localhost:8000/api/v1/user/update/",
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            username: user.username,
+            email: user.email,
+            phone_number: user.phone_number,
+          }),
+        },
+      );
+
+      // Handle response
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "Failed to update profile");
+      }
+
+      // Exit editing mode
+      setIsEditing(false);
+      setErrorMessage("");
+    } catch (error) {
+      // Handle errors
+      setErrorMessage(error.message);
+    } finally {
+      // Set loading to false
+      setIsLoading(false);
+    }
   };
+
+  // Logout handler
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/login");
+  };
+
+  // Render loading state
+  if (isLoading) {
+    return <div className="profile-loading">Loading profile...</div>;
+  }
 
   return (
     <div className="profile-info-container">
@@ -42,62 +153,37 @@ const ProfileInfo = () => {
           )}
         </div>
 
+        {/* Error message display */}
+        {errorMessage && <p className="error">{errorMessage}</p>}
+
+        {/* Editing form */}
         {isEditing ? (
           <form onSubmit={handleSave} className="profile-form">
-            <div className="form-group">
-              <label htmlFor="name">Name</label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                value={user.name}
-                onChange={handleChange}
-                required
-              />
-            </div>
+            {/* Dynamically render input fields */}
+            {Object.entries(user)
+              .filter(([key]) => !["id", "is_active", "password"].includes(key))
+              .map(([key, value]) => (
+                <div key={key} className="form-group">
+                  <label htmlFor={key}>
+                    {key.replace("_", " ").toUpperCase()}
+                  </label>
+                  <input
+                    type="text"
+                    id={key}
+                    name={key}
+                    value={value}
+                    onChange={handleChange}
+                    required
+                    disabled={key === "role"}
+                  />
+                  {key === "role" && <small>Role cannot be changed</small>}
+                </div>
+              ))}
 
-            <div className="form-group">
-              <label htmlFor="email">Email</label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={user.email}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="number">Phone Number</label>
-              <input
-                type="text"
-                id="number"
-                name="number"
-                value={user.number}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="role">Role</label>
-              <input
-                type="text"
-                id="role"
-                name="role"
-                value={user.role}
-                onChange={handleChange}
-                required
-                disabled
-                className="input-disabled"
-              />
-              <small>Role cannot be changed</small>
-            </div>
-
+            {/* Save and Cancel buttons */}
             <div className="form-actions">
-              <button type="submit" className="btn-save">
-                Save Changes
+              <button type="submit" className="btn-save" disabled={isLoading}>
+                {isLoading ? "Saving..." : "Save Changes"}
               </button>
               <button
                 type="button"
@@ -109,28 +195,31 @@ const ProfileInfo = () => {
             </div>
           </form>
         ) : (
+          // Profile details view
           <div className="profile-details">
-            <div className="profile-detail-item">
-              <span className="detail-label">Name</span>
-              <span className="detail-value">{user.name}</span>
-            </div>
-
-            <div className="profile-detail-item">
-              <span className="detail-label">Email</span>
-              <span className="detail-value">{user.email}</span>
-            </div>
-
-            <div className="profile-detail-item">
-              <span className="detail-label">Phone Number</span>
-              <span className="detail-value">{user.number}</span>
-            </div>
-
-            <div className="profile-detail-item">
-              <span className="detail-label">Role</span>
-              <span className="detail-value role-badge">{user.role}</span>
-            </div>
+            {Object.entries(user)
+              .filter(([key]) => !["id", "is_active", "password"].includes(key))
+              .map(([key, value]) => (
+                <div key={key} className="profile-detail-item">
+                  <span className="detail-label">
+                    {key.replace("_", " ").toUpperCase()}
+                  </span>
+                  <span
+                    className={`detail-value ${key === "role" ? "role-badge" : ""}`}
+                  >
+                    {value}
+                  </span>
+                </div>
+              ))}
           </div>
         )}
+      </div>
+
+      {/* Logout button */}
+      <div className="logout">
+        <button onClick={handleLogout} className="logout-button">
+          Logout
+        </button>
       </div>
     </div>
   );

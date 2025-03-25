@@ -10,17 +10,21 @@ select {
   color: white;
   border-radius: 1em;
 }
+
 .signup {
   display: block;
 }
+
 .signup p {
   margin: 1em auto;
   font-size: 0.8rem;
 }
+
 .signup h2 {
   margin: 0.7em auto;
   color: #e94560;
 }
+
 .signupbtn {
   margin: 0.6em auto;
   padding: 1.3em;
@@ -29,4 +33,53 @@ select {
   font-weight: bold;
   width: 100%;
   border-radius: 0.8em;
+}
+
+/* Modal Styles */
+.modaal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modaal-content {
+  list-style: none;
+  background: #294070;
+  padding: 2em;
+  border-radius: 0.8em;
+  width: 80%;
+  max-width: 400px;
+  color: #fff;
+}
+
+.modaal-content h3 {
+  color: #e94560;
+  text-align: center;
+}
+
+.modaal-content ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0.5em 0;
+}
+
+.modaal-content li {
+  margin: 0.5em 0;
+}
+
+.close-btn {
+  background-color: #e94560;
+  color: white;
+  padding: 0.7em 1.5em;
+  border: none;
+  border-radius: 0.5em;
+  cursor: pointer;
+  display: block;
+  margin: 1em auto;
 }

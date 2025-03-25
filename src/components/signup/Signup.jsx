@@ -1,33 +1,64 @@
 import { useState } from "react";
 import "./signup.css";
+import { useNavigate } from "react-router-dom";
+
 const Signup = () => {
   const [formData, setFormData] = useState({
+    username: "",
     email: "",
-    phone: "",
+    phone_number: "",
     password: "",
-    role: "",
+    role: "manager",
     is_active: true,
   });
 
-  const [is_register, setIsRegister] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [modalErrorMessages, setModalErrorMessages] = useState([]);
+  const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsRegister(true);
-    console.log("User registered:", formData);
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("http://127.0.0.1:8000/api/v1/register/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setModalErrorMessages([...Object.values(data).flat()]);
+        throw new Error("Registration failed.");
+      }
+
+      localStorage.setItem("token", data.token);
+      navigate("/home");
+    } catch (error) {
+      setErrorMessage(error.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div>
       <form onSubmit={handleSubmit} className="login signup">
         <h2>Sign Up</h2>
-        <p className="Lab"> Enter UserName </p>
+        <p className="Lab"> Enter Username </p>
         <input
           type="text"
-          name="name"
+          name="username"
           placeholder="Enter Username"
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          value={formData.username}
+          onChange={(e) =>
+            setFormData({ ...formData, username: e.target.value })
+          }
           required
         />
         <p className="Lab"> Enter Email </p>
@@ -37,25 +68,28 @@ const Signup = () => {
           placeholder="Enter Email"
           value={formData.email}
           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+          required
         />
         <p className="Lab"> Enter Number </p>
         <input
           type="number"
-          name="phone"
+          name="phone_number"
           placeholder="Enter Phone"
-          value={formData.phone}
-          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+          value={formData.phone_number}
+          onChange={(e) =>
+            setFormData({ ...formData, phone_number: e.target.value })
+          }
         />
         <p className="Lab"> Enter Password </p>
         <input
           type="password"
           name="password"
           placeholder="Enter Password"
-          required
           value={formData.password}
           onChange={(e) =>
             setFormData({ ...formData, password: e.target.value })
           }
+          required
         />
         <p className="Lab"> Select Role </p>
         <select
@@ -70,12 +104,31 @@ const Signup = () => {
           <option value="wholesale_client">Wholesale Client</option>
           <option value="sales_agent">Sales Agent</option>
         </select>
-        <button type="submit" className="signupbtn">
-          Register
+        <button type="submit" className="signupbtn" disabled={isLoading}>
+          {isLoading ? "Registering..." : "Register"}
         </button>
       </form>
 
-      {is_register && <p>Registration Successful!</p>}
+      {errorMessage && <p className="error">{errorMessage}</p>}
+
+      {modalErrorMessages.length > 0 && (
+        <div className="modaal-overlay">
+          <div className="modaal-content">
+            <h3>Error Messages</h3>
+            <ul>
+              {modalErrorMessages.map((msg, index) => (
+                <li key={index}>{msg}</li>
+              ))}
+            </ul>
+            <button
+              onClick={() => setModalErrorMessages([])}
+              className="close-btn"
+            >
+              Back
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
