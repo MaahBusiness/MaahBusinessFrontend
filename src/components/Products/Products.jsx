@@ -131,7 +131,7 @@ const Product = () => {
     }
   };
 
-  // Add a new function to fetch product details after the fetchProducts function
+  // Function to fetch product details using the detail API
   const fetchProductDetails = async (productId) => {
     setIsLoading(true);
     try {
@@ -220,10 +220,10 @@ const Product = () => {
       } else {
         // Check if product name already exists
         const nameExists = products.some(
-          (product) =>
-            product.name &&
+          (item) =>
+            item.product.name &&
             formData.name &&
-            product.name.toLowerCase() === formData.name.toLowerCase(),
+            item.product.name.toLowerCase() === formData.name.toLowerCase(),
         );
 
         if (nameExists) {
@@ -304,16 +304,19 @@ const Product = () => {
     });
   };
 
-  // Update the handleEditProduct function to use the fetchProductDetails API
-  const handleEditProduct = async (product) => {
+  // Function to handle editing a product - uses the fetchProductDetails API
+  const handleEditProduct = async (item) => {
     setIsLoading(true);
     try {
+      // Get the actual product object from the item
+      const productId = item.product.id;
+
       // Fetch detailed product information
-      const productDetails = await fetchProductDetails(product.id);
+      const productDetails = await fetchProductDetails(productId);
 
       if (productDetails) {
         setIsEditing(true);
-        setEditingProductId(product.id);
+        setEditingProductId(productId);
         setFormData({
           ...productDetails,
         });
@@ -321,21 +324,25 @@ const Product = () => {
       } else {
         // Fallback to using the product data we already have
         setIsEditing(true);
-        setEditingProductId(product.id);
+        setEditingProductId(productId);
         setFormData({
-          ...product,
+          ...item.product,
+          category_id: item.category?.id || "",
+          subcategory_id: item.subcategory?.id || "",
         });
-        setImagePreview(product.image);
+        setImagePreview(item.product.image);
       }
     } catch (error) {
       console.error("Error preparing product for edit:", error);
       // Fallback to using the product data we already have
       setIsEditing(true);
-      setEditingProductId(product.id);
+      setEditingProductId(item.product.id);
       setFormData({
-        ...product,
+        ...item.product,
+        category_id: item.category?.id || "",
+        subcategory_id: item.subcategory?.id || "",
       });
-      setImagePreview(product.image);
+      setImagePreview(item.product.image);
     } finally {
       setIsLoading(false);
       setShowForm(true);
@@ -350,7 +357,7 @@ const Product = () => {
         await axios.delete(`${apiBaseUrl}/${id}/delete/`);
 
         // Update local state
-        setProducts(products.filter((product) => product.id !== id));
+        setProducts(products.filter((item) => item.product.id !== id));
         console.log("Product deleted successfully");
       } catch (error) {
         console.error("Error deleting product:", error);
@@ -359,20 +366,25 @@ const Product = () => {
     }
   };
 
-  const filteredProducts = products.filter(
-    (product) =>
-      (product.name &&
-        product.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (product.description &&
-        product.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (product.category_id &&
-        getCategoryName(product.category_id)
+  // FIXED: This filter function now accesses the nested product properties correctly
+  const filteredProducts = products.filter((item) => {
+    if (!item.product) return false;
+
+    return (
+      (item.product.name &&
+        item.product.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (item.product.description &&
+        item.product.description
           .toLowerCase()
-          .includes(searchTerm.toLowerCase())),
-  );
+          .includes(searchTerm.toLowerCase())) ||
+      (item.category &&
+        item.category.name &&
+        item.category.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+  });
 
   const getStockStatus = (product) => {
-    if (!product || product.quantity === undefined) return "unknown";
+    if (!product) return "unknown";
 
     if (product.quantity <= 0) {
       return "out-of-stock";
@@ -386,16 +398,14 @@ const Product = () => {
     }
   };
 
-  // Get category name by id
-  const getCategoryName = (categoryId) => {
-    const category = categories.find((cat) => cat.id === categoryId);
-    return category ? category.name : "Uncategorized";
+  // Get category name by id - Simplified since we already have the category object
+  const getCategoryName = (categoryObj) => {
+    return categoryObj ? categoryObj.name : "Uncategorized";
   };
 
-  // Get subcategory name by id
-  const getSubcategoryName = (subcategoryId) => {
-    const subcategory = subcategories.find((sub) => sub.id === subcategoryId);
-    return subcategory ? subcategory.name : "";
+  // Get subcategory name by id - Simplified since we already have the subcategory object
+  const getSubcategoryName = (subcategoryObj) => {
+    return subcategoryObj ? subcategoryObj.name : "";
   };
 
   return (
@@ -460,78 +470,85 @@ const Product = () => {
               </div>
             ))
         ) : filteredProducts.length > 0 ? (
-          filteredProducts.map((product, index) => (
-            <div key={product.id || index} className="product-card">
-              <div className="product-image-container">
-                <img
-                  src={product.image || "/placeholder.svg"}
-                  alt={product.name || "Product"}
-                  className="product-image"
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = "/placeholder.svg";
-                  }}
-                />
-                {product.on_promotion && (
-                  <div className="promotion-badge">On Sale</div>
-                )}
-              </div>
-              <div className="product-details">
-                <h3 className="product-name">
-                  {product.name || "Unnamed Product"}
-                </h3>
-                <p className="product-description">
-                  {product.description || "No description available"}
-                </p>
-                <div className="product-meta">
-                  <div className="product-category">
-                    {getCategoryName(product.category_id) || "Uncategorized"}
-                    {product.subcategory_id && (
-                      <span className="product-subcategory">
-                        {" "}
-                        / {getSubcategoryName(product.subcategory_id)}
+          filteredProducts.map((item) => {
+            // Extract product and category from the item
+            const product = item.product;
+            const category = item.category;
+            const subcategory = item.subcategory;
+
+            return (
+              <div key={item.id} className="product-card">
+                <div className="product-image-container">
+                  <img
+                    src={product.image || "/placeholder.svg"}
+                    alt={product.name || "Product"}
+                    className="product-image"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = "/placeholder.svg";
+                    }}
+                  />
+                  {product.on_promotion && (
+                    <div className="promotion-badge">On Sale</div>
+                  )}
+                </div>
+                <div className="product-details">
+                  <h3 className="product-name">
+                    {product.name || "Unnamed Product"}
+                  </h3>
+                  <p className="product-description">
+                    {product.description || "No description available"}
+                  </p>
+                  <div className="product-meta">
+                    <div className="product-category">
+                      {getCategoryName(category) || "Uncategorized"}
+                      {subcategory && (
+                        <span className="product-subcategory">
+                          {" "}
+                          / {getSubcategoryName(subcategory)}
+                        </span>
+                      )}
+                    </div>
+                    <div className={`stock-status ${getStockStatus(product)}`}>
+                      {product.quantity > 0
+                        ? `${product.quantity} in stock`
+                        : "Out of stock"}
+                    </div>
+                  </div>
+                  <div className="product-price-container">
+                    {product.on_promotion ? (
+                      <>
+                        <span className="product-price discounted">
+                          {product.unit_price || 0} XFA
+                        </span>
+                        <span className="product-price">
+                          {product.promo_price || 0} XFA
+                        </span>
+                      </>
+                    ) : (
+                      <span className="product-price">
+                        {product.unit_price || 0} XFA
                       </span>
                     )}
                   </div>
-                  <div className={`stock-status ${getStockStatus(product)}`}>
-                    {product.quantity > 0
-                      ? `${product.quantity} in stock`
-                      : "Out of stock"}
+                  <div className="product-actions">
+                    <button
+                      className="action-btn edit"
+                      onClick={() => handleEditProduct(item)}
+                    >
+                      <Edit size={16} /> Edit
+                    </button>
+                    <button
+                      className="action-btn delete"
+                      onClick={() => handleDeleteProduct(product.id)}
+                    >
+                      <Trash2 size={16} /> Delete
+                    </button>
                   </div>
                 </div>
-                <div className="product-price-container">
-                  {product.on_promotion ? (
-                    <>
-                      <span className="product-price discounted">
-                        {product.unit_price || 0} XFA
-                      </span>
-                      <span className="product-price">
-                        {product.promo_price || 0} XFA
-                      </span>
-                    </>
-                  ) : (
-                    <span className="product-price">
-                      {product.unit_price || 0} XFA
-                    </span>
-                  )}
-                </div>
-                <div className="product-actions">
-                  <button
-                    className="action-btn edit"
-                    onClick={() => handleEditProduct(product)}
-                  >
-                    <Edit size={16} /> Edit
-                  </button>
-                  <button
-                    className="action-btn delete"
-                    onClick={() => handleDeleteProduct(product.id)}
-                  >
-                    <Trash2 size={16} /> Delete
-                  </button>
-                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         ) : (
           <div className="no-products">
             <p>

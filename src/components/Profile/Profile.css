@@ -14,7 +14,7 @@
 .profile-header h2 {
   font-size: 2rem;
   font-weight: 600;
-  color: #e94560;
+  color: #6366f1;
   margin-bottom: 0.5rem;
 }
 
@@ -26,16 +26,16 @@
 .profile-wrapper {
   display: flex;
   flex-direction: column;
-  background-color: #16213e;
+  background-color: #252525;
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
-  border: 1px solid #0f3460;
+  border: 1px solid #6366f1;
 }
 
 .profile-nav {
   display: flex;
-  background-color: #0f3460;
+  background-color: #252525;
   padding: 0.5rem;
 }
 
@@ -50,12 +50,12 @@
 }
 
 .profile-nav-link:hover {
-  background-color: rgba(233, 69, 96, 0.1);
-  color: #e94560;
+  background-color: #4346f3;
+  color: #fff;
 }
 
 .profile-nav-link.active {
-  background-color: #e94560;
+  background-color: #494cf3;
   color: white;
 }
 
@@ -65,15 +65,15 @@
 
 /* Profile Card Styles */
 .profile-card {
-  background-color: #1a1a2e;
+  background-color: #252525;
   border-radius: 8px;
   overflow: hidden;
-  border: 1px solid #0f3460;
+  border: 1px solid #6366f1;
 }
 
 .profile-card-header {
   padding: 1.5rem;
-  background-color: #0f3460;
+  background-color: #252525;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -142,8 +142,7 @@
 }
 
 .form-group input:focus {
-  border-color: #e94560;
-  box-shadow: 0 0 0 2px rgba(233, 69, 96, 0.2);
+  border-color: #494cf3;
   outline: none;
 }
 
@@ -160,11 +159,11 @@
 }
 
 .input-error {
-  border-color: #ef476f !important;
+  border-color: #494cf3 !important;
 }
 
 .error-message {
-  color: #ef476f;
+  color: #494cf3;
   font-size: 0.875rem;
   margin-top: 0.5rem;
   display: block;
@@ -176,7 +175,7 @@
   margin-top: 2rem;
 }
 .logout-button {
-  background: #d63d57;
+  background: #494cf3;
   color: #fff;
 }
 
@@ -194,21 +193,17 @@
 
 .profile-edit-button {
   background-color: transparent;
-  color: #e94560;
-  border: 1px solid #e94560;
-}
-
-.profile-edit-button:hover {
-  background-color: rgba(233, 69, 96, 0.1);
+  color: #494cf3;
+  border: 1px solid #494cf3;
 }
 
 .btn-save {
-  background-color: #e94560;
+  background-color: #494cf3;
   color: white;
 }
 
 .btn-save:hover {
-  background-color: #d63d57;
+  background-color: #494cf3;
 }
 
 .btn-cancel {
@@ -223,7 +218,7 @@
 
 /* Password Requirements */
 .password-requirements {
-  background-color: #0f3460;
+  background-color: #434599;
   padding: 1rem;
   border-radius: 6px;
   margin-bottom: 1.5rem;
@@ -342,4 +337,13 @@
   .btn-cancel {
     width: 100%;
   }
+}
+
+.success-message {
+  background-color: #6366f1;
+  color: #fff;
+  border: 1px solid #6366f1;
+  border-radius: 4px;
+  padding: 10px 15px;
+  margin-bottom: 20px;
 }

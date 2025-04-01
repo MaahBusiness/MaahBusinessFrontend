@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./Profile.css";
 
 const ChangePassword = () => {
@@ -14,6 +14,7 @@ const ChangePassword = () => {
   const [modalMessage, setModalMessage] = useState("");
   const [modalType, setModalType] = useState("error");
   const [isLoading, setIsLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -28,6 +29,11 @@ const ChangePassword = () => {
         ...prev,
         [name]: null,
       }));
+    }
+
+    // Clear success message when user starts typing again
+    if (successMessage) {
+      setSuccessMessage("");
     }
   };
 
@@ -80,7 +86,7 @@ const ChangePassword = () => {
           },
           body: JSON.stringify({
             current_password: formData.currentPassword,
-            password: formData.newPassword,
+            new_password: formData.newPassword,
           }),
         },
       );
@@ -88,33 +94,27 @@ const ChangePassword = () => {
       const data = await response.json();
 
       if (!response.ok) {
-        // Handle validation errors from server
         let errorMsg = "Failed to update password";
         if (data.detail) {
           errorMsg = data.detail;
         } else if (data.errors) {
           errorMsg = Object.values(data.errors).join(", ");
-        } else if (data.password) {
-          errorMsg = data.password;
         } else if (data.current_password) {
           errorMsg = data.current_password;
         }
         throw new Error(errorMsg);
       }
 
-      // Success
-      setModalType("success");
-      setModalMessage("Password updated successfully!");
-      setShowModal(true);
+      // Show success message in the form
+      setSuccessMessage("Password updated successfully!");
 
-      // Reset form
+      // Clear form fields
       setFormData({
         currentPassword: "",
         newPassword: "",
         confirmPassword: "",
       });
     } catch (error) {
-      console.error("Password update error:", error);
       setModalType("error");
       setModalMessage(
         error.message || "Failed to update password. Please try again.",
@@ -133,6 +133,12 @@ const ChangePassword = () => {
         <div className="profile-card-header">
           <h3>Change Password</h3>
         </div>
+
+        {successMessage && (
+          <div className="success-message">
+            <p>{successMessage}</p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="profile-form">
           <div className="form-group">
