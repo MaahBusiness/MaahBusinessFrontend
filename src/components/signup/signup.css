@@ -2,6 +2,7 @@
   outline: 0;
   border: 0;
 }
+
 select {
   width: 100%;
   padding: 1em 1.5em;
@@ -22,17 +23,39 @@ select {
 
 .signup h2 {
   margin: 0.7em auto;
-  color: #e94560;
+  color: #6366f1;
 }
 
 .signupbtn {
   margin: 0.6em auto;
   padding: 1.3em;
-  background: #e94560;
+  background: #6366f1;
   color: #fff;
   font-weight: bold;
   width: 100%;
   border-radius: 0.8em;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+.signupbtn:disabled {
+  background: #888;
+  cursor: not-allowed;
+}
+
+/* Account Link Styles */
+.signup p a {
+  text-decoration: none;
+}
+
+.signup p a span {
+  color: #6366f1;
+  font-weight: bold;
+  transition: color 0.3s ease;
+}
+
+.signup p a span:hover {
+  color: #4548fa;
+  text-decoration: underline;
 }
 
 /* Modal Styles */
@@ -46,6 +69,7 @@ select {
   display: flex;
   justify-content: center;
   align-items: center;
+  z-index: 1000;
 }
 
 .modaal-content {
@@ -56,11 +80,13 @@ select {
   width: 80%;
   max-width: 400px;
   color: #fff;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
 .modaal-content h3 {
-  color: #e94560;
+  color: #6366f1;
   text-align: center;
+  margin-bottom: 1em;
 }
 
 .modaal-content ul {
@@ -71,10 +97,13 @@ select {
 
 .modaal-content li {
   margin: 0.5em 0;
+  padding: 0.5em;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 0.3em;
 }
 
 .close-btn {
-  background-color: #e94560;
+  background-color: #6366f1;
   color: white;
   padding: 0.7em 1.5em;
   border: none;
@@ -82,4 +111,19 @@ select {
   cursor: pointer;
   display: block;
   margin: 1em auto;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+
+.close-btn:hover {
+  background-color: #6366f1;
+}
+
+.error {
+  color: #ff6060;
+  background: rgba(255, 0, 0, 0.1);
+  padding: 0.5em;
+  border-radius: 0.3em;
+  margin: 0.5em 0;
+  text-align: center;
 }

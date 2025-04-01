@@ -17,7 +17,7 @@ const Home = () => {
           </p>
           <button
             className="btn"
-            onClick={() => navigate("/Login")}
+            onClick={() => navigate("/dashboard")}
             aria-label="Get Started"
           >
             Get Started

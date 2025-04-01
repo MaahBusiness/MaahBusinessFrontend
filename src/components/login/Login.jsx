@@ -13,7 +13,7 @@ const Login = () => {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
-      navigate("/home");
+      navigate("/");
     }
   }, [navigate]);
 
@@ -42,7 +42,7 @@ const Login = () => {
       localStorage.setItem("token", data.access);
 
       // Redirect to home
-      navigate("/home");
+      navigate("/");
       setErrorMessage("");
     } catch (error) {
       setErrorMessage(error.message);

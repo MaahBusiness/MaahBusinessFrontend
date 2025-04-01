@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import "./Profile.css";
 import { useNavigate } from "react-router-dom";
@@ -13,39 +15,58 @@ const ProfileInfo = () => {
     role: "",
     is_active: false,
   });
+  const [originalUser, setOriginalUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const navigate = useNavigate();
 
-  // Fetch user data when component mounts
   useEffect(() => {
     const fetchUserData = async () => {
-      // Get token from local storage
       const token = localStorage.getItem("token");
 
-      // Redirect to login if no token
       if (!token) {
         navigate("/login");
         return;
       }
 
       try {
-        // Fetch user information
+        // First check if we have cached user data from signup
+        const cachedUser = localStorage.getItem("user");
+        if (cachedUser) {
+          const userData = JSON.parse(cachedUser);
+          // Use cached data temporarily while we fetch the latest
+          setUser(userData);
+          setOriginalUser(userData);
+        }
+
+        // Fetch latest user information from API
         const response = await fetch(
           "http://localhost:8000/api/v1/user-info/",
           {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`, // Corrected Bearer token
+              Authorization: `Bearer ${token}`,
             },
           },
         );
 
         // Handle response
         if (!response.ok) {
-          // Throw error if response is not successful
           const errorData = await response.json();
+
+          // Check for token invalid error
+          if (
+            errorData.error &&
+            errorData.error.includes("Token is invalid or expired")
+          ) {
+            // Clear invalid token and user data
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            throw new Error("Your session has expired. Please log in again.");
+          }
+
           throw new Error(errorData.detail || "Failed to fetch user data");
         }
 
@@ -54,14 +75,24 @@ const ProfileInfo = () => {
 
         // Update user state with fetched data
         setUser(userData);
+        setOriginalUser(userData);
+
+        // Update cached user data
+        localStorage.setItem("user", JSON.stringify(userData));
+
         setErrorMessage("");
       } catch (error) {
         // Handle errors
         setErrorMessage(error.message);
 
-        // If unauthorized, remove token and redirect to login
-        if (error.message.includes("Unauthorized")) {
+        // If unauthorized or token expired, redirect to login
+        if (
+          error.message.includes("Unauthorized") ||
+          error.message.includes("session has expired") ||
+          error.message.includes("Token is invalid or expired")
+        ) {
           localStorage.removeItem("token");
+          localStorage.removeItem("user");
           navigate("/login");
         }
       } finally {
@@ -87,16 +118,20 @@ const ProfileInfo = () => {
   const handleSave = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setErrorMessage("");
+    setSuccessMessage("");
 
-    // Get token from local storage
     const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/login");
+      return;
+    }
 
     try {
-      // Send update request
       const response = await fetch(
-        "http://localhost:8000/api/v1/user/update/",
+        "http://localhost:8000/api/v1/update-user/",
         {
-          method: "PUT",
+          method: "PATCH",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
@@ -109,32 +144,92 @@ const ProfileInfo = () => {
         },
       );
 
-      // Handle response
+      const data = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || "Failed to update profile");
+        // Check for token invalid error
+        if (data.error && data.error.includes("Token is invalid or expired")) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          navigate("/login");
+          throw new Error("Your session has expired. Please log in again.");
+        }
+
+        // Handle other validation errors from server
+        let errorMsg = "Failed to update profile";
+        if (data.detail) {
+          errorMsg = data.detail;
+        } else if (data.errors) {
+          errorMsg = Object.values(data.errors).join(", ");
+        }
+        throw new Error(errorMsg);
       }
 
-      // Exit editing mode
+      // Update state with new data
+      setUser(data);
+      setOriginalUser(data);
+
+      // Update cached user data
+      localStorage.setItem("user", JSON.stringify(data));
+
       setIsEditing(false);
-      setErrorMessage("");
+      setSuccessMessage("Profile updated successfully!");
+
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setSuccessMessage("");
+      }, 3000);
     } catch (error) {
-      // Handle errors
-      setErrorMessage(error.message);
+      console.error("Update error:", error);
+      setErrorMessage(
+        error.message || "Failed to update profile. Please check your inputs.",
+      );
+
+      // Don't revert to original user if we're redirecting
+      if (!error.message.includes("session has expired")) {
+        setUser(originalUser);
+      }
     } finally {
-      // Set loading to false
       setIsLoading(false);
     }
   };
 
+  // Handle cancel editing
+  const handleCancel = () => {
+    // Revert to original user data
+    setUser(originalUser);
+    setIsEditing(false);
+  };
+
   // Logout handler
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    navigate("/login");
+  const handleLogout = async () => {
+    const token = localStorage.getItem("token");
+
+    try {
+      const response = await fetch("http://localhost:8000/api/v1/logout/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      // Even if logout fails, we'll still remove the token and navigate
+      if (!response.ok) {
+        console.error("Logout failed on server");
+      }
+    } catch (error) {
+      console.error("Logout request error:", error);
+    } finally {
+      // Always remove token and user data, then navigate to login
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      navigate("/login");
+    }
   };
 
   // Render loading state
-  if (isLoading) {
+  if (isLoading && !user.username) {
     return <div className="profile-loading">Loading profile...</div>;
   }
 
@@ -153,32 +248,49 @@ const ProfileInfo = () => {
           )}
         </div>
 
+        {/* Success message display */}
+        {successMessage && <p className="success-message">{successMessage}</p>}
+
         {/* Error message display */}
-        {errorMessage && <p className="error">{errorMessage}</p>}
+        {errorMessage && <p className="error-message">{errorMessage}</p>}
 
         {/* Editing form */}
         {isEditing ? (
           <form onSubmit={handleSave} className="profile-form">
-            {/* Dynamically render input fields */}
-            {Object.entries(user)
-              .filter(([key]) => !["id", "is_active", "password"].includes(key))
-              .map(([key, value]) => (
-                <div key={key} className="form-group">
-                  <label htmlFor={key}>
-                    {key.replace("_", " ").toUpperCase()}
-                  </label>
-                  <input
-                    type="text"
-                    id={key}
-                    name={key}
-                    value={value}
-                    onChange={handleChange}
-                    required
-                    disabled={key === "role"}
-                  />
-                  {key === "role" && <small>Role cannot be changed</small>}
-                </div>
-              ))}
+            <div className="form-group">
+              <label htmlFor="username">USERNAME</label>
+              <input
+                type="text"
+                id="username"
+                name="username"
+                value={user.username || ""}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="email">EMAIL</label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={user.email || ""}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="phone_number">PHONE NUMBER</label>
+              <input
+                type="text"
+                id="phone_number"
+                name="phone_number"
+                value={user.phone_number || ""}
+                onChange={handleChange}
+              />
+            </div>
 
             {/* Save and Cancel buttons */}
             <div className="form-actions">
@@ -187,7 +299,7 @@ const ProfileInfo = () => {
               </button>
               <button
                 type="button"
-                onClick={() => setIsEditing(false)}
+                onClick={handleCancel}
                 className="btn-cancel"
               >
                 Cancel
@@ -197,25 +309,42 @@ const ProfileInfo = () => {
         ) : (
           // Profile details view
           <div className="profile-details">
-            {Object.entries(user)
-              .filter(([key]) => !["id", "is_active", "password"].includes(key))
-              .map(([key, value]) => (
-                <div key={key} className="profile-detail-item">
-                  <span className="detail-label">
-                    {key.replace("_", " ").toUpperCase()}
-                  </span>
-                  <span
-                    className={`detail-value ${key === "role" ? "role-badge" : ""}`}
-                  >
-                    {value}
-                  </span>
-                </div>
-              ))}
+            <div className="profile-detail-item">
+              <span className="detail-label">USERNAME</span>
+              <span className="detail-value">{user.username || "Not set"}</span>
+            </div>
+
+            <div className="profile-detail-item">
+              <span className="detail-label">EMAIL</span>
+              <span className="detail-value">{user.email || "Not set"}</span>
+            </div>
+
+            <div className="profile-detail-item">
+              <span className="detail-label">PHONE NUMBER</span>
+              <span className="detail-value">
+                {user.phone_number || "Not set"}
+              </span>
+            </div>
+
+            <div className="profile-detail-item">
+              <span className="detail-label">ROLE</span>
+              <span className="detail-value role-badge">
+                {user.role || "Not set"}
+              </span>
+            </div>
+
+            <div className="profile-detail-item">
+              <span className="detail-label">ACCOUNT STATUS</span>
+              <span
+                className={`detail-value status-badge ${user.is_active ? "active" : "inactive"}`}
+              >
+                {user.is_active ? "Active" : "Inactive"}
+              </span>
+            </div>
           </div>
         )}
       </div>
 
-      {/* Logout button */}
       <div className="logout">
         <button onClick={handleLogout} className="logout-button">
           Logout

@@ -114,12 +114,10 @@ const Dashboard = () => {
           <h3>Total Revenue</h3>
           <p className="card-value">XFA {totalAmount.toLocaleString()}</p>
         </div>
-
         <div className="card">
           <h3>Products in Stock</h3>
           <p className="card-value">{totalProducts.toLocaleString()}</p>
         </div>
-
         <div className="card">
           <h3>Sales</h3>
           <p className="card-value">+{totalInvoices.toLocaleString()}</p>

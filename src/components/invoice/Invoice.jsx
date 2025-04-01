@@ -554,9 +554,7 @@ const Invoice = () => {
                 <div className="summary-value">
                   {totalRevenue.toFixed(2)} XFA
                 </div>
-                <div className="summary-trend up">
-                  <ArrowUpRight size={14} /> 12.5% from last month
-                </div>
+                <div className="summary-trend up"></div>
               </div>
             </div>
             <div className="summary-card">
@@ -568,9 +566,7 @@ const Invoice = () => {
                 <div className="summary-value">
                   {totalPending.toFixed(2)} XFA
                 </div>
-                <div className="summary-trend down">
-                  <ArrowDownRight size={14} /> 5.2% from last month
-                </div>
+                <div className="summary-trend down"></div>
               </div>
             </div>
             <div className="summary-card">
@@ -582,9 +578,7 @@ const Invoice = () => {
                 <div className="summary-value">
                   {averageInvoiceValue.toFixed(2)} XFA
                 </div>
-                <div className="summary-trend up">
-                  <ArrowUpRight size={14} /> 3.7% from last month
-                </div>
+                <div className="summary-trend up"></div>
               </div>
             </div>
           </div>

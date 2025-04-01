@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import axios from "axios";
 import {
@@ -11,17 +13,22 @@ import {
   Grid,
   List,
   Check,
+  Loader,
 } from "lucide-react";
 import "./products.css";
 
 const Product = () => {
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [subcategories, setSubcategories] = useState([]);
+  const [filteredSubcategories, setFilteredSubcategories] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
   const [viewMode, setViewMode] = useState("grid");
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingSubcategories, setIsLoadingSubcategories] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingProductId, setEditingProductId] = useState(null);
   const [formData, setFormData] = useState({
@@ -29,6 +36,7 @@ const Product = () => {
     name: "",
     description: "",
     unit_price: "",
+    purchase_price: "",
     image: "",
     quantity: 0,
     min_quantity: 0,
@@ -42,89 +50,102 @@ const Product = () => {
     subcategory_id: "",
   });
 
-  // Fetch products on component mount
+  const apiBaseUrl = "http://localhost:8000/api/v1/product";
+  const categoryApiBaseUrl = "http://localhost:8000/api/v1/categories";
+
+  // Fetch products and categories on component mount
   useEffect(() => {
-    fetchProducts();
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        // Fetch products
+        const productsResponse = await axios.get(
+          "http://localhost:8000/api/v1/product/products/",
+        );
+        console.log(
+          "Products fetched successfully",
+          productsResponse.data.results,
+        );
+        setProducts(productsResponse.data.results || []);
+
+        // Fetch categories
+        const categoriesResponse = await axios.get(
+          `${categoryApiBaseUrl}/categories/`,
+        );
+        console.log(
+          "Categories fetched successfully",
+          categoriesResponse.data.results,
+        );
+        setCategories(categoriesResponse.data.results || []);
+
+        // Fetch all subcategories
+        const subcategoriesResponse = await axios.get(
+          `${categoryApiBaseUrl}/subcategories/`,
+        );
+        console.log(
+          "Subcategories fetched successfully",
+          subcategoriesResponse.data.results,
+        );
+        setSubcategories(subcategoriesResponse.data.results || []);
+
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        setIsLoading(false);
+        setProducts([]);
+        setCategories([]);
+        setSubcategories([]);
+      }
+    };
+
     fetchData();
   }, []);
 
-  const fetchProducts = () => {
+  // Update filtered subcategories when category changes or when subcategories are loaded
+  useEffect(() => {
+    if (formData.category_id) {
+      setIsLoadingSubcategories(true);
+      // Simulate a small delay to show loading state (can be removed in production)
+      setTimeout(() => {
+        const filtered = subcategories.filter(
+          (sub) => sub.category_id === formData.category_id,
+        );
+        setFilteredSubcategories(filtered);
+        setIsLoadingSubcategories(false);
+      }, 300);
+    } else {
+      setFilteredSubcategories([]);
+    }
+  }, [formData.category_id, subcategories]);
+
+  const fetchProducts = async () => {
+    try {
+      const response = await axios.get(
+        "http://localhost:8000/api/v1/product/products/",
+      );
+      console.log("Products fetched successfully", response.data.results);
+      setProducts(response.data.results || []);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      setProducts([]);
+    }
+  };
+
+  // Add a new function to fetch product details after the fetchProducts function
+  const fetchProductDetails = async (productId) => {
     setIsLoading(true);
-    // Simulating API call with sample data
-    setTimeout(() => {
-      const sampleProducts = [
-        {
-          id: 1,
-          name: "Smartphone X",
-          description: "Latest smartphone with advanced features",
-          unit_price: "999.99",
-          image: "/placeholder.svg?height=200&width=200",
-          quantity: 50,
-          min_quantity: 10,
-          is_expired: false,
-          expiry_date: "",
-          on_promotion: true,
-          promotion_start_date: "2025-03-01",
-          promotion_end_date: "2025-04-01",
-          promo_price: "899.99",
-          category_id: "Electronics",
-          subcategory_id: "Smartphones",
-        },
-        {
-          id: 2,
-          name: "Laptop Pro",
-          description: "High-performance laptop for professionals",
-          unit_price: "1499.99",
-          image: "/placeholder.svg?height=200&width=200",
-          quantity: 25,
-          min_quantity: 5,
-          is_expired: false,
-          expiry_date: "",
-          on_promotion: false,
-          promotion_start_date: "",
-          promotion_end_date: "",
-          promo_price: "",
-          category_id: "Electronics",
-          subcategory_id: "Laptops",
-        },
-        {
-          id: 3,
-          name: "Wireless Headphones",
-          description: "Premium noise-cancelling headphones",
-          unit_price: "299.99",
-          image: "/placeholder.svg?height=200&width=200",
-          quantity: 100,
-          min_quantity: 15,
-          is_expired: false,
-          expiry_date: "",
-          on_promotion: true,
-          promotion_start_date: "2025-03-15",
-          promotion_end_date: "2025-04-15",
-          promo_price: "249.99",
-          category_id: "Electronics",
-          subcategory_id: "Audio",
-        },
-        {
-          id: 4,
-          name: "Smart Watch",
-          description: "Fitness and health tracking smartwatch",
-          unit_price: "199.99",
-          image: "/placeholder.svg?height=200&width=200",
-          quantity: 75,
-          min_quantity: 10,
-          is_expired: false,
-          expiry_date: "",
-          on_promotion: false,
-          promotion_start_date: "",
-          promotion_end_date: "",
-          promo_price: "",
-          category_id: "Electronics",
-          subcategory_id: "Wearables",
-        },
-      ];
-      setProducts(sampleProducts);
+    try {
+      const response = await axios.get(`${apiBaseUrl}/detail/`, {
+        params: { product_id: productId },
+      });
+      console.log("Product details fetched successfully:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching product details:", error);
+      return null;
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   const handleChange = (e) => {
@@ -137,6 +158,14 @@ const Product = () => {
     // Clear error when user types in name field
     if (name === "name" && errorMessage) {
       setErrorMessage("");
+    }
+
+    // When category changes, reset subcategory
+    if (name === "category_id") {
+      setFormData((prev) => ({
+        ...prev,
+        subcategory_id: "",
+      }));
     }
   };
 
@@ -152,48 +181,101 @@ const Product = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (isEditing) {
-      // Update existing product
-      const updatedProducts = products.map((product) =>
-        product.id === editingProductId
-          ? {
-              ...formData,
-              image: imagePreview || formData.image,
-            }
-          : product,
-      );
+    try {
+      if (isEditing) {
+        // Update existing product via API
+        const productData = new FormData();
 
-      setProducts(updatedProducts);
-      setIsEditing(false);
-      setEditingProductId(null);
-    } else {
-      // Check if product name already exists
-      const nameExists = products.some(
-        (product) => product.name.toLowerCase() === formData.name.toLowerCase(),
-      );
+        // Add all form fields to FormData
+        Object.keys(formData).forEach((key) => {
+          if (
+            key !== "image" ||
+            (key === "image" && typeof formData[key] !== "string")
+          ) {
+            productData.append(key, formData[key]);
+          }
+        });
 
-      if (nameExists) {
-        setErrorMessage("A product with this name already exists.");
-        return;
+        // If there's a new image file, append it
+        if (formData.image && typeof formData.image !== "string") {
+          productData.append("image", formData.image);
+        }
+
+        await axios.put(
+          `${apiBaseUrl}/${editingProductId}/update/`,
+          productData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          },
+        );
+
+        // Refresh products from server
+        fetchProducts();
+        console.log("Product updated successfully");
+      } else {
+        // Check if product name already exists
+        const nameExists = products.some(
+          (product) =>
+            product.name &&
+            formData.name &&
+            product.name.toLowerCase() === formData.name.toLowerCase(),
+        );
+
+        if (nameExists) {
+          setErrorMessage("A product with this name already exists.");
+          return;
+        }
+
+        // Create a new product via API
+        const productData = new FormData();
+
+        // Add all form fields to FormData
+        Object.keys(formData).forEach((key) => {
+          if (
+            key !== "image" ||
+            (key === "image" && typeof formData[key] !== "string")
+          ) {
+            productData.append(key, formData[key]);
+          }
+        });
+
+        // If there's a new image file, append it
+        if (formData.image && typeof formData.image !== "string") {
+          productData.append("image", formData.image);
+        }
+
+        const response = await axios.post(
+          `${apiBaseUrl}/create/`,
+          productData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          },
+        );
+
+        // Add the new product to the list
+        if (response.data) {
+          // Refresh products from server to ensure we have the latest data
+          fetchProducts();
+          console.log("Product created successfully");
+        }
       }
 
-      // Create a new product with an ID
-      const newProduct = {
-        ...formData,
-        id:
-          products.length > 0 ? Math.max(...products.map((p) => p.id)) + 1 : 1,
-        image: imagePreview || "/placeholder.svg?height=200&width=200",
-      };
-
-      // Add the new product to the list
-      setProducts([...products, newProduct]);
+      // Reset form
+      resetForm();
+    } catch (error) {
+      console.error("Error creating/updating product:", error);
+      setErrorMessage(
+        error.response?.data?.message ||
+          "Failed to process product. Please try again.",
+      );
     }
-
-    // Reset form
-    resetForm();
   };
 
   const resetForm = () => {
@@ -207,6 +289,7 @@ const Product = () => {
       name: "",
       description: "",
       unit_price: "",
+      purchase_price: "",
       image: "",
       quantity: 0,
       min_quantity: 0,
@@ -221,50 +304,100 @@ const Product = () => {
     });
   };
 
-  const handleEditProduct = (product) => {
-    setIsEditing(true);
-    setEditingProductId(product.id);
-    setFormData({
-      ...product,
-    });
-    setImagePreview(product.image);
-    setShowForm(true);
+  // Update the handleEditProduct function to use the fetchProductDetails API
+  const handleEditProduct = async (product) => {
+    setIsLoading(true);
+    try {
+      // Fetch detailed product information
+      const productDetails = await fetchProductDetails(product.id);
+
+      if (productDetails) {
+        setIsEditing(true);
+        setEditingProductId(product.id);
+        setFormData({
+          ...productDetails,
+        });
+        setImagePreview(productDetails.image);
+      } else {
+        // Fallback to using the product data we already have
+        setIsEditing(true);
+        setEditingProductId(product.id);
+        setFormData({
+          ...product,
+        });
+        setImagePreview(product.image);
+      }
+    } catch (error) {
+      console.error("Error preparing product for edit:", error);
+      // Fallback to using the product data we already have
+      setIsEditing(true);
+      setEditingProductId(product.id);
+      setFormData({
+        ...product,
+      });
+      setImagePreview(product.image);
+    } finally {
+      setIsLoading(false);
+      setShowForm(true);
+    }
   };
 
-  const handleDeleteProduct = (id) => {
+  const handleDeleteProduct = async (id) => {
     // Show confirmation dialog
     if (window.confirm("Are you sure you want to delete this product?")) {
-      setProducts(products.filter((product) => product.id !== id));
+      try {
+        // Delete product via API
+        await axios.delete(`${apiBaseUrl}/${id}/delete/`);
+
+        // Update local state
+        setProducts(products.filter((product) => product.id !== id));
+        console.log("Product deleted successfully");
+      } catch (error) {
+        console.error("Error deleting product:", error);
+        alert("Failed to delete product. Please try again.");
+      }
     }
   };
 
   const filteredProducts = products.filter(
     (product) =>
-      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.category_id.toLowerCase().includes(searchTerm.toLowerCase()),
+      (product.name &&
+        product.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (product.description &&
+        product.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (product.category_id &&
+        getCategoryName(product.category_id)
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase())),
   );
 
   const getStockStatus = (product) => {
+    if (!product || product.quantity === undefined) return "unknown";
+
     if (product.quantity <= 0) {
       return "out-of-stock";
-    } else if (product.quantity <= product.min_quantity) {
+    } else if (
+      product.min_quantity !== undefined &&
+      product.quantity <= product.min_quantity
+    ) {
       return "low-stock";
     } else {
       return "in-stock";
     }
   };
 
-  const fetchData = async () => {
-    try {
-      const response = await axios.get(
-        "http://127.0.0.1:8000/api/v1/product/products/",
-      );
-      console.log(response.data);
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    }
+  // Get category name by id
+  const getCategoryName = (categoryId) => {
+    const category = categories.find((cat) => cat.id === categoryId);
+    return category ? category.name : "Uncategorized";
   };
+
+  // Get subcategory name by id
+  const getSubcategoryName = (subcategoryId) => {
+    const subcategory = subcategories.find((sub) => sub.id === subcategoryId);
+    return subcategory ? subcategory.name : "";
+  };
+
   return (
     <div className="product-container">
       <div className="product-header">
@@ -327,23 +460,39 @@ const Product = () => {
               </div>
             ))
         ) : filteredProducts.length > 0 ? (
-          filteredProducts.map((product) => (
-            <div key={product.id} className="product-card">
+          filteredProducts.map((product, index) => (
+            <div key={product.id || index} className="product-card">
               <div className="product-image-container">
                 <img
                   src={product.image || "/placeholder.svg"}
-                  alt={product.name}
+                  alt={product.name || "Product"}
                   className="product-image"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = "/placeholder.svg";
+                  }}
                 />
                 {product.on_promotion && (
                   <div className="promotion-badge">On Sale</div>
                 )}
               </div>
               <div className="product-details">
-                <h3 className="product-name">{product.name}</h3>
-                <p className="product-description">{product.description}</p>
+                <h3 className="product-name">
+                  {product.name || "Unnamed Product"}
+                </h3>
+                <p className="product-description">
+                  {product.description || "No description available"}
+                </p>
                 <div className="product-meta">
-                  <div className="product-category">{product.category_id}</div>
+                  <div className="product-category">
+                    {getCategoryName(product.category_id) || "Uncategorized"}
+                    {product.subcategory_id && (
+                      <span className="product-subcategory">
+                        {" "}
+                        / {getSubcategoryName(product.subcategory_id)}
+                      </span>
+                    )}
+                  </div>
                   <div className={`stock-status ${getStockStatus(product)}`}>
                     {product.quantity > 0
                       ? `${product.quantity} in stock`
@@ -354,15 +503,15 @@ const Product = () => {
                   {product.on_promotion ? (
                     <>
                       <span className="product-price discounted">
-                        {product.unit_price} XFA
+                        {product.unit_price || 0} XFA
                       </span>
                       <span className="product-price">
-                        {product.promo_price} XFA
+                        {product.promo_price || 0} XFA
                       </span>
                     </>
                   ) : (
                     <span className="product-price">
-                      {product.unit_price} XFA
+                      {product.unit_price || 0} XFA
                     </span>
                   )}
                 </div>
@@ -432,6 +581,17 @@ const Product = () => {
                   </div>
 
                   <div className="form-group">
+                    <label htmlFor="purchase-price">Purchase Price</label>
+                    <input
+                      id="purchase-price"
+                      name="purchase_price"
+                      value={formData.purchase_price}
+                      onChange={handleChange}
+                      className={errorMessage ? "input-error" : ""}
+                    />
+                  </div>
+
+                  <div className="form-group">
                     <label htmlFor="product-description">Description</label>
                     <textarea
                       id="product-description"
@@ -471,52 +631,55 @@ const Product = () => {
                         className="form-select"
                       >
                         <option value="">Select a category</option>
-                        <option value="Electronics">Electronics</option>
-                        <option value="Clothing">Clothing</option>
-                        <option value="Home & Kitchen">Home & Kitchen</option>
-                        <option value="Books">Books</option>
-                        <option value="Sports">Sports</option>
+                        {categories.map((category) => (
+                          <option key={category.id} value={category.id}>
+                            {category.name}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </div>
 
-                  <div className="form-group">
-                    <label htmlFor="product-subcategory">Subcategory</label>
-                    <select
-                      id="product-subcategory"
-                      name="subcategory_id"
-                      value={formData.subcategory_id}
-                      onChange={handleChange}
-                      className="form-select"
-                    >
-                      <option value="">Select a subcategory</option>
-                      {formData.category_id === "Electronics" && (
-                        <>
-                          <option value="Smartphones">Smartphones</option>
-                          <option value="Laptops">Laptops</option>
-                          <option value="Audio">Audio</option>
-                          <option value="Wearables">Wearables</option>
-                          <option value="Cameras">Cameras</option>
-                        </>
-                      )}
-                      {formData.category_id === "Clothing" && (
-                        <>
-                          <option value="Men">Men</option>
-                          <option value="Women">Women</option>
-                          <option value="Kids">Kids</option>
-                          <option value="Accessories">Accessories</option>
-                        </>
-                      )}
-                      {formData.category_id === "Home & Kitchen" && (
-                        <>
-                          <option value="Furniture">Furniture</option>
-                          <option value="Appliances">Appliances</option>
-                          <option value="Cookware">Cookware</option>
-                          <option value="Decor">Decor</option>
-                        </>
-                      )}
-                    </select>
-                  </div>
+                  {/* Only show subcategory field when a category is selected */}
+                  {formData.category_id && (
+                    <div className="form-group subcategory-field">
+                      <label htmlFor="product-subcategory">
+                        Subcategory
+                        {isLoadingSubcategories && (
+                          <span className="loading-indicator-inline">
+                            <Loader size={14} className="spinner" />
+                          </span>
+                        )}
+                      </label>
+                      <select
+                        id="product-subcategory"
+                        name="subcategory_id"
+                        value={formData.subcategory_id}
+                        onChange={handleChange}
+                        className="form-select"
+                        disabled={
+                          isLoadingSubcategories ||
+                          filteredSubcategories.length === 0
+                        }
+                      >
+                        <option value="">Select a subcategory</option>
+                        {filteredSubcategories.map((subcategory) => (
+                          <option key={subcategory.id} value={subcategory.id}>
+                            {subcategory.name}
+                          </option>
+                        ))}
+                      </select>
+                      {!isLoadingSubcategories &&
+                        filteredSubcategories.length === 0 && (
+                          <div className="subcategory-message">
+                            <AlertCircle size={14} />
+                            <small>
+                              No subcategories available for this category
+                            </small>
+                          </div>
+                        )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Inventory Information */}

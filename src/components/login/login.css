@@ -11,7 +11,7 @@
   max-width: 400px;
   margin: 5% auto;
   padding: 2em;
-  background: #0f3460;
+  background: #252525;
   border-radius: 1em;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   display: flex;
@@ -22,7 +22,7 @@
 h2 {
   font-size: 2rem;
   text-align: center;
-  color: #e94560;
+  color: #6366f1;
 }
 
 input {
@@ -35,7 +35,7 @@ input {
 }
 
 input:focus {
-  border-color: #e94560;
+  border-color: #6366f1;
   box-shadow: 0 0 5px rgba(11, 56, 153, 0.3);
 }
 
@@ -47,7 +47,7 @@ input::placeholder {
   width: 100%;
   margin: 1em auto;
   padding: 1em;
-  background-color: #e94560;
+  background-color: #6366f1;
   color: #fff;
   font-weight: bold;
   border-radius: 0.8em;

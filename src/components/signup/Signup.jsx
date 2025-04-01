@@ -1,6 +1,6 @@
 import { useState } from "react";
 import "./signup.css";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -20,6 +20,8 @@ const Signup = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setErrorMessage("");
+    setModalErrorMessages([]);
 
     try {
       const response = await fetch("http://127.0.0.1:8000/api/v1/register/", {
@@ -33,12 +35,44 @@ const Signup = () => {
       const data = await response.json();
 
       if (!response.ok) {
-        setModalErrorMessages([...Object.values(data).flat()]);
+        // Handle validation errors
+        if (typeof data === "object") {
+          const errorMessages = Object.entries(data).flatMap(([key, value]) => {
+            if (Array.isArray(value)) {
+              return value;
+            } else if (typeof value === "string") {
+              return [`${key}: ${value}`];
+            }
+            return [];
+          });
+
+          setModalErrorMessages(errorMessages);
+        } else {
+          setModalErrorMessages(["Registration failed. Please try again."]);
+        }
         throw new Error("Registration failed.");
       }
 
+      // Store user data and token
       localStorage.setItem("token", data.token);
-      navigate("/home");
+
+      // Store user profile data in localStorage for immediate access
+      if (data.user) {
+        localStorage.setItem("user", JSON.stringify(data.user));
+      } else {
+        // If the API doesn't return user data, store what we have
+        const userData = {
+          username: formData.username,
+          email: formData.email,
+          phone_number: formData.phone_number,
+          role: formData.role,
+          is_active: formData.is_active,
+        };
+        localStorage.setItem("user", JSON.stringify(userData));
+      }
+
+      // Redirect to profile page
+      navigate("/profile/info");
     } catch (error) {
       setErrorMessage(error.message);
     } finally {
@@ -47,7 +81,7 @@ const Signup = () => {
   };
 
   return (
-    <div>
+    <div className="signup-container">
       <form onSubmit={handleSubmit} className="login signup">
         <h2>Sign Up</h2>
         <p className="Lab"> Enter Username </p>
@@ -107,6 +141,12 @@ const Signup = () => {
         <button type="submit" className="signupbtn" disabled={isLoading}>
           {isLoading ? "Registering..." : "Register"}
         </button>
+        <p className="login-link">
+          Already have an account?{" "}
+          <Link to="/login">
+            <span>Sign in</span>
+          </Link>
+        </p>
       </form>
 
       {errorMessage && <p className="error">{errorMessage}</p>}

@@ -13,6 +13,7 @@ const ChangePassword = () => {
   const [showModal, setShowModal] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
   const [modalType, setModalType] = useState("error");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -52,7 +53,7 @@ const ChangePassword = () => {
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     const validationErrors = validateForm();
@@ -61,18 +62,67 @@ const ChangePassword = () => {
       return;
     }
 
-    // Simulate password change success
-    console.log("Password changed successfully");
-    setModalType("success");
-    setModalMessage("Password updated successfully!");
-    setShowModal(true);
+    setIsLoading(true);
 
-    // Reset form
-    setFormData({
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    });
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("You must be logged in to change your password");
+      }
+
+      const response = await fetch(
+        "http://localhost:8000/api/v1/update-user/",
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            current_password: formData.currentPassword,
+            password: formData.newPassword,
+          }),
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        // Handle validation errors from server
+        let errorMsg = "Failed to update password";
+        if (data.detail) {
+          errorMsg = data.detail;
+        } else if (data.errors) {
+          errorMsg = Object.values(data.errors).join(", ");
+        } else if (data.password) {
+          errorMsg = data.password;
+        } else if (data.current_password) {
+          errorMsg = data.current_password;
+        }
+        throw new Error(errorMsg);
+      }
+
+      // Success
+      setModalType("success");
+      setModalMessage("Password updated successfully!");
+      setShowModal(true);
+
+      // Reset form
+      setFormData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+    } catch (error) {
+      console.error("Password update error:", error);
+      setModalType("error");
+      setModalMessage(
+        error.message || "Failed to update password. Please try again.",
+      );
+      setShowModal(true);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const closeModal = () => setShowModal(false);
@@ -95,6 +145,7 @@ const ChangePassword = () => {
               value={formData.currentPassword}
               onChange={handleChange}
               className={errors.currentPassword ? "input-error" : ""}
+              disabled={isLoading}
             />
             {errors.currentPassword && (
               <span className="error-message">{errors.currentPassword}</span>
@@ -111,6 +162,7 @@ const ChangePassword = () => {
               value={formData.newPassword}
               onChange={handleChange}
               className={errors.newPassword ? "input-error" : ""}
+              disabled={isLoading}
             />
             {errors.newPassword && (
               <span className="error-message">{errors.newPassword}</span>
@@ -127,14 +179,15 @@ const ChangePassword = () => {
               value={formData.confirmPassword}
               onChange={handleChange}
               className={errors.confirmPassword ? "input-error" : ""}
+              disabled={isLoading}
             />
             {errors.confirmPassword && (
               <span className="error-message">{errors.confirmPassword}</span>
             )}
           </div>
 
-          <button type="submit" className="btn-save">
-            Update Password
+          <button type="submit" className="btn-save" disabled={isLoading}>
+            {isLoading ? "Updating..." : "Update Password"}
           </button>
         </form>
       </div>
