@@ -14,6 +14,8 @@ import {
   List,
   Check,
   Loader,
+  Calendar,
+  Eye,
 } from "lucide-react";
 import "./products.css";
 
@@ -31,6 +33,10 @@ const Product = () => {
   const [isLoadingSubcategories, setIsLoadingSubcategories] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingProductId, setEditingProductId] = useState(null);
+  const [showExpiryFilter, setShowExpiryFilter] = useState(false);
+  const [expiryDate, setExpiryDate] = useState("");
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
   const [formData, setFormData] = useState({
     id: null,
     name: "",
@@ -131,6 +137,26 @@ const Product = () => {
     }
   };
 
+  // Function to fetch products by expiry date
+  const fetchProductsByExpiryDate = async (date) => {
+    setIsLoading(true);
+    try {
+      const response = await axios.get(
+        `${apiBaseUrl}/expiry_date/?expiry_date=${date}`,
+      );
+      console.log(
+        "Products by expiry date fetched successfully",
+        response.data.results,
+      );
+      setProducts(response.data.results || []);
+    } catch (error) {
+      console.error("Error fetching products by expiry date:", error);
+      setProducts([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Function to fetch product details using the detail API
   const fetchProductDetails = async (productId) => {
     setIsLoading(true);
@@ -181,21 +207,78 @@ const Product = () => {
     }
   };
 
+  const handleExpiryDateChange = (e) => {
+    setExpiryDate(e.target.value);
+  };
+
+  const handleExpiryDateFilter = () => {
+    if (expiryDate) {
+      fetchProductsByExpiryDate(expiryDate);
+    }
+  };
+
+  const handleClearExpiryFilter = () => {
+    setExpiryDate("");
+    fetchProducts();
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrorMessage("");
 
     try {
       if (isEditing) {
         // Update existing product via API
         const productData = new FormData();
 
-        // Add all form fields to FormData
-        Object.keys(formData).forEach((key) => {
+        // IMPORTANT: Add product_id to the form data - this is what was missing
+        productData.append("product_id", editingProductId);
+
+        // Format dates for API if they exist
+        const formattedData = { ...formData };
+        if (formData.promotion_start_date) {
+          formattedData.promotion_start_date = `${formData.promotion_start_date}T00:00:00Z`;
+        }
+        if (formData.promotion_end_date) {
+          formattedData.promotion_end_date = `${formData.promotion_end_date}T00:00:00Z`;
+        }
+        if (formData.expiry_date) {
+          formattedData.expiry_date = `${formData.expiry_date}T00:00:00Z`;
+        }
+
+        // Convert numeric fields to ensure they're sent as numbers
+        if (formattedData.unit_price) {
+          formattedData.unit_price = Number(formattedData.unit_price);
+        }
+        if (formattedData.purchase_price) {
+          formattedData.purchase_price = Number(formattedData.purchase_price);
+        }
+        // Only include promo_price if it has a value and product is on promotion
+        if (formattedData.on_promotion && formattedData.promo_price) {
+          formattedData.promo_price = Number(formattedData.promo_price);
+        } else if (!formattedData.on_promotion) {
+          // Remove promo_price if product is not on promotion
+          delete formattedData.promo_price;
+        }
+        formattedData.quantity = Number(formattedData.quantity);
+        formattedData.min_quantity = Number(formattedData.min_quantity);
+
+        // Then use formattedData instead of formData when adding to FormData
+        Object.keys(formattedData).forEach((key) => {
+          // Skip undefined, null, or empty string values
+          if (
+            formattedData[key] === undefined ||
+            formattedData[key] === null ||
+            formattedData[key] === ""
+          ) {
+            return;
+          }
+
           if (
             key !== "image" ||
-            (key === "image" && typeof formData[key] !== "string")
+            (key === "image" && typeof formattedData[key] !== "string")
           ) {
-            productData.append(key, formData[key]);
+            productData.append(key, formattedData[key]);
           }
         });
 
@@ -204,19 +287,24 @@ const Product = () => {
           productData.append("image", formData.image);
         }
 
-        await axios.put(
-          `${apiBaseUrl}/${editingProductId}/update/`,
-          productData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
+        console.log("Updating product with ID:", editingProductId);
+        console.log("Form data entries:", [...productData.entries()]);
+
+        // Use the updated API endpoint
+        const response = await axios.put(`${apiBaseUrl}/update/`, productData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
           },
-        );
+        });
+
+        console.log("Update response:", response.data);
 
         // Refresh products from server
         fetchProducts();
         console.log("Product updated successfully");
+
+        // Reset form
+        resetForm();
       } else {
         // Check if product name already exists
         const nameExists = products.some(
@@ -234,13 +322,51 @@ const Product = () => {
         // Create a new product via API
         const productData = new FormData();
 
-        // Add all form fields to FormData
-        Object.keys(formData).forEach((key) => {
+        // Format dates for API if they exist
+        const formattedData = { ...formData };
+        if (formData.promotion_start_date) {
+          formattedData.promotion_start_date = `${formData.promotion_start_date}T00:00:00Z`;
+        }
+        if (formData.promotion_end_date) {
+          formattedData.promotion_end_date = `${formData.promotion_end_date}T00:00:00Z`;
+        }
+        if (formData.expiry_date) {
+          formattedData.expiry_date = `${formData.expiry_date}T00:00:00Z`;
+        }
+
+        // Convert numeric fields to ensure they're sent as numbers
+        if (formattedData.unit_price) {
+          formattedData.unit_price = Number(formattedData.unit_price);
+        }
+        if (formattedData.purchase_price) {
+          formattedData.purchase_price = Number(formattedData.purchase_price);
+        }
+        // Only include promo_price if it has a value and product is on promotion
+        if (formattedData.on_promotion && formattedData.promo_price) {
+          formattedData.promo_price = Number(formattedData.promo_price);
+        } else if (!formattedData.on_promotion) {
+          // Remove promo_price if product is not on promotion
+          delete formattedData.promo_price;
+        }
+        formattedData.quantity = Number(formattedData.quantity);
+        formattedData.min_quantity = Number(formattedData.min_quantity);
+
+        // Then use formattedData instead of formData when adding to FormData
+        Object.keys(formattedData).forEach((key) => {
+          // Skip undefined, null, or empty string values
+          if (
+            formattedData[key] === undefined ||
+            formattedData[key] === null ||
+            formattedData[key] === ""
+          ) {
+            return;
+          }
+
           if (
             key !== "image" ||
-            (key === "image" && typeof formData[key] !== "string")
+            (key === "image" && typeof formattedData[key] !== "string")
           ) {
-            productData.append(key, formData[key]);
+            productData.append(key, formattedData[key]);
           }
         });
 
@@ -248,6 +374,8 @@ const Product = () => {
         if (formData.image && typeof formData.image !== "string") {
           productData.append("image", formData.image);
         }
+
+        console.log("Creating product with data:", [...productData.entries()]);
 
         const response = await axios.post(
           `${apiBaseUrl}/create/`,
@@ -259,22 +387,40 @@ const Product = () => {
           },
         );
 
+        console.log("Create response:", response.data);
+
         // Add the new product to the list
         if (response.data) {
           // Refresh products from server to ensure we have the latest data
           fetchProducts();
           console.log("Product created successfully");
+
+          // Reset form
+          resetForm();
         }
       }
-
-      // Reset form
-      resetForm();
     } catch (error) {
       console.error("Error creating/updating product:", error);
-      setErrorMessage(
-        error.response?.data?.message ||
-          "Failed to process product. Please try again.",
-      );
+      if (error.response) {
+        console.error("Error response data:", error.response.data);
+
+        // Handle specific error messages
+        if (error.response.data.product_id) {
+          setErrorMessage(
+            `Product ID error: ${error.response.data.product_id}`,
+          );
+        } else if (error.response.data.message) {
+          setErrorMessage(error.response.data.message);
+        } else if (error.response.data.error) {
+          setErrorMessage(error.response.data.error);
+        } else {
+          setErrorMessage(
+            "Failed to process product. Please check all required fields.",
+          );
+        }
+      } else {
+        setErrorMessage("Failed to process product. Please try again.");
+      }
     }
   };
 
@@ -305,7 +451,11 @@ const Product = () => {
   };
 
   // Function to handle editing a product - uses the fetchProductDetails API
-  const handleEditProduct = async (item) => {
+  const handleEditProduct = async (item, event) => {
+    if (event) {
+      event.stopPropagation();
+    }
+
     setIsLoading(true);
     try {
       // Get the actual product object from the item
@@ -317,19 +467,45 @@ const Product = () => {
       if (productDetails) {
         setIsEditing(true);
         setEditingProductId(productId);
-        setFormData({
+
+        // Format dates for form fields (YYYY-MM-DD)
+        const formattedProductDetails = {
           ...productDetails,
-        });
+          expiry_date: productDetails.expiry_date
+            ? productDetails.expiry_date.split("T")[0]
+            : "",
+          promotion_start_date: productDetails.promotion_start_date
+            ? productDetails.promotion_start_date.split("T")[0]
+            : "",
+          promotion_end_date: productDetails.promotion_end_date
+            ? productDetails.promotion_end_date.split("T")[0]
+            : "",
+        };
+
+        setFormData(formattedProductDetails);
         setImagePreview(productDetails.image);
       } else {
         // Fallback to using the product data we already have
         setIsEditing(true);
-        setEditingProductId(productId);
-        setFormData({
+        setEditingProductId(item.product.id);
+
+        // Format dates for form fields (YYYY-MM-DD)
+        const formattedProduct = {
           ...item.product,
           category_id: item.category?.id || "",
           subcategory_id: item.subcategory?.id || "",
-        });
+          expiry_date: item.product.expiry_date
+            ? item.product.expiry_date.split("T")[0]
+            : "",
+          promotion_start_date: item.product.promotion_start_date
+            ? item.product.promotion_start_date.split("T")[0]
+            : "",
+          promotion_end_date: item.product.promotion_end_date
+            ? item.product.promotion_end_date.split("T")[0]
+            : "",
+        };
+
+        setFormData(formattedProduct);
         setImagePreview(item.product.image);
       }
     } catch (error) {
@@ -337,11 +513,24 @@ const Product = () => {
       // Fallback to using the product data we already have
       setIsEditing(true);
       setEditingProductId(item.product.id);
-      setFormData({
+
+      // Format dates for form fields (YYYY-MM-DD)
+      const formattedProduct = {
         ...item.product,
         category_id: item.category?.id || "",
         subcategory_id: item.subcategory?.id || "",
-      });
+        expiry_date: item.product.expiry_date
+          ? item.product.expiry_date.split("T")[0]
+          : "",
+        promotion_start_date: item.product.promotion_start_date
+          ? item.product.promotion_start_date.split("T")[0]
+          : "",
+        promotion_end_date: item.product.promotion_end_date
+          ? item.product.promotion_end_date.split("T")[0]
+          : "",
+      };
+
+      setFormData(formattedProduct);
       setImagePreview(item.product.image);
     } finally {
       setIsLoading(false);
@@ -349,20 +538,74 @@ const Product = () => {
     }
   };
 
-  const handleDeleteProduct = async (id) => {
-    // Show confirmation dialog
-    if (window.confirm("Are you sure you want to delete this product?")) {
-      try {
-        // Delete product via API
-        await axios.delete(`${apiBaseUrl}/${id}/delete/`);
+  const handleDelete = async (id, event) => {
+    if (event) {
+      event.stopPropagation();
+    }
 
-        // Update local state
-        setProducts(products.filter((item) => item.product.id !== id));
+    if (!window.confirm("Are you sure you want to delete this product?")) {
+      return;
+    }
+
+    try {
+      // Use the updated delete API endpoint
+      const response = await axios.delete(`${apiBaseUrl}/delete/`, {
+        params: { product_id: id },
+      });
+
+      console.log("Delete response:", response);
+
+      if (response.status === 204 || response.status === 200) {
         console.log("Product deleted successfully");
-      } catch (error) {
-        console.error("Error deleting product:", error);
-        alert("Failed to delete product. Please try again.");
+        // Update UI after deletion - filter out the deleted product
+        setProducts(products.filter((item) => item.product.id !== id));
+        // Close details modal if open
+        if (showDetailsModal) {
+          setShowDetailsModal(false);
+        }
+      } else {
+        throw new Error("Failed to delete product");
       }
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      alert("Error deleting product. Please try again.");
+    }
+  };
+
+  const handleViewProductDetails = async (item) => {
+    try {
+      // Get the actual product object from the item
+      const productId = item.product.id;
+
+      // Fetch detailed product information
+      const productDetails = await fetchProductDetails(productId);
+
+      if (productDetails) {
+        setSelectedProduct({
+          ...productDetails,
+          category: item.category,
+          subcategory: item.subcategory,
+        });
+      } else {
+        // Fallback to using the product data we already have
+        setSelectedProduct({
+          ...item.product,
+          category: item.category,
+          subcategory: item.subcategory,
+        });
+      }
+
+      // Show the details modal
+      setShowDetailsModal(true);
+    } catch (error) {
+      console.error("Error fetching product details:", error);
+      // Fallback to using the product data we already have
+      setSelectedProduct({
+        ...item.product,
+        category: item.category,
+        subcategory: item.subcategory,
+      });
+      setShowDetailsModal(true);
     }
   };
 
@@ -435,6 +678,9 @@ const Product = () => {
             className="search-input"
           />
         </div>
+
+        {/* Expiry Date Filter */}
+
         <div className="view-controls">
           <button
             className={`view-btn ${viewMode === "grid" ? "active" : ""}`}
@@ -477,7 +723,11 @@ const Product = () => {
             const subcategory = item.subcategory;
 
             return (
-              <div key={item.id} className="product-card">
+              <div
+                key={item.id}
+                className="product-card"
+                onClick={() => handleViewProductDetails(item)}
+              >
                 <div className="product-image-container">
                   <img
                     src={product.image || "/placeholder.svg"}
@@ -531,20 +781,6 @@ const Product = () => {
                       </span>
                     )}
                   </div>
-                  <div className="product-actions">
-                    <button
-                      className="action-btn edit"
-                      onClick={() => handleEditProduct(item)}
-                    >
-                      <Edit size={16} /> Edit
-                    </button>
-                    <button
-                      className="action-btn delete"
-                      onClick={() => handleDeleteProduct(product.id)}
-                    >
-                      <Trash2 size={16} /> Delete
-                    </button>
-                  </div>
                 </div>
               </div>
             );
@@ -580,7 +816,7 @@ const Product = () => {
                   <h4>Basic Information</h4>
 
                   <div className="form-group">
-                    <label htmlFor="product-name">Name</label>
+                    <label htmlFor="product-name">Name *</label>
                     <input
                       id="product-name"
                       name="name"
@@ -598,13 +834,17 @@ const Product = () => {
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="purchase-price">Purchase Price</label>
+                    <label htmlFor="purchase-price">Purchase Price *</label>
                     <input
                       id="purchase-price"
                       name="purchase_price"
+                      type="number"
+                      step="0.01"
+                      min="0"
                       value={formData.purchase_price}
                       onChange={handleChange}
                       className={errorMessage ? "input-error" : ""}
+                      required
                     />
                   </div>
 
@@ -621,7 +861,7 @@ const Product = () => {
 
                   <div className="form-row">
                     <div className="form-group">
-                      <label htmlFor="product-price">Price</label>
+                      <label htmlFor="product-price">Price *</label>
                       <div className="input-with-prefix">
                         <span className="input-prefix">$</span>
                         <input
@@ -638,7 +878,7 @@ const Product = () => {
                     </div>
 
                     <div className="form-group">
-                      <label htmlFor="product-category">Category</label>
+                      <label htmlFor="product-category">Category *</label>
                       <select
                         id="product-category"
                         name="category_id"
@@ -705,7 +945,7 @@ const Product = () => {
 
                   <div className="form-row">
                     <div className="form-group">
-                      <label htmlFor="product-quantity">Quantity</label>
+                      <label htmlFor="product-quantity">Quantity *</label>
                       <input
                         id="product-quantity"
                         type="number"
@@ -713,11 +953,14 @@ const Product = () => {
                         name="quantity"
                         value={formData.quantity}
                         onChange={handleChange}
+                        required
                       />
                     </div>
 
                     <div className="form-group">
-                      <label htmlFor="product-min-quantity">Min Quantity</label>
+                      <label htmlFor="product-min-quantity">
+                        Min Quantity *
+                      </label>
                       <input
                         id="product-min-quantity"
                         type="number"
@@ -725,6 +968,7 @@ const Product = () => {
                         name="min_quantity"
                         value={formData.min_quantity}
                         onChange={handleChange}
+                        required
                       />
                     </div>
                   </div>
@@ -810,7 +1054,7 @@ const Product = () => {
                     <>
                       <div className="form-row">
                         <div className="form-group">
-                          <label htmlFor="promo-start">Start Date</label>
+                          <label htmlFor="promo-start">Start Date *</label>
                           <input
                             id="promo-start"
                             type="date"
@@ -822,7 +1066,7 @@ const Product = () => {
                         </div>
 
                         <div className="form-group">
-                          <label htmlFor="promo-end">End Date</label>
+                          <label htmlFor="promo-end">End Date *</label>
                           <input
                             id="promo-end"
                             type="date"
@@ -846,7 +1090,7 @@ const Product = () => {
                             min="0"
                             value={formData.promo_price}
                             onChange={handleChange}
-                            required={formData.on_promotion}
+                            // Remove the required attribute
                           />
                         </div>
                       </div>
@@ -876,6 +1120,161 @@ const Product = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Product Details Modal */}
+      {showDetailsModal && selectedProduct && (
+        <div className="product-modal-overlay">
+          <div className="product-modal-content">
+            <div className="product-modal-header">
+              <h3>Product Details</h3>
+              <button
+                className="close-modal-btn"
+                onClick={() => setShowDetailsModal(false)}
+                aria-label="Close modal"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="product-details-content">
+              <div className="product-details-grid">
+                <div className="product-details-image">
+                  <img
+                    src={selectedProduct.image || "/placeholder.svg"}
+                    alt={selectedProduct.name || "Product"}
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = "/placeholder.svg";
+                    }}
+                  />
+                  {selectedProduct.on_promotion && (
+                    <div className="promotion-badge details-badge">On Sale</div>
+                  )}
+                </div>
+
+                <div className="product-details-info">
+                  <h2 className="product-details-name">
+                    {selectedProduct.name}
+                  </h2>
+
+                  <div className="product-details-meta">
+                    <div className="product-details-category">
+                      <strong>Category:</strong>{" "}
+                      {getCategoryName(selectedProduct.category) ||
+                        "Uncategorized"}
+                      {selectedProduct.subcategory && (
+                        <span>
+                          {" "}
+                          / {getSubcategoryName(selectedProduct.subcategory)}
+                        </span>
+                      )}
+                    </div>
+
+                    <div
+                      className={`stock-status ${getStockStatus(selectedProduct)}`}
+                    >
+                      {selectedProduct.quantity > 0
+                        ? `${selectedProduct.quantity} in stock`
+                        : "Out of stock"}
+                    </div>
+                  </div>
+
+                  <div className="product-details-price">
+                    {selectedProduct.on_promotion ? (
+                      <>
+                        <span className="product-price discounted">
+                          {selectedProduct.unit_price || 0} XFA
+                        </span>
+                        <span className="product-price">
+                          {selectedProduct.promo_price || 0} XFA
+                        </span>
+                      </>
+                    ) : (
+                      <span className="product-price">
+                        {selectedProduct.unit_price || 0} XFA
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="product-details-description">
+                    <h4>Description</h4>
+                    <p>
+                      {selectedProduct.description ||
+                        "No description available"}
+                    </p>
+                  </div>
+
+                  <div className="product-details-specs">
+                    <div className="details-spec-item">
+                      <strong>Purchase Price:</strong>{" "}
+                      {selectedProduct.purchase_price || 0} XFA
+                    </div>
+                    <div className="details-spec-item">
+                      <strong>Min Quantity:</strong>{" "}
+                      {selectedProduct.min_quantity || 0}
+                    </div>
+                    <div className="details-spec-item">
+                      <strong>Expiry Date:</strong>{" "}
+                      {selectedProduct.expiry_date
+                        ? new Date(
+                            selectedProduct.expiry_date,
+                          ).toLocaleDateString()
+                        : "N/A"}
+                    </div>
+                    {selectedProduct.on_promotion && (
+                      <>
+                        <div className="details-spec-item">
+                          <strong>Promotion Start:</strong>{" "}
+                          {selectedProduct.promotion_start_date
+                            ? new Date(
+                                selectedProduct.promotion_start_date,
+                              ).toLocaleDateString()
+                            : "N/A"}
+                        </div>
+                        <div className="details-spec-item">
+                          <strong>Promotion End:</strong>{" "}
+                          {selectedProduct.promotion_end_date
+                            ? new Date(
+                                selectedProduct.promotion_end_date,
+                              ).toLocaleDateString()
+                            : "N/A"}
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="product-details-actions">
+                    <button
+                      className="action-btn edit"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditProduct({
+                          product: selectedProduct,
+                          category: selectedProduct.category,
+                          subcategory: selectedProduct.subcategory,
+                        });
+                        setShowDetailsModal(false);
+                      }}
+                    >
+                      <Edit size={16} /> Edit
+                    </button>
+                    <button
+                      className="action-btn delete"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(selectedProduct.id);
+                        setShowDetailsModal(false);
+                      }}
+                    >
+                      <Trash2 size={16} /> Delete
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

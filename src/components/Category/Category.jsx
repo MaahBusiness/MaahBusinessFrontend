@@ -346,7 +346,7 @@ const Category = () => {
 
     if (hasSubcategories) {
       alert(
-        "Cannot delete category that has subcategories. Please delete the subcategories first.",
+        "Cannot delete category thadeletet has subcategories. Please delete the subcategories first.",
       );
       return;
     }

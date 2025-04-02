@@ -2,9 +2,9 @@
 .report-container {
   display: flex;
   flex-direction: column;
-  width: 80%;
+  width: 90%;
   position: absolute;
-  left: 16%;
+  left: 10%;
   margin: 0 auto;
   min-height: 70vh;
   border-radius: 12px;
@@ -149,6 +149,42 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Report Type Buttons */
+.report-type-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.report-type-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  background-color: #1a1a2e;
+  border: 1px solid #3f3f5a;
+  border-radius: 0.375rem;
+  color: #a5a5a5;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.report-type-btn:hover {
+  background-color: #252538;
+  border-color: #6366f1;
+  color: #e0e0e0;
+}
+
+.report-type-btn.active {
+  background-color: #6366f1;
+  border-color: #6366f1;
+  color: white;
 }
 
 /* Saved Reports Section */
@@ -756,7 +792,8 @@
 /* Enhanced Responsive Styles */
 @media (max-width: 1200px) {
   .report-container {
-    width: 90%;
+    width: 80%;
+    display: inline;
     left: 5%;
   }
 
@@ -796,12 +833,13 @@
 
 @media (max-width: 768px) {
   .report-container {
-    position: none;
-    width: 90%;
-    left: 5%;
-    margin: auto;
+    position: relative;
+    width: 80%;
+    left: 2.5%;
+    margin: 0 auto;
     height: auto;
     padding: 1rem;
+    overflow-x: hidden;
   }
 
   .report-grid {
@@ -829,78 +867,101 @@
   .saved-reports-list {
     max-height: 150px;
   }
+
+  .report-type-buttons {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Reduce animation scale */
+  .stat-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  .summary-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Improve table scrolling on mobile */
+  .table-container {
+    overflow-x: auto;
+  }
 }
 
+/* Tablet view improvements */
+@media (min-width: 769px) and (max-width: 992px) {
+  .report-container {
+    width: 80%;
+
+    padding: 1.5rem;
+  }
+
+  .report-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+
+  .report-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  /* Reduce animation scale */
+  .stat-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  .summary-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+}
+
+/* Small mobile improvements */
 @media (max-width: 576px) {
   .report-container {
+    width: 70%;
+    left: 0;
+    position: relative;
+    border-radius: 0;
+  }
+
+  .report-type-buttons {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .report-type-btn {
+    padding: 10px;
+  }
+
+  /* Reduce animation completely for very small screens */
+  .stat-card:hover,
+  .summary-card:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  /* Make sure tables are scrollable */
+  .table-container {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  .report-table {
+    min-width: 500px; /* Ensure table has minimum width to show all columns */
+  }
+
+  /* Adjust spacing */
+  .form-content,
+  .results-content {
     padding: 0.75rem;
   }
 
-  .report-title {
-    font-size: 1.25rem;
-    margin-bottom: 1rem;
-  }
-
-  .report-form-header,
-  .report-results-header,
-  .dashboard-header {
-    padding: 0.75rem 1rem;
-  }
-
-  .form-content,
-  .results-content,
-  .dashboard-content {
-    padding: 0.75rem 1rem;
-  }
-
-  .form-label {
-    font-size: 0.8rem;
-  }
-
-  .form-select,
-  .form-input {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.8rem;
-  }
-
-  .generate-btn {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.8rem;
-  }
-
-  .stat-label,
-  .summary-card-title {
-    font-size: 0.8rem;
-  }
-
-  .stat-value,
-  .summary-value {
-    font-size: 1.125rem;
-  }
-
-  .table-title {
-    font-size: 0.9rem;
-  }
-
-  .report-table th,
-  .report-table td {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.8rem;
-  }
-
-  .tab-trigger {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.8rem;
-  }
-
-  .details-title {
-    font-size: 0.9rem;
-  }
-
-  .details-description,
-  .details-highlight p,
-  .details-highlight li {
-    font-size: 0.8rem;
+  .report-stats {
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
   }
 }
 
@@ -948,4 +1009,27 @@
   .saved-report-date {
     font-size: 0.65rem;
   }
+}
+
+/* Adjust animation speed to be more subtle */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin {
+  animation: spin 1.5s linear infinite; /* Slightly slower spin */
+}
+
+/* Improve report type buttons for all screen sizes */
+.report-type-buttons {
+  margin-bottom: 1.25rem;
+}
+
+.report-type-btn {
+  transition: all 0.2s ease; /* Faster transition */
 }
