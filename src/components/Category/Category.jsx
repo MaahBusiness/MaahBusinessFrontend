@@ -145,39 +145,40 @@ const Category = () => {
     }
   };
 
+  // Fetch products for a category// ... keep existing code
+
   // Fetch products for a category
   const fetchCategoryProducts = async (categoryId) => {
     if (!categoryId) return;
 
     setIsLoadingCategoryProducts(true);
     try {
+      // First try the categories API endpoint
       const response = await axios.get(`${apiBaseUrl}/products/`, {
         params: { category_id: categoryId },
       });
       console.log("Category products fetched successfully:", response.data);
       setCategoryProducts(response.data.results || []);
-      setIsLoadingCategoryProducts(false);
     } catch (error) {
       console.error("Error fetching category products:", error);
 
       // Fallback to fetching from product API if category API fails
       try {
         const productResponse = await axios.get(
-          `${productApiBaseUrl}/products/`,
+          `${productApiBaseUrl}/products/by-category/${categoryId}/`,
         );
-        const filteredProducts = productResponse.data.results.filter(
-          (product) => product.category_id === categoryId,
-        );
-        console.log("Products filtered by category:", filteredProducts);
-        setCategoryProducts(filteredProducts);
+        console.log("Products fetched by category:", productResponse.data);
+        setCategoryProducts(productResponse.data.results || []);
       } catch (productError) {
         console.error("Error fetching from product API:", productError);
         setCategoryProducts([]);
       }
-
+    } finally {
       setIsLoadingCategoryProducts(false);
     }
   };
+
+  // ... keep existing code
 
   // Fetch category details
   const fetchCategoryDetails = async (categoryId) => {
