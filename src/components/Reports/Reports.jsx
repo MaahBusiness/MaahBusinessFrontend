@@ -1511,16 +1511,6 @@ const Reports = () => {
                         }}
                         className="form-input date-input"
                       />
-                      <input
-                        id="start-time"
-                        type="time"
-                        value={startTime}
-                        onChange={(e) => {
-                          setStartTime(e.target.value);
-                          console.log("Start time set to:", e.target.value);
-                        }}
-                        className="form-input time-input"
-                      />
                     </div>
                   </div>
 
@@ -1538,16 +1528,6 @@ const Reports = () => {
                           console.log("End date set to:", e.target.value);
                         }}
                         className="form-input date-input"
-                      />
-                      <input
-                        id="end-time"
-                        type="time"
-                        value={endTime}
-                        onChange={(e) => {
-                          setEndTime(e.target.value);
-                          console.log("End time set to:", e.target.value);
-                        }}
-                        className="form-input time-input"
                       />
                     </div>
                   </div>

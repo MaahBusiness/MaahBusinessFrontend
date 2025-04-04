@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import axios from "axios";
 import {
   Plus,
   Search,
-  Edit,
   Trash2,
   X,
   Check,
@@ -14,8 +14,8 @@ import {
   User,
   ShoppingCart,
   AlertCircle,
-  ArrowUpRight,
-  ArrowDownRight,
+  Loader,
+  Clock,
 } from "lucide-react";
 import {
   BarChart,
@@ -32,139 +32,191 @@ import {
 } from "recharts";
 import "./Invoice.css";
 
-// Sample products data
-const products = [
-  { id: "product-1", name: "Laptop", price: 1200 },
-  { id: "product-2", name: "Smartphone", price: 800 },
-  { id: "product-3", name: "Headphones", price: 150 },
-  { id: "product-4", name: "Monitor", price: 300 },
-  { id: "product-5", name: "Keyboard", price: 80 },
-  { id: "product-6", name: "Mouse", price: 50 },
-  { id: "product-7", name: "Tablet", price: 500 },
-  { id: "product-8", name: "Printer", price: 250 },
-];
-
 const Invoice = () => {
+  // Style definitions for form fields
+  const requiredFieldStyle = {
+    color: "#f44336",
+    marginLeft: "4px",
+  };
+
+  const optionalFieldStyle = {
+    color: "#a5a5a5",
+    fontSize: "0.8rem",
+    marginLeft: "4px",
+  };
+
+  const fieldHintStyle = {
+    color: "#a5a5a5",
+    fontSize: "0.75rem",
+    marginTop: "4px",
+    display: "block",
+  };
+
   // Main state
   const [invoices, setInvoices] = useState([]);
+  const [products, setProducts] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentView, setCurrentView] = useState("list"); // list, analytics
   const [selectedInvoice, setSelectedInvoice] = useState(null);
-  const [confirmDelete, setConfirmDelete] = useState(null);
+  const [confirmArchive, setConfirmArchive] = useState(null);
   const [statusMessage, setStatusMessage] = useState({
     show: false,
     text: "",
     type: "success",
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [validStatusValues, setValidStatusValues] = useState([
+    "COMPLETED",
+    "CANCELLED",
+    "CREDIT",
+  ]);
 
   // Form state
   const [clientName, setClientName] = useState("");
   const [reason, setReason] = useState("");
   const [tax, setTax] = useState(0);
   const [advancePaid, setAdvancePaid] = useState(0);
-
+  const [dueDate, setDueDate] = useState("");
   const [lines, setLines] = useState([
     { product_id: "", name: "", quantity: 1, price: 0, discount: 0 },
   ]);
-  const [currentEditingIndex, setCurrentEditingIndex] = useState(null);
   const [formError, setFormError] = useState("");
 
-  // Initialize with sample data
+  // Check authentication on component mount
   useEffect(() => {
-    const sampleInvoices = [
-      {
-        id: "INV-001",
-        client_name: "John Doe",
-        reason: "IT Equipment Purchase",
-        tax: 5,
-        status: "COMPLETED",
-        due_date: "2025-04-15",
-        date_created: "2025-03-01",
-        advance_paid: 1500,
-        lines: [
-          {
-            product_id: "product-1",
-            name: "Laptop",
-            quantity: 1,
-            price: 1200,
-            discount: 0,
-          },
-          {
-            product_id: "product-3",
-            name: "Headphones",
-            quantity: 2,
-            price: 150,
-            discount: 10,
-          },
-        ],
-        subtotal: 1470,
-        total: 1543.5,
-        remaining: 43.5,
-        refund: 0,
+    const token = localStorage.getItem("token");
+    setIsAuthenticated(!!token);
+
+    if (!token) {
+      showStatusMessage(
+        "Please log in to create or manage invoices",
+        "warning",
+      );
+    }
+  }, []);
+
+  // Create axios instance with authentication headers
+  const getAuthAxios = () => {
+    const token = localStorage.getItem("token");
+    return axios.create({
+      headers: {
+        Authorization: token ? `Bearer ${token}` : "",
       },
-      {
-        id: "INV-002",
-        client_name: "Jane Smith",
-        reason: "Office Supplies",
-        tax: 7,
-        status: "PENDING",
-        due_date: "2025-04-30",
-        date_created: "2025-03-10",
-        advance_paid: 200,
-        lines: [
-          {
-            product_id: "product-5",
-            name: "Keyboard",
-            quantity: 3,
-            price: 80,
-            discount: 5,
-          },
-          {
-            product_id: "product-6",
-            name: "Mouse",
-            quantity: 3,
-            price: 50,
-            discount: 5,
-          },
-          {
-            product_id: "product-8",
-            name: "Printer",
-            quantity: 1,
-            price: 250,
-            discount: 0,
-          },
-        ],
-        subtotal: 569,
-        total: 608.83,
-        remaining: 408.83,
-        refund: 0,
-      },
-      {
-        id: "INV-003",
-        client_name: "Robert Johnson",
-        reason: "Software Licenses",
-        tax: 0,
-        status: "COMPLETED",
-        due_date: "2025-03-15",
-        date_created: "2025-02-15",
-        advance_paid: 1000,
-        lines: [
-          {
-            product_id: "product-9",
-            name: "Software License",
-            quantity: 5,
-            price: 200,
-            discount: 20,
-          },
-        ],
-        subtotal: 800,
-        total: 800,
-        remaining: 0,
-        refund: 200,
-      },
-    ];
-    setInvoices(sampleInvoices);
+    });
+  };
+
+  // Fetch products and invoices on component mount
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        console.log("Fetching products...");
+        const authAxios = getAuthAxios();
+        const response = await authAxios.get(
+          "http://localhost:8000/api/v1/product/products/",
+        );
+        console.log("Products API response:", response.data);
+
+        // Handle different response formats
+        let productData = [];
+        if (Array.isArray(response.data)) {
+          productData = response.data;
+        } else if (
+          response.data.results &&
+          Array.isArray(response.data.results)
+        ) {
+          productData = response.data.results;
+        } else if (typeof response.data === "object") {
+          // If it's an object with product data directly
+          productData = [response.data];
+        }
+
+        console.log("Product data array length:", productData.length);
+
+        // Map the products correctly, handling different possible structures
+        const processedProducts = productData
+          .map((item) => {
+            // Handle different possible product structures
+            const productInfo = item.product || item;
+            return {
+              id: productInfo.id || "",
+              name:
+                productInfo.name ||
+                productInfo.product_name ||
+                "Unnamed Product",
+              price: Number.parseFloat(
+                productInfo.unit_price || productInfo.price || 0,
+              ),
+            };
+          })
+          .filter((product) => product.id); // Filter out any products without an ID
+
+        console.log(
+          "Processed products:",
+          processedProducts.length,
+          processedProducts,
+        );
+        setProducts(processedProducts);
+      } catch (error) {
+        console.error("Error fetching products:", error);
+        if (error.response) {
+          console.error("Error response data:", error.response.data);
+          console.error("Error status:", error.response.status);
+
+          // Handle authentication errors
+          if (error.response.status === 401) {
+            setIsAuthenticated(false);
+            localStorage.removeItem("token");
+            showStatusMessage(
+              "Authentication expired. Please log in again.",
+              "error",
+            );
+          }
+        }
+        showStatusMessage(
+          "Failed to load products. Please try again.",
+          "error",
+        );
+      }
+    };
+
+    const fetchInvoices = async () => {
+      try {
+        const authAxios = getAuthAxios();
+        const response = await authAxios.get(
+          "http://localhost:8000/api/v1/invoice/invoices/",
+        );
+        console.log("Invoices fetched:", response.data);
+
+        // Check if response.data is an array or has a results property
+        const invoiceData = Array.isArray(response.data)
+          ? response.data
+          : response.data.results || [];
+
+        setInvoices(invoiceData);
+      } catch (error) {
+        console.error("Error fetching invoices:", error);
+
+        // Handle authentication errors
+        if (error.response && error.response.status === 401) {
+          setIsAuthenticated(false);
+          localStorage.removeItem("token");
+          showStatusMessage(
+            "Authentication expired. Please log in again.",
+            "error",
+          );
+        } else {
+          showStatusMessage(
+            "Failed to load invoices. Please try again.",
+            "error",
+          );
+        }
+      }
+    };
+
+    fetchProducts();
+    fetchInvoices();
   }, []);
 
   // Helper function to calculate invoice totals
@@ -178,8 +230,10 @@ const Invoice = () => {
     const total = subtotal + taxAmount;
     const remaining = total - advancePaid;
     const refund = advancePaid > total ? advancePaid - total : 0;
-    const status = remaining > 0 ? "PENDING" : "COMPLETED";
-    return { subtotal, total, remaining, refund, status };
+
+    // Use "COMPLETED" when fully paid, "CREDIT" when there's a remaining balance
+    const status = remaining > 0 ? "CREDIT" : "COMPLETED";
+    return { subtotal, taxAmount, total, remaining, refund, status };
   };
 
   // Function to show status messages
@@ -218,10 +272,15 @@ const Invoice = () => {
 
           // If product_id changed, update the name and price
           if (key === "product_id" && value) {
-            const selectedProduct = products.find((p) => p.id === value);
+            const selectedProduct = products.find(
+              (p) => p.id.toString() === value.toString(),
+            );
             if (selectedProduct) {
+              console.log("Selected product:", selectedProduct);
               updatedLine.name = selectedProduct.name;
               updatedLine.price = selectedProduct.price;
+            } else {
+              console.log("Product not found for ID:", value);
             }
           }
 
@@ -232,11 +291,21 @@ const Invoice = () => {
     );
   };
 
-  // Handle creating or updating an invoice
-  const handleCreateOrUpdateInvoice = () => {
-    // Validate form
-    if (!clientName.trim()) {
-      setFormError("Client name is required");
+  // Handle creating a new invoice
+  const handleCreateInvoice = async () => {
+    // Check if user is authenticated
+    if (!isAuthenticated) {
+      setFormError("You must be logged in to create invoices");
+      showStatusMessage("Authentication required. Please log in.", "error");
+      return;
+    }
+
+    // Calculate if there's a remaining balance
+    const { total, remaining, status } = calculateTotals();
+
+    // Only require due date if there's a remaining balance (invoice not fully paid)
+    if (remaining > 0 && !dueDate) {
+      setFormError("Due date is required for invoices with remaining balance");
       return;
     }
 
@@ -251,77 +320,181 @@ const Invoice = () => {
       return;
     }
 
-    const { subtotal, total, remaining, refund, status } = calculateTotals();
-
-    const newInvoice = {
-      id:
-        currentEditingIndex !== null
-          ? invoices[currentEditingIndex].id
-          : `INV-${String(invoices.length + 1).padStart(3, "0")}`,
-      client_name: clientName,
-      reason,
-      tax,
-      status,
-
-      date_created:
-        currentEditingIndex !== null
-          ? invoices[currentEditingIndex].date_created
-          : new Date().toISOString().split("T")[0],
-      advance_paid: advancePaid,
-      lines,
-      subtotal,
-      total,
-      remaining,
-      refund,
-    };
-
-    if (currentEditingIndex !== null) {
-      // Update existing invoice
-      setInvoices(
-        invoices.map((inv, i) =>
-          i === currentEditingIndex ? newInvoice : inv,
-        ),
-      );
-      showStatusMessage("Invoice updated successfully");
-    } else {
-      // Create new invoice
-      setInvoices([...invoices, newInvoice]);
-      showStatusMessage("Invoice created successfully");
+    // If status is CREDIT and reason is empty, set a default reason
+    let finalReason = reason;
+    if (status === "CREDIT" && !reason.trim()) {
+      finalReason = "Credit invoice"; // Set a default reason for CREDIT status
     }
 
-    resetForm();
-    setShowModal(false);
+    setIsLoading(true);
+
+    try {
+      // Prepare the payload for the API
+      const payload = {
+        client_name: clientName || "Anonymous", // Default to "Anonymous" if client name is not provided
+        tax: tax.toString(),
+        reason: finalReason, // Use the possibly modified reason
+        due_date: dueDate || null, // Make due date optional
+        advance_paid: advancePaid.toString(),
+        status: status, // Always include the status field with the calculated value
+        lines: lines.map((line) => ({
+          product_id: line.product_id,
+          quantity: line.quantity,
+          discount: line.discount.toString(),
+        })),
+      };
+
+      console.log("Submitting invoice payload:", payload);
+      const authAxios = getAuthAxios();
+
+      // Create new invoice
+      const response = await authAxios.post(
+        "http://localhost:8000/api/v1/invoice/create-invoice/",
+        payload,
+      );
+
+      // Add the new invoice to the list
+      setInvoices([...invoices, response.data]);
+      showStatusMessage("Invoice created successfully");
+
+      resetForm();
+      setShowModal(false);
+    } catch (error) {
+      console.error("Error creating invoice:", error);
+      if (error.response) {
+        console.error("Error response data:", error.response.data);
+
+        // Handle authentication errors
+        if (error.response.status === 401) {
+          setIsAuthenticated(false);
+          localStorage.removeItem("token");
+          setFormError("Authentication expired. Please log in again.");
+          return;
+        }
+
+        // Handle specific API errors
+        if (error.response.data.reason) {
+          setFormError(`Reason error: ${error.response.data.reason}`);
+        } else if (error.response.data.status) {
+          setFormError(
+            `Status error: ${JSON.stringify(error.response.data.status)}`,
+          );
+        } else if (
+          error.response.data.error &&
+          error.response.data.error.includes("Invoice.cashier")
+        ) {
+          setFormError(
+            "Authentication error: You must be logged in as a valid user to create invoices",
+          );
+        } else {
+          setFormError(
+            error.response?.data?.detail ||
+              error.response?.data?.message ||
+              error.response?.data?.error ||
+              "Failed to process invoice. Please try again.",
+          );
+        }
+      } else {
+        setFormError("Failed to process invoice. Please try again.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  // Handle editing an invoice
-  const handleEditInvoice = (index) => {
+  // View invoice details
+  const handleViewInvoice = async (index) => {
     const invoice = invoices[index];
-    setClientName(invoice.client_name);
-    setReason(invoice.reason || "");
-    setTax(invoice.tax);
-    setAdvancePaid(invoice.advance_paid);
+    setIsLoading(true);
 
-    setLines(invoice.lines);
-    setCurrentEditingIndex(index);
-    setFormError("");
-    setShowModal(true);
+    try {
+      // If we already have detailed data, use it directly
+      if (invoice.lines && invoice.cashier_name) {
+        setSelectedInvoice(invoice);
+      } else {
+        // Otherwise fetch detailed invoice data
+        const authAxios = getAuthAxios();
+        const response = await authAxios.get(
+          `http://localhost:8000/api/v1/invoice/${invoice.id}/detail/`,
+        );
+        setSelectedInvoice(response.data);
+      }
+    } catch (error) {
+      console.error("Error fetching invoice details:", error);
+
+      // Handle authentication errors
+      if (error.response && error.response.status === 401) {
+        setIsAuthenticated(false);
+        localStorage.removeItem("token");
+        showStatusMessage(
+          "Authentication expired. Please log in again.",
+          "error",
+        );
+      } else {
+        showStatusMessage(
+          "Failed to load invoice details. Please try again.",
+          "error",
+        );
+      }
+
+      // Fallback to using the basic invoice data we already have
+      setSelectedInvoice(invoice);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  // Handle viewing an invoice
-  const handleViewInvoice = (index) => {
-    setSelectedInvoice(invoices[index]);
+  // Handle archiving an invoice (appears as delete to the user)
+  const handleArchiveInvoice = (index) => {
+    // Check if user is authenticated
+    if (!isAuthenticated) {
+      showStatusMessage("Authentication required. Please log in.", "error");
+      return;
+    }
+
+    setConfirmArchive(index);
   };
 
-  // Handle deleting an invoice
-  const handleDeleteInvoice = (index) => {
-    setConfirmDelete(index);
-  };
+  // Confirm archive
+  const confirmArchiveInvoice = async () => {
+    const invoiceId = invoices[confirmArchive].id;
+    setIsLoading(true);
 
-  // Confirm delete
-  const confirmDeleteInvoice = () => {
-    setInvoices(invoices.filter((_, i) => i !== confirmDelete));
-    setConfirmDelete(null);
-    showStatusMessage("Invoice deleted successfully", "warning");
+    try {
+      const authAxios = getAuthAxios();
+      // Use the archive API instead of delete
+      await authAxios.post(
+        `http://localhost:8000/api/v1/archive/archive-invoice/`,
+        {
+          invoice_id: invoiceId,
+          status: "CANCELLED", // Set status to CANCELLED when archiving
+        },
+      );
+
+      // Remove from the UI just like a delete
+      setInvoices(invoices.filter((_, i) => i !== confirmArchive));
+      showStatusMessage("Invoice archived successfully", "warning");
+    } catch (error) {
+      console.error("Error archiving invoice:", error);
+
+      // Handle authentication errors
+      if (error.response && error.response.status === 401) {
+        setIsAuthenticated(false);
+        localStorage.removeItem("token");
+        showStatusMessage(
+          "Authentication expired. Please log in again.",
+          "error",
+        );
+      } else {
+        showStatusMessage(
+          "Failed to archive invoice. Please try again.",
+          "error",
+        );
+      }
+    } finally {
+      setConfirmArchive(null);
+      setIsLoading(false);
+    }
   };
 
   // Reset form
@@ -330,20 +503,25 @@ const Invoice = () => {
     setReason("");
     setTax(0);
     setAdvancePaid(0);
-
+    setDueDate("");
     setLines([
       { product_id: "", name: "", quantity: 1, price: 0, discount: 0 },
     ]);
-    setCurrentEditingIndex(null);
     setFormError("");
   };
 
   // Filter invoices based on search term
   const filteredInvoices = invoices.filter(
     (invoice) =>
-      invoice.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      invoice.client_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      invoice.reason.toLowerCase().includes(searchTerm.toLowerCase()),
+      (invoice.id &&
+        invoice.id
+          .toString()
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase())) ||
+      (invoice.client_name &&
+        invoice.client_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (invoice.reason &&
+        invoice.reason.toLowerCase().includes(searchTerm.toLowerCase())),
   );
 
   // Calculate analytics data
@@ -351,11 +529,13 @@ const Invoice = () => {
     // Monthly revenue data
     const monthlyData = {};
     invoices.forEach((invoice) => {
-      const month = invoice.date_created.substring(0, 7); // YYYY-MM
+      if (!invoice.created_at) return;
+
+      const month = invoice.created_at.substring(0, 7); // YYYY-MM
       if (!monthlyData[month]) {
         monthlyData[month] = { total: 0, count: 0 };
       }
-      monthlyData[month].total += invoice.total;
+      monthlyData[month].total += Number.parseFloat(invoice.total) || 0;
       monthlyData[month].count += 1;
     });
 
@@ -368,22 +548,28 @@ const Invoice = () => {
     // Status distribution
     const statusData = [
       {
-        name: "Completed",
+        name: "COMPLETED",
         value: invoices.filter((inv) => inv.status === "COMPLETED").length,
       },
       {
-        name: "Pending",
-        value: invoices.filter((inv) => inv.status === "PENDING").length,
+        name: "CREDIT",
+        value: invoices.filter((inv) => inv.status === "CREDIT").length,
+      },
+      {
+        name: "CANCELLED",
+        value: invoices.filter((inv) => inv.status === "CANCELLED").length,
       },
     ];
 
     // Client distribution
     const clientData = {};
     invoices.forEach((invoice) => {
+      if (!invoice.client_name) return;
+
       if (!clientData[invoice.client_name]) {
         clientData[invoice.client_name] = 0;
       }
-      clientData[invoice.client_name] += invoice.total;
+      clientData[invoice.client_name] += Number.parseFloat(invoice.total) || 0;
     });
 
     const clientDistributionData = Object.keys(clientData).map((client) => ({
@@ -405,12 +591,15 @@ const Invoice = () => {
 
   // Calculate totals for summary cards
   const totalRevenue = invoices.reduce(
-    (sum, invoice) => sum + invoice.total,
+    (sum, invoice) => sum + (Number.parseFloat(invoice.total) || 0),
     0,
   );
   const totalPending = invoices.reduce(
     (sum, invoice) =>
-      sum + (invoice.status === "PENDING" ? invoice.remaining : 0),
+      sum +
+      (invoice.status === "CREDIT"
+        ? Number.parseFloat(invoice.remaining_amount) || 0
+        : 0),
     0,
   );
   const averageInvoiceValue =
@@ -419,19 +608,118 @@ const Invoice = () => {
   // COLORS for charts
   const COLORS = ["#800020", "#6A1B9A", "#4A0F0F", "#B71C1C", "#1F2937"];
 
+  // Format date for display
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString();
+    } catch (error) {
+      return dateString;
+    }
+  };
+
+  // Format date and time for display
+  const formatDateTime = (dateString) => {
+    if (!dateString) return "N/A";
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleString();
+    } catch (error) {
+      return dateString;
+    }
+  };
+
+  // Handle PDF export
+  const handleExportPDF = async (invoiceId) => {
+    if (!isAuthenticated) {
+      showStatusMessage("Authentication required. Please log in.", "error");
+      return;
+    }
+
+    if (!invoiceId) {
+      showStatusMessage("Invoice ID is required for export", "error");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      showStatusMessage("Generating PDF...", "info");
+
+      const authAxios = getAuthAxios();
+
+      // Make request to export PDF endpoint with the invoice ID as a query parameter
+      const response = await authAxios.get(
+        `http://localhost:8000/api/v1/invoice/export-pdf/?invoice_id=${invoiceId}`,
+        {
+          responseType: "blob", // Important: set the response type to blob
+        },
+      );
+
+      // Create a blob from the PDF response
+      const blob = new Blob([response.data], { type: "application/pdf" });
+
+      // Create a URL for the blob
+      const url = window.URL.createObjectURL(blob);
+
+      // Create a temporary link element to trigger the download
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `invoice-${invoiceId}.pdf`);
+      document.body.appendChild(link);
+
+      // Trigger the download
+      link.click();
+
+      // Clean up
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(link);
+
+      showStatusMessage("PDF downloaded successfully", "success");
+    } catch (error) {
+      console.error("Error exporting PDF:", error);
+
+      // Handle authentication errors
+      if (error.response && error.response.status === 401) {
+        setIsAuthenticated(false);
+        localStorage.removeItem("token");
+        showStatusMessage(
+          "Authentication expired. Please log in again.",
+          "error",
+        );
+      } else {
+        showStatusMessage("Failed to export PDF. Please try again.", "error");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle login
+  const handleLogin = () => {
+    // Redirect to login page or show login modal
+    window.location.href = "/login";
+  };
+
   return (
     <div className="invoice-manager-container">
       <div className="invoice-manager-header">
         <h2>Invoice Management</h2>
-        <button
-          className="add-button"
-          onClick={() => {
-            resetForm();
-            setShowModal(true);
-          }}
-        >
-          <Plus size={18} /> Create Invoice
-        </button>
+        {isAuthenticated ? (
+          <button
+            className="add-button"
+            onClick={() => {
+              resetForm();
+              setShowModal(true);
+            }}
+          >
+            <Plus size={18} /> Create Invoice
+          </button>
+        ) : (
+          <button className="login-button" onClick={handleLogin}>
+            <User size={18} /> Login to Create Invoices
+          </button>
+        )}
       </div>
 
       {/* Status Message */}
@@ -471,7 +759,12 @@ const Invoice = () => {
             />
           </div>
 
-          {filteredInvoices.length === 0 ? (
+          {isLoading ? (
+            <div className="loading-state">
+              <Loader size={48} className="spin" />
+              <p>Loading invoices...</p>
+            </div>
+          ) : filteredInvoices.length === 0 ? (
             <div className="empty-state">
               <FileText size={48} />
               <p>
@@ -483,9 +776,11 @@ const Invoice = () => {
               {filteredInvoices.map((invoice, index) => (
                 <div key={invoice.id} className="invoice-card">
                   <div className="invoice-card-header">
-                    <div className="invoice-id">{invoice.id}</div>
+                    <div className="invoice-id">
+                      {invoice.number ? `INV-${invoice.number}` : invoice.id}
+                    </div>
                     <div
-                      className={`invoice-status ${invoice.status.toLowerCase()}`}
+                      className={`invoice-status ${(invoice.status || "").toLowerCase()}`}
                     >
                       {invoice.status}
                     </div>
@@ -493,7 +788,7 @@ const Invoice = () => {
                   <div className="invoice-card-body">
                     <div className="invoice-client">
                       <User size={16} />
-                      <span>{invoice.client_name}</span>
+                      <span>{invoice.client_name || "Anonymous"}</span>
                     </div>
                     <div className="invoice-reason">
                       <FileText size={16} />
@@ -501,15 +796,21 @@ const Invoice = () => {
                     </div>
                     <div className="invoice-date">
                       <Calendar size={16} />
-                      <span>Due: {invoice.due_date}</span>
+                      <span>Due: {formatDate(invoice.due_date)}</span>
+                    </div>
+                    <div className="invoice-date">
+                      <Clock size={16} />
+                      <span>Created: {formatDateTime(invoice.created_at)}</span>
                     </div>
                     <div className="invoice-amount">
                       <DollarSign size={16} />
-                      <span>{invoice.total.toFixed(2)} XFA</span>
+                      <span>
+                        {Number.parseFloat(invoice.total || 0).toFixed(2)} XFA
+                      </span>
                     </div>
                     <div className="invoice-items">
                       <ShoppingCart size={16} />
-                      <span>{invoice.lines.length} items</span>
+                      <span>{invoice.lines?.length || 0} items</span>
                     </div>
                   </div>
                   <div className="invoice-card-footer">
@@ -521,14 +822,8 @@ const Invoice = () => {
                     </button>
                     <div className="invoice-actions">
                       <button
-                        className="invoice-action-btn edit"
-                        onClick={() => handleEditInvoice(index)}
-                      >
-                        <Edit size={14} />
-                      </button>
-                      <button
                         className="invoice-action-btn delete"
-                        onClick={() => handleDeleteInvoice(index)}
+                        onClick={() => handleArchiveInvoice(index)}
                       >
                         <Trash2 size={14} />
                       </button>
@@ -673,16 +968,12 @@ const Invoice = () => {
         </div>
       )}
 
-      {/* Create/Edit Invoice Modal */}
+      {/* Create Invoice Modal */}
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-content">
             <div className="modal-header">
-              <h3>
-                {currentEditingIndex !== null
-                  ? "Edit Invoice"
-                  : "Create New Invoice"}
-              </h3>
+              <h3>Create New Invoice</h3>
               <button
                 className="close-modal-btn"
                 onClick={() => setShowModal(false)}
@@ -693,26 +984,36 @@ const Invoice = () => {
             <div className="modal-body">
               {formError && <div className="form-error">{formError}</div>}
 
+              {!isAuthenticated && (
+                <div className="auth-warning">
+                  <AlertCircle size={18} />
+                  <span>You must be logged in to create invoices</span>
+                </div>
+              )}
+
               <div className="form-grid">
                 {/* Client Information */}
                 <div className="form-section">
                   <h4>Client Information</h4>
                   <div className="form-group">
-                    <label htmlFor="client-name">Client Name</label>
+                    <label htmlFor="client-name">
+                      Client Name{" "}
+                      <span style={optionalFieldStyle}>(Optional)</span>
+                    </label>
                     <input
                       id="client-name"
                       type="text"
-                      placeholder="Enter client name"
+                      placeholder="Enter client name or leave blank for anonymous"
                       value={clientName}
                       onChange={(e) => setClientName(e.target.value)}
-                      className={
-                        formError && !clientName.trim() ? "input-error" : ""
-                      }
                     />
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="reason">Reason/Description</label>
+                    <label htmlFor="reason">
+                      Reason/Description{" "}
+                      <span style={optionalFieldStyle}>(Optional)</span>
+                    </label>
                     <input
                       id="reason"
                       type="text"
@@ -720,16 +1021,41 @@ const Invoice = () => {
                       value={reason}
                       onChange={(e) => setReason(e.target.value)}
                     />
+                    {calculateTotals().status === "CREDIT" && (
+                      <small style={fieldHintStyle}>
+                        A default reason will be used if left blank for credit
+                        invoices
+                      </small>
+                    )}
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="due-date">Due Date</label>
+                    <label htmlFor="due-date">
+                      Due Date{" "}
+                      {advancePaid < calculateTotals().total ? (
+                        <span style={requiredFieldStyle}>*</span>
+                      ) : (
+                        <span style={optionalFieldStyle}>(Optional)</span>
+                      )}
+                    </label>
                     <input
                       id="due-date"
                       type="date"
-                      onChange={(e) => e.target.value}
-                      className={formError ? "input-error" : ""}
+                      value={dueDate}
+                      onChange={(e) => setDueDate(e.target.value)}
+                      className={
+                        formError &&
+                        advancePaid < calculateTotals().total &&
+                        !dueDate
+                          ? "input-error"
+                          : ""
+                      }
                     />
+                    {advancePaid < calculateTotals().total && (
+                      <small style={fieldHintStyle}>
+                        Required when invoice is not fully paid
+                      </small>
+                    )}
                   </div>
                 </div>
 
@@ -805,7 +1131,10 @@ const Invoice = () => {
                           >
                             <option value="">Select Product</option>
                             {products.map((product) => (
-                              <option key={product.id} value={product.id}>
+                              <option
+                                key={product.id}
+                                value={product.id.toString()}
+                              >
                                 {product.name} - {product.price} XFA
                               </option>
                             ))}
@@ -879,8 +1208,14 @@ const Invoice = () => {
               {/* Totals */}
               <div className="invoice-totals">
                 {(() => {
-                  const { subtotal, total, remaining, refund, status } =
-                    calculateTotals();
+                  const {
+                    subtotal,
+                    taxAmount,
+                    total,
+                    remaining,
+                    refund,
+                    status,
+                  } = calculateTotals();
                   return (
                     <>
                       <div className="totals-row">
@@ -889,7 +1224,7 @@ const Invoice = () => {
                       </div>
                       <div className="totals-row">
                         <span>Tax ({tax}%):</span>
-                        <span>{((subtotal * tax) / 100).toFixed(2)} XFA</span>
+                        <span>{taxAmount.toFixed(2)} XFA</span>
                       </div>
                       <div className="totals-row total">
                         <span>Total:</span>
@@ -935,12 +1270,11 @@ const Invoice = () => {
               </button>
               <button
                 className="save-btn"
-                onClick={handleCreateOrUpdateInvoice}
+                onClick={handleCreateInvoice}
+                disabled={isLoading || !isAuthenticated}
               >
-                {currentEditingIndex !== null ? (
-                  <>
-                    <Check size={16} /> Update Invoice
-                  </>
+                {isLoading ? (
+                  <Loader size={16} className="spin" />
                 ) : (
                   <>
                     <Plus size={16} /> Create Invoice
@@ -968,9 +1302,14 @@ const Invoice = () => {
             <div className="modal-body">
               <div className="invoice-detail-header">
                 <div className="invoice-detail-id">
-                  <h4>Invoice #{selectedInvoice.id}</h4>
+                  <h4>
+                    Invoice #
+                    {selectedInvoice.number
+                      ? selectedInvoice.number
+                      : selectedInvoice.id}
+                  </h4>
                   <div
-                    className={`invoice-status ${selectedInvoice.status.toLowerCase()}`}
+                    className={`invoice-status ${(selectedInvoice.status || "").toLowerCase()}`}
                   >
                     {selectedInvoice.status}
                   </div>
@@ -978,11 +1317,11 @@ const Invoice = () => {
                 <div className="invoice-detail-dates">
                   <div className="date-item">
                     <span>Created:</span>
-                    <span>{selectedInvoice.date_created}</span>
+                    <span>{formatDateTime(selectedInvoice.created_at)}</span>
                   </div>
                   <div className="date-item">
                     <span>Due:</span>
-                    <span>{selectedInvoice.due_date}</span>
+                    <span>{formatDate(selectedInvoice.due_date)}</span>
                   </div>
                 </div>
               </div>
@@ -990,11 +1329,17 @@ const Invoice = () => {
               <div className="invoice-detail-client">
                 <h4>Client Information</h4>
                 <p>
-                  <strong>Name:</strong> {selectedInvoice.client_name}
+                  <strong>Name:</strong>{" "}
+                  {selectedInvoice.client_name || "Anonymous"}
                 </p>
                 <p>
                   <strong>Reason:</strong> {selectedInvoice.reason || "N/A"}
                 </p>
+                {selectedInvoice.cashier_name && (
+                  <p>
+                    <strong>Cashier:</strong> {selectedInvoice.cashier_name}
+                  </p>
+                )}
               </div>
 
               <div className="invoice-detail-items">
@@ -1010,19 +1355,27 @@ const Invoice = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {selectedInvoice.lines.map((line, index) => {
-                      const lineSubtotal =
-                        line.quantity * line.price * (1 - line.discount / 100);
-                      return (
-                        <tr key={index}>
-                          <td>{line.name || line.product_id}</td>
-                          <td>{line.quantity}</td>
-                          <td>{line.price.toFixed(2)} XFA</td>
-                          <td>{line.discount}%</td>
-                          <td>{lineSubtotal.toFixed(2)} XFA</td>
-                        </tr>
-                      );
-                    })}
+                    {selectedInvoice.lines &&
+                      selectedInvoice.lines.map((line, index) => {
+                        const linePrice =
+                          Number.parseFloat(line.unit_price || line.price) || 0;
+                        const lineDiscount =
+                          Number.parseFloat(line.discount) || 0;
+                        const lineQuantity = line.quantity || 0;
+                        const lineSubtotal =
+                          Number.parseFloat(line.line_total) ||
+                          lineQuantity * linePrice * (1 - lineDiscount / 100);
+
+                        return (
+                          <tr key={index}>
+                            <td>{line.product_name || "Unknown Product"}</td>
+                            <td>{lineQuantity}</td>
+                            <td>{linePrice.toFixed(2)} XFA</td>
+                            <td>{lineDiscount}%</td>
+                            <td>{lineSubtotal.toFixed(2)} XFA</td>
+                          </tr>
+                        );
+                      })}
                   </tbody>
                 </table>
               </div>
@@ -1030,35 +1383,59 @@ const Invoice = () => {
               <div className="invoice-detail-totals">
                 <div className="totals-row">
                   <span>Subtotal:</span>
-                  <span>{selectedInvoice.subtotal.toFixed(2)} XFA</span>
+                  <span>
+                    {Number.parseFloat(selectedInvoice.total || 0).toFixed(2)}{" "}
+                    XFA
+                  </span>
                 </div>
                 <div className="totals-row">
-                  <span>Tax ({selectedInvoice.tax}%):</span>
                   <span>
-                    {(
-                      (selectedInvoice.subtotal * selectedInvoice.tax) /
-                      100
-                    ).toFixed(2)}{" "}
+                    Tax ({Number.parseFloat(selectedInvoice.tax || 0)}%):
+                  </span>
+                  <span>
+                    {Number.parseFloat(selectedInvoice.tax_amount || 0).toFixed(
+                      2,
+                    )}{" "}
                     XFA
                   </span>
                 </div>
                 <div className="totals-row total">
                   <span>Total:</span>
-                  <span>{selectedInvoice.total.toFixed(2)} XFA</span>
+                  <span>
+                    {Number.parseFloat(selectedInvoice.total || 0).toFixed(2)}{" "}
+                    XFA
+                  </span>
                 </div>
                 <div className="totals-row">
                   <span>Advance Paid:</span>
-                  <span>{selectedInvoice.advance_paid.toFixed(2)} XFA</span>
+                  <span>
+                    {Number.parseFloat(
+                      selectedInvoice.advance_paid || 0,
+                    ).toFixed(2)}{" "}
+                    XFA
+                  </span>
                 </div>
-                {selectedInvoice.remaining > 0 ? (
+                {Number.parseFloat(selectedInvoice.remaining_amount || 0) >
+                0 ? (
                   <div className="totals-row remaining">
                     <span>Remaining:</span>
-                    <span>{selectedInvoice.remaining.toFixed(2)} XFA</span>
+                    <span>
+                      {Number.parseFloat(
+                        selectedInvoice.remaining_amount || 0,
+                      ).toFixed(2)}{" "}
+                      XFA
+                    </span>
                   </div>
-                ) : selectedInvoice.refund > 0 ? (
+                ) : Number.parseFloat(selectedInvoice.refund_amount || 0) >
+                  0 ? (
                   <div className="totals-row refund">
                     <span>Refund:</span>
-                    <span>{selectedInvoice.refund.toFixed(2)} XFA</span>
+                    <span>
+                      {Number.parseFloat(
+                        selectedInvoice.refund_amount || 0,
+                      ).toFixed(2)}{" "}
+                      XFA
+                    </span>
                   </div>
                 ) : (
                   <div className="totals-row paid">
@@ -1068,60 +1445,71 @@ const Invoice = () => {
                     </span>
                   </div>
                 )}
+                {selectedInvoice.is_credit_settled !== undefined && (
+                  <div className="totals-row">
+                    <span>Credit Settled:</span>
+                    <span>
+                      {selectedInvoice.is_credit_settled ? "Yes" : "No"}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
             <div className="modal-footer">
-              <button className="print-btn" onClick={() => window.print()}>
-                Print Invoice
-              </button>
               <button
-                className="edit-btn"
-                onClick={() => {
-                  const index = invoices.findIndex(
-                    (inv) => inv.id === selectedInvoice.id,
-                  );
-                  if (index !== -1) {
-                    handleEditInvoice(index);
-                    setSelectedInvoice(null);
-                  }
-                }}
+                className="export-pdf-btn"
+                onClick={() => handleExportPDF(selectedInvoice.id)}
+                disabled={isLoading}
               >
-                <Edit size={16} /> Edit Invoice
+                {isLoading ? (
+                  <Loader size={16} className="spin" />
+                ) : (
+                  <>
+                    <FileText size={16} /> Export PDF
+                  </>
+                )}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Confirm Delete Modal */}
-      {confirmDelete !== null && (
+      {/* Confirm Archive Modal */}
+      {confirmArchive !== null && (
         <div className="modal-overlay">
           <div className="modal-content confirm-modal">
             <div className="modal-header">
               <h3>Confirm Delete</h3>
               <button
                 className="close-modal-btn"
-                onClick={() => setConfirmDelete(null)}
+                onClick={() => setConfirmArchive(null)}
               >
                 <X size={20} />
               </button>
             </div>
             <div className="modal-body">
-              <p>
-                Are you sure you want to delete invoice{" "}
-                <strong>{invoices[confirmDelete].id}</strong>?
-              </p>
+              <p>Are you sure you want to delete invoice this invoice?</p>
               <p>This action cannot be undone.</p>
             </div>
             <div className="modal-footer">
               <button
                 className="cancel-btn"
-                onClick={() => setConfirmDelete(null)}
+                onClick={() => setConfirmArchive(null)}
               >
                 Cancel
               </button>
-              <button className="delete-btn" onClick={confirmDeleteInvoice}>
-                <Trash2 size={16} /> Delete Invoice
+              <button
+                className="delete-btn"
+                onClick={confirmArchiveInvoice}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <Loader size={16} className="spin" />
+                ) : (
+                  <>
+                    <Trash2 size={16} /> Delete Invoice
+                  </>
+                )}
               </button>
             </div>
           </div>
