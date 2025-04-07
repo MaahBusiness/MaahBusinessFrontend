@@ -15,7 +15,6 @@ import {
   ShoppingCart,
   AlertCircle,
   Loader,
-  Clock,
 } from "lucide-react";
 import {
   BarChart,
@@ -67,11 +66,7 @@ const Invoice = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [validStatusValues, setValidStatusValues] = useState([
-    "COMPLETED",
-    "CANCELLED",
-    "CREDIT",
-  ]);
+  const [validStatusValues, setValidStatusValues] = useState([]);
 
   // Form state
   const [clientName, setClientName] = useState("");
@@ -194,6 +189,17 @@ const Invoice = () => {
           ? response.data
           : response.data.results || [];
 
+        // Extract valid status values from the invoices
+        const statusValues = new Set();
+        invoiceData.forEach((invoice) => {
+          if (invoice.status) {
+            statusValues.add(invoice.status);
+          }
+        });
+
+        setValidStatusValues(Array.from(statusValues));
+        console.log("Valid status values extracted:", Array.from(statusValues));
+
         setInvoices(invoiceData);
       } catch (error) {
         console.error("Error fetching invoices:", error);
@@ -231,8 +237,11 @@ const Invoice = () => {
     const remaining = total - advancePaid;
     const refund = advancePaid > total ? advancePaid - total : 0;
 
-    // Use "COMPLETED" when fully paid, "CREDIT" when there's a remaining balance
-    const status = remaining > 0 ? "CREDIT" : "COMPLETED";
+    // Determine status based on payment
+    // We'll use "completed" (lowercase) for completed invoices and "pending" (lowercase) for pending ones
+    // This is based on the observation that API might be case-sensitive
+    const status = remaining > 0 ? "pending" : "completed";
+
     return { subtotal, taxAmount, total, remaining, refund, status };
   };
 
@@ -263,7 +272,6 @@ const Invoice = () => {
     }
   };
 
-  // Update a line item
   const updateLine = (index, key, value) => {
     setLines(
       lines.map((line, i) => {
@@ -320,12 +328,6 @@ const Invoice = () => {
       return;
     }
 
-    // If status is CREDIT and reason is empty, set a default reason
-    let finalReason = reason;
-    if (status === "CREDIT" && !reason.trim()) {
-      finalReason = "Credit invoice"; // Set a default reason for CREDIT status
-    }
-
     setIsLoading(true);
 
     try {
@@ -333,10 +335,10 @@ const Invoice = () => {
       const payload = {
         client_name: clientName || "Anonymous", // Default to "Anonymous" if client name is not provided
         tax: tax.toString(),
-        reason: finalReason, // Use the possibly modified reason
+        status: status, // Use lowercase status
+        reason: reason || "", // Make reason optional
         due_date: dueDate || null, // Make due date optional
         advance_paid: advancePaid.toString(),
-        status: status, // Always include the status field with the calculated value
         lines: lines.map((line) => ({
           product_id: line.product_id,
           quantity: line.quantity,
@@ -373,12 +375,25 @@ const Invoice = () => {
         }
 
         // Handle specific API errors
-        if (error.response.data.reason) {
-          setFormError(`Reason error: ${error.response.data.reason}`);
-        } else if (error.response.data.status) {
+        if (error.response.data.status) {
           setFormError(
             `Status error: ${JSON.stringify(error.response.data.status)}`,
           );
+
+          // Try to determine valid status values from the error message
+          if (
+            typeof error.response.data.status === "string" &&
+            error.response.data.status.includes("valid choice")
+          ) {
+            const match = error.response.data.status.match(
+              /"([^"]+)" is not a valid choice/,
+            );
+            if (match) {
+              setFormError(
+                `"${match[1]}" is not a valid status. Please try a different value.`,
+              );
+            }
+          }
         } else if (
           error.response.data.error &&
           error.response.data.error.includes("Invoice.cashier")
@@ -397,6 +412,51 @@ const Invoice = () => {
       } else {
         setFormError("Failed to process invoice. Please try again.");
       }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Try to pay off an invoice debt
+  const handlePayDebt = async (invoiceId, amount) => {
+    if (!isAuthenticated) {
+      showStatusMessage("Authentication required. Please log in.", "error");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const authAxios = getAuthAxios();
+
+      const response = await authAxios.post(
+        "http://localhost:8000/api/v1/invoice/pay-debt/",
+        {
+          invoice_id: invoiceId,
+          amount: amount.toString(),
+        },
+      );
+
+      console.log("Debt payment response:", response.data);
+
+      // Update the invoice in the list
+      setInvoices(
+        invoices.map((inv) =>
+          inv.id === invoiceId ? { ...inv, ...response.data } : inv,
+        ),
+      );
+
+      showStatusMessage("Payment processed successfully");
+
+      // If we're viewing this invoice, update the selected invoice
+      if (selectedInvoice && selectedInvoice.id === invoiceId) {
+        setSelectedInvoice({ ...selectedInvoice, ...response.data });
+      }
+    } catch (error) {
+      console.error("Error paying debt:", error);
+      showStatusMessage(
+        "Failed to process payment. Please try again.",
+        "error",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -467,7 +527,6 @@ const Invoice = () => {
         `http://localhost:8000/api/v1/archive/archive-invoice/`,
         {
           invoice_id: invoiceId,
-          status: "CANCELLED", // Set status to CANCELLED when archiving
         },
       );
 
@@ -548,16 +607,20 @@ const Invoice = () => {
     // Status distribution
     const statusData = [
       {
-        name: "COMPLETED",
-        value: invoices.filter((inv) => inv.status === "COMPLETED").length,
+        name: "Completed",
+        value: invoices.filter(
+          (inv) =>
+            inv.status?.toLowerCase() === "completed" ||
+            inv.status?.toLowerCase() === "complete",
+        ).length,
       },
       {
-        name: "CREDIT",
-        value: invoices.filter((inv) => inv.status === "CREDIT").length,
-      },
-      {
-        name: "CANCELLED",
-        value: invoices.filter((inv) => inv.status === "CANCELLED").length,
+        name: "Pending",
+        value: invoices.filter(
+          (inv) =>
+            inv.status?.toLowerCase() === "pending" ||
+            inv.status?.toLowerCase() === "open",
+        ).length,
       },
     ];
 
@@ -597,7 +660,8 @@ const Invoice = () => {
   const totalPending = invoices.reduce(
     (sum, invoice) =>
       sum +
-      (invoice.status === "CREDIT"
+      (invoice.status?.toLowerCase() === "pending" ||
+      invoice.status?.toLowerCase() === "open"
         ? Number.parseFloat(invoice.remaining_amount) || 0
         : 0),
     0,
@@ -614,17 +678,6 @@ const Invoice = () => {
     try {
       const date = new Date(dateString);
       return date.toLocaleDateString();
-    } catch (error) {
-      return dateString;
-    }
-  };
-
-  // Format date and time for display
-  const formatDateTime = (dateString) => {
-    if (!dateString) return "N/A";
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleString();
     } catch (error) {
       return dateString;
     }
@@ -797,10 +850,6 @@ const Invoice = () => {
                     <div className="invoice-date">
                       <Calendar size={16} />
                       <span>Due: {formatDate(invoice.due_date)}</span>
-                    </div>
-                    <div className="invoice-date">
-                      <Clock size={16} />
-                      <span>Created: {formatDateTime(invoice.created_at)}</span>
                     </div>
                     <div className="invoice-amount">
                       <DollarSign size={16} />
@@ -1021,12 +1070,6 @@ const Invoice = () => {
                       value={reason}
                       onChange={(e) => setReason(e.target.value)}
                     />
-                    {calculateTotals().status === "CREDIT" && (
-                      <small style={fieldHintStyle}>
-                        A default reason will be used if left blank for credit
-                        invoices
-                      </small>
-                    )}
                   </div>
 
                   <div className="form-group">
@@ -1317,7 +1360,7 @@ const Invoice = () => {
                 <div className="invoice-detail-dates">
                   <div className="date-item">
                     <span>Created:</span>
-                    <span>{formatDateTime(selectedInvoice.created_at)}</span>
+                    <span>{formatDate(selectedInvoice.created_at)}</span>
                   </div>
                   <div className="date-item">
                     <span>Due:</span>

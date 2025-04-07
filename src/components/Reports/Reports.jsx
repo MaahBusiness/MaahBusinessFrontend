@@ -1538,7 +1538,7 @@ const Reports = () => {
               <div className="report-modal-footer">
                 <button
                   type="button"
-                  className="cancel-btn"
+                  className="cancel-btnn"
                   onClick={closeReportModal}
                 >
                   Cancel

@@ -176,6 +176,10 @@
 }
 .logout-button {
   background: #494cf3;
+  padding: 1em 1.5em;
+  border-radius: 6px;
+  width: 100%;
+  margin: 1em auto;
   color: #fff;
 }
 

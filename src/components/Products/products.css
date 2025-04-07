@@ -123,11 +123,6 @@
   font-size: 0.875rem;
 }
 
-.view-btn:hover {
-  background-color: #333;
-  color: #f8f9fa;
-}
-
 .view-btn.active {
   background-color: #6366f1;
   color: white;
@@ -176,16 +171,6 @@
   transition: opacity 0.3s ease;
 }
 
-.product-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-  border-color: #6366f1;
-}
-
-.product-card:hover::before {
-  opacity: 1;
-}
-
 .products-display.list .product-card {
   flex-direction: row;
   height: auto;
@@ -209,10 +194,6 @@
   height: 100%;
   object-fit: cover;
   transition: transform 0.3s ease;
-}
-
-.product-card:hover .product-image {
-  transform: scale(1.05);
 }
 
 .promotion-badge {
@@ -352,19 +333,9 @@
   color: white;
 }
 
-.action-btn.edit:hover {
-  background-color: #4338ca;
-  transform: translateY(-2px);
-}
-
 .action-btn.delete {
   background-color: rgba(239, 68, 68, 0.1);
   color: #ef4444;
-}
-
-.action-btn.delete:hover {
-  background-color: rgba(239, 68, 68, 0.2);
-  transform: translateY(-2px);
 }
 
 .no-products {
@@ -506,11 +477,6 @@
   justify-content: center;
   border-radius: 0.375rem;
   transition: all 0.2s ease;
-}
-
-.close-modal-btn:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: #f8f9fa;
 }
 
 /* Form Styles */
@@ -663,10 +629,6 @@
   transition: all 0.3s ease;
 }
 
-.image-upload-container:hover {
-  border-color: #6366f1;
-}
-
 .upload-label {
   display: block;
   width: 100%;
@@ -717,10 +679,6 @@
   transition: background-color 0.2s ease;
 }
 
-.remove-image:hover {
-  background-color: rgba(239, 71, 111, 0.8);
-}
-
 /* Promotion Section */
 .promotion-section {
   grid-column: span 2;
@@ -766,21 +724,10 @@
   border: 1px solid #a0a0a0;
 }
 
-.cancel-btn:hover {
-  background-color: rgba(160, 160, 160, 0.1);
-  transform: translateY(-2px);
-}
-
 .create-btn {
   background-color: #6366f1;
   color: white;
   box-shadow: 0 4px 6px rgba(99, 102, 241, 0.2);
-}
-
-.create-btn:hover {
-  background-color: #4f46e5;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(99, 102, 241, 0.3);
 }
 
 .create-btn:active {
@@ -1208,5 +1155,101 @@
   .create-btn {
     padding: 0.6rem 1rem;
     font-size: 0.8rem;
+  }
+}
+
+/* Expiry Filter Styles */
+.expiry-filter-container {
+  display: flex;
+  flex-direction: column;
+  margin: 0.5rem 0;
+}
+
+.filter-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background-color: #252525;
+  color: #a0a0a0;
+  padding: 0.5rem 1rem;
+  border: 1px solid #333;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.875rem;
+}
+
+.expiry-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 10px;
+  background-color: #252525;
+  border: 1px solid #333;
+  border-radius: 0.5rem;
+  animation: fadeIn 0.3s ease;
+}
+
+.date-input-container {
+  width: 100%;
+}
+
+.expiry-date-input {
+  width: 100%;
+  padding: 8px;
+  background-color: #333;
+  border: 1px solid #555;
+  border-radius: 4px;
+  color: #f8f9fa;
+  font-size: 14px;
+}
+
+.filter-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.apply-filter-btn,
+.clear-filter-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+}
+
+.apply-filter-btn {
+  background-color: #6366f1;
+  color: white;
+}
+
+.apply-filter-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.clear-filter-btn {
+  background-color: #333;
+  color: #a0a0a0;
+}
+
+.clear-filter-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

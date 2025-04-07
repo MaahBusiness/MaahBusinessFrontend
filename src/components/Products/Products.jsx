@@ -1,5 +1,6 @@
 "use client";
 
+import No_image from "../../assets/No_IMG.jpg";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import {
@@ -15,7 +16,6 @@ import {
   Check,
   Loader,
   Calendar,
-  Eye,
 } from "lucide-react";
 import "./products.css";
 
@@ -137,21 +137,183 @@ const Product = () => {
     }
   };
 
-  // Function to fetch products by expiry date
+  // Update the fetchProductsByExpiryDate function to properly filter by the exact date
   const fetchProductsByExpiryDate = async (date) => {
     setIsLoading(true);
     try {
-      const response = await axios.get(
-        `${apiBaseUrl}/expiry_date/?expiry_date=${date}`,
-      );
+      // Format the date as YYYY-MM-DD for the API
+      const formattedDate = new Date(date).toISOString().split("T")[0];
+      console.log(`Fetching products with expiry date: ${formattedDate}`);
+
+      // Make the API request
+      const response = await axios.get(`${apiBaseUrl}/expiry_date/`, {
+        params: { expiry_date: formattedDate },
+      });
+
+      console.log("Expiry date filter response:", response.data);
+
+      // Extract products from the response
+      const responseData = response.data;
+      const productsToDisplay = [];
+
+      // Function to check if a product's expiry date matches our selected date
+      const matchesSelectedDate = (product) => {
+        if (!product.expiry_date) return false;
+
+        // Convert both dates to YYYY-MM-DD format for comparison
+        const productExpiryDate = new Date(product.expiry_date)
+          .toISOString()
+          .split("T")[0];
+        return productExpiryDate === formattedDate;
+      };
+
+      // Process expired products if they exist
+      if (
+        responseData.expired_products &&
+        Array.isArray(responseData.expired_products)
+      ) {
+        // Filter only products with matching expiry date
+        const matchingExpiredProducts =
+          responseData.expired_products.filter(matchesSelectedDate);
+
+        // Transform each product into the expected format
+        const formattedExpiredProducts = matchingExpiredProducts.map(
+          (product) => ({
+            id: product.id,
+            product: product,
+            category: { id: product.category_id, name: "Loading..." },
+            subcategory: product.subcategory_id
+              ? { id: product.subcategory_id, name: "Loading..." }
+              : null,
+          }),
+        );
+
+        productsToDisplay.push(...formattedExpiredProducts);
+      }
+
+      // Process near expiry products if they exist
+      if (
+        responseData.near_expiry_products &&
+        Array.isArray(responseData.near_expiry_products)
+      ) {
+        // Filter only products with matching expiry date
+        const matchingNearExpiryProducts =
+          responseData.near_expiry_products.filter(matchesSelectedDate);
+
+        // Transform each product into the expected format
+        const formattedNearExpiryProducts = matchingNearExpiryProducts.map(
+          (product) => ({
+            id: product.id,
+            product: product,
+            category: { id: product.category_id, name: "Loading..." },
+            subcategory: product.subcategory_id
+              ? { id: product.subcategory_id, name: "Loading..." }
+              : null,
+          }),
+        );
+
+        productsToDisplay.push(...formattedNearExpiryProducts);
+      }
+
       console.log(
-        "Products by expiry date fetched successfully",
-        response.data.results,
+        `Found ${productsToDisplay.length} products matching expiry date: ${formattedDate}`,
       );
-      setProducts(response.data.results || []);
+
+      // If we have products, try to fetch their category names
+      if (productsToDisplay.length > 0) {
+        try {
+          // Fetch categories to get names
+          const categoriesResponse = await axios.get(
+            `${categoryApiBaseUrl}/categories/`,
+          );
+          const categoriesData = categoriesResponse.data.results || [];
+
+          // Create a map of category IDs to names for quick lookup
+          const categoryMap = {};
+          categoriesData.forEach((category) => {
+            categoryMap[category.id] = category.name;
+          });
+
+          // Update the category names in our products
+          productsToDisplay.forEach((item) => {
+            if (
+              item.category &&
+              item.category.id &&
+              categoryMap[item.category.id]
+            ) {
+              item.category.name = categoryMap[item.category.id];
+            }
+          });
+
+          // Also try to fetch subcategory names if needed
+          const subcategoryIds = productsToDisplay
+            .filter((item) => item.subcategory && item.subcategory.id)
+            .map((item) => item.subcategory.id);
+
+          if (subcategoryIds.length > 0) {
+            const subcategoriesResponse = await axios.get(
+              `${categoryApiBaseUrl}/subcategories/`,
+            );
+            const subcategoriesData = subcategoriesResponse.data.results || [];
+
+            // Create a map of subcategory IDs to names
+            const subcategoryMap = {};
+            subcategoriesData.forEach((subcategory) => {
+              subcategoryMap[subcategory.id] = subcategory.name;
+            });
+
+            // Update the subcategory names
+            productsToDisplay.forEach((item) => {
+              if (
+                item.subcategory &&
+                item.subcategory.id &&
+                subcategoryMap[item.subcategory.id]
+              ) {
+                item.subcategory.name = subcategoryMap[item.subcategory.id];
+              }
+            });
+          }
+        } catch (error) {
+          console.error("Error fetching category/subcategory names:", error);
+          // Continue with the products we have, even without category names
+        }
+      }
+
+      // Set the products state with our filtered products
+      setProducts(productsToDisplay);
+
+      // Show a status message with the count of products found
+      const statusElement = document.createElement("div");
+      statusElement.className = "status-message info";
+      statusElement.textContent = `Found ${productsToDisplay.length} product${productsToDisplay.length !== 1 ? "s" : ""} with expiry date: ${new Date(date).toLocaleDateString()}`;
+      document.body.appendChild(statusElement);
+
+      // Remove the status message after 3 seconds
+      setTimeout(() => {
+        if (document.body.contains(statusElement)) {
+          document.body.removeChild(statusElement);
+        }
+      }, 3000);
     } catch (error) {
       console.error("Error fetching products by expiry date:", error);
+      if (error.response) {
+        console.error("Error response:", error.response.data);
+        console.error("Error status:", error.response.status);
+      }
       setProducts([]);
+
+      // Show error message
+      const statusElement = document.createElement("div");
+      statusElement.className = "status-message error";
+      statusElement.textContent = "Error fetching products by expiry date";
+      document.body.appendChild(statusElement);
+
+      // Remove the status message after 3 seconds
+      setTimeout(() => {
+        if (document.body.contains(statusElement)) {
+          document.body.removeChild(statusElement);
+        }
+      }, 3000);
     } finally {
       setIsLoading(false);
     }
@@ -211,15 +373,45 @@ const Product = () => {
     setExpiryDate(e.target.value);
   };
 
+  // Update the handleExpiryDateFilter function to provide better feedback
   const handleExpiryDateFilter = () => {
     if (expiryDate) {
+      console.log(`Applying expiry date filter: ${expiryDate}`);
       fetchProductsByExpiryDate(expiryDate);
+
+      // Add a status message to inform the user
+      const statusElement = document.createElement("div");
+      statusElement.className = "status-message info";
+      statusElement.textContent = `Filtering products by expiry date: ${new Date(expiryDate).toLocaleDateString()}`;
+      document.body.appendChild(statusElement);
+
+      // Remove the status message after 3 seconds
+      setTimeout(() => {
+        if (document.body.contains(statusElement)) {
+          document.body.removeChild(statusElement);
+        }
+      }, 3000);
     }
   };
 
+  // Update the handleClearExpiryFilter function to provide feedback
   const handleClearExpiryFilter = () => {
     setExpiryDate("");
+    console.log("Clearing expiry date filter");
     fetchProducts();
+
+    // Add a status message to inform the user
+    const statusElement = document.createElement("div");
+    statusElement.className = "status-message info";
+    statusElement.textContent = "Cleared expiry date filter";
+    document.body.appendChild(statusElement);
+
+    // Remove the status message after 3 seconds
+    setTimeout(() => {
+      if (document.body.contains(statusElement)) {
+        document.body.removeChild(statusElement);
+      }
+    }, 3000);
   };
 
   const handleSubmit = async (e) => {
@@ -680,6 +872,44 @@ const Product = () => {
         </div>
 
         {/* Expiry Date Filter */}
+        <div className="expiry-filter-container">
+          <button
+            className="filter-toggle-btn"
+            onClick={() => setShowExpiryFilter(!showExpiryFilter)}
+          >
+            <Calendar size={18} />{" "}
+            {showExpiryFilter ? "Hide Expiry Filter" : "Filter by Expiry"}
+          </button>
+
+          {showExpiryFilter && (
+            <div className="expiry-filter">
+              <div className="date-input-container">
+                <input
+                  type="date"
+                  value={expiryDate}
+                  onChange={handleExpiryDateChange}
+                  className="expiry-date-input"
+                />
+              </div>
+              <div className="filter-actions">
+                <button
+                  className="apply-filter-btn"
+                  onClick={handleExpiryDateFilter}
+                  disabled={!expiryDate}
+                >
+                  <Search size={14} /> Filter
+                </button>
+                <button
+                  className="clear-filter-btn"
+                  onClick={handleClearExpiryFilter}
+                  disabled={!expiryDate}
+                >
+                  <X size={14} /> Clear
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
 
         <div className="view-controls">
           <button
@@ -730,12 +960,12 @@ const Product = () => {
               >
                 <div className="product-image-container">
                   <img
-                    src={product.image || "/placeholder.svg"}
+                    src={product.image || No_image}
                     alt={product.name || "Product"}
                     className="product-image"
                     onError={(e) => {
                       e.target.onerror = null;
-                      e.target.src = "/placeholder.svg";
+                      e.target.src = No_image;
                     }}
                   />
                   {product.on_promotion && (
@@ -786,10 +1016,25 @@ const Product = () => {
             );
           })
         ) : (
-          <div className="no-products">
-            <p>
-              No products found. Try adjusting your search or add a new product.
-            </p>
+          <div className={`no-products ${expiryDate ? "filtered" : ""}`}>
+            {expiryDate ? (
+              <>
+                <p>
+                  No products found with expiry date:{" "}
+                  <span className="filter-info">
+                    {new Date(expiryDate).toLocaleDateString()}
+                  </span>
+                </p>
+                <button onClick={handleClearExpiryFilter}>
+                  <X size={14} /> Clear Filter
+                </button>
+              </>
+            ) : (
+              <p>
+                No products found. Try adjusting your search or add a new
+                product.
+              </p>
+            )}
           </div>
         )}
       </div>
@@ -1002,7 +1247,7 @@ const Product = () => {
                       {imagePreview ? (
                         <div className="image-preview">
                           <img
-                            src={imagePreview || "/placeholder.svg"}
+                            src={imagePreview || No_image}
                             alt="Product preview"
                           />
                           <button
@@ -1143,11 +1388,11 @@ const Product = () => {
               <div className="product-details-grid">
                 <div className="product-details-image">
                   <img
-                    src={selectedProduct.image || "/placeholder.svg"}
+                    src={selectedProduct.image || No_image}
                     alt={selectedProduct.name || "Product"}
                     onError={(e) => {
                       e.target.onerror = null;
-                      e.target.src = "/placeholder.svg";
+                      e.target.src = No_image;
                     }}
                   />
                   {selectedProduct.on_promotion && (
