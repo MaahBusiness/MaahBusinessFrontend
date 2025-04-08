@@ -34,6 +34,7 @@ import {
   Eye,
   EyeOff,
   Users,
+  Calendar,
 } from "lucide-react";
 import "./dashboard.css";
 
@@ -41,16 +42,33 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [invoices, setInvoices] = useState([]);
   const [products, setProducts] = useState([]);
-  const [totalAmount, setTotalAmount] = useState(45231.89);
-  const [totalInvoices, setTotalInvoices] = useState(573);
-  const [totalProducts, setTotalProducts] = useState(1234);
   const [timePeriod, setTimePeriod] = useState("monthly");
-  const [totalCustomers, setTotalCustomers] = useState(2543);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // State for API data
+  const [inventoryData, setInventoryData] = useState({
+    stockStatus: [],
+    stockData: [],
+    alerts: { low_stock: 0, out_of_stock: 0, overstocked: 0 },
+  });
+  const [productPerformanceData, setProductPerformanceData] = useState([]);
+  const [salesDataState, setSalesData] = useState({
+    salesOverTime: [],
+    recentSales: [],
+    salesByCategory: [],
+    monthlyRevenue: [],
+  });
+  const [dashboardStats, setDashboardStats] = useState({
+    revenue: { value: "0", change: "0", change_percent: "0" },
+    orders: { value: "0", change: "0", change_percent: "0" },
+    averageOrderValue: { value: "0", change: "0", change_percent: "0" },
+    customers: { value: "0", change: "0", change_percent: "0" },
+  });
+  const [topSellingProducts, setTopSellingProducts] = useState([]);
 
   // User management state
   const [showUserModal, setShowUserModal] = useState(false);
   const [users, setUsers] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [editingUser, setEditingUser] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -146,38 +164,61 @@ const Dashboard = () => {
         if (response.data && response.data.role) {
           setCurrentUserRole(response.data.role);
           console.log("Current user role set to:", response.data.role);
+          return;
         }
       } catch (authError) {
         console.error("Error fetching from /auth/user/ endpoint:", authError);
-
-        // As a fallback, try to get users and find the current user
-        try {
-          const usersResponse = await authAxios.get(
-            "http://localhost:8000/api/v1/users/",
-          );
-
-          // Store debug info
-          setDebugInfo((prev) => ({
-            ...prev,
-            endpoint: "/users/",
-            status: usersResponse.status,
-            usersCount: usersResponse.data.length,
-          }));
-
-          // Find a user with manager role and assume it's the current user (temporary workaround)
-          const managerUser = usersResponse.data.find(
-            (user) => user.role === "manager",
-          );
-          if (managerUser) {
-            setCurrentUserRole("manager");
-            console.log(
-              "Assuming current user is a manager based on users list",
-            );
-          }
-        } catch (usersError) {
-          console.error("Error fetching users list:", usersError);
-        }
       }
+
+      // If both previous attempts fail, try to get user info from user-info endpoint
+      try {
+        const userInfoResponse = await authAxios.get(
+          "http://localhost:8000/api/v1/user-info/",
+        );
+        console.log("User info data:", userInfoResponse.data);
+
+        // Store debug info
+        setDebugInfo((prev) => ({
+          ...prev,
+          endpoint: "/user-info/",
+          status: userInfoResponse.status,
+          data: userInfoResponse.data,
+        }));
+
+        if (userInfoResponse.data && userInfoResponse.data.role) {
+          setCurrentUserRole(userInfoResponse.data.role);
+          console.log("Current user role set to:", userInfoResponse.data.role);
+          return;
+        }
+      } catch (userInfoError) {
+        console.error(
+          "Error fetching from /user-info/ endpoint:",
+          userInfoError,
+        );
+      }
+
+      // As a last resort, try to get the user from localStorage
+      try {
+        const userData = localStorage.getItem("user");
+        if (userData) {
+          const parsedUser = JSON.parse(userData);
+          if (parsedUser && parsedUser.role) {
+            setCurrentUserRole(parsedUser.role);
+            console.log(
+              "Current user role set from localStorage:",
+              parsedUser.role,
+            );
+            return;
+          }
+        }
+      } catch (localStorageError) {
+        console.error(
+          "Error getting user from localStorage:",
+          localStorageError,
+        );
+      }
+
+      console.warn("Could not determine user role from any source");
     } catch (err) {
       console.error("Error fetching current user:", err);
       if (err.response && err.response.status === 401) {
@@ -228,7 +269,6 @@ const Dashboard = () => {
       }));
 
       setUsers(processedUsers);
-      setTotalCustomers(processedUsers.length);
     } catch (err) {
       console.error("Error fetching users:", err);
 
@@ -386,7 +426,6 @@ const Dashboard = () => {
 
       // Remove user from list
       setUsers(users.filter((u) => u.id !== userId));
-      setTotalCustomers((prev) => prev - 1);
       setConfirmDelete(null);
     } catch (err) {
       console.error("Error deleting user:", err);
@@ -441,82 +480,236 @@ const Dashboard = () => {
       user.phone_number?.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
-  // Update the salesData array to have more realistic values that match the monthly revenue
-  const salesData = [
-    { name: "Jan", sales: 4000, target: 5000 },
-    { name: "Feb", sales: 3000, target: 5000 },
-    { name: "Mar", sales: 5000, target: 5000 },
-    { name: "Apr", sales: 4500, target: 5000 },
-    { name: "May", sales: 6000, target: 5000 },
-    { name: "Jun", sales: 5500, target: 5000 },
-    { name: "Jul", sales: 7000, target: 5000 },
-  ];
+  // Functions to fetch data from the APIs
+  const fetchInventoryData = async () => {
+    try {
+      setIsLoading(true);
+      const authAxios = getAuthAxios();
+      const response = await authAxios.get(
+        "http://localhost:8000/api/v1/dashboard/inventory/",
+      );
+      setInventoryData(response.data);
+      console.log("Inventory data:", response.data);
+    } catch (err) {
+      console.error("Error fetching inventory data:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  const productPerformance = [
-    { name: "Product A", value: 2346, fill: "#FF6384" },
-    { name: "Product C", value: 2050, fill: "#FFCE56" },
-    { name: "Product D", value: 1500, fill: "#4BC0C0" },
-    { name: "Product B", value: 1360, fill: "#36A2EB" },
-    { name: "Product E", value: 1200, fill: "#9966FF" },
-  ].sort((a, b) => b.value - a.value);
+  const fetchProductsData = async () => {
+    try {
+      setIsLoading(true);
+      const authAxios = getAuthAxios();
+      const response = await authAxios.get(
+        `http://localhost:8000/api/v1/dashboard/products/?period=${timePeriod}`,
+      );
+      setProductPerformanceData(response.data);
+      console.log("Product performance data:", response.data);
+    } catch (err) {
+      console.error("Error fetching product performance data:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  const stockStatus = [
-    { name: "In Stock", value: 65, fill: "#4CAF50" },
-    { name: "Low Stock", value: 25, fill: "#FFC107" },
-    { name: "Out of Stock", value: 10, fill: "#F44336" },
-  ].sort((a, b) => b.value - a.value);
+  const fetchSalesData = async () => {
+    try {
+      setIsLoading(true);
+      const authAxios = getAuthAxios();
+      const response = await authAxios.get(
+        `http://localhost:8000/api/v1/dashboard/sales/?period=${timePeriod}`,
+      );
+      setSalesData(response.data);
+      console.log("Sales data:", response.data);
+    } catch (err) {
+      console.error("Error fetching sales data:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  // Update the recentSales array to use XFA currency to match the rest of the dashboard
-  const recentSales = [
-    {
-      name: "John Doe",
-      amount: "250.00",
-      date: "2 hours ago",
-      avatar: "/placeholder.svg?height=40&width=40",
-    },
-    {
-      name: "Jane Smith",
-      amount: "12,050.00",
-      date: "5 hours ago",
-      avatar: "/placeholder.svg?height=40&width=40",
-    },
-    {
-      name: "Bob Johnson",
-      amount: "7,520.00",
-      date: "1 day ago",
-      avatar: "/placeholder.svg?height=40&width=40",
-    },
-  ];
+  const fetchDashboardStats = async () => {
+    try {
+      setIsLoading(true);
+      const authAxios = getAuthAxios();
+      const response = await authAxios.get(
+        `http://localhost:8000/api/v1/dashboard/stats/?period=${timePeriod}`,
+      );
+      setDashboardStats(response.data);
+      console.log("Dashboard stats:", response.data);
+    } catch (err) {
+      console.error("Error fetching dashboard stats:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  // Update the topProducts array to use XFA currency and format numbers properly
-  const topProducts = [
-    { name: "Product A", sold: 123, revenue: "2,460.00", color: "#FF6384" },
-    { name: "Product C", sold: 98, revenue: "1,950.00", color: "#FFCE56" },
-    { name: "Product B", sold: 75, revenue: "1,360.00", color: "#36A2EB" },
-  ].sort((a, b) => b.sold - a.sold);
+  // Fetch top selling products from invoices
+  const fetchTopSellingProducts = async () => {
+    try {
+      setIsLoading(true);
+      const authAxios = getAuthAxios();
 
-  const monthlyRevenue = [
-    { month: "Jan", revenue: 4000 },
-    { month: "Feb", revenue: 3000 },
-    { month: "Mar", revenue: 5000 },
-    { month: "Apr", revenue: 4500 },
-    { month: "May", revenue: 6000 },
-    { month: "Jun", revenue: 5500 },
-    { month: "Jul", revenue: 7000 },
-  ].sort((a, b) => b.revenue - a.revenue);
+      // Get invoices with line items
+      const response = await authAxios.get(
+        "http://localhost:8000/api/v1/invoice/invoices/",
+      );
 
-  const salesByCategory = [
-    { name: "Electronics", value: 70, fill: "#FF6384" },
-    { name: "Clothing", value: 50, fill: "#36A2EB" },
-    { name: "Home", value: 40, fill: "#FFCE56" },
-    { name: "Sports", value: 30, fill: "#4BC0C0" },
-    { name: "Books", value: 20, fill: "#9966FF" },
-  ].sort((a, b) => b.value - a.value);
+      // Extract all line items from invoices
+      let allLineItems = [];
+      if (response.data && response.data.results) {
+        response.data.results.forEach((invoice) => {
+          if (invoice.lines && Array.isArray(invoice.lines)) {
+            allLineItems = [...allLineItems, ...invoice.lines];
+          }
+        });
+      }
+
+      // Count product occurrences and total quantities
+      const productCounts = {};
+      const productRevenue = {};
+
+      allLineItems.forEach((line) => {
+        const productId = line.product_id;
+        const productName = line.product_name || "Unknown Product";
+        const quantity = Number.parseInt(line.quantity) || 0;
+        const price = Number.parseFloat(line.unit_price || line.price || 0);
+        const lineTotal =
+          quantity * price * (1 - Number.parseFloat(line.discount || 0) / 100);
+
+        if (!productCounts[productId]) {
+          productCounts[productId] = {
+            id: productId,
+            name: productName,
+            quantity: 0,
+            revenue: 0,
+          };
+        }
+
+        productCounts[productId].quantity += quantity;
+        productCounts[productId].revenue += lineTotal;
+      });
+
+      // Convert to array and sort by quantity
+      const topProducts = Object.values(productCounts)
+        .sort((a, b) => b.quantity - a.quantity)
+        .slice(0, 5)
+        .map((product, index) => ({
+          ...product,
+          color: ["#FF6384", "#FFCE56", "#4BC0C0", "#36A2EB", "#9966FF"][
+            index % 5
+          ],
+        }));
+
+      setTopSellingProducts(topProducts);
+      console.log("Top selling products:", topProducts);
+    } catch (err) {
+      console.error("Error fetching top selling products:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Add a useEffect to fetch data when the component mounts or when timePeriod changes
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchInventoryData();
+      fetchProductsData();
+      fetchSalesData();
+      fetchDashboardStats();
+      fetchTopSellingProducts();
+    }
+  }, [isAuthenticated, timePeriod]);
+
+  // Prepare chart data from API responses
+  const stockStatus =
+    inventoryData.stockStatus.length > 0
+      ? inventoryData.stockStatus.map((item) => ({
+          name: item.name,
+          value: Number(item.value),
+          fill: item.name.toLowerCase().includes("in stock")
+            ? "#4CAF50"
+            : item.name.toLowerCase().includes("low stock")
+              ? "#FFC107"
+              : "#F44336",
+        }))
+      : [];
+
+  const productPerformance =
+    productPerformanceData.length > 0
+      ? productPerformanceData
+          .map((item, index) => ({
+            name: item.name,
+            value: Number(item.value),
+            fill: ["#FF6384", "#FFCE56", "#4BC0C0", "#36A2EB", "#9966FF"][
+              index % 5
+            ],
+          }))
+          .sort((a, b) => b.value - a.value)
+      : [];
+
+  const salesChartData =
+    salesDataState.salesOverTime && salesDataState.salesOverTime.length > 0
+      ? salesDataState.salesOverTime.map((item) => ({
+          name: item.period,
+          sales: Number(item.sales),
+          target: Number(item.target),
+          profit: Number(item.profit),
+          expenses: Number(item.expenses),
+        }))
+      : [];
+
+  const recentSalesData =
+    salesDataState.recentSales && salesDataState.recentSales.length > 0
+      ? salesDataState.recentSales.map((sale) => ({
+          name: sale.customerName,
+          amount: sale.amount,
+          date: sale.date,
+          avatar: "/placeholder.svg?height=40&width=40",
+        }))
+      : [];
+
+  const salesByCategoryData =
+    salesDataState.salesByCategory && salesDataState.salesByCategory.length > 0
+      ? salesDataState.salesByCategory
+          .map((category, index) => ({
+            name: category.name,
+            value: Number(category.value),
+            fill: ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF"][
+              index % 5
+            ],
+          }))
+          .sort((a, b) => b.value - a.value)
+      : [];
+
+  const monthlyRevenueData =
+    salesDataState.monthlyRevenue && salesDataState.monthlyRevenue.length > 0
+      ? salesDataState.monthlyRevenue.map((item) => ({
+          month: item.month,
+          revenue: Number(item.revenue),
+        }))
+      : [];
 
   return (
     <div className="dashboard">
       <div className="dashboard-header">
-        <h2>Dashboard</h2>
+        <div className="title-section">
+          <h2>Dashboard</h2>
+          <div className="period-filter">
+            <Calendar size={16} />
+            <select
+              value={timePeriod}
+              onChange={(e) => setTimePeriod(e.target.value)}
+              className="period-selector"
+            >
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+              <option value="yearly">Yearly</option>
+            </select>
+          </div>
+        </div>
         <div className="dashboard-actions">
           {currentUserRole && (
             <div className="role-indicator">
@@ -540,171 +733,302 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {isLoading && (
+        <div className="loading-overlay">
+          <Loader size={40} className="spin" />
+          <p>Loading dashboard data...</p>
+        </div>
+      )}
+
       <div className="dashboard-cards">
         <div className="card">
           <h3>Total Revenue</h3>
-          <p className="card-value">XFA {totalAmount.toLocaleString()}</p>
+          <p className="card-value">
+            XFA {Number(dashboardStats.revenue.value).toLocaleString()}
+          </p>
+          <div className="stat-change">
+            <span
+              className={
+                Number(dashboardStats.revenue.change_percent) >= 0
+                  ? "positive"
+                  : "negative"
+              }
+            >
+              {Number(dashboardStats.revenue.change_percent) >= 0 ? "+" : ""}
+              {Number(dashboardStats.revenue.change_percent).toFixed(1)}%
+            </span>
+            <span className="period">from last {timePeriod}</span>
+          </div>
         </div>
         <div className="card">
-          <h3>Products in Stock</h3>
-          <p className="card-value">{totalProducts.toLocaleString()}</p>
+          <h3>Orders</h3>
+          <p className="card-value">
+            {Number(dashboardStats.orders.value).toLocaleString()}
+          </p>
+          <div className="stat-change">
+            <span
+              className={
+                Number(dashboardStats.orders.change_percent) >= 0
+                  ? "positive"
+                  : "negative"
+              }
+            >
+              {Number(dashboardStats.orders.change_percent) >= 0 ? "+" : ""}
+              {Number(dashboardStats.orders.change_percent).toFixed(1)}%
+            </span>
+            <span className="period">from last {timePeriod}</span>
+          </div>
         </div>
         <div className="card">
-          <h3>Sales</h3>
-          <p className="card-value">+{totalInvoices.toLocaleString()}</p>
+          <h3>Average Order Value</h3>
+          <p className="card-value">
+            XFA{" "}
+            {Number(dashboardStats.averageOrderValue.value).toLocaleString()}
+          </p>
+          <div className="stat-change">
+            <span
+              className={
+                Number(dashboardStats.averageOrderValue.change_percent) >= 0
+                  ? "positive"
+                  : "negative"
+              }
+            >
+              {Number(dashboardStats.averageOrderValue.change_percent) >= 0
+                ? "+"
+                : ""}
+              {Number(dashboardStats.averageOrderValue.change_percent).toFixed(
+                1,
+              )}
+              %
+            </span>
+            <span className="period">from last {timePeriod}</span>
+          </div>
         </div>
         <div className="card">
-          <h3>Total Customers</h3>
-          <p className="card-value">{totalCustomers.toLocaleString()}</p>
+          <h3>Customers</h3>
+          <p className="card-value">
+            {Number(dashboardStats.customers.value).toLocaleString()}
+          </p>
+          <div className="stat-change">
+            <span
+              className={
+                Number(dashboardStats.customers.change_percent) >= 0
+                  ? "positive"
+                  : "negative"
+              }
+            >
+              {Number(dashboardStats.customers.change_percent) >= 0 ? "+" : ""}
+              {Number(dashboardStats.customers.change_percent).toFixed(1)}%
+            </span>
+            <span className="period">from last {timePeriod}</span>
+          </div>
         </div>
       </div>
 
       <div className="charts-container">
         <div className="chart">
           <h3>Sales Performance</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={salesData}>
-              <defs>
-                <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#FF6384" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#FF6384" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="colorTarget" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#36A2EB" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#36A2EB" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis dataKey="name" stroke="#D1D5DB" />
-              <YAxis stroke="#D1D5DB" />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "#1F2937",
-                  border: "none",
-                  borderRadius: "4px",
-                }}
-                itemStyle={{ color: "#D1D5DB" }}
-              />
-              <Legend wrapperStyle={{ color: "#D1D5DB" }} />
-              <Area
-                type="monotone"
-                dataKey="sales"
-                stroke="#FF6384"
-                fillOpacity={1}
-                fill="url(#colorSales)"
-                name="Actual Sales"
-              />
-              <Area
-                type="monotone"
-                dataKey="target"
-                stroke="#36A2EB"
-                fillOpacity={0.3}
-                fill="url(#colorTarget)"
-                name="Target"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
+          {salesChartData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={salesChartData}>
+                <defs>
+                  <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#FF6384" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="#FF6384" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="colorTarget" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#36A2EB" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="#36A2EB" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="colorProfit" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#4BC0C0" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="#4BC0C0" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient
+                    id="colorExpenses"
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
+                    <stop offset="5%" stopColor="#FFCE56" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="#FFCE56" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis dataKey="name" stroke="#D1D5DB" />
+                <YAxis stroke="#D1D5DB" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#1F2937",
+                    border: "none",
+                    borderRadius: "4px",
+                  }}
+                  itemStyle={{ color: "#D1D5DB" }}
+                />
+                <Legend wrapperStyle={{ color: "#D1D5DB" }} />
+                <Area
+                  type="monotone"
+                  dataKey="sales"
+                  stroke="#FF6384"
+                  fillOpacity={1}
+                  fill="url(#colorSales)"
+                  name="Sales"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="target"
+                  stroke="#36A2EB"
+                  fillOpacity={0.3}
+                  fill="url(#colorTarget)"
+                  name="Target"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="profit"
+                  stroke="#4BC0C0"
+                  fillOpacity={0.3}
+                  fill="url(#colorProfit)"
+                  name="Profit"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="expenses"
+                  stroke="#FFCE56"
+                  fillOpacity={0.3}
+                  fill="url(#colorExpenses)"
+                  name="Expenses"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="no-data">
+              No sales data available for this period
+            </div>
+          )}
         </div>
 
         <div className="chart">
           <h3>Product Performance</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart
-              layout="vertical"
-              data={productPerformance}
-              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis type="number" stroke="#D1D5DB" />
-              <YAxis dataKey="name" type="category" stroke="#D1D5DB" />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "#1F2937",
-                  border: "none",
-                  borderRadius: "4px",
-                }}
-                itemStyle={{ color: "#D1D5DB" }}
-              />
-              <Bar dataKey="value" name="Sales">
-                {productPerformance.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.fill} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+          {productPerformance.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart
+                layout="vertical"
+                data={productPerformance}
+                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis type="number" stroke="#D1D5DB" />
+                <YAxis dataKey="name" type="category" stroke="#D1D5DB" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#1F2937",
+                    border: "none",
+                    borderRadius: "4px",
+                  }}
+                  itemStyle={{ color: "#D1D5DB" }}
+                />
+                <Bar dataKey="value" name="Sales">
+                  {productPerformance.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="no-data">
+              No product performance data available for this period
+            </div>
+          )}
         </div>
       </div>
 
       <div className="secondary-charts">
         <div className="chart">
           <h3>Stock Status</h3>
-          <ResponsiveContainer width="100%" height={200}>
-            <PieChart>
-              <Pie
-                data={stockStatus}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-                label={({ name, percent }) =>
-                  `${name} ${(percent * 100).toFixed(0)}%`
-                }
-              >
-                {stockStatus.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.fill} />
-                ))}
-              </Pie>
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "#1F2937",
-                  border: "none",
-                  borderRadius: "4px",
-                }}
-                itemStyle={{ color: "#D1D5DB" }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
+          {stockStatus.length > 0 ? (
+            <ResponsiveContainer width="100%" height={200}>
+              <PieChart>
+                <Pie
+                  data={stockStatus}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                  label={({ name, percent }) =>
+                    `${name} ${(percent * 100).toFixed(0)}%`
+                  }
+                >
+                  {stockStatus.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#1F2937",
+                    border: "none",
+                    borderRadius: "4px",
+                  }}
+                  itemStyle={{ color: "#D1D5DB" }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="no-data">No stock status data available</div>
+          )}
         </div>
 
         <div className="chart">
           <h3>Recent Sales</h3>
-          <div className="recent-sales">
-            {recentSales.map((sale, index) => (
-              <div key={index} className="sale-item">
-                <div className="sale-info">
-                  <p className="sale-name">{sale.name}</p>
-                  <p className="sale-date">{sale.date}</p>
+          {recentSalesData.length > 0 ? (
+            <div className="recent-sales">
+              {recentSalesData.map((sale, index) => (
+                <div key={index} className="sale-item">
+                  <div className="sale-info">
+                    <p className="sale-name">{sale.name}</p>
+                    <p className="sale-date">{sale.date}</p>
+                  </div>
+                  <p className="sale-amount">XFA {sale.amount}</p>
                 </div>
-                <p className="sale-amount">XFA {sale.amount}</p>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="no-data">No recent sales data available</div>
+          )}
         </div>
 
         <div className="chart">
           <h3>Top Selling Products</h3>
-          <div className="top-products">
-            {topProducts.map((product, index) => (
-              <div key={index} className="product-item">
-                <div
-                  className="product-color"
-                  style={{ backgroundColor: product.color }}
-                ></div>
-                <div className="product-info">
-                  <div className="product-name">{product.name}</div>
-                  <div className="product-sold">{product.sold} units sold</div>
+          {topSellingProducts.length > 0 ? (
+            <div className="top-products">
+              {topSellingProducts.map((product, index) => (
+                <div key={index} className="product-item">
+                  <div
+                    className="product-color"
+                    style={{ backgroundColor: product.color }}
+                  ></div>
+                  <div className="product-info">
+                    <div className="product-name">{product.name}</div>
+                    <div className="product-sold">
+                      {product.quantity} units sold
+                    </div>
+                  </div>
+                  <div
+                    className="product-revenue"
+                    style={{ color: product.color }}
+                  >
+                    XFA {product.revenue.toFixed(2)}
+                  </div>
                 </div>
-                <div
-                  className="product-revenue"
-                  style={{ color: product.color }}
-                >
-                  XFA {product.revenue}
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="no-data">
+              No top selling products data available
+            </div>
+          )}
         </div>
       </div>
 
@@ -712,64 +1036,72 @@ const Dashboard = () => {
       <div className="additional-charts">
         <div className="chart">
           <h3>Monthly Revenue Trend</h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={monthlyRevenue}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis dataKey="month" stroke="#D1D5DB" />
-              <YAxis stroke="#D1D5DB" />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "#1F2937",
-                  border: "none",
-                  borderRadius: "4px",
-                }}
-                itemStyle={{ color: "#D1D5DB" }}
-              />
-              <Line
-                type="monotone"
-                dataKey="revenue"
-                stroke="#4BC0C0"
-                strokeWidth={2}
-                dot={{ r: 4, fill: "#4BC0C0" }}
-                activeDot={{ r: 6, fill: "#4BC0C0" }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          {monthlyRevenueData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={250}>
+              <LineChart data={monthlyRevenueData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis dataKey="month" stroke="#D1D5DB" />
+                <YAxis stroke="#D1D5DB" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#1F2937",
+                    border: "none",
+                    borderRadius: "4px",
+                  }}
+                  itemStyle={{ color: "#D1D5DB" }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke="#4BC0C0"
+                  strokeWidth={2}
+                  dot={{ r: 4, fill: "#4BC0C0" }}
+                  activeDot={{ r: 6, fill: "#4BC0C0" }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="no-data">No monthly revenue data available</div>
+          )}
         </div>
 
         <div className="chart">
           <h3>Sales by Category</h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <RadialBarChart
-              cx="50%"
-              cy="50%"
-              innerRadius="10%"
-              outerRadius="80%"
-              barSize={10}
-              data={salesByCategory}
-            >
-              <RadialBar
-                label={{ fill: "#D1D5DB", position: "insideStart" }}
-                background
-                dataKey="value"
-              />
-              <Legend
-                iconSize={10}
-                layout="vertical"
-                verticalAlign="middle"
-                align="right"
-                wrapperStyle={{ color: "#D1D5DB" }}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "#1F2937",
-                  border: "none",
-                  borderRadius: "4px",
-                }}
-                itemStyle={{ color: "#D1D5DB" }}
-              />
-            </RadialBarChart>
-          </ResponsiveContainer>
+          {salesByCategoryData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={250}>
+              <RadialBarChart
+                cx="50%"
+                cy="50%"
+                innerRadius="10%"
+                outerRadius="80%"
+                barSize={10}
+                data={salesByCategoryData}
+              >
+                <RadialBar
+                  label={{ fill: "#D1D5DB", position: "insideStart" }}
+                  background
+                  dataKey="value"
+                />
+                <Legend
+                  iconSize={10}
+                  layout="vertical"
+                  verticalAlign="middle"
+                  align="right"
+                  wrapperStyle={{ color: "#D1D5DB" }}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#1F2937",
+                    border: "none",
+                    borderRadius: "4px",
+                  }}
+                  itemStyle={{ color: "#D1D5DB" }}
+                />
+              </RadialBarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="no-data">No sales by category data available</div>
+          )}
         </div>
       </div>
 
@@ -812,10 +1144,6 @@ const Dashboard = () => {
                 <div className="debug-panel">
                   <h4>Debug Information</h4>
                   <p>Current Role: {currentUserRole || "Not set"}</p>
-                  <p>
-                    Has Manager Permission:{" "}
-                    {hasManagerPermission() ? "Yes" : "No"}
-                  </p>
                 </div>
               )}
 

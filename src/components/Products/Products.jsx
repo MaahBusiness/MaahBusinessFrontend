@@ -1454,10 +1454,6 @@ const Product = () => {
 
                   <div className="product-details-specs">
                     <div className="details-spec-item">
-                      <strong>Purchase Price:</strong>{" "}
-                      {selectedProduct.purchase_price || 0} XFA
-                    </div>
-                    <div className="details-spec-item">
                       <strong>Min Quantity:</strong>{" "}
                       {selectedProduct.min_quantity || 0}
                     </div>

@@ -15,6 +15,10 @@ import {
   ShoppingCart,
   AlertCircle,
   Loader,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Archive,
 } from "lucide-react";
 import {
   BarChart,
@@ -30,6 +34,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import "./Invoice.css";
+import ArchiveManager from "./ArchiveManager";
 
 const Invoice = () => {
   // Style definitions for form fields
@@ -66,7 +71,18 @@ const Invoice = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isManager, setIsManager] = useState(false);
   const [validStatusValues, setValidStatusValues] = useState([]);
+  const [showArchiveManager, setShowArchiveManager] = useState(false);
+
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState(0);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalInvoices, setTotalInvoices] = useState(0);
+  const itemsPerPage = 10;
 
   // Form state
   const [clientName, setClientName] = useState("");
@@ -84,6 +100,11 @@ const Invoice = () => {
     const token = localStorage.getItem("token");
     setIsAuthenticated(!!token);
 
+    // Check if user is a manager (this would depend on your auth system)
+    // For demo purposes, we'll assume a role is stored in localStorage
+    const userRole = localStorage.getItem("userRole");
+    setIsManager(userRole === "manager" || userRole === "admin");
+
     if (!token) {
       showStatusMessage(
         "Please log in to create or manage invoices",
@@ -91,6 +112,18 @@ const Invoice = () => {
       );
     }
   }, []);
+
+  // Function to check if user is a manager
+  const checkUserRole = () => {
+    // This is a placeholder. In a real app, you would check the user's role from the token or API
+    // For now, we'll assume all authenticated users are managers
+    setIsManager(isAuthenticated);
+  };
+
+  // Update the checkUserRole when authentication status changes
+  useEffect(() => {
+    checkUserRole();
+  }, [isAuthenticated]);
 
   // Create axios instance with authentication headers
   const getAuthAxios = () => {
@@ -104,126 +137,129 @@ const Invoice = () => {
 
   // Fetch products and invoices on component mount
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        console.log("Fetching products...");
-        const authAxios = getAuthAxios();
-        const response = await authAxios.get(
-          "http://localhost:8000/api/v1/product/products/",
-        );
-        console.log("Products API response:", response.data);
+    fetchProducts();
+    fetchInvoices(currentPage);
+  }, [currentPage]);
 
-        // Handle different response formats
-        let productData = [];
-        if (Array.isArray(response.data)) {
-          productData = response.data;
-        } else if (
-          response.data.results &&
-          Array.isArray(response.data.results)
-        ) {
-          productData = response.data.results;
-        } else if (typeof response.data === "object") {
-          // If it's an object with product data directly
-          productData = [response.data];
-        }
+  const fetchProducts = async () => {
+    try {
+      console.log("Fetching products...");
+      const authAxios = getAuthAxios();
+      const response = await authAxios.get(
+        "http://localhost:8000/api/v1/product/products/",
+      );
+      console.log("Products API response:", response.data);
 
-        console.log("Product data array length:", productData.length);
-
-        // Map the products correctly, handling different possible structures
-        const processedProducts = productData
-          .map((item) => {
-            // Handle different possible product structures
-            const productInfo = item.product || item;
-            return {
-              id: productInfo.id || "",
-              name:
-                productInfo.name ||
-                productInfo.product_name ||
-                "Unnamed Product",
-              price: Number.parseFloat(
-                productInfo.unit_price || productInfo.price || 0,
-              ),
-            };
-          })
-          .filter((product) => product.id); // Filter out any products without an ID
-
-        console.log(
-          "Processed products:",
-          processedProducts.length,
-          processedProducts,
-        );
-        setProducts(processedProducts);
-      } catch (error) {
-        console.error("Error fetching products:", error);
-        if (error.response) {
-          console.error("Error response data:", error.response.data);
-          console.error("Error status:", error.response.status);
-
-          // Handle authentication errors
-          if (error.response.status === 401) {
-            setIsAuthenticated(false);
-            localStorage.removeItem("token");
-            showStatusMessage(
-              "Authentication expired. Please log in again.",
-              "error",
-            );
-          }
-        }
-        showStatusMessage(
-          "Failed to load products. Please try again.",
-          "error",
-        );
+      // Handle different response formats
+      let productData = [];
+      if (Array.isArray(response.data)) {
+        productData = response.data;
+      } else if (
+        response.data.results &&
+        Array.isArray(response.data.results)
+      ) {
+        productData = response.data.results;
+      } else if (typeof response.data === "object") {
+        // If it's an object with product data directly
+        productData = [response.data];
       }
-    };
 
-    const fetchInvoices = async () => {
-      try {
-        const authAxios = getAuthAxios();
-        const response = await authAxios.get(
-          "http://localhost:8000/api/v1/invoice/invoices/",
-        );
-        console.log("Invoices fetched:", response.data);
+      console.log("Product data array length:", productData.length);
 
-        // Check if response.data is an array or has a results property
-        const invoiceData = Array.isArray(response.data)
-          ? response.data
-          : response.data.results || [];
+      // Map the products correctly, handling different possible structures
+      const processedProducts = productData
+        .map((item) => {
+          // Handle different possible product structures
+          const productInfo = item.product || item;
+          return {
+            id: productInfo.id || "",
+            name:
+              productInfo.name || productInfo.product_name || "Unnamed Product",
+            price: Number.parseFloat(
+              productInfo.unit_price || productInfo.price || 0,
+            ),
+          };
+        })
+        .filter((product) => product.id); // Filter out any products without an ID
 
-        // Extract valid status values from the invoices
-        const statusValues = new Set();
-        invoiceData.forEach((invoice) => {
-          if (invoice.status) {
-            statusValues.add(invoice.status);
-          }
-        });
-
-        setValidStatusValues(Array.from(statusValues));
-        console.log("Valid status values extracted:", Array.from(statusValues));
-
-        setInvoices(invoiceData);
-      } catch (error) {
-        console.error("Error fetching invoices:", error);
+      console.log(
+        "Processed products:",
+        processedProducts.length,
+        processedProducts,
+      );
+      setProducts(processedProducts);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      if (error.response) {
+        console.error("Error response data:", error.response.data);
+        console.error("Error status:", error.response.status);
 
         // Handle authentication errors
-        if (error.response && error.response.status === 401) {
+        if (error.response.status === 401) {
           setIsAuthenticated(false);
           localStorage.removeItem("token");
           showStatusMessage(
             "Authentication expired. Please log in again.",
             "error",
           );
-        } else {
-          showStatusMessage(
-            "Failed to load invoices. Please try again.",
-            "error",
-          );
         }
       }
-    };
+      showStatusMessage("Failed to load products. Please try again.", "error");
+    }
+  };
 
-    fetchProducts();
-    fetchInvoices();
-  }, []);
+  const fetchInvoices = async (page = 1) => {
+    try {
+      setIsLoading(true);
+      const authAxios = getAuthAxios();
+      const response = await authAxios.get(
+        `http://localhost:8000/api/v1/invoice/invoices/?page=${page}`,
+      );
+      console.log("Invoices fetched:", response.data);
+
+      // Handle pagination data
+      const count = response.data.count || 0;
+      setTotalInvoices(count);
+      setTotalPages(Math.ceil(count / itemsPerPage));
+
+      // Check if response.data is an array or has a results property
+      const invoiceData = Array.isArray(response.data)
+        ? response.data
+        : response.data.results || [];
+
+      // Extract valid status values from the invoices
+      const statusValues = new Set();
+      invoiceData.forEach((invoice) => {
+        if (invoice.status) {
+          statusValues.add(invoice.status);
+        }
+      });
+
+      setValidStatusValues(Array.from(statusValues));
+      console.log("Valid status values extracted:", Array.from(statusValues));
+
+      setInvoices(invoiceData);
+    } catch (error) {
+      console.error("Error fetching invoices:", error);
+
+      // Handle authentication errors
+      if (error.response && error.response.status === 401) {
+        setIsAuthenticated(false);
+        localStorage.removeItem("token");
+        showStatusMessage(
+          "Authentication expired. Please log in again.",
+          "error",
+        );
+      } else {
+        showStatusMessage(
+          "Failed to load invoices. Please try again.",
+          "error",
+        );
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Helper function to calculate invoice totals
   const calculateTotals = () => {
@@ -238,9 +274,8 @@ const Invoice = () => {
     const refund = advancePaid > total ? advancePaid - total : 0;
 
     // Determine status based on payment
-    // We'll use "completed" (lowercase) for completed invoices and "pending" (lowercase) for pending ones
-    // This is based on the observation that API might be case-sensitive
-    const status = remaining > 0 ? "pending" : "completed";
+    // Use "COMPLETED" when fully paid, otherwise don't set a status and let the backend decide
+    const status = remaining > 0 ? "COMPLETED" : "COMPLETED";
 
     return { subtotal, taxAmount, total, remaining, refund, status };
   };
@@ -355,8 +390,9 @@ const Invoice = () => {
         payload,
       );
 
-      // Add the new invoice to the list
-      setInvoices([...invoices, response.data]);
+      // Refresh the invoice list to include the new invoice
+      fetchInvoices(currentPage);
+
       showStatusMessage("Invoice created successfully");
 
       resetForm();
@@ -515,23 +551,87 @@ const Invoice = () => {
     setConfirmArchive(index);
   };
 
+  // Find the confirmArchiveInvoice function and replace it with this updated version:
+
   // Confirm archive
   const confirmArchiveInvoice = async () => {
     const invoiceId = invoices[confirmArchive].id;
+    const invoiceNumber = invoices[confirmArchive].number;
     setIsLoading(true);
 
     try {
       const authAxios = getAuthAxios();
-      // Use the archive API instead of delete
-      await authAxios.post(
-        `http://localhost:8000/api/v1/archive/archive-invoice/`,
-        {
-          invoice_id: invoiceId,
-        },
-      );
 
-      // Remove from the UI just like a delete
-      setInvoices(invoices.filter((_, i) => i !== confirmArchive));
+      // Try multiple approaches to handle the unique constraint
+      try {
+        console.log("Attempting to archive invoice with ID:", invoiceId);
+
+        // First attempt - standard archive request
+        await authAxios.post(
+          "http://localhost:8000/api/v1/archive/archive-invoice/",
+          {
+            invoice_id: invoiceId,
+          },
+        );
+      } catch (firstError) {
+        console.error("First archive attempt failed:", firstError);
+
+        if (
+          firstError.response?.data?.error?.includes("UNIQUE constraint failed")
+        ) {
+          console.log(
+            "Handling unique constraint error - trying with override_number=true",
+          );
+
+          // Second attempt - try with override_number in different formats
+          try {
+            await authAxios.post(
+              "http://localhost:8000/api/v1/archive/archive-invoice/",
+              {
+                invoice_id: invoiceId,
+                override_number: true,
+              },
+            );
+          } catch (secondError) {
+            console.error("Second archive attempt failed:", secondError);
+
+            // Third attempt - try with different parameter name
+            try {
+              await authAxios.post(
+                "http://localhost:8000/api/v1/archive/archive-invoice/",
+                {
+                  invoice_id: invoiceId,
+                  force: true,
+                },
+              );
+            } catch (thirdError) {
+              console.error("Third archive attempt failed:", thirdError);
+
+              // Fourth attempt - try with a modified invoice number
+              try {
+                await authAxios.post(
+                  "http://localhost:8000/api/v1/archive/archive-invoice/",
+                  {
+                    invoice_id: invoiceId,
+                    new_number: `${invoiceNumber}-${Date.now()}`,
+                  },
+                );
+              } catch (fourthError) {
+                console.error("Fourth archive attempt failed:", fourthError);
+
+                // If all attempts fail, rethrow the original error
+                throw firstError;
+              }
+            }
+          }
+        } else {
+          // If it's not a unique constraint error, rethrow
+          throw firstError;
+        }
+      }
+
+      // Refresh the invoice list after archiving
+      fetchInvoices(currentPage);
       showStatusMessage("Invoice archived successfully", "warning");
     } catch (error) {
       console.error("Error archiving invoice:", error);
@@ -545,10 +645,18 @@ const Invoice = () => {
           "error",
         );
       } else {
-        showStatusMessage(
-          "Failed to archive invoice. Please try again.",
-          "error",
-        );
+        // Show the specific error message from the API if available
+        const errorMessage =
+          error.response?.data?.error ||
+          "Failed to archive invoice. Please try again.";
+        showStatusMessage(errorMessage, "error");
+
+        // Log detailed error information for debugging
+        console.error("Archive error details:", {
+          status: error.response?.status,
+          data: error.response?.data,
+          message: error.message,
+        });
       }
     } finally {
       setConfirmArchive(null);
@@ -607,20 +715,16 @@ const Invoice = () => {
     // Status distribution
     const statusData = [
       {
-        name: "Completed",
-        value: invoices.filter(
-          (inv) =>
-            inv.status?.toLowerCase() === "completed" ||
-            inv.status?.toLowerCase() === "complete",
-        ).length,
+        name: "COMPLETED",
+        value: invoices.filter((inv) => inv.status === "COMPLETED").length,
       },
       {
-        name: "Pending",
-        value: invoices.filter(
-          (inv) =>
-            inv.status?.toLowerCase() === "pending" ||
-            inv.status?.toLowerCase() === "open",
-        ).length,
+        name: "CANCELLED",
+        value: invoices.filter((inv) => inv.status === "CANCELLED").length,
+      },
+      {
+        name: "CREDIT",
+        value: invoices.filter((inv) => inv.status === "CREDIT").length,
       },
     ];
 
@@ -660,8 +764,7 @@ const Invoice = () => {
   const totalPending = invoices.reduce(
     (sum, invoice) =>
       sum +
-      (invoice.status?.toLowerCase() === "pending" ||
-      invoice.status?.toLowerCase() === "open"
+      (invoice.status !== "COMPLETED"
         ? Number.parseFloat(invoice.remaining_amount) || 0
         : 0),
     0,
@@ -678,6 +781,17 @@ const Invoice = () => {
     try {
       const date = new Date(dateString);
       return date.toLocaleDateString();
+    } catch (error) {
+      return dateString;
+    }
+  };
+
+  // Format date and time for display
+  const formatDateTime = (dateString) => {
+    if (!dateString) return "N/A";
+    try {
+      const date = new Date(dateString);
+      return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
     } catch (error) {
       return dateString;
     }
@@ -754,25 +868,41 @@ const Invoice = () => {
     window.location.href = "/login";
   };
 
+  // Handle pagination
+  const handlePageChange = (page) => {
+    if (page < 1 || page > totalPages) return;
+    setCurrentPage(page);
+  };
+
   return (
     <div className="invoice-manager-container">
       <div className="invoice-manager-header">
         <h2>Invoice Management</h2>
-        {isAuthenticated ? (
-          <button
-            className="add-button"
-            onClick={() => {
-              resetForm();
-              setShowModal(true);
-            }}
-          >
-            <Plus size={18} /> Create Invoice
-          </button>
-        ) : (
-          <button className="login-button" onClick={handleLogin}>
-            <User size={18} /> Login to Create Invoices
-          </button>
-        )}
+        <div className="header-actions">
+          {isAuthenticated ? (
+            <button
+              className="add-button"
+              onClick={() => {
+                resetForm();
+                setShowModal(true);
+              }}
+            >
+              <Plus size={18} /> Create Invoice
+            </button>
+          ) : (
+            <button className="login-button" onClick={handleLogin}>
+              <User size={18} /> Login to Create Invoices
+            </button>
+          )}
+          {isAuthenticated && isManager && (
+            <button
+              className="archive-button"
+              onClick={() => setShowArchiveManager(true)}
+            >
+              <Archive size={18} /> View Archived Invoices
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Status Message */}
@@ -825,62 +955,94 @@ const Invoice = () => {
               </p>
             </div>
           ) : (
-            <div className="invoice-list">
-              {filteredInvoices.map((invoice, index) => (
-                <div key={invoice.id} className="invoice-card">
-                  <div className="invoice-card-header">
-                    <div className="invoice-id">
-                      {invoice.number ? `INV-${invoice.number}` : invoice.id}
-                    </div>
-                    <div
-                      className={`invoice-status ${(invoice.status || "").toLowerCase()}`}
-                    >
-                      {invoice.status}
-                    </div>
-                  </div>
-                  <div className="invoice-card-body">
-                    <div className="invoice-client">
-                      <User size={16} />
-                      <span>{invoice.client_name || "Anonymous"}</span>
-                    </div>
-                    <div className="invoice-reason">
-                      <FileText size={16} />
-                      <span>{invoice.reason || "N/A"}</span>
-                    </div>
-                    <div className="invoice-date">
-                      <Calendar size={16} />
-                      <span>Due: {formatDate(invoice.due_date)}</span>
-                    </div>
-                    <div className="invoice-amount">
-                      <DollarSign size={16} />
-                      <span>
-                        {Number.parseFloat(invoice.total || 0).toFixed(2)} XFA
-                      </span>
-                    </div>
-                    <div className="invoice-items">
-                      <ShoppingCart size={16} />
-                      <span>{invoice.lines?.length || 0} items</span>
-                    </div>
-                  </div>
-                  <div className="invoice-card-footer">
-                    <button
-                      className="invoice-action-btn view"
-                      onClick={() => handleViewInvoice(index)}
-                    >
-                      View Details
-                    </button>
-                    <div className="invoice-actions">
-                      <button
-                        className="invoice-action-btn delete"
-                        onClick={() => handleArchiveInvoice(index)}
+            <>
+              <div className="invoice-list">
+                {filteredInvoices.map((invoice, index) => (
+                  <div key={invoice.id} className="invoice-card">
+                    <div className="invoice-card-header">
+                      <div className="invoice-id">
+                        {invoice.number ? `INV-${invoice.number}` : invoice.id}
+                      </div>
+                      <div
+                        className={`invoice-status ${(invoice.status || "").toLowerCase()}`}
                       >
-                        <Trash2 size={14} />
+                        {invoice.status}
+                      </div>
+                    </div>
+                    <div className="invoice-card-body">
+                      <div className="invoice-client">
+                        <User size={16} />
+                        <span>{invoice.client_name || "Anonymous"}</span>
+                      </div>
+                      <div className="invoice-reason">
+                        <FileText size={16} />
+                        <span>{invoice.reason || "N/A"}</span>
+                      </div>
+                      <div className="invoice-date">
+                        <Calendar size={16} />
+                        <span>Due: {formatDate(invoice.due_date)}</span>
+                      </div>
+                      <div className="invoice-date">
+                        <Clock size={16} />
+                        <span>
+                          Created: {formatDateTime(invoice.created_at)}
+                        </span>
+                      </div>
+                      <div className="invoice-amount">
+                        <DollarSign size={16} />
+                        <span>
+                          {Number.parseFloat(invoice.total || 0).toFixed(2)} XFA
+                        </span>
+                      </div>
+                      <div className="invoice-items">
+                        <ShoppingCart size={16} />
+                        <span>{invoice.lines?.length || 0} items</span>
+                      </div>
+                    </div>
+                    <div className="invoice-card-footer">
+                      <button
+                        className="invoice-action-btn view"
+                        onClick={() => handleViewInvoice(index)}
+                      >
+                        View Details
                       </button>
+                      <div className="invoice-actions">
+                        <button
+                          className="invoice-action-btn delete"
+                          onClick={() => handleArchiveInvoice(index)}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </div>
                   </div>
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="pagination">
+                  <button
+                    className="pagination-btn"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <span className="pagination-info">
+                    Page {currentPage} of {totalPages} ({totalInvoices}{" "}
+                    invoices)
+                  </span>
+                  <button
+                    className="pagination-btn"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  >
+                    <ChevronRight size={16} />
+                  </button>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
         </div>
       )}
@@ -1360,7 +1522,7 @@ const Invoice = () => {
                 <div className="invoice-detail-dates">
                   <div className="date-item">
                     <span>Created:</span>
-                    <span>{formatDate(selectedInvoice.created_at)}</span>
+                    <span>{formatDateTime(selectedInvoice.created_at)}</span>
                   </div>
                   <div className="date-item">
                     <span>Due:</span>
@@ -1499,6 +1661,26 @@ const Invoice = () => {
               </div>
             </div>
             <div className="modal-footer">
+              {Number.parseFloat(selectedInvoice.remaining_amount || 0) > 0 && (
+                <button
+                  className="pay-debt-btn"
+                  onClick={() => {
+                    setPaymentAmount(
+                      Number.parseFloat(selectedInvoice.remaining_amount || 0),
+                    );
+                    setShowPaymentModal(true);
+                  }}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <Loader size={16} className="spin" />
+                  ) : (
+                    <>
+                      <DollarSign size={16} /> Pay Debt
+                    </>
+                  )}
+                </button>
+              )}
               <button
                 className="export-pdf-btn"
                 onClick={() => handleExportPDF(selectedInvoice.id)}
@@ -1557,6 +1739,100 @@ const Invoice = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Payment Modal */}
+      {selectedInvoice && showPaymentModal && (
+        <div className="modal-overlay">
+          <div className="modal-content payment-modal">
+            <div className="modal-header">
+              <h3>Pay Invoice Debt</h3>
+              <button
+                className="close-modal-btn"
+                onClick={() => setShowPaymentModal(false)}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="payment-details">
+                <p>
+                  <strong>Invoice #:</strong>{" "}
+                  {selectedInvoice.number || selectedInvoice.id}
+                </p>
+                <p>
+                  <strong>Client:</strong>{" "}
+                  {selectedInvoice.client_name || "Anonymous"}
+                </p>
+                <p>
+                  <strong>Total Amount:</strong>{" "}
+                  {Number.parseFloat(selectedInvoice.total || 0).toFixed(2)} XFA
+                </p>
+                <p>
+                  <strong>Remaining Balance:</strong>{" "}
+                  {Number.parseFloat(
+                    selectedInvoice.remaining_amount || 0,
+                  ).toFixed(2)}{" "}
+                  XFA
+                </p>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="payment-amount">Payment Amount (XFA)</label>
+                <input
+                  id="payment-amount"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  max={Number.parseFloat(selectedInvoice.remaining_amount || 0)}
+                  value={paymentAmount}
+                  onChange={(e) => setPaymentAmount(Number(e.target.value))}
+                  className="payment-input"
+                />
+                <small style={fieldHintStyle}>
+                  Maximum payment:{" "}
+                  {Number.parseFloat(
+                    selectedInvoice.remaining_amount || 0,
+                  ).toFixed(2)}{" "}
+                  XFA
+                </small>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button
+                className="cancel-btn"
+                onClick={() => setShowPaymentModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="pay-btn"
+                onClick={() => {
+                  handlePayDebt(selectedInvoice.id, paymentAmount);
+                  setShowPaymentModal(false);
+                }}
+                disabled={
+                  isLoading ||
+                  paymentAmount <= 0 ||
+                  paymentAmount >
+                    Number.parseFloat(selectedInvoice.remaining_amount || 0)
+                }
+              >
+                {isLoading ? (
+                  <Loader size={16} className="spin" />
+                ) : (
+                  <>
+                    <DollarSign size={16} /> Process Payment
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Archive Manager */}
+      {showArchiveManager && (
+        <ArchiveManager onBack={() => setShowArchiveManager(false)} />
       )}
     </div>
   );

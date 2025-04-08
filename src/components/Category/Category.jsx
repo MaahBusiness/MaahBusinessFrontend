@@ -1,5 +1,6 @@
 "use client";
 
+import No_image from "../../assets/No_IMG.jpg";
 import { useState, useEffect } from "react";
 import {
   Plus,
@@ -12,6 +13,12 @@ import {
   Package,
   ShoppingBag,
   AlertCircle,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Calendar,
+  Eye,
 } from "lucide-react";
 import axios from "axios";
 import "./category.css";
@@ -50,6 +57,9 @@ const Category = () => {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isCategoryProductsModalOpen, setIsCategoryProductsModalOpen] =
     useState(false);
+  const [isProductDetailModalOpen, setIsProductDetailModalOpen] =
+    useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
   // Form states
   const [categoryName, setCategoryName] = useState("");
@@ -66,6 +76,16 @@ const Category = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [refreshData, setRefreshData] = useState(0);
+
+  // Search states
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchCategory, setSearchCategory] = useState("");
+  const [searchSubcategory, setSearchSubcategory] = useState("");
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [productsPerPage] = useState(6);
+  const [totalPages, setTotalPages] = useState(1);
 
   // Add these state variables after the other state declarations
   const [categoryDetails, setCategoryDetails] = useState(null);
@@ -137,15 +157,20 @@ const Category = () => {
       });
       console.log("Subcategory products fetched successfully:", response.data);
       setSubcategoryProducts(response.data.results || []);
+
+      // Calculate total pages for pagination
+      const total = response.data.results ? response.data.results.length : 0;
+      setTotalPages(Math.ceil(total / productsPerPage));
+      setCurrentPage(1); // Reset to first page when fetching new products
+
       setIsLoadingProducts(false);
     } catch (error) {
       console.error("Error fetching subcategory products:", error);
       setSubcategoryProducts([]);
+      setTotalPages(1);
       setIsLoadingProducts(false);
     }
   };
-
-  // Fetch products for a category// ... keep existing code
 
   // Fetch products for a category
   const fetchCategoryProducts = async (categoryId) => {
@@ -159,6 +184,11 @@ const Category = () => {
       });
       console.log("Category products fetched successfully:", response.data);
       setCategoryProducts(response.data.results || []);
+
+      // Calculate total pages for pagination
+      const total = response.data.results ? response.data.results.length : 0;
+      setTotalPages(Math.ceil(total / productsPerPage));
+      setCurrentPage(1); // Reset to first page when fetching new products
     } catch (error) {
       console.error("Error fetching category products:", error);
 
@@ -169,16 +199,38 @@ const Category = () => {
         );
         console.log("Products fetched by category:", productResponse.data);
         setCategoryProducts(productResponse.data.results || []);
+
+        // Calculate total pages for pagination
+        const total = productResponse.data.results
+          ? productResponse.data.results.length
+          : 0;
+        setTotalPages(Math.ceil(total / productsPerPage));
+        setCurrentPage(1); // Reset to first page when fetching new products
       } catch (productError) {
         console.error("Error fetching from product API:", productError);
         setCategoryProducts([]);
+        setTotalPages(1);
       }
     } finally {
       setIsLoadingCategoryProducts(false);
     }
   };
 
-  // ... keep existing code
+  // Fetch product details
+  const fetchProductDetails = async (productId) => {
+    if (!productId) return;
+
+    try {
+      const response = await axios.get(`${productApiBaseUrl}/detail/`, {
+        params: { product_id: productId },
+      });
+      console.log("Product details fetched successfully:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching product details:", error);
+      return null;
+    }
+  };
 
   // Fetch category details
   const fetchCategoryDetails = async (categoryId) => {
@@ -213,6 +265,15 @@ const Category = () => {
       fetchCategoryProducts(selectedCategory.id);
       setIsCategoryProductsModalOpen(true);
     }
+  };
+
+  // Handle product selection for details view
+  const handleProductSelect = async (product) => {
+    setIsLoading(true);
+    const productDetails = await fetchProductDetails(product.id);
+    setSelectedProduct(productDetails || product);
+    setIsProductDetailModalOpen(true);
+    setIsLoading(false);
   };
 
   // Function to show status messages
@@ -258,6 +319,11 @@ const Category = () => {
   const closeCategoryProductsModal = () => {
     setIsCategoryProductsModalOpen(false);
     setCategoryProducts([]);
+  };
+
+  const closeProductDetailModal = () => {
+    setIsProductDetailModalOpen(false);
+    setSelectedProduct(null);
   };
 
   const addOrUpdateCategory = async () => {
@@ -347,7 +413,7 @@ const Category = () => {
 
     if (hasSubcategories) {
       alert(
-        "Cannot delete category thadeletet has subcategories. Please delete the subcategories first.",
+        "Cannot delete category that has subcategories. Please delete the subcategories first.",
       );
       return;
     }
@@ -566,11 +632,74 @@ const Category = () => {
     return date.toLocaleDateString();
   };
 
+  // Format date with time for display
+  const formatDateTime = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    return date.toLocaleString();
+  };
+
   // Format price for display
   const formatPrice = (price) => {
     if (price === undefined || price === null) return "N/A";
     return `$${Number.parseFloat(price).toFixed(2)}`;
   };
+
+  // Pagination functions
+  const paginate = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
+  const nextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const prevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  // Get current products for pagination
+  const getCurrentProducts = (products) => {
+    const indexOfLastProduct = currentPage * productsPerPage;
+    const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
+    return products.slice(indexOfFirstProduct, indexOfLastProduct);
+  };
+
+  // Filter categories based on search term
+  const filteredCategories = categories.filter(
+    (category) =>
+      category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      category.description.toLowerCase().includes(searchTerm.toLowerCase()),
+  );
+
+  // Filter subcategories based on search term and selected category
+  const filteredSubcategories = selectedCategory
+    ? subcategories.filter(
+        (sub) =>
+          sub.category_id === selectedCategory.id &&
+          (searchSubcategory === "" ||
+            sub.name.toLowerCase().includes(searchSubcategory.toLowerCase()) ||
+            sub.description
+              .toLowerCase()
+              .includes(searchSubcategory.toLowerCase())),
+      )
+    : [];
+
+  // Filter category products based on search term
+  const filteredCategoryProducts = categoryProducts.filter(
+    (product) =>
+      product.name.toLowerCase().includes(searchCategory.toLowerCase()) ||
+      product.description.toLowerCase().includes(searchCategory.toLowerCase()),
+  );
+
+  // Get paginated products
+  const paginatedCategoryProducts = getCurrentProducts(
+    filteredCategoryProducts,
+  );
 
   return (
     <div className="category-dashboard">
@@ -591,11 +720,12 @@ const Category = () => {
             <Plus size={16} /> Add
           </button>
         </div>
+
         <div className="category-list">
           {isLoading ? (
             <div className="loading-indicator">Loading categories...</div>
-          ) : categories.length > 0 ? (
-            categories.map((category) => (
+          ) : filteredCategories.length > 0 ? (
+            filteredCategories.map((category) => (
               <div
                 key={category.id}
                 className={`category-item ${selectedCategory?.id === category.id ? "active" : ""}`}
@@ -637,6 +767,18 @@ const Category = () => {
           <div className="welcome-section">
             <h1>Category Management</h1>
             <p>Select a category to view details or manage subcategories</p>
+
+            {/* Search for categories - moved to welcome section */}
+            <div className="search-container welcome-search">
+              <Search size={16} className="search-icon" />
+              <input
+                type="text"
+                placeholder="Search categories..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="search-input"
+              />
+            </div>
           </div>
         ) : (
           <div className="selected-category-details">
@@ -682,14 +824,38 @@ const Category = () => {
                     <div className="category-meta-item">
                       <span className="meta-label">Created:</span>
                       <span className="meta-value">
-                        {formatDate(categoryDetails.created_at)}
+                        <div className="date-time-display">
+                          <Calendar size={14} />
+                          <span>{formatDate(categoryDetails.created_at)}</span>
+                        </div>
+                        <div className="date-time-display">
+                          <Clock size={14} />
+                          <span>
+                            {new Date(
+                              categoryDetails.created_at,
+                            ).toLocaleTimeString()}
+                          </span>
+                        </div>
                       </span>
                     </div>
                     {categoryDetails.updated_at && (
                       <div className="category-meta-item">
                         <span className="meta-label">Last Updated:</span>
                         <span className="meta-value">
-                          {formatDate(categoryDetails.updated_at)}
+                          <div className="date-time-display">
+                            <Calendar size={14} />
+                            <span>
+                              {formatDate(categoryDetails.updated_at)}
+                            </span>
+                          </div>
+                          <div className="date-time-display">
+                            <Clock size={14} />
+                            <span>
+                              {new Date(
+                                categoryDetails.updated_at,
+                              ).toLocaleTimeString()}
+                            </span>
+                          </div>
                         </span>
                       </div>
                     )}
@@ -716,12 +882,23 @@ const Category = () => {
             <div className="subcategories-section">
               <div className="subcategories-header">
                 <h3>Subcategories</h3>
+
+                {/* Search for subcategories */}
+                <div className="search-container subcategory-search">
+                  <Search size={16} className="search-icon" />
+                  <input
+                    type="text"
+                    placeholder="Search subcategories..."
+                    value={searchSubcategory}
+                    onChange={(e) => setSearchSubcategory(e.target.value)}
+                    className="search-input"
+                  />
+                </div>
               </div>
 
               <div className="subcategories-list">
-                {subcategories
-                  .filter((sub) => sub.category_id === selectedCategory.id)
-                  .map((subcategory) => (
+                {filteredSubcategories.length > 0 ? (
+                  filteredSubcategories.map((subcategory) => (
                     <div key={subcategory.id} className="subcategory-item">
                       <div
                         className="subcategory-info"
@@ -757,11 +934,13 @@ const Category = () => {
                         </button>
                       </div>
                     </div>
-                  ))}
-                {subcategories.filter(
-                  (sub) => sub.category_id === selectedCategory.id,
-                ).length === 0 && (
-                  <p className="no-subcategories">No subcategories found</p>
+                  ))
+                ) : (
+                  <p className="no-subcategories">
+                    {searchSubcategory
+                      ? "No subcategories match your search"
+                      : "No subcategories found"}
+                  </p>
                 )}
               </div>
             </div>
@@ -957,7 +1136,7 @@ const Category = () => {
                       <div className="detail-item">
                         <span className="detail-label">Created:</span>
                         <span className="detail-value">
-                          {formatDate(subcategoryDetails.created_at)}
+                          {formatDateTime(subcategoryDetails.created_at)}
                         </span>
                       </div>
                       <div className="detail-item">
@@ -978,32 +1157,72 @@ const Category = () => {
                         Loading products...
                       </div>
                     ) : subcategoryProducts.length > 0 ? (
-                      <div className="subcategory-products">
-                        {subcategoryProducts.map((product) => (
-                          <div key={product.id} className="product-item">
-                            <div className="product-image">
-                              <img
-                                src={product.image || "/placeholder.svg"}
-                                alt={product.name}
-                              />
-                            </div>
-                            <div className="product-info">
-                              <h5>{product.name}</h5>
-                              <p className="product-description">
-                                {product.description}
-                              </p>
-                              <div className="product-meta">
-                                <span className="product-price">
-                                  {formatPrice(product.unit_price)}
-                                </span>
-                                <span className="product-stock">
-                                  Stock: {product.quantity}
-                                </span>
+                      <>
+                        <div className="subcategory-products">
+                          {getCurrentProducts(subcategoryProducts).map(
+                            (product) => (
+                              <div
+                                key={product.id}
+                                className="product-item"
+                                onClick={() => handleProductSelect(product)}
+                              >
+                                <div className="product-image">
+                                  <img
+                                    src={product.image || No_image}
+                                    alt={product.name}
+                                  />
+                                </div>
+                                <div className="product-info">
+                                  <h5>{product.name}</h5>
+                                  <p className="product-description">
+                                    {product.description}
+                                  </p>
+                                  <div className="product-meta">
+                                    <span className="product-price">
+                                      {formatPrice(product.unit_price)}
+                                    </span>
+                                    <span className="product-stock">
+                                      Stock: {product.quantity}
+                                    </span>
+                                  </div>
+                                  <button className="view-product-btn">
+                                    <Eye size={14} /> View Details
+                                  </button>
+                                </div>
                               </div>
-                            </div>
+                            ),
+                          )}
+                        </div>
+
+                        {/* Pagination controls */}
+                        {subcategoryProducts.length > productsPerPage && (
+                          <div className="pagination">
+                            <button
+                              onClick={prevPage}
+                              disabled={currentPage === 1}
+                              className="pagination-btn"
+                            >
+                              <ChevronLeft size={16} />
+                            </button>
+                            {Array.from({ length: totalPages }, (_, i) => (
+                              <button
+                                key={i + 1}
+                                onClick={() => paginate(i + 1)}
+                                className={`pagination-btn ${currentPage === i + 1 ? "active" : ""}`}
+                              >
+                                {i + 1}
+                              </button>
+                            ))}
+                            <button
+                              onClick={nextPage}
+                              disabled={currentPage === totalPages}
+                              className="pagination-btn"
+                            >
+                              <ChevronRight size={16} />
+                            </button>
                           </div>
-                        ))}
-                      </div>
+                        )}
+                      </>
                     ) : (
                       <p className="no-products">
                         No products found in this subcategory
@@ -1035,18 +1254,34 @@ const Category = () => {
               </button>
             </div>
             <div className="modal-body">
+              {/* Search for products */}
+              <div className="search-container product-search">
+                <Search size={16} className="search-icon" />
+                <input
+                  type="text"
+                  placeholder="Search products..."
+                  value={searchCategory}
+                  onChange={(e) => setSearchCategory(e.target.value)}
+                  className="search-input"
+                />
+              </div>
+
               {isLoadingCategoryProducts ? (
                 <div className="loading-indicator">
                   Loading category products...
                 </div>
-              ) : categoryProducts.length > 0 ? (
+              ) : filteredCategoryProducts.length > 0 ? (
                 <div className="category-products-container">
                   <div className="category-products-grid">
-                    {categoryProducts.map((product) => (
-                      <div key={product.id} className="product-card">
+                    {paginatedCategoryProducts.map((product) => (
+                      <div
+                        key={product.id}
+                        className="product-card"
+                        onClick={() => handleProductSelect(product)}
+                      >
                         <div className="product-card-image">
                           <img
-                            src={product.image || "/placeholder.svg"}
+                            src={product.image || No_image}
                             alt={product.name}
                           />
                           {product.on_promotion && (
@@ -1094,17 +1329,162 @@ const Category = () => {
                               <span>No subcategory</span>
                             )}
                           </div>
+                          <button className="view-product-btn">
+                            <Eye size={14} /> View Details
+                          </button>
                         </div>
                       </div>
                     ))}
                   </div>
+
+                  {/* Pagination controls */}
+                  {filteredCategoryProducts.length > productsPerPage && (
+                    <div className="pagination">
+                      <button
+                        onClick={prevPage}
+                        disabled={currentPage === 1}
+                        className="pagination-btn"
+                      >
+                        <ChevronLeft size={16} />
+                      </button>
+                      {Array.from({ length: totalPages }, (_, i) => (
+                        <button
+                          key={i + 1}
+                          onClick={() => paginate(i + 1)}
+                          className={`pagination-btn ${currentPage === i + 1 ? "active" : ""}`}
+                        >
+                          {i + 1}
+                        </button>
+                      ))}
+                      <button
+                        onClick={nextPage}
+                        disabled={currentPage === totalPages}
+                        className="pagination-btn"
+                      >
+                        <ChevronRight size={16} />
+                      </button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="no-products-message">
                   <Package size={48} />
-                  <p>No products found in this category</p>
+                  <p>
+                    {searchCategory
+                      ? "No products match your search"
+                      : "No products found in this category"}
+                  </p>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Product Detail Modal */}
+      {isProductDetailModalOpen && selectedProduct && (
+        <div className="modal-overlay">
+          <div className="modal-content product-detail-modal">
+            <div className="modal-header">
+              <h3>Product Details</h3>
+              <button
+                className="close-modal-btn"
+                onClick={closeProductDetailModal}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="product-detail-container">
+                <div className="product-detail-image">
+                  <img
+                    src={selectedProduct.image || No_image}
+                    alt={selectedProduct.name}
+                  />
+                  {selectedProduct.on_promotion && (
+                    <span className="promotion-tag large">On Sale</span>
+                  )}
+                </div>
+                <div className="product-detail-info">
+                  <h2 className="product-detail-title">
+                    {selectedProduct.name}
+                  </h2>
+                  <p className="product-detail-description">
+                    {selectedProduct.description}
+                  </p>
+
+                  <div className="product-detail-meta">
+                    <div className="product-detail-price">
+                      <span className="detail-label">Price:</span>
+                      {selectedProduct.on_promotion ? (
+                        <div className="price-container">
+                          <span className="original-price large">
+                            {formatPrice(selectedProduct.unit_price)}
+                          </span>
+                          <span className="sale-price large">
+                            {formatPrice(selectedProduct.promo_price)}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="price-value">
+                          {formatPrice(selectedProduct.unit_price)}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="product-detail-stock">
+                      <span className="detail-label">Stock Status:</span>
+                      <span
+                        className={`stock-indicator large ${selectedProduct.quantity > 0 ? "in-stock" : "out-of-stock"}`}
+                      >
+                        {selectedProduct.quantity > 0
+                          ? `${selectedProduct.quantity} in stock`
+                          : "Out of stock"}
+                      </span>
+                    </div>
+
+                    {selectedProduct.category_id && (
+                      <div className="product-detail-category">
+                        <span className="detail-label">Category:</span>
+                        <span className="category-value">
+                          {categories.find(
+                            (cat) => cat.id === selectedProduct.category_id,
+                          )?.name || "Unknown"}
+                        </span>
+                      </div>
+                    )}
+
+                    {selectedProduct.subcategory_id && (
+                      <div className="product-detail-subcategory">
+                        <span className="detail-label">Subcategory:</span>
+                        <span className="subcategory-value">
+                          {subcategories.find(
+                            (sub) => sub.id === selectedProduct.subcategory_id,
+                          )?.name || "Unknown"}
+                        </span>
+                      </div>
+                    )}
+
+                    {selectedProduct.created_at && (
+                      <div className="product-detail-date">
+                        <span className="detail-label">Added on:</span>
+                        <span className="date-value">
+                          {formatDateTime(selectedProduct.created_at)}
+                        </span>
+                      </div>
+                    )}
+
+                    {selectedProduct.expiry_date && (
+                      <div className="product-detail-expiry">
+                        <span className="detail-label">Expiry Date:</span>
+                        <span className="expiry-value">
+                          {formatDate(selectedProduct.expiry_date)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

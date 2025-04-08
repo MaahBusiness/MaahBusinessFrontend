@@ -15,6 +15,7 @@ import Reports from "./components/Reports/Reports";
 import Category from "./components/Category/Category";
 import Dashboard from "./components/Dashboard/Dashboard";
 import Invoice from "./components/invoice/Invoice";
+import ArchiveManager from "./components/invoice/ArchiveManager";
 import ProfileLayout from "./components/Profile/ProfileLayout";
 import ProfileInfo from "./components/Profile/ProfileInfo";
 import ChangePassword from "./components/Profile/ChangePassword";
@@ -46,6 +47,7 @@ const App = () => {
               <Route path="/reports" element={<Reports />} />
               <Route path="/category" element={<Category />} />
               <Route path="/Invoice" element={<Invoice />} />
+              <Route path="/ArchiveManager" element={<ArchiveManager />} />
 
               <Route path="/profile" element={<ProfileLayout />}>
                 <Route path="info" element={<ProfileInfo />} />

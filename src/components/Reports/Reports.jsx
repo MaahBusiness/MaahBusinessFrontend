@@ -1,6 +1,8 @@
 "use client";
 import axios from "axios";
 import { useState, useEffect } from "react";
+import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
 import {
   Loader2,
   FileText,
@@ -8,327 +10,209 @@ import {
   Calendar,
   BarChart,
   RefreshCw,
+  AlertCircle,
+  Info,
   X,
   Plus,
 } from "lucide-react";
-import { format } from "date-fns";
-import { useNavigate } from "react-router-dom";
 import "./reports.css";
 
 const Reports = () => {
-  // Navigation
   const navigate = useNavigate();
 
-  // Form state
-  const [reportType, setReportType] = useState("sales");
-  const [startDate, setStartDate] = useState("");
-  const [startTime, setStartTime] = useState("00:00"); // Add start time state
-  const [endDate, setEndDate] = useState("");
-  const [endTime, setEndTime] = useState("23:59"); // Add end time state with default end of day
-  const [showReportModal, setShowReportModal] = useState(false);
+  // Basic state
+  const [token, setToken] = useState(localStorage.getItem("token"));
+  const [error, setError] = useState(null);
+  const [debugInfo, setDebugInfo] = useState(null);
 
-  // Report state
+  // Report generation state
+  const [reportType, setReportType] = useState("inventory");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [showReportModal, setShowReportModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Report data state
   const [report, setReport] = useState(null);
   const [savedReports, setSavedReports] = useState([]);
-  const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("summary");
-  const [debugInfo, setDebugInfo] = useState(null);
-  const [showDebug, setShowDebug] = useState(false);
 
-  // Inventory data state
+  // Inventory specific state
   const [inventoryData, setInventoryData] = useState([]);
   const [isLoadingInventory, setIsLoadingInventory] = useState(false);
   const [inventoryError, setInventoryError] = useState(null);
 
-  // Check for authentication token on component mount
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  // Authentication check on mount
   useEffect(() => {
-    const token = localStorage.getItem("token");
     if (!token) {
-      // Redirect to login if no token exists
       navigate("/login");
       return;
     }
 
-    // Load saved reports if authenticated
-    const storedReports = localStorage.getItem("savedReports");
-    if (storedReports) {
-      try {
-        const parsedReports = JSON.parse(storedReports);
-        setSavedReports(parsedReports || []);
-      } catch (err) {
-        console.error("Error parsing saved reports:", err);
-        localStorage.removeItem("savedReports"); // Clear corrupted data
-        setSavedReports([]);
+    // Load saved reports from localStorage
+    try {
+      const storedReports = localStorage.getItem("savedReports");
+      if (storedReports) {
+        setSavedReports(JSON.parse(storedReports));
       }
+    } catch (err) {
+      console.error("Error loading saved reports:", err);
+      localStorage.removeItem("savedReports");
     }
-  }, [navigate]);
+  }, [navigate, token]);
 
-  // Handle report type selection
-  const handleReportTypeSelect = (type) => {
-    setReportType(type);
-    setError(null);
+  // Tab switching effect
+  useEffect(() => {
+    if (!report) return;
 
-    // If inventory type is selected, fetch detailed inventory data
-    if (type === "inventory") {
-      fetchInventoryData();
-    }
-  };
+    const tabTriggers = document.querySelectorAll(".tab-trigger");
+    const tabContents = document.querySelectorAll(".tab-content");
 
-  // Open report generation modal
-  const openReportModal = () => {
-    setShowReportModal(true);
-    setError(null);
-  };
+    const handleTabClick = (e) => {
+      const tabId = e.currentTarget.getAttribute("data-tab");
 
-  // Close report generation modal
-  const closeReportModal = () => {
-    setShowReportModal(false);
-  };
+      // Update active classes
+      tabTriggers.forEach((t) => t.classList.remove("active"));
+      tabContents.forEach((c) => c.classList.remove("active"));
 
-  // Update the fetchInventoryData function to properly handle date-time parameters
-  const fetchInventoryData = async () => {
+      e.currentTarget.classList.add("active");
+      document.getElementById(tabId)?.classList.add("active");
+    };
+
+    // Add event listeners
+    tabTriggers.forEach((trigger) => {
+      trigger.addEventListener("click", handleTabClick);
+    });
+
+    // Cleanup
+    return () => {
+      tabTriggers.forEach((trigger) => {
+        trigger.removeEventListener("click", handleTabClick);
+      });
+    };
+  }, [report]);
+
+  // Fetch inventory data from API
+  const fetchInventoryData = async (
+    useStartDate = startDate,
+    useEndDate = endDate,
+  ) => {
     setIsLoadingInventory(true);
     setInventoryError(null);
 
-    // Get the authentication token
-    const token = localStorage.getItem("token");
     if (!token) {
       setInventoryError("Authentication required. Please log in again.");
       setIsLoadingInventory(false);
-      return;
+      return [];
     }
 
     try {
-      // Add date parameters to the request if they exist
+      // Build URL with query parameters
       let url = "http://localhost:8000/api/v1/report/inventory-data/";
       const params = new URLSearchParams();
 
-      if (startDate) {
-        // Combine date and time for more precise filtering
-        const [startHours, startMinutes] = startTime.split(":").map(Number);
-        const formattedStartDate = new Date(startDate);
-        formattedStartDate.setHours(startHours, startMinutes, 0, 0);
-
-        // Format as ISO string and ensure it's in the correct format
-        const isoStartDate = formattedStartDate.toISOString();
-        console.log("Using start date:", isoStartDate);
-        params.append("start_date", isoStartDate);
+      // Only add date parameters if they are not empty strings
+      if (useStartDate && useStartDate.trim() !== "") {
+        params.append("start_date", useStartDate);
       }
 
-      if (endDate) {
-        // Combine date and time for more precise filtering
-        const [endHours, endMinutes] = endTime.split(":").map(Number);
-        const formattedEndDate = new Date(endDate);
-        formattedEndDate.setHours(endHours, endMinutes, 59, 999);
-
-        // Format as ISO string and ensure it's in the correct format
-        const isoEndDate = formattedEndDate.toISOString();
-        console.log("Using end date:", isoEndDate);
-        params.append("end_date", isoEndDate);
+      if (useEndDate && useEndDate.trim() !== "") {
+        params.append("end_date", useEndDate);
       }
 
-      // Append params to URL if any exist
-      const queryString = params.toString();
-      if (queryString) {
-        url += `?${queryString}`;
+      if (params.toString()) {
+        url += `?${params.toString()}`;
       }
 
-      console.log("Fetching inventory data from URL:", url);
+      console.log("Fetching inventory data from:", url);
 
       const response = await axios.get(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      console.log("Inventory data response:", response.data);
+      console.log("Inventory API response:", response.data);
 
-      // Use only the API response data
-      const inventoryItems = Array.isArray(response.data)
-        ? response.data
-        : response.data.results || [response.data];
+      // Process the response data
+      let inventoryItems = [];
 
-      // Remove duplicates by creating a Map with product_name as key
-      const uniqueInventoryMap = new Map();
-      inventoryItems.forEach((item) => {
-        // Use a combination of product name and category as the unique key
-        const key = `${item.product_name}-${item.category}`;
-        if (!uniqueInventoryMap.has(key)) {
-          uniqueInventoryMap.set(key, item);
-        }
-      });
+      if (Array.isArray(response.data)) {
+        inventoryItems = response.data;
+      } else if (
+        response.data.results &&
+        Array.isArray(response.data.results)
+      ) {
+        inventoryItems = response.data.results;
+      } else if (response.data) {
+        // Handle case where a single item is returned
+        inventoryItems = [response.data];
+      }
 
-      // Convert Map back to array
-      const uniqueInventoryItems = Array.from(uniqueInventoryMap.values());
+      // Remove duplicates using product name and category as key
+      const uniqueItems = Array.from(
+        new Map(
+          inventoryItems.map((item) => [
+            `${item.product_name || item.name}-${item.category}`,
+            item,
+          ]),
+        ).values(),
+      );
 
-      setInventoryData(uniqueInventoryItems);
+      setInventoryData(uniqueItems);
+      return uniqueItems;
     } catch (err) {
       console.error("Error fetching inventory data:", err);
 
-      // Handle authentication errors
-      if (err.response && err.response.status === 401) {
-        setInventoryError("Authentication expired. Please log in again.");
-        setIsLoadingInventory(false);
-        localStorage.removeItem("token");
-        setTimeout(() => navigate("/login"), 2000);
-        return;
+      // Handle different error scenarios
+      if (!err.response) {
+        setInventoryError("Network error. Please check your connection.");
+        return [];
       }
 
-      // Handle "No inventory report found" error gracefully
-      if (
-        err.response &&
-        err.response.data &&
-        err.response.data.error === "No inventory report found."
-      ) {
-        console.log("No inventory data found for the selected date range");
-        // Set empty array instead of showing error
-        setInventoryData([]);
-      } else {
-        // For other errors, set the error message
-        setInventoryError(
-          err.response?.data?.detail ||
-            err.response?.data?.message ||
-            err.response?.data?.error ||
-            "Failed to fetch inventory data",
-        );
+      if (err.response.status === 401) {
+        setInventoryError("Authentication expired. Please log in again.");
+        localStorage.removeItem("token");
+        setToken(null);
+        setTimeout(() => navigate("/login"), 2000);
+        return [];
       }
+
+      // Special handling for "No inventory report found"
+      if (err.response.data?.error === "No inventory report found.") {
+        console.log("No inventory data found for the selected date range");
+        setInventoryData([]);
+        return [];
+      }
+
+      // Handle other errors
+      setInventoryError(
+        err.response.data?.detail ||
+          err.response.data?.message ||
+          err.response.data?.error ||
+          "Failed to fetch inventory data",
+      );
+      return [];
     } finally {
       setIsLoadingInventory(false);
     }
   };
 
-  // Add a function to directly query products by date range
-  const fetchProductsByDateRange = async () => {
-    if (!startDate || !endDate) {
-      setError("Please select both start and end dates");
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    // Get the authentication token
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setError("Authentication required. Please log in again.");
-      setIsLoading(false);
-      navigate("/login");
-      return;
-    }
-
-    try {
-      // Format dates with time
-      const [startHours, startMinutes] = startTime.split(":").map(Number);
-      const formattedStartDate = new Date(startDate);
-      formattedStartDate.setHours(startHours, startMinutes, 0, 0);
-
-      const [endHours, endMinutes] = endTime.split(":").map(Number);
-      const formattedEndDate = new Date(endDate);
-      formattedEndDate.setHours(endHours, endMinutes, 59, 999);
-
-      // Create query parameters
-      const params = new URLSearchParams({
-        start_date: formattedStartDate.toISOString(),
-        end_date: formattedEndDate.toISOString(),
-      });
-
-      console.log("Fetching products with date range:", params.toString());
-
-      // Make direct request to products API with date filter
-      const response = await axios.get(
-        `http://localhost:8000/api/v1/product/products/?${params.toString()}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-
-      console.log("Products by date range response:", response.data);
-
-      // Process the products data
-      const products = response.data.results || [];
-
-      if (products.length === 0) {
-        setError("No products found in the selected date range");
-      } else {
-        // Create a report from the products data
-        const reportData = {
-          id: `report-${Date.now()}`,
-          report_type: "inventory",
-          date_generated: new Date().toISOString(),
-          created_at: new Date().toISOString(),
-          generated_by: "System",
-          date_range: {
-            start: formattedStartDate.toISOString(),
-            end: formattedEndDate.toISOString(),
-          },
-          report_data: {
-            report_type: "inventory",
-            total_products: products.length,
-            expired_count: products.filter(
-              (p) => p.product && p.product.is_expired,
-            ).length,
-            low_stock_count: products.filter(
-              (p) => p.product && p.product.quantity <= p.product.min_quantity,
-            ).length,
-            near_expiry_count: 0, // Would need logic to determine this
-            products: products,
-            created_at: new Date().toISOString(),
-          },
-        };
-
-        // Save and display the report
-        saveReport(reportData);
-        setReport(reportData);
-
-        // Also update inventory data
-        setInventoryData(
-          products.map((p) => ({
-            product_name: p.product?.name || "Unknown",
-            category: p.category?.name || "Uncategorized",
-            subcategory: p.subcategory?.name || "",
-            unit_price: p.product?.unit_price || 0,
-            quantity: p.product?.quantity || 0,
-            min_quantity: p.product?.min_quantity || 0,
-            expiry_date: p.product?.expiry_date || null,
-            is_expired: p.product?.is_expired || false,
-            is_critical: p.product?.quantity <= p.product?.min_quantity,
-          })),
-        );
-      }
-    } catch (err) {
-      console.error("Error fetching products by date range:", err);
-      setError("Failed to fetch products. Please try again.");
-
-      // Log detailed error information
-      if (err.response) {
-        console.error("Error response:", err.response.data);
-        console.error("Error status:", err.response.status);
-        setDebugInfo({
-          status: err.response.status,
-          data: err.response.data,
-          headers: err.response.headers,
-        });
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Fixed version of handleGenerateReport function - corrected try/catch/finally structure
+  // Generate a new report
   const handleGenerateReport = async (e) => {
-    e.preventDefault(); // Prevent default form submission behavior
+    e.preventDefault();
     setIsLoading(true);
     setError(null);
     setDebugInfo(null);
-
-    // Close the modal
+    setCurrentPage(1);
+    // Reset inventory data to prevent data from previous reports affecting the new one
+    setInventoryData([]);
+    // Reset the report to null to clear any previous report data
+    setReport(null);
     closeReportModal();
 
-    // Get the authentication token
-    const token = localStorage.getItem("token");
     if (!token) {
       setError("Authentication required. Please log in again.");
       setIsLoading(false);
@@ -340,210 +224,214 @@ const Reports = () => {
       // Create query parameters
       const params = new URLSearchParams({
         report_type: reportType,
-        created_at: new Date().toISOString(), // Add created_at timestamp in ISO format
       });
 
-      // Format and add date parameters if they exist
-      if (startDate) {
-        // Combine date and time for more precise filtering
-        const [startHours, startMinutes] = startTime.split(":").map(Number);
+      // Format dates for API - only add if they are not empty
+      if (startDate && startDate.trim() !== "") {
         const formattedStartDate = new Date(startDate);
-        // Use local time instead of UTC to avoid timezone issues
-        formattedStartDate.setHours(startHours, startMinutes, 0, 0);
-
-        // Format as ISO string
-        const isoStartDate = formattedStartDate.toISOString();
-        console.log("Using start date for report:", isoStartDate);
-        params.append("start_date", isoStartDate);
+        formattedStartDate.setUTCHours(0, 0, 0, 0);
+        params.append("start_date", formattedStartDate.toISOString());
       }
 
-      if (endDate) {
-        // Combine date and time for more precise filtering
-        const [endHours, endMinutes] = endTime.split(":").map(Number);
+      if (endDate && endDate.trim() !== "") {
         const formattedEndDate = new Date(endDate);
-        // Use local time instead of UTC to avoid timezone issues
-        formattedEndDate.setHours(endHours, endMinutes, 59, 999);
-
-        // Format as ISO string
-        const isoEndDate = formattedEndDate.toISOString();
-        console.log("Using end date for report:", isoEndDate);
-        params.append("end_date", isoEndDate);
+        formattedEndDate.setUTCHours(23, 59, 59, 999);
+        params.append("end_date", formattedEndDate.toISOString());
       }
 
-      // Debug log
-      console.log("Request params:", params.toString());
-      console.log(
-        "Generating report with URL:",
-        `http://localhost:8000/api/v1/report/generate/?${params.toString()}`,
-      );
+      console.log("Generating report with params:", params.toString());
 
-      // If inventory report is selected, fetch detailed inventory data with the same date parameters
+      // For inventory reports, fetch inventory data first with the same date parameters
+      let inventoryItems = [];
       if (reportType === "inventory") {
-        await fetchInventoryData();
+        inventoryItems = await fetchInventoryData(startDate, endDate);
       }
 
-      // Make the GET request with authentication token
+      // Generate the report
       const response = await axios.get(
         `http://localhost:8000/api/v1/report/generate/?${params.toString()}`,
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         },
       );
 
-      // Get report data from API response
-      const responseData = response.data;
-      console.log("Response data:", responseData);
+      console.log("Report generation response:", response.data);
 
-      // Check if the API returned a success response
-      if (!responseData.success) {
-        // If no success but we have data, we can still show the report
-        if (responseData.data && responseData.data.report_data) {
-          // Continue with the report generation
-        } else {
-          setError(responseData.message || "Failed to generate report");
-          return;
-        }
+      // Process the response
+      const responseData = response.data;
+
+      if (!responseData.success && !responseData.data?.report_data) {
+        throw new Error(responseData.message || "Failed to generate report");
       }
 
-      // Restructure the data to match what the frontend expects
+      // Create report object
       const reportData = {
         id: responseData.data?.report_id || `report-${Date.now()}`,
         report_type: responseData.data?.report_data?.report_type || reportType,
-        date_generated: new Date().toISOString(), // Current date in ISO format
-        created_at: responseData.data?.created_at || new Date().toISOString(), // Use API's created_at or generate new one
-        generated_by: responseData.data?.report_data?.generated_by || "Unknown",
+        date_generated: new Date().toISOString(),
+        generated_by: responseData.data?.report_data?.generated_by || "System",
         date_range: {
-          start: startDate ? new Date(startDate).toISOString() : null,
-          end: endDate ? new Date(endDate).toISOString() : null,
+          start:
+            startDate && startDate.trim() !== ""
+              ? new Date(startDate).toISOString()
+              : null,
+          end:
+            endDate && endDate.trim() !== ""
+              ? new Date(endDate).toISOString()
+              : null,
         },
-        report_data: {
-          ...(responseData.data?.report_data || {
-            // Default empty data structure based on report type
-            report_type: reportType,
-            total_products: 0,
-            expired_count: 0,
-            low_stock_count: 0,
-            near_expiry_count: 0,
-            products: [],
-          }),
-          created_at: responseData.data?.created_at || new Date().toISOString(), // Add created_at to report_data as well
-        },
+        report_data:
+          responseData.data?.report_data || createEmptyReportData(reportType),
       };
 
-      console.log("Processed report data:", reportData);
+      // For inventory reports, add the inventory data
+      if (reportType === "inventory" && inventoryItems.length > 0) {
+        reportData.report_data.products = inventoryItems;
+        reportData.report_data.total_products = inventoryItems.length;
+        reportData.report_data.expired_count = inventoryItems.filter(
+          (item) => item.is_expired,
+        ).length;
+        reportData.report_data.low_stock_count = inventoryItems.filter(
+          (item) => item.is_critical,
+        ).length;
+        reportData.report_data.near_expiry_count = inventoryItems.filter(
+          (item) => item.is_near_expiry,
+        ).length;
+      }
 
-      // Save the report
+      // Save and set the report
       saveReport(reportData);
       setReport(reportData);
     } catch (err) {
-      console.error("API error:", err);
+      console.error("Error generating report:", err);
 
-      // Handle authentication errors specifically
-      if (err.response && err.response.status === 401) {
-        setError("Authentication expired. Please log in again.");
-        localStorage.removeItem("token"); // Clear invalid token
-        setTimeout(() => navigate("/login"), 2000); // Redirect after showing message
-        return;
-      }
+      handleApiError(err, "report generation");
 
-      // Handle "No inventory report found" error gracefully
-      if (
-        err.response &&
-        err.response.data &&
-        err.response.data.error === "No inventory report found."
-      ) {
-        console.log("Creating empty report due to no data found");
-        // Create an empty report instead of showing error
+      // Create empty report for "No inventory report found" error
+      if (err.response?.data?.error === "No inventory report found.") {
         const emptyReport = {
           id: `report-${Date.now()}`,
           report_type: reportType,
           date_generated: new Date().toISOString(),
-          created_at: new Date().toISOString(), // Add created_at timestamp in ISO format
           generated_by: "System",
           date_range: {
-            start: startDate ? new Date(startDate).toISOString() : null,
-            end: endDate ? new Date(endDate).toISOString() : null,
+            start:
+              startDate && startDate.trim() !== ""
+                ? new Date(startDate).toISOString()
+                : null,
+            end:
+              endDate && endDate.trim() !== ""
+                ? new Date(endDate).toISOString()
+                : null,
           },
-          report_data: {
-            report_type: reportType,
-            total_products: 0,
-            expired_count: 0,
-            low_stock_count: 0,
-            near_expiry_count: 0,
-            products: [],
-            created_at: new Date().toISOString(), // Add created_at to report_data as well
-          },
+          report_data: createEmptyReportData(reportType),
         };
 
         saveReport(emptyReport);
         setReport(emptyReport);
-
-        // Show a more helpful message to the user
-        setError(
-          "No data found for the selected date range. An empty report has been generated.",
-        );
-      } else {
-        // Enhanced error handling for other errors
-        if (err.response) {
-          // The request was made and the server responded with a status code
-          // that falls out of the range of 2xx
-          console.error("Error response:", err.response.data);
-          console.error("Error status:", err.response.status);
-
-          // Set detailed error message
-          if (err.response.status === 400) {
-            setError(
-              `API Error (400): ${err.response.data?.detail || err.response.data?.message || err.response.data?.error || "Invalid request parameters"}`,
-            );
-          } else if (err.response.status === 500) {
-            setError(
-              `Server Error (500): ${err.response.data?.detail || err.response.data?.message || "Internal server error"}`,
-            );
-          } else {
-            setError(
-              `Error ${err.response.status}: ${err.response.data?.detail || err.response.data?.message || err.response.data?.error || "Unknown error"}`,
-            );
-          }
-
-          // Save debug info
-          setDebugInfo({
-            status: err.response.status,
-            data: err.response.data,
-            headers: err.response.headers,
-          });
-        } else if (err.request) {
-          // The request was made but no response was received
-          console.error("No response received:", err.request);
-          setError(
-            "No response received from server. Please check if the server is running.",
-          );
-        } else {
-          // Something happened in setting up the request that triggered an Error
-          console.error("Error setting up request:", err.message);
-          setError(`Request error: ${err.message}`);
-        }
       }
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Add logout functionality
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    navigate("/login");
+  // Create empty report data structure based on report type
+  const createEmptyReportData = (type) => {
+    switch (type) {
+      case "inventory":
+        return {
+          report_type: type,
+          total_products: 0,
+          expired_count: 0,
+          low_stock_count: 0,
+          near_expiry_count: 0,
+          products: [],
+        };
+      case "sales":
+        return {
+          report_type: type,
+          total_sales: 0,
+          total_revenue: 0,
+          products_sold: [],
+        };
+      case "returns":
+        return {
+          report_type: type,
+          total_returns: 0,
+          total_return_value: 0,
+          return_rate: 0,
+          returned_products: [],
+        };
+      case "expired":
+        return {
+          report_type: type,
+          total_expired: 0,
+          total_loss_value: 0,
+          expiry_rate: 0,
+          expired_products: [],
+        };
+      default:
+        return { report_type: type };
+    }
   };
 
-  // Update the saveReport function to ensure proper date formatting
+  // Handle API errors
+  const handleApiError = (err, context) => {
+    if (!err.response) {
+      setError(
+        `Network error during ${context}. Please check your connection.`,
+      );
+      return;
+    }
+
+    if (err.response.status === 401) {
+      setError("Authentication expired. Please log in again.");
+      localStorage.removeItem("token");
+      setToken(null);
+      setTimeout(() => navigate("/login"), 2000);
+      return;
+    }
+
+    // Set detailed error message
+    let errorMessage = `Error during ${context}: `;
+
+    if (err.response.status === 400) {
+      errorMessage +=
+        err.response.data?.detail ||
+        err.response.data?.message ||
+        err.response.data?.error ||
+        "Invalid request parameters";
+    } else if (err.response.status === 500) {
+      errorMessage +=
+        err.response.data?.detail ||
+        err.response.data?.message ||
+        "Internal server error";
+    } else {
+      errorMessage +=
+        err.response.data?.detail ||
+        err.response.data?.message ||
+        err.response.data?.error ||
+        "Unknown error";
+    }
+
+    setError(errorMessage);
+
+    // Save debug info
+    setDebugInfo({
+      status: err.response.status,
+      data: err.response.data,
+      headers: err.response.headers,
+    });
+  };
+
+  // Save report to localStorage
   const saveReport = (newReport) => {
     if (!newReport) return;
 
-    // Create a deep copy to avoid reference issues
+    // Create a deep copy
     const reportToSave = JSON.parse(JSON.stringify(newReport));
 
-    // Ensure date_generated is in ISO format
+    // Ensure dates are in ISO format
     if (
       !reportToSave.date_generated ||
       !reportToSave.date_generated.includes("T")
@@ -551,12 +439,6 @@ const Reports = () => {
       reportToSave.date_generated = new Date().toISOString();
     }
 
-    // Ensure created_at is in ISO format
-    if (!reportToSave.created_at || !reportToSave.created_at.includes("T")) {
-      reportToSave.created_at = new Date().toISOString();
-    }
-
-    // Ensure date range is properly formatted
     if (reportToSave.date_range) {
       if (
         reportToSave.date_range.start &&
@@ -576,18 +458,16 @@ const Reports = () => {
       }
     }
 
-    // Check if a report with this ID already exists
-    const existingReportIndex = savedReports.findIndex(
+    // Update or add the report
+    const existingIndex = savedReports.findIndex(
       (r) => r.id === reportToSave.id,
     );
-
     let updatedReports;
-    if (existingReportIndex >= 0) {
-      // Update existing report
+
+    if (existingIndex >= 0) {
       updatedReports = [...savedReports];
-      updatedReports[existingReportIndex] = reportToSave;
+      updatedReports[existingIndex] = reportToSave;
     } else {
-      // Add new report
       updatedReports = [...savedReports, reportToSave];
     }
 
@@ -600,56 +480,75 @@ const Reports = () => {
     }
   };
 
-  // Update the loadReport function to fetch data with date filters
+  // Load a saved report
   const loadReport = (reportId) => {
     const reportToLoad = savedReports.find((r) => r.id === reportId);
-    if (reportToLoad) {
-      setReport(reportToLoad);
+    if (!reportToLoad) return;
 
-      // Set the date filters from the saved report
-      if (reportToLoad.date_range) {
-        if (reportToLoad.date_range.start) {
-          const startDateObj = new Date(reportToLoad.date_range.start);
-          setStartDate(startDateObj.toISOString().split("T")[0]); // Format as YYYY-MM-DD
+    // Reset all state variables to prevent data from previous reports affecting the new one
+    setInventoryData([]);
+    setCurrentPage(1);
+    setError(null);
+    setInventoryError(null);
+    setDebugInfo(null);
 
-          // Extract time and format as HH:MM
-          const hours = startDateObj.getUTCHours().toString().padStart(2, "0");
-          const minutes = startDateObj
-            .getUTCMinutes()
-            .toString()
-            .padStart(2, "0");
-          setStartTime(`${hours}:${minutes}`);
-        }
+    // Now set the new report
+    setReport(reportToLoad);
+    setReportType(reportToLoad.report_type);
 
-        if (reportToLoad.date_range.end) {
-          const endDateObj = new Date(reportToLoad.date_range.end);
-          setEndDate(endDateObj.toISOString().split("T")[0]); // Format as YYYY-MM-DD
-
-          // Extract time and format as HH:MM
-          const hours = endDateObj.getUTCHours().toString().padStart(2, "0");
-          const minutes = endDateObj
-            .getUTCMinutes()
-            .toString()
-            .padStart(2, "0");
-          setEndTime(`${hours}:${minutes}`);
-        }
+    // Set date filters from the saved report
+    if (reportToLoad.date_range) {
+      if (reportToLoad.date_range.start) {
+        const startDateObj = new Date(reportToLoad.date_range.start);
+        setStartDate(startDateObj.toISOString().split("T")[0]);
+      } else {
+        setStartDate("");
       }
 
-      // If loading an inventory report, fetch the latest inventory data with the date filters
-      if (reportToLoad.report_type === "inventory") {
-        fetchInventoryData();
+      if (reportToLoad.date_range.end) {
+        const endDateObj = new Date(reportToLoad.date_range.end);
+        setEndDate(endDateObj.toISOString().split("T")[0]);
+      } else {
+        setEndDate("");
       }
+    } else {
+      // Ensure dates are cleared if no date range exists
+      setStartDate("");
+      setEndDate("");
+    }
+
+    // For inventory reports, try to fetch fresh data
+    if (reportToLoad.report_type === "inventory") {
+      fetchInventoryData(
+        reportToLoad.date_range?.start
+          ? new Date(reportToLoad.date_range.start).toISOString().split("T")[0]
+          : "",
+        reportToLoad.date_range?.end
+          ? new Date(reportToLoad.date_range.end).toISOString().split("T")[0]
+          : "",
+      ).catch((err) => {
+        console.error("Error fetching inventory data for saved report:", err);
+
+        // If API returns "No inventory report found", use saved data
+        if (err.response?.data?.error === "No inventory report found.") {
+          console.log("Using saved inventory data");
+          if (reportToLoad.report_data?.products) {
+            setInventoryData(reportToLoad.report_data.products);
+          }
+        }
+      });
     }
   };
 
   // Delete a saved report
   const deleteReport = (reportId, e) => {
     e.stopPropagation();
+
     const updatedReports = savedReports.filter((r) => r.id !== reportId);
     setSavedReports(updatedReports);
     localStorage.setItem("savedReports", JSON.stringify(updatedReports));
 
-    // If the current report is deleted, clear it
+    // Clear current report if it's the one being deleted
     if (report && report.id === reportId) {
       setReport(null);
     }
@@ -670,6 +569,7 @@ const Reports = () => {
   // Format date
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
+
     try {
       return format(new Date(dateString), "PPP");
     } catch (err) {
@@ -678,49 +578,75 @@ const Reports = () => {
     }
   };
 
-  // Handle tab switching
-  const handleTabChange = (tab) => {
-    setActiveTab(tab);
+  // Handle report type selection
+  const handleReportTypeSelect = (type) => {
+    setReportType(type);
+    setError(null);
+
+    // Clear inventory data when switching report types to prevent data leakage
+    if (type !== "inventory") {
+      setInventoryData([]);
+      setInventoryError(null);
+    } else {
+      // Only fetch inventory data if we're switching to inventory report type
+      fetchInventoryData("", "");
+    }
   };
 
-  // Add tab functionality with useEffect
-  useEffect(() => {
-    if (!report) return; // Don't run if there's no report
+  // Modal controls
+  const openReportModal = () => {
+    // Reset form fields when opening the modal
+    setReportType("inventory");
+    setStartDate("");
+    setEndDate("");
+    setError(null);
+    setShowReportModal(true);
+  };
 
-    const tabTriggers = document.querySelectorAll(".tab-trigger");
-    const tabContents = document.querySelectorAll(".tab-content");
+  const closeReportModal = () => {
+    setShowReportModal(false);
+  };
 
-    tabTriggers.forEach((trigger) => {
-      trigger.addEventListener("click", () => {
-        const tabId = trigger.getAttribute("data-tab");
-
-        // Remove active class from all triggers and contents
-        tabTriggers.forEach((t) => t.classList.remove("active"));
-        tabContents.forEach((c) => c.classList.remove("active"));
-
-        // Add active class to clicked trigger and corresponding content
-        trigger.classList.add("active");
-        document.getElementById(tabId)?.classList.add("active");
-      });
-    });
-  }, [report]);
-
-  // Update the renderInventoryDataTable function to handle empty data gracefully
+  // Render inventory data table with pagination
   const renderInventoryDataTable = () => {
-    if (!inventoryData || inventoryData.length === 0) {
+    // Determine which data to use - prioritize fresh inventory data
+    const dataToUse =
+      inventoryData.length > 0
+        ? inventoryData
+        : report?.report_data?.products || [];
+
+    if (!dataToUse || dataToUse.length === 0) {
       return (
         <div className="empty-inventory-message">
           <Package size={48} />
           <p>No inventory data found for the selected date range</p>
           <button
             className="refresh-inventory-btn"
-            onClick={fetchInventoryData}
+            onClick={() =>
+              fetchInventoryData(
+                report?.date_range?.start
+                  ? new Date(report.date_range.start)
+                      .toISOString()
+                      .split("T")[0]
+                  : "",
+                report?.date_range?.end
+                  ? new Date(report.date_range.end).toISOString().split("T")[0]
+                  : "",
+              )
+            }
           >
+            <RefreshCw size={16} />
             Refresh Inventory Data
           </button>
         </div>
       );
     }
+
+    // Calculate pagination
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentItems = dataToUse.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.ceil(dataToUse.length / itemsPerPage);
 
     return (
       <div className="table-container">
@@ -734,45 +660,143 @@ const Reports = () => {
               <th className="text-right">Quantity</th>
               <th className="text-right">Min Qty</th>
               <th>Expiry Date</th>
-              <th>Status</th>
             </tr>
           </thead>
           <tbody>
-            {inventoryData.map((item, index) => (
-              <tr
-                key={index}
-                className={
-                  item.is_expired
-                    ? "expired-row"
-                    : item.is_critical
-                      ? "critical-row"
-                      : ""
-                }
-              >
-                <td>{item.product_name}</td>
-                <td>{item.category}</td>
-                <td>{item.subcategory}</td>
-                <td className="text-right">
-                  {formatCurrency(item.unit_price)}
-                </td>
-                <td className="text-right">{item.quantity}</td>
-                <td className="text-right">{item.min_quantity}</td>
-                <td>{formatDate(item.expiry_date)}</td>
-                <td>
-                  {item.is_expired ? (
-                    <span className="status-badge expired">Expired</span>
-                  ) : item.is_critical ? (
-                    <span className="status-badge critical">Low Stock</span>
-                  ) : (
-                    <span className="status-badge normal">Normal</span>
-                  )}
+            {currentItems.length > 0 ? (
+              currentItems.map((item, index) => (
+                <tr
+                  key={index}
+                  className={
+                    item.is_expired
+                      ? "expired-row"
+                      : item.is_critical
+                        ? "critical-row"
+                        : ""
+                  }
+                >
+                  <td>{item.product_name || item.name}</td>
+                  <td>{item.category}</td>
+                  <td>{item.subcategory}</td>
+                  <td className="text-right">
+                    {formatCurrency(item.unit_price)}
+                  </td>
+                  <td className="text-right">{item.quantity}</td>
+                  <td className="text-right">{item.min_quantity}</td>
+                  <td>{formatDate(item.expiry_date)}</td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={7} className="text-center">
+                  No data available
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
+
+        {/* Pagination controls */}
+        {renderPaginationControls(dataToUse.length, totalPages)}
       </div>
     );
+  };
+
+  // Render paginated table for any data type
+  const renderPaginatedTable = (items, columns) => {
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return (
+        <tbody>
+          <tr>
+            <td colSpan={columns.length}>No data available</td>
+          </tr>
+        </tbody>
+      );
+    }
+
+    // Calculate pagination
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentItems = items.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.ceil(items.length / itemsPerPage);
+
+    return (
+      <>
+        <tbody>
+          {currentItems.map((item, index) => (
+            <tr key={index}>
+              {columns.map((column, colIndex) => (
+                <td
+                  key={colIndex}
+                  className={`${column.align === "right" ? "text-right" : ""} ${column.className || ""}`}
+                >
+                  {column.format
+                    ? column.format(item[column.key])
+                    : item[column.key]}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+
+        {/* Pagination controls */}
+        {items.length > itemsPerPage && (
+          <tfoot>
+            <tr>
+              <td colSpan={columns.length}>
+                {renderPaginationControls(items.length, totalPages)}
+              </td>
+            </tr>
+          </tfoot>
+        )}
+      </>
+    );
+  };
+
+  // Reusable pagination controls
+  const renderPaginationControls = (totalItems, totalPages) => {
+    if (totalItems <= itemsPerPage) return null;
+
+    return (
+      <div className="pagination">
+        <button
+          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+          disabled={currentPage === 1}
+          className="pagination-btn"
+        >
+          Previous
+        </button>
+
+        <span className="pagination-info">
+          Page {currentPage} of {totalPages}
+        </span>
+
+        <button
+          onClick={() =>
+            setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+          }
+          disabled={currentPage === totalPages}
+          className="pagination-btn"
+        >
+          Next
+        </button>
+      </div>
+    );
+  };
+
+  // Get inventory stats
+  const getInventoryStats = () => {
+    const dataToUse =
+      inventoryData.length > 0
+        ? inventoryData
+        : report?.report_data?.products || [];
+
+    return {
+      totalProducts: dataToUse.length,
+      expiredCount: dataToUse.filter((item) => item.is_expired).length,
+      lowStockCount: dataToUse.filter((item) => item.is_critical).length,
+      nearExpiryCount: dataToUse.filter((item) => item.is_near_expiry).length,
+    };
   };
 
   return (
@@ -798,44 +822,13 @@ const Reports = () => {
                 <span>Generate New Report</span>
               </button>
 
-              {/* Add the debug section that shows when toggled */}
-              {showDebug && (
+              {/* Debug Info */}
+              {debugInfo && (
                 <div className="debug-section">
                   <h3 className="debug-title">Debug Information</h3>
                   <div className="debug-content">
-                    <p>
-                      <strong>Start Date:</strong>{" "}
-                      {startDate ? `${startDate} ${startTime}` : "Not set"}
-                    </p>
-                    <p>
-                      <strong>End Date:</strong>{" "}
-                      {endDate ? `${endDate} ${endTime}` : "Not set"}
-                    </p>
-                    <p>
-                      <strong>ISO Start:</strong>{" "}
-                      {startDate
-                        ? new Date(`${startDate}T${startTime}`).toISOString()
-                        : "N/A"}
-                    </p>
-                    <p>
-                      <strong>ISO End:</strong>{" "}
-                      {endDate
-                        ? new Date(`${endDate}T${endTime}`).toISOString()
-                        : "N/A"}
-                    </p>
-                    {debugInfo && (
-                      <>
-                        <p>
-                          <strong>Last API Status:</strong> {debugInfo.status}
-                        </p>
-                        <p>
-                          <strong>Last API Response:</strong>
-                        </p>
-                        <pre className="debug-json">
-                          {JSON.stringify(debugInfo.data, null, 2)}
-                        </pre>
-                      </>
-                    )}
+                    <p>Status: {debugInfo.status}</p>
+                    <p>Error: {JSON.stringify(debugInfo.data)}</p>
                   </div>
                 </div>
               )}
@@ -909,7 +902,7 @@ const Reports = () => {
 
               {report && (
                 <div className="report-data">
-                  {/* Add a date filter display in the report header to show the active date range */}
+                  {/* Report Header with Date Range */}
                   <div className="report-header-section">
                     <div className="report-type-badge">
                       {report.report_type?.toUpperCase() || "UNKNOWN"}
@@ -918,7 +911,7 @@ const Reports = () => {
                       <div className="date-filter-info">
                         <span className="date-filter-label">Date Range:</span>
                         <span className="date-filter-value">
-                          {startDate ? formatDate(startDate) : "All time"} -{" "}
+                          {startDate ? formatDate(startDate) : "All time"} -
                           {endDate ? formatDate(endDate) : "Present"}
                         </span>
                       </div>
@@ -926,6 +919,7 @@ const Reports = () => {
                   </div>
 
                   <div className="report-content-section">
+                    {/* Sales Report */}
                     {report.report_type === "sales" && report.report_data && (
                       <>
                         <div className="report-stats">
@@ -956,54 +950,56 @@ const Reports = () => {
                                   <th className="text-right">Revenue</th>
                                 </tr>
                               </thead>
-                              <tbody>
-                                {Array.isArray(
+                              {Array.isArray(
+                                report.report_data.products_sold,
+                              ) ? (
+                                renderPaginatedTable(
                                   report.report_data.products_sold,
-                                ) ? (
-                                  report.report_data.products_sold.map(
-                                    (product, index) => (
-                                      <tr key={index}>
-                                        <td>{product.product_name}</td>
-                                        <td className="text-right">
-                                          {product.total_quantity}
-                                        </td>
-                                        <td className="text-right primary">
-                                          {formatCurrency(
-                                            product.total_revenue,
-                                          )}
-                                        </td>
-                                      </tr>
-                                    ),
-                                  )
-                                ) : (
+                                  [
+                                    { key: "product__name", label: "Product" },
+                                    {
+                                      key: "total_quantity",
+                                      label: "Quantity",
+                                      align: "right",
+                                    },
+                                    {
+                                      key: "total_revenue",
+                                      label: "Revenue",
+                                      align: "right",
+                                      format: formatCurrency,
+                                      className: "primary",
+                                    },
+                                  ],
+                                )
+                              ) : (
+                                <tbody>
                                   <tr>
                                     <td colSpan="3">
                                       No product data available
                                     </td>
                                   </tr>
-                                )}
-                              </tbody>
+                                </tbody>
+                              )}
                             </table>
                           </div>
                         </div>
                       </>
                     )}
 
-                    {/* Update the inventory stats section to only use API data */}
+                    {/* Inventory Report */}
                     {report.report_type === "inventory" && (
                       <>
                         <div className="report-stats">
                           <div className="stat-card">
                             <p className="stat-label">Total Products</p>
                             <p className="stat-value">
-                              {inventoryData.length || 0}
+                              {getInventoryStats().totalProducts}
                             </p>
                           </div>
                           <div className="stat-card">
                             <p className="stat-label">Expired Products</p>
                             <p className="stat-value danger">
-                              {inventoryData.filter((item) => item.is_expired)
-                                .length || 0}
+                              {getInventoryStats().expiredCount}
                             </p>
                           </div>
                         </div>
@@ -1012,21 +1008,18 @@ const Reports = () => {
                           <div className="stat-card">
                             <p className="stat-label">Near Expiry</p>
                             <p className="stat-value warning">
-                              {inventoryData.filter(
-                                (item) => item.is_near_expiry,
-                              ).length || 0}
+                              {getInventoryStats().nearExpiryCount}
                             </p>
                           </div>
                           <div className="stat-card">
                             <p className="stat-label">Low Stock</p>
                             <p className="stat-value warning">
-                              {inventoryData.filter((item) => item.is_critical)
-                                .length || 0}
+                              {getInventoryStats().lowStockCount}
                             </p>
                           </div>
                         </div>
 
-                        {/* Detailed Inventory Data Table - Now using the extracted function */}
+                        {/* Detailed Inventory Data Table */}
                         <div className="report-table-section">
                           <h4 className="table-title">Detailed Inventory</h4>
                           {renderInventoryDataTable()}
@@ -1034,6 +1027,7 @@ const Reports = () => {
                       </>
                     )}
 
+                    {/* Returns Report */}
                     {report.report_type === "returns" && report.report_data && (
                       <>
                         <div className="report-stats">
@@ -1065,38 +1059,48 @@ const Reports = () => {
                                   <th>Reason</th>
                                 </tr>
                               </thead>
-                              <tbody>
-                                {Array.isArray(
+                              {Array.isArray(
+                                report.report_data.returned_products,
+                              ) ? (
+                                renderPaginatedTable(
                                   report.report_data.returned_products,
-                                ) ? (
-                                  report.report_data.returned_products.map(
-                                    (product, index) => (
-                                      <tr key={index}>
-                                        <td>{product.product_name}</td>
-                                        <td className="text-right">
-                                          {product.quantity}
-                                        </td>
-                                        <td className="text-right danger">
-                                          {formatCurrency(product.value)}
-                                        </td>
-                                        <td>{product.reason || "N/A"}</td>
-                                      </tr>
-                                    ),
-                                  )
-                                ) : (
+                                  [
+                                    { key: "product_name", label: "Product" },
+                                    {
+                                      key: "quantity",
+                                      label: "Quantity",
+                                      align: "right",
+                                    },
+                                    {
+                                      key: "value",
+                                      label: "Value",
+                                      align: "right",
+                                      format: formatCurrency,
+                                      className: "danger",
+                                    },
+                                    {
+                                      key: "reason",
+                                      label: "Reason",
+                                      format: (val) => val || "N/A",
+                                    },
+                                  ],
+                                )
+                              ) : (
+                                <tbody>
                                   <tr>
                                     <td colSpan="4">
                                       No return data available
                                     </td>
                                   </tr>
-                                )}
-                              </tbody>
+                                </tbody>
+                              )}
                             </table>
                           </div>
                         </div>
                       </>
                     )}
 
+                    {/* Expired Products Report */}
                     {report.report_type === "expired" && report.report_data && (
                       <>
                         <div className="report-stats">
@@ -1128,34 +1132,41 @@ const Reports = () => {
                                   <th className="text-right">Loss Value</th>
                                 </tr>
                               </thead>
-                              <tbody>
-                                {Array.isArray(
+                              {Array.isArray(
+                                report.report_data.expired_products,
+                              ) ? (
+                                renderPaginatedTable(
                                   report.report_data.expired_products,
-                                ) ? (
-                                  report.report_data.expired_products.map(
-                                    (product, index) => (
-                                      <tr key={index}>
-                                        <td>{product.product_name}</td>
-                                        <td className="text-right">
-                                          {product.quantity}
-                                        </td>
-                                        <td>
-                                          {formatDate(product.expiry_date)}
-                                        </td>
-                                        <td className="text-right danger">
-                                          {formatCurrency(product.loss_value)}
-                                        </td>
-                                      </tr>
-                                    ),
-                                  )
-                                ) : (
+                                  [
+                                    { key: "product_name", label: "Product" },
+                                    {
+                                      key: "quantity",
+                                      label: "Quantity",
+                                      align: "right",
+                                    },
+                                    {
+                                      key: "expiry_date",
+                                      label: "Expiry Date",
+                                      format: formatDate,
+                                    },
+                                    {
+                                      key: "loss_value",
+                                      label: "Loss Value",
+                                      align: "right",
+                                      format: formatCurrency,
+                                      className: "danger",
+                                    },
+                                  ],
+                                )
+                              ) : (
+                                <tbody>
                                   <tr>
                                     <td colSpan="4">
                                       No expired product data available
                                     </td>
                                   </tr>
-                                )}
-                              </tbody>
+                                </tbody>
+                              )}
                             </table>
                           </div>
                         </div>
@@ -1167,7 +1178,7 @@ const Reports = () => {
                     <p className="generated-by">
                       Generated by:{" "}
                       <span className="user-name">
-                        {report.generated_by || ""}
+                        {report.generated_by || "System"}
                       </span>
                     </p>
                   </div>
@@ -1190,7 +1201,7 @@ const Reports = () => {
                   <button
                     className="tab-trigger active"
                     data-tab="summary"
-                    onClick={() => handleTabChange("summary")}
+                    onClick={() => setActiveTab("summary")}
                   >
                     Summary
                   </button>
@@ -1198,7 +1209,7 @@ const Reports = () => {
                     <button
                       className="tab-trigger"
                       data-tab="inventory-details"
-                      onClick={() => handleTabChange("inventory-details")}
+                      onClick={() => setActiveTab("inventory-details")}
                     >
                       Inventory Details
                     </button>
@@ -1258,7 +1269,7 @@ const Reports = () => {
                       </>
                     )}
 
-                    {/* Update the inventory dashboard summary to use the actual inventory data */}
+                    {/* Inventory Dashboard Summary */}
                     {report.report_type === "inventory" && (
                       <>
                         <div className="summary-card">
@@ -1270,7 +1281,7 @@ const Reports = () => {
                           <div className="summary-card-content">
                             <div className="summary-value-container">
                               <p className="summary-value">
-                                {inventoryData.length || 0}
+                                {getInventoryStats().totalProducts}
                               </p>
                             </div>
                           </div>
@@ -1285,8 +1296,7 @@ const Reports = () => {
                           <div className="summary-card-content">
                             <div className="summary-value-container">
                               <div className="summary-value danger">
-                                {inventoryData.filter((item) => item.is_expired)
-                                  .length || 0}
+                                {getInventoryStats().expiredCount}
                               </div>
                             </div>
                           </div>
@@ -1299,9 +1309,7 @@ const Reports = () => {
                           <div className="summary-card-content">
                             <div className="summary-value-container">
                               <div className="summary-value warning">
-                                {inventoryData.filter(
-                                  (item) => item.is_critical,
-                                ).length || 0}
+                                {getInventoryStats().lowStockCount}
                               </div>
                             </div>
                           </div>
@@ -1428,8 +1436,24 @@ const Reports = () => {
                       </div>
 
                       <div className="inventory-details-table">
-                        {/* Using the extracted function to render inventory data table */}
                         {renderInventoryDataTable()}
+                      </div>
+
+                      <div className="inventory-summary">
+                        <div className="inventory-summary-item">
+                          <Info size={16} />
+                          <span>
+                            Products with quantity below minimum stock level are
+                            marked as <strong>Low Stock</strong>
+                          </span>
+                        </div>
+                        <div className="inventory-summary-item">
+                          <AlertCircle size={16} />
+                          <span>
+                            Products past their expiration date are marked as{" "}
+                            <strong>Expired</strong>
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1492,7 +1516,6 @@ const Reports = () => {
                 </div>
               </div>
 
-              {/* Update the date input fields in the modal to handle date changes better */}
               <div className="date-range-section">
                 <h4>Date Range (Optional)</h4>
                 <div className="date-inputs">
@@ -1500,50 +1523,44 @@ const Reports = () => {
                     <label htmlFor="start-date" className="form-label">
                       Start Date
                     </label>
-                    <div className="date-time-inputs">
-                      <input
-                        id="start-date"
-                        type="date"
-                        value={startDate}
-                        onChange={(e) => {
-                          setStartDate(e.target.value);
-                          console.log("Start date set to:", e.target.value);
-                        }}
-                        className="form-input date-input"
-                      />
-                    </div>
+                    <input
+                      id="start-date"
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => {
+                        setStartDate(e.target.value);
+                        console.log("Start date set to:", e.target.value);
+                      }}
+                      className="form-input"
+                    />
                   </div>
 
                   <div className="form-group">
                     <label htmlFor="end-date" className="form-label">
                       End Date
                     </label>
-                    <div className="date-time-inputs">
-                      <input
-                        id="end-date"
-                        type="date"
-                        value={endDate}
-                        onChange={(e) => {
-                          setEndDate(e.target.value);
-                          console.log("End date set to:", e.target.value);
-                        }}
-                        className="form-input date-input"
-                      />
-                    </div>
+                    <input
+                      id="end-date"
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => {
+                        setEndDate(e.target.value);
+                        console.log("End date set to:", e.target.value);
+                      }}
+                      className="form-input"
+                    />
                   </div>
                 </div>
               </div>
 
-              {/* Update the report modal footer to include a direct fetch button */}
               <div className="report-modal-footer">
                 <button
                   type="button"
-                  className="cancel-btnn"
+                  className="cancel-btn"
                   onClick={closeReportModal}
                 >
                   Cancel
                 </button>
-
                 <button
                   type="submit"
                   className="generate-btn"
