@@ -53,7 +53,7 @@ const Signup = () => {
         throw new Error("Registration failed.");
       }
 
-      // Store user data and token
+      // Store user data and token in localStorage (similar to login)
       localStorage.setItem("token", data.token);
 
       // Store user profile data in localStorage for immediate access
@@ -71,8 +71,8 @@ const Signup = () => {
         localStorage.setItem("user", JSON.stringify(userData));
       }
 
-      // Redirect to profile page
-      navigate("/profile/info");
+      // Redirect to home page instead of profile page
+      navigate("/");
     } catch (error) {
       setErrorMessage(error.message);
     } finally {

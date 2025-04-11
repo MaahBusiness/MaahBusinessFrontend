@@ -1,6 +1,6 @@
 "use client";
 
-import No_image from "../../assets/No_IMG.jpg";
+import No_image from "../../../public/assets/No_IMG.jpg";
 import { useState, useEffect } from "react";
 import {
   Plus,
@@ -87,6 +87,10 @@ const Category = () => {
   const [productsPerPage] = useState(6);
   const [totalPages, setTotalPages] = useState(1);
 
+  // Authentication state
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState(null);
+
   // Add these state variables after the other state declarations
   const [categoryDetails, setCategoryDetails] = useState(null);
   const [isLoadingCategoryDetails, setIsLoadingCategoryDetails] =
@@ -95,37 +99,130 @@ const Category = () => {
   const apiBaseUrl = "http://localhost:8000/api/v1/categories";
   const productApiBaseUrl = "http://localhost:8000/api/v1/product";
 
+  // Check authentication on component mount
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        // Redirect to login if no token is found
+        window.location.href = "/login";
+        return;
+      }
+
+      try {
+        // First check if we have cached user data from signup
+        const cachedUser = localStorage.getItem("user");
+        if (cachedUser) {
+          const userData = JSON.parse(cachedUser);
+          // Use cached data temporarily while we fetch the latest
+          setUser(userData);
+        }
+
+        // Fetch latest user information from API
+        const response = await fetch(
+          "http://localhost:8000/api/v1/user-info/",
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+
+        if (response.ok) {
+          const userData = await response.json();
+          setUser(userData);
+          localStorage.setItem("user", JSON.stringify(userData));
+          setIsAuthenticated(true);
+        } else {
+          // If token is invalid, redirect to login
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          window.location.href = "/login";
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        setIsAuthenticated(false);
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
+  // Create axios instance with authentication headers
+  const getAuthAxios = () => {
+    const token = localStorage.getItem("token");
+    return axios.create({
+      headers: {
+        Authorization: token ? `Bearer ${token}` : "",
+        "Content-Type": "application/json",
+      },
+    });
+  };
+
   // Fetch categories and subcategories on component mount or when refreshData changes
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
+        const authAxios = getAuthAxios();
+
         // Fetch categories
-        const response = await axios.get(`${apiBaseUrl}/categories/`);
+        const response = await authAxios.get(`${apiBaseUrl}/categories/`);
         console.log("Categories fetched successfully:", response.data.results);
         setCategories(response.data.results || []);
 
         // Fetch subcategories
         try {
-          const subResponse = await axios.get(`${apiBaseUrl}/subcategories/`);
+          const subResponse = await authAxios.get(
+            `${apiBaseUrl}/subcategories/`,
+          );
           console.log("Subcategories fetched successfully:", subResponse.data);
           setSubcategories(subResponse.data.results || []);
         } catch (subError) {
           console.error("Error fetching subcategories:", subError);
+
+          // Check if error is due to authentication
+          if (subError.response && subError.response.status === 401) {
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            window.location.href = "/login";
+            return;
+          }
+
           setSubcategories([]);
         }
 
         setIsLoading(false);
       } catch (error) {
         console.error("Error fetching categories:", error);
+
+        // Check if error is due to authentication
+        if (error.response && error.response.status === 401) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          window.location.href = "/login";
+          return;
+        }
+
         setCategories([]);
         setSubcategories([]);
         setIsLoading(false);
       }
     };
 
-    fetchData();
-  }, [refreshData]);
+    if (isAuthenticated) {
+      fetchData();
+    } else if (localStorage.getItem("token")) {
+      // If we have a token but haven't confirmed authentication yet, wait
+      // The authentication check in the first useEffect will handle this
+    } else {
+      // No token, redirect to login
+      window.location.href = "/login";
+    }
+  }, [refreshData, isAuthenticated]);
 
   // Fetch subcategory details when a subcategory is selected
   const fetchSubcategoryDetails = async (subcategoryId) => {
@@ -133,7 +230,8 @@ const Category = () => {
 
     setIsLoadingDetails(true);
     try {
-      const response = await axios.get(
+      const authAxios = getAuthAxios();
+      const response = await authAxios.get(
         `${apiBaseUrl}/${subcategoryId}/subcategory/detail/`,
       );
       console.log("Subcategory details fetched successfully:", response.data);
@@ -141,6 +239,15 @@ const Category = () => {
       setIsLoadingDetails(false);
     } catch (error) {
       console.error("Error fetching subcategory details:", error);
+
+      // Check if error is due to authentication
+      if (error.response && error.response.status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        window.location.href = "/login";
+        return;
+      }
+
       setSubcategoryDetails(null);
       setIsLoadingDetails(false);
     }
@@ -152,7 +259,8 @@ const Category = () => {
 
     setIsLoadingProducts(true);
     try {
-      const response = await axios.get(`${apiBaseUrl}/sub/products/`, {
+      const authAxios = getAuthAxios();
+      const response = await authAxios.get(`${apiBaseUrl}/sub/products/`, {
         params: { subcategory_id: subcategoryId },
       });
       console.log("Subcategory products fetched successfully:", response.data);
@@ -166,6 +274,15 @@ const Category = () => {
       setIsLoadingProducts(false);
     } catch (error) {
       console.error("Error fetching subcategory products:", error);
+
+      // Check if error is due to authentication
+      if (error.response && error.response.status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        window.location.href = "/login";
+        return;
+      }
+
       setSubcategoryProducts([]);
       setTotalPages(1);
       setIsLoadingProducts(false);
@@ -178,8 +295,10 @@ const Category = () => {
 
     setIsLoadingCategoryProducts(true);
     try {
+      const authAxios = getAuthAxios();
+
       // First try the categories API endpoint
-      const response = await axios.get(`${apiBaseUrl}/products/`, {
+      const response = await authAxios.get(`${apiBaseUrl}/products/`, {
         params: { category_id: categoryId },
       });
       console.log("Category products fetched successfully:", response.data);
@@ -192,9 +311,18 @@ const Category = () => {
     } catch (error) {
       console.error("Error fetching category products:", error);
 
+      // Check if error is due to authentication
+      if (error.response && error.response.status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        window.location.href = "/login";
+        return;
+      }
+
       // Fallback to fetching from product API if category API fails
       try {
-        const productResponse = await axios.get(
+        const authAxios = getAuthAxios();
+        const productResponse = await authAxios.get(
           `${productApiBaseUrl}/products/by-category/${categoryId}/`,
         );
         console.log("Products fetched by category:", productResponse.data);
@@ -208,6 +336,15 @@ const Category = () => {
         setCurrentPage(1); // Reset to first page when fetching new products
       } catch (productError) {
         console.error("Error fetching from product API:", productError);
+
+        // Check if error is due to authentication
+        if (productError.response && productError.response.status === 401) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          window.location.href = "/login";
+          return;
+        }
+
         setCategoryProducts([]);
         setTotalPages(1);
       }
@@ -221,13 +358,23 @@ const Category = () => {
     if (!productId) return;
 
     try {
-      const response = await axios.get(`${productApiBaseUrl}/detail/`, {
+      const authAxios = getAuthAxios();
+      const response = await authAxios.get(`${productApiBaseUrl}/detail/`, {
         params: { product_id: productId },
       });
       console.log("Product details fetched successfully:", response.data);
       return response.data;
     } catch (error) {
       console.error("Error fetching product details:", error);
+
+      // Check if error is due to authentication
+      if (error.response && error.response.status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        window.location.href = "/login";
+        return null;
+      }
+
       return null;
     }
   };
@@ -238,7 +385,8 @@ const Category = () => {
 
     setIsLoadingCategoryDetails(true);
     try {
-      const response = await axios.get(
+      const authAxios = getAuthAxios();
+      const response = await authAxios.get(
         `${apiBaseUrl}/${categoryId}/category/detail/`,
       );
       console.log("Category details fetched successfully:", response.data);
@@ -246,6 +394,15 @@ const Category = () => {
       setIsLoadingCategoryDetails(false);
     } catch (error) {
       console.error("Error fetching category details:", error);
+
+      // Check if error is due to authentication
+      if (error.response && error.response.status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        window.location.href = "/login";
+        return;
+      }
+
       setCategoryDetails(null);
       setIsLoadingCategoryDetails(false);
     }
@@ -350,6 +507,8 @@ const Category = () => {
     }
 
     try {
+      const authAxios = getAuthAxios();
+
       if (editingCategory) {
         // Update existing category via API
         const categoryData = {
@@ -357,14 +516,9 @@ const Category = () => {
           description: categoryDescription,
         };
 
-        await axios.put(
+        await authAxios.put(
           `${apiBaseUrl}/${editingCategory.id}/category/update/`,
           categoryData,
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-          },
         );
 
         console.log("Category updated successfully");
@@ -379,14 +533,9 @@ const Category = () => {
           description: categoryDescription,
         };
 
-        const response = await axios.post(
+        const response = await authAxios.post(
           `${apiBaseUrl}/category/create/`,
           categoryData,
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-          },
         );
 
         console.log("Category created successfully:", response.data);
@@ -398,6 +547,15 @@ const Category = () => {
       closeCategoryModal();
     } catch (error) {
       console.error("Error creating/updating category:", error);
+
+      // Check if error is due to authentication
+      if (error.response && error.response.status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        window.location.href = "/login";
+        return;
+      }
+
       setFormError(
         error.response?.data?.message ||
           "Failed to process category. Please try again.",
@@ -420,7 +578,8 @@ const Category = () => {
 
     // Check if category has products
     try {
-      const response = await axios.get(`${productApiBaseUrl}/products/`);
+      const authAxios = getAuthAxios();
+      const response = await authAxios.get(`${productApiBaseUrl}/products/`);
       const hasProducts = response.data.results.some(
         (product) => product.category_id === id,
       );
@@ -433,12 +592,21 @@ const Category = () => {
       }
     } catch (error) {
       console.error("Error checking for products:", error);
+
+      // Check if error is due to authentication
+      if (error.response && error.response.status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        window.location.href = "/login";
+        return;
+      }
     }
 
     if (window.confirm("Are you sure you want to delete this category?")) {
       try {
+        const authAxios = getAuthAxios();
         // Delete category via API
-        await axios.delete(`${apiBaseUrl}/${id}/category/delete/`);
+        await authAxios.delete(`${apiBaseUrl}/${id}/category/delete/`);
 
         // Update local state
         setCategories(categories.filter((cat) => cat.id !== id));
@@ -446,6 +614,15 @@ const Category = () => {
         showStatusMessage("Category deleted successfully!", "warning");
       } catch (error) {
         console.error("Error deleting category:", error);
+
+        // Check if error is due to authentication
+        if (error.response && error.response.status === 401) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          window.location.href = "/login";
+          return;
+        }
+
         showStatusMessage(
           "Failed to delete category. Please try again.",
           "error",
@@ -505,6 +682,8 @@ const Category = () => {
     }
 
     try {
+      const authAxios = getAuthAxios();
+
       if (editingSubcategory) {
         // Update existing subcategory via API
         const subcategoryData = {
@@ -513,14 +692,9 @@ const Category = () => {
           category_id: selectedCategory.id,
         };
 
-        const response = await axios.put(
+        const response = await authAxios.put(
           `${apiBaseUrl}/${editingSubcategory.id}/subcategory/update/`,
           subcategoryData,
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-          },
         );
 
         console.log("Subcategory updated successfully:", response.data);
@@ -542,14 +716,9 @@ const Category = () => {
           category_id: selectedCategory.id,
         };
 
-        const response = await axios.post(
+        const response = await authAxios.post(
           `${apiBaseUrl}/subcategory/create/`,
           subcategoryData,
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-          },
         );
 
         console.log("Subcategory created successfully:", response.data);
@@ -563,6 +732,15 @@ const Category = () => {
       closeSubcategoryModal();
     } catch (error) {
       console.error("Error creating/updating subcategory:", error);
+
+      // Check if error is due to authentication
+      if (error.response && error.response.status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        window.location.href = "/login";
+        return;
+      }
+
       setFormError(
         error.response?.data?.message ||
           "Failed to process subcategory. Please try again.",
@@ -573,7 +751,8 @@ const Category = () => {
   const deleteSubcategory = async (id) => {
     // Check if subcategory has products
     try {
-      const response = await axios.get(`${productApiBaseUrl}/products/`);
+      const authAxios = getAuthAxios();
+      const response = await authAxios.get(`${productApiBaseUrl}/products/`);
       const hasProducts = response.data.results.some(
         (product) => product.subcategory_id === id,
       );
@@ -586,18 +765,36 @@ const Category = () => {
       }
     } catch (error) {
       console.error("Error checking for products:", error);
+
+      // Check if error is due to authentication
+      if (error.response && error.response.status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        window.location.href = "/login";
+        return;
+      }
     }
 
     if (window.confirm("Are you sure you want to delete this subcategory?")) {
       try {
+        const authAxios = getAuthAxios();
         // Delete subcategory via API
-        await axios.delete(`${apiBaseUrl}/${id}/subcategory/delete/`);
+        await authAxios.delete(`${apiBaseUrl}/${id}/subcategory/delete/`);
 
         // Update local state
         setSubcategories(subcategories.filter((sub) => sub.id !== id));
         showStatusMessage("Subcategory deleted successfully!", "warning");
       } catch (error) {
         console.error("Error deleting subcategory:", error);
+
+        // Check if error is due to authentication
+        if (error.response && error.response.status === 401) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          window.location.href = "/login";
+          return;
+        }
+
         showStatusMessage(
           "Failed to delete subcategory. Please try again.",
           "error",
@@ -700,6 +897,16 @@ const Category = () => {
   const paginatedCategoryProducts = getCurrentProducts(
     filteredCategoryProducts,
   );
+
+  // If not authenticated and no token, show loading or redirect
+  if (!isAuthenticated && !localStorage.getItem("token")) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
+        <p>Checking authentication...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="category-dashboard">

@@ -15,6 +15,7 @@ import Reports from "./components/Reports/Reports";
 import Category from "./components/Category/Category";
 import Dashboard from "./components/Dashboard/Dashboard";
 import Invoice from "./components/invoice/Invoice";
+import Notification from "./components/Notification/Notification";
 import ArchiveManager from "./components/invoice/ArchiveManager";
 import ProfileLayout from "./components/Profile/ProfileLayout";
 import ProfileInfo from "./components/Profile/ProfileInfo";
@@ -48,6 +49,7 @@ const App = () => {
               <Route path="/category" element={<Category />} />
               <Route path="/Invoice" element={<Invoice />} />
               <Route path="/ArchiveManager" element={<ArchiveManager />} />
+              <Route path="/Notification" element={<Notification />} />
 
               <Route path="/profile" element={<ProfileLayout />}>
                 <Route path="info" element={<ProfileInfo />} />

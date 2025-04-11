@@ -100,16 +100,57 @@ const Invoice = () => {
     const token = localStorage.getItem("token");
     setIsAuthenticated(!!token);
 
-    // Check if user is a manager (this would depend on your auth system)
-    // For demo purposes, we'll assume a role is stored in localStorage
-    const userRole = localStorage.getItem("userRole");
-    setIsManager(userRole === "manager" || userRole === "admin");
-
     if (!token) {
       showStatusMessage(
         "Please log in to create or manage invoices",
         "warning",
       );
+      // Redirect to login page
+      window.location.href = "/login";
+      return;
+    }
+
+    // Try to get cached user data
+    try {
+      const cachedUser = localStorage.getItem("user");
+      if (cachedUser) {
+        const userData = JSON.parse(cachedUser);
+        // Check if user is a manager based on cached data
+        setIsManager(userData.role === "manager" || userData.role === "admin");
+      }
+
+      // Fetch latest user information from API
+      fetch("http://localhost:8000/api/v1/user-info/", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Failed to fetch user info");
+          }
+          return response.json();
+        })
+        .then((userData) => {
+          // Update user role based on fetched data
+          setIsManager(
+            userData.role === "manager" || userData.role === "admin",
+          );
+          // Store updated user data
+          localStorage.setItem("user", JSON.stringify(userData));
+        })
+        .catch((error) => {
+          console.error("Error fetching user info:", error);
+          if (error.message === "Unauthorized") {
+            localStorage.removeItem("token");
+            setIsAuthenticated(false);
+            window.location.href = "/login";
+          }
+        });
+    } catch (error) {
+      console.error("Error processing user data:", error);
     }
   }, []);
 
@@ -264,8 +305,7 @@ const Invoice = () => {
   // Helper function to calculate invoice totals
   const calculateTotals = () => {
     const subtotal = lines.reduce(
-      (sum, item) =>
-        sum + item.quantity * item.price * (1 - item.discount / 100),
+      (sum, item) => sum + (item.quantity * item.price - item.discount),
       0,
     );
     const taxAmount = subtotal * (tax / 100);
@@ -574,7 +614,7 @@ const Invoice = () => {
           },
         );
       } catch (firstError) {
-        console.error("First archive attempt failed:", firstError);
+        console.error("First Delete attempt failed:", firstError);
 
         if (
           firstError.response?.data?.error?.includes("UNIQUE constraint failed")
@@ -632,7 +672,7 @@ const Invoice = () => {
 
       // Refresh the invoice list after archiving
       fetchInvoices(currentPage);
-      showStatusMessage("Invoice archived successfully", "warning");
+      showStatusMessage("Invoice Deleted successfully", "warning");
     } catch (error) {
       console.error("Error archiving invoice:", error);
 
@@ -648,7 +688,7 @@ const Invoice = () => {
         // Show the specific error message from the API if available
         const errorMessage =
           error.response?.data?.error ||
-          "Failed to archive invoice. Please try again.";
+          "Failed to Delete invoice. Please try again.";
         showStatusMessage(errorMessage, "error");
 
         // Log detailed error information for debugging
@@ -1313,14 +1353,14 @@ const Invoice = () => {
                     <div className="line-item-col product">Product</div>
                     <div className="line-item-col quantity">Quantity</div>
                     <div className="line-item-col price">Price (XFA)</div>
-                    <div className="line-item-col discount">Discount (%)</div>
+                    <div className="line-item-col discount">Discount (XFA)</div>
                     <div className="line-item-col subtotal">Subtotal</div>
                     <div className="line-item-col actions">Actions</div>
                   </div>
 
                   {lines.map((line, index) => {
                     const lineSubtotal =
-                      line.quantity * line.price * (1 - line.discount / 100);
+                      line.quantity * line.price - line.discount;
 
                     return (
                       <div key={index} className="line-item">
@@ -1380,7 +1420,7 @@ const Invoice = () => {
                           <input
                             type="number"
                             min="0"
-                            max="100"
+                            step="0.01"
                             value={line.discount}
                             onChange={(e) =>
                               updateLine(
@@ -1513,11 +1553,7 @@ const Invoice = () => {
                       ? selectedInvoice.number
                       : selectedInvoice.id}
                   </h4>
-                  <div
-                    className={`invoice-status ${(selectedInvoice.status || "").toLowerCase()}`}
-                  >
-                    {selectedInvoice.status}
-                  </div>
+         
                 </div>
                 <div className="invoice-detail-dates">
                   <div className="date-item">
@@ -1576,7 +1612,7 @@ const Invoice = () => {
                             <td>{line.product_name || "Unknown Product"}</td>
                             <td>{lineQuantity}</td>
                             <td>{linePrice.toFixed(2)} XFA</td>
-                            <td>{lineDiscount}%</td>
+                            <td>{lineDiscount.toFixed(2)} XFA</td>
                             <td>{lineSubtotal.toFixed(2)} XFA</td>
                           </tr>
                         );

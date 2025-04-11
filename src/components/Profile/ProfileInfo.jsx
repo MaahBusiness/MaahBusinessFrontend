@@ -23,6 +23,7 @@ const ProfileInfo = () => {
 
   useEffect(() => {
     const fetchUserData = async () => {
+      // Get token from localStorage (stored during signup/login)
       const token = localStorage.getItem("token");
 
       if (!token) {
@@ -40,7 +41,7 @@ const ProfileInfo = () => {
           setOriginalUser(userData);
         }
 
-        // Fetch latest user information from API
+        // Fetch latest user information from API using the token from signup/login
         const response = await fetch(
           "http://localhost:8000/api/v1/user-info/",
           {
@@ -121,6 +122,7 @@ const ProfileInfo = () => {
     setErrorMessage("");
     setSuccessMessage("");
 
+    // Get token from localStorage (could be from signup or login)
     const token = localStorage.getItem("token");
     if (!token) {
       navigate("/login");

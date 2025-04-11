@@ -1,5 +1,5 @@
 import "./home.css";
-import img from "../../assets/pexels-cottonbro-7019213.jpg";
+import img from "../../../public/assets/hero.jpg";
 import { useNavigate } from "react-router-dom";
 
 const Home = () => {

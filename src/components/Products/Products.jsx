@@ -1,6 +1,6 @@
 "use client";
 
-import No_image from "../../assets/No_IMG.jpg";
+import No_image from "../../../public/assets/No_IMG.jpg";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import {
@@ -37,6 +37,11 @@ const Product = () => {
   const [expiryDate, setExpiryDate] = useState("");
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
+
+  // Authentication state
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState(null);
+
   const [formData, setFormData] = useState({
     id: null,
     name: "",
@@ -59,15 +64,78 @@ const Product = () => {
   const apiBaseUrl = "http://localhost:8000/api/v1/product";
   const categoryApiBaseUrl = "http://localhost:8000/api/v1/categories";
 
+  // Check authentication on component mount
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        // Redirect to login if no token is found
+        window.location.href = "/login";
+        return;
+      }
+
+      try {
+        // First check if we have cached user data from signup
+        const cachedUser = localStorage.getItem("user");
+        if (cachedUser) {
+          const userData = JSON.parse(cachedUser);
+          // Use cached data temporarily while we fetch the latest
+          setUser(userData);
+        }
+
+        // Fetch latest user information from API
+        const response = await fetch(
+          "http://localhost:8000/api/v1/user-info/",
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+
+        if (response.ok) {
+          const userData = await response.json();
+          setUser(userData);
+          localStorage.setItem("user", JSON.stringify(userData));
+          setIsAuthenticated(true);
+        } else {
+          // If token is invalid, redirect to login
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          window.location.href = "/login";
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        setIsAuthenticated(false);
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
+  // Create axios instance with authentication headers
+  const getAuthAxios = () => {
+    const token = localStorage.getItem("token");
+    return axios.create({
+      headers: {
+        Authorization: token ? `Bearer ${token}` : "",
+        "Content-Type": "application/json",
+      },
+    });
+  };
+
   // Fetch products and categories on component mount
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
+        const authAxios = getAuthAxios();
+
         // Fetch products
-        const productsResponse = await axios.get(
-          "http://localhost:8000/api/v1/product/products/",
-        );
+        const productsResponse = await authAxios.get(`${apiBaseUrl}/products/`);
         console.log(
           "Products fetched successfully",
           productsResponse.data.results,
@@ -75,7 +143,7 @@ const Product = () => {
         setProducts(productsResponse.data.results || []);
 
         // Fetch categories
-        const categoriesResponse = await axios.get(
+        const categoriesResponse = await authAxios.get(
           `${categoryApiBaseUrl}/categories/`,
         );
         console.log(
@@ -85,7 +153,7 @@ const Product = () => {
         setCategories(categoriesResponse.data.results || []);
 
         // Fetch all subcategories
-        const subcategoriesResponse = await axios.get(
+        const subcategoriesResponse = await authAxios.get(
           `${categoryApiBaseUrl}/subcategories/`,
         );
         console.log(
@@ -97,6 +165,15 @@ const Product = () => {
         setIsLoading(false);
       } catch (error) {
         console.error("Error fetching data:", error);
+
+        // Check if error is due to authentication
+        if (error.response && error.response.status === 401) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          window.location.href = "/login";
+          return;
+        }
+
         setIsLoading(false);
         setProducts([]);
         setCategories([]);
@@ -104,8 +181,16 @@ const Product = () => {
       }
     };
 
-    fetchData();
-  }, []);
+    if (isAuthenticated) {
+      fetchData();
+    } else if (localStorage.getItem("token")) {
+      // If we have a token but haven't confirmed authentication yet, wait
+      // The authentication check in the first useEffect will handle this
+    } else {
+      // No token, redirect to login
+      window.location.href = "/login";
+    }
+  }, [isAuthenticated]);
 
   // Update filtered subcategories when category changes or when subcategories are loaded
   useEffect(() => {
@@ -126,13 +211,21 @@ const Product = () => {
 
   const fetchProducts = async () => {
     try {
-      const response = await axios.get(
-        "http://localhost:8000/api/v1/product/products/",
-      );
+      const authAxios = getAuthAxios();
+      const response = await authAxios.get(`${apiBaseUrl}/products/`);
       console.log("Products fetched successfully", response.data.results);
       setProducts(response.data.results || []);
     } catch (error) {
       console.error("Error fetching products:", error);
+
+      // Check if error is due to authentication
+      if (error.response && error.response.status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        window.location.href = "/login";
+        return;
+      }
+
       setProducts([]);
     }
   };
@@ -141,12 +234,14 @@ const Product = () => {
   const fetchProductsByExpiryDate = async (date) => {
     setIsLoading(true);
     try {
+      const authAxios = getAuthAxios();
+
       // Format the date as YYYY-MM-DD for the API
       const formattedDate = new Date(date).toISOString().split("T")[0];
       console.log(`Fetching products with expiry date: ${formattedDate}`);
 
       // Make the API request
-      const response = await axios.get(`${apiBaseUrl}/expiry_date/`, {
+      const response = await authAxios.get(`${apiBaseUrl}/expiry_date/`, {
         params: { expiry_date: formattedDate },
       });
 
@@ -222,8 +317,10 @@ const Product = () => {
       // If we have products, try to fetch their category names
       if (productsToDisplay.length > 0) {
         try {
+          const authAxios = getAuthAxios();
+
           // Fetch categories to get names
-          const categoriesResponse = await axios.get(
+          const categoriesResponse = await authAxios.get(
             `${categoryApiBaseUrl}/categories/`,
           );
           const categoriesData = categoriesResponse.data.results || [];
@@ -251,7 +348,7 @@ const Product = () => {
             .map((item) => item.subcategory.id);
 
           if (subcategoryIds.length > 0) {
-            const subcategoriesResponse = await axios.get(
+            const subcategoriesResponse = await authAxios.get(
               `${categoryApiBaseUrl}/subcategories/`,
             );
             const subcategoriesData = subcategoriesResponse.data.results || [];
@@ -275,6 +372,15 @@ const Product = () => {
           }
         } catch (error) {
           console.error("Error fetching category/subcategory names:", error);
+
+          // Check if error is due to authentication
+          if (error.response && error.response.status === 401) {
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            window.location.href = "/login";
+            return;
+          }
+
           // Continue with the products we have, even without category names
         }
       }
@@ -285,7 +391,9 @@ const Product = () => {
       // Show a status message with the count of products found
       const statusElement = document.createElement("div");
       statusElement.className = "status-message info";
-      statusElement.textContent = `Found ${productsToDisplay.length} product${productsToDisplay.length !== 1 ? "s" : ""} with expiry date: ${new Date(date).toLocaleDateString()}`;
+      statusElement.textContent = `Found ${productsToDisplay.length} product${
+        productsToDisplay.length !== 1 ? "s" : ""
+      } with expiry date: ${new Date(date).toLocaleDateString()}`;
       document.body.appendChild(statusElement);
 
       // Remove the status message after 3 seconds
@@ -296,6 +404,15 @@ const Product = () => {
       }, 3000);
     } catch (error) {
       console.error("Error fetching products by expiry date:", error);
+
+      // Check if error is due to authentication
+      if (error.response && error.response.status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        window.location.href = "/login";
+        return;
+      }
+
       if (error.response) {
         console.error("Error response:", error.response.data);
         console.error("Error status:", error.response.status);
@@ -323,13 +440,23 @@ const Product = () => {
   const fetchProductDetails = async (productId) => {
     setIsLoading(true);
     try {
-      const response = await axios.get(`${apiBaseUrl}/detail/`, {
+      const authAxios = getAuthAxios();
+      const response = await authAxios.get(`${apiBaseUrl}/detail/`, {
         params: { product_id: productId },
       });
       console.log("Product details fetched successfully:", response.data);
       return response.data;
     } catch (error) {
       console.error("Error fetching product details:", error);
+
+      // Check if error is due to authentication
+      if (error.response && error.response.status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        window.location.href = "/login";
+        return null;
+      }
+
       return null;
     } finally {
       setIsLoading(false);
@@ -419,6 +546,8 @@ const Product = () => {
     setErrorMessage("");
 
     try {
+      const authAxios = getAuthAxios();
+
       if (isEditing) {
         // Update existing product via API
         const productData = new FormData();
@@ -483,11 +612,15 @@ const Product = () => {
         console.log("Form data entries:", [...productData.entries()]);
 
         // Use the updated API endpoint
-        const response = await axios.put(`${apiBaseUrl}/update/`, productData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
+        const response = await authAxios.put(
+          `${apiBaseUrl}/update/`,
+          productData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
           },
-        });
+        );
 
         console.log("Update response:", response.data);
 
@@ -569,7 +702,7 @@ const Product = () => {
 
         console.log("Creating product with data:", [...productData.entries()]);
 
-        const response = await axios.post(
+        const response = await authAxios.post(
           `${apiBaseUrl}/create/`,
           productData,
           {
@@ -593,6 +726,15 @@ const Product = () => {
       }
     } catch (error) {
       console.error("Error creating/updating product:", error);
+
+      // Check if error is due to authentication
+      if (error.response && error.response.status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        window.location.href = "/login";
+        return;
+      }
+
       if (error.response) {
         console.error("Error response data:", error.response.data);
 
@@ -702,6 +844,15 @@ const Product = () => {
       }
     } catch (error) {
       console.error("Error preparing product for edit:", error);
+
+      // Check if error is due to authentication
+      if (error.response && error.response.status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        window.location.href = "/login";
+        return;
+      }
+
       // Fallback to using the product data we already have
       setIsEditing(true);
       setEditingProductId(item.product.id);
@@ -740,8 +891,10 @@ const Product = () => {
     }
 
     try {
+      const authAxios = getAuthAxios();
+
       // Use the updated delete API endpoint
-      const response = await axios.delete(`${apiBaseUrl}/delete/`, {
+      const response = await authAxios.delete(`${apiBaseUrl}/delete/`, {
         params: { product_id: id },
       });
 
@@ -760,6 +913,15 @@ const Product = () => {
       }
     } catch (error) {
       console.error("Error deleting product:", error);
+
+      // Check if error is due to authentication
+      if (error.response && error.response.status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        window.location.href = "/login";
+        return;
+      }
+
       alert("Error deleting product. Please try again.");
     }
   };
@@ -791,6 +953,15 @@ const Product = () => {
       setShowDetailsModal(true);
     } catch (error) {
       console.error("Error fetching product details:", error);
+
+      // Check if error is due to authentication
+      if (error.response && error.response.status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        window.location.href = "/login";
+        return;
+      }
+
       // Fallback to using the product data we already have
       setSelectedProduct({
         ...item.product,
@@ -842,6 +1013,16 @@ const Product = () => {
   const getSubcategoryName = (subcategoryObj) => {
     return subcategoryObj ? subcategoryObj.name : "";
   };
+
+  // If not authenticated and no token, show loading or redirect
+  if (!isAuthenticated && !localStorage.getItem("token")) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
+        <p>Checking authentication...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="product-container">
@@ -996,7 +1177,7 @@ const Product = () => {
                     </div>
                   </div>
                   <div className="product-price-container">
-                    {product.on_promotion ? (
+                    {product.on_promotion && product.promo_price ? (
                       <>
                         <span className="product-price discounted">
                           {product.unit_price || 0} XFA
@@ -1324,7 +1505,7 @@ const Product = () => {
                       </div>
 
                       <div className="form-group">
-                        <label htmlFor="promo-price">Promotional Price</label>
+                        <label htmlFor="promo-price">Promotional Price *</label>
                         <div className="input-with-prefix">
                           <span className="input-prefix">$</span>
                           <input
@@ -1335,7 +1516,7 @@ const Product = () => {
                             min="0"
                             value={formData.promo_price}
                             onChange={handleChange}
-                            // Remove the required attribute
+                            required={formData.on_promotion}
                           />
                         </div>
                       </div>
@@ -1428,7 +1609,8 @@ const Product = () => {
                   </div>
 
                   <div className="product-details-price">
-                    {selectedProduct.on_promotion ? (
+                    {selectedProduct.on_promotion &&
+                    selectedProduct.promo_price ? (
                       <>
                         <span className="product-price discounted">
                           {selectedProduct.unit_price || 0} XFA
