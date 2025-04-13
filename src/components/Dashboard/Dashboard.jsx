@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
 import {
   BarChart,
   Bar,
@@ -39,7 +38,6 @@ import {
 import "./dashboard.css";
 
 const Dashboard = () => {
-  const navigate = useNavigate();
   const [invoices, setInvoices] = useState([]);
   const [products, setProducts] = useState([]);
   const [timePeriod, setTimePeriod] = useState("monthly");
@@ -123,81 +121,7 @@ const Dashboard = () => {
     try {
       const authAxios = getAuthAxios();
 
-      // First try the /me/ endpoint
-      try {
-        const response = await authAxios.get(
-          "http://localhost:8000/api/v1/users/me/",
-        );
-        console.log("Current user data:", response.data);
-
-        // Store debug info
-        setDebugInfo({
-          endpoint: "/users/me/",
-          status: response.status,
-          data: response.data,
-        });
-
-        if (response.data && response.data.role) {
-          setCurrentUserRole(response.data.role);
-          console.log("Current user role set to:", response.data.role);
-          return;
-        }
-      } catch (meError) {
-        console.error("Error fetching from /me/ endpoint:", meError);
-      }
-
-      // If /me/ endpoint fails, try to get the user info from the token
-      try {
-        const response = await authAxios.get(
-          "http://localhost:8000/api/v1/auth/user/",
-        );
-        console.log("Auth user data:", response.data);
-
-        // Store debug info
-        setDebugInfo((prev) => ({
-          ...prev,
-          endpoint: "/auth/user/",
-          status: response.status,
-          data: response.data,
-        }));
-
-        if (response.data && response.data.role) {
-          setCurrentUserRole(response.data.role);
-          console.log("Current user role set to:", response.data.role);
-          return;
-        }
-      } catch (authError) {
-        console.error("Error fetching from /auth/user/ endpoint:", authError);
-      }
-
-      // If both previous attempts fail, try to get user info from user-info endpoint
-      try {
-        const userInfoResponse = await authAxios.get(
-          "http://localhost:8000/api/v1/user-info/",
-        );
-        console.log("User info data:", userInfoResponse.data);
-
-        // Store debug info
-        setDebugInfo((prev) => ({
-          ...prev,
-          endpoint: "/user-info/",
-          status: userInfoResponse.status,
-          data: userInfoResponse.data,
-        }));
-
-        if (userInfoResponse.data && userInfoResponse.data.role) {
-          setCurrentUserRole(userInfoResponse.data.role);
-          console.log("Current user role set to:", userInfoResponse.data.role);
-          return;
-        }
-      } catch (userInfoError) {
-        console.error(
-          "Error fetching from /user-info/ endpoint:",
-          userInfoError,
-        );
-      }
-
-      // As a last resort, try to get the user from localStorage
+      // Try to get the user info from localStorage first
       try {
         const userData = localStorage.getItem("user");
         if (userData) {
@@ -218,7 +142,30 @@ const Dashboard = () => {
         );
       }
 
-      console.warn("Could not determine user role from any source");
+      // Try the user-info endpoint as a fallback
+      try {
+        const userInfoResponse = await authAxios.get(
+          "http://localhost:8000/api/v1/user-info/",
+        );
+        console.log("User info data:", userInfoResponse.data);
+
+        if (userInfoResponse.data && userInfoResponse.data.role) {
+          setCurrentUserRole(userInfoResponse.data.role);
+          console.log("Current user role set to:", userInfoResponse.data.role);
+          return;
+        }
+      } catch (userInfoError) {
+        console.error(
+          "Error fetching from /user-info/ endpoint:",
+          userInfoError,
+        );
+      }
+
+      // If we couldn't determine the role, set a default
+      console.warn(
+        "Could not determine user role from any source, defaulting to non-manager",
+      );
+      setCurrentUserRole("cashier"); // Default to non-manager role
     } catch (err) {
       console.error("Error fetching current user:", err);
       if (err.response && err.response.status === 401) {
@@ -228,13 +175,9 @@ const Dashboard = () => {
     }
   };
 
-  // Check if user has manager permissions - ALWAYS RETURN TRUE FOR NOW TO FIX THE ISSUE
+  // Check if user has manager permissions
   const hasManagerPermission = () => {
-    // For debugging, always return true to ensure editing works
-    return true;
-
-    // The proper implementation would be:
-    // return currentUserRole === "manager";
+    return currentUserRole === "manager";
   };
 
   // Fetch users when modal is opened
@@ -461,7 +404,7 @@ const Dashboard = () => {
 
   // Handle login redirect
   const handleLogin = () => {
-    navigate("/login");
+    window.location.href = "/login";
   };
 
   // Start editing a user
@@ -472,16 +415,33 @@ const Dashboard = () => {
     });
   };
 
-  // Filter users based on search term
-  const filteredUsers = users.filter(
-    (user) =>
+  // Filter users based on search term and hide manager users if not a manager
+  const filteredUsers = users.filter((user) => {
+    // First check if we should hide manager users
+    if (user.role === "manager" && currentUserRole !== "manager") {
+      return false;
+    }
+
+    // Then apply search filter
+    return (
       user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.phone_number?.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+      user.phone_number?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  });
 
   // Functions to fetch data from the APIs
   const fetchInventoryData = async () => {
+    if (!hasManagerPermission()) {
+      // Return empty data for non-managers
+      setInventoryData({
+        stockStatus: [],
+        stockData: [],
+        alerts: { low_stock: 0, out_of_stock: 0, overstocked: 0 },
+      });
+      return;
+    }
+
     try {
       setIsLoading(true);
       const authAxios = getAuthAxios();
@@ -492,12 +452,24 @@ const Dashboard = () => {
       console.log("Inventory data:", response.data);
     } catch (err) {
       console.error("Error fetching inventory data:", err);
+      // Set empty data on error
+      setInventoryData({
+        stockStatus: [],
+        stockData: [],
+        alerts: { low_stock: 0, out_of_stock: 0, overstocked: 0 },
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
   const fetchProductsData = async () => {
+    if (!hasManagerPermission()) {
+      // Return empty data for non-managers
+      setProductPerformanceData([]);
+      return;
+    }
+
     try {
       setIsLoading(true);
       const authAxios = getAuthAxios();
@@ -508,12 +480,24 @@ const Dashboard = () => {
       console.log("Product performance data:", response.data);
     } catch (err) {
       console.error("Error fetching product performance data:", err);
+      setProductPerformanceData([]);
     } finally {
       setIsLoading(false);
     }
   };
 
   const fetchSalesData = async () => {
+    if (!hasManagerPermission()) {
+      // Return empty data for non-managers
+      setSalesData({
+        salesOverTime: [],
+        recentSales: [],
+        salesByCategory: [],
+        monthlyRevenue: [],
+      });
+      return;
+    }
+
     try {
       setIsLoading(true);
       const authAxios = getAuthAxios();
@@ -524,12 +508,29 @@ const Dashboard = () => {
       console.log("Sales data:", response.data);
     } catch (err) {
       console.error("Error fetching sales data:", err);
+      setSalesData({
+        salesOverTime: [],
+        recentSales: [],
+        salesByCategory: [],
+        monthlyRevenue: [],
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
   const fetchDashboardStats = async () => {
+    if (!hasManagerPermission()) {
+      // Return zero values for non-managers
+      setDashboardStats({
+        revenue: { value: "0", change: "0", change_percent: "0" },
+        orders: { value: "0", change: "0", change_percent: "0" },
+        averageOrderValue: { value: "0", change: "0", change_percent: "0" },
+        customers: { value: "0", change: "0", change_percent: "0" },
+      });
+      return;
+    }
+
     try {
       setIsLoading(true);
       const authAxios = getAuthAxios();
@@ -540,6 +541,12 @@ const Dashboard = () => {
       console.log("Dashboard stats:", response.data);
     } catch (err) {
       console.error("Error fetching dashboard stats:", err);
+      setDashboardStats({
+        revenue: { value: "0", change: "0", change_percent: "0" },
+        orders: { value: "0", change: "0", change_percent: "0" },
+        averageOrderValue: { value: "0", change: "0", change_percent: "0" },
+        customers: { value: "0", change: "0", change_percent: "0" },
+      });
     } finally {
       setIsLoading(false);
     }
@@ -547,6 +554,12 @@ const Dashboard = () => {
 
   // Fetch top selling products from invoices
   const fetchTopSellingProducts = async () => {
+    if (!hasManagerPermission()) {
+      // Return empty data for non-managers
+      setTopSellingProducts([]);
+      return;
+    }
+
     try {
       setIsLoading(true);
       const authAxios = getAuthAxios();
@@ -606,6 +619,7 @@ const Dashboard = () => {
       console.log("Top selling products:", topProducts);
     } catch (err) {
       console.error("Error fetching top selling products:", err);
+      setTopSellingProducts([]);
     } finally {
       setIsLoading(false);
     }
@@ -620,7 +634,7 @@ const Dashboard = () => {
       fetchDashboardStats();
       fetchTopSellingProducts();
     }
-  }, [isAuthenticated, timePeriod]);
+  }, [isAuthenticated, timePeriod, currentUserRole]);
 
   // Prepare chart data from API responses
   const stockStatus =
@@ -737,6 +751,15 @@ const Dashboard = () => {
         <div className="loading-overlay">
           <Loader size={40} className="spin" />
           <p>Loading dashboard data...</p>
+        </div>
+      )}
+
+      {!hasManagerPermission() && (
+        <div className="non-manager-notice">
+          <p>
+            Limited dashboard view. Manager access required to view complete
+            data.
+          </p>
         </div>
       )}
 
@@ -903,7 +926,9 @@ const Dashboard = () => {
             </ResponsiveContainer>
           ) : (
             <div className="no-data">
-              No sales data available for this period
+              {hasManagerPermission()
+                ? "No sales data available for this period"
+                : "Manager access required to view sales data"}
             </div>
           )}
         </div>
@@ -937,7 +962,9 @@ const Dashboard = () => {
             </ResponsiveContainer>
           ) : (
             <div className="no-data">
-              No product performance data available for this period
+              {hasManagerPermission()
+                ? "No product performance data available for this period"
+                : "Manager access required to view product data"}
             </div>
           )}
         </div>
@@ -976,7 +1003,11 @@ const Dashboard = () => {
               </PieChart>
             </ResponsiveContainer>
           ) : (
-            <div className="no-data">No stock status data available</div>
+            <div className="no-data">
+              {hasManagerPermission()
+                ? "No stock status data available"
+                : "Manager access required to view stock status"}
+            </div>
           )}
         </div>
 
@@ -995,7 +1026,11 @@ const Dashboard = () => {
               ))}
             </div>
           ) : (
-            <div className="no-data">No recent sales data available</div>
+            <div className="no-data">
+              {hasManagerPermission()
+                ? "No recent sales data available"
+                : "Manager access required to view recent sales"}
+            </div>
           )}
         </div>
 
@@ -1026,7 +1061,9 @@ const Dashboard = () => {
             </div>
           ) : (
             <div className="no-data">
-              No top selling products data available
+              {hasManagerPermission()
+                ? "No top selling products data available"
+                : "Manager access required to view top products"}
             </div>
           )}
         </div>
@@ -1061,7 +1098,11 @@ const Dashboard = () => {
               </LineChart>
             </ResponsiveContainer>
           ) : (
-            <div className="no-data">No monthly revenue data available</div>
+            <div className="no-data">
+              {hasManagerPermission()
+                ? "No monthly revenue data available"
+                : "Manager access required to view revenue trends"}
+            </div>
           )}
         </div>
 
@@ -1100,7 +1141,11 @@ const Dashboard = () => {
               </RadialBarChart>
             </ResponsiveContainer>
           ) : (
-            <div className="no-data">No sales by category data available</div>
+            <div className="no-data">
+              {hasManagerPermission()
+                ? "No sales by category data available"
+                : "Manager access required to view category data"}
+            </div>
           )}
         </div>
       </div>

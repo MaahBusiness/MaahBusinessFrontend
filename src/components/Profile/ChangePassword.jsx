@@ -16,6 +16,15 @@ const ChangePassword = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
 
+  // Check if user is logged in
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      //navigate("/login") // Removed navigate as it's not defined and we're in a client component
+      console.warn("User not logged in. Redirect to login page."); // Placeholder for redirection
+    }
+  }, []);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({

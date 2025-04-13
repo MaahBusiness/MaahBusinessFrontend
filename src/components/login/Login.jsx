@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./login.css";
@@ -40,11 +42,41 @@ const Login = () => {
 
       // Store the token in localStorage
       localStorage.setItem("token", data.access);
+      console.log("Login successful, token stored");
+
+      // If the login response includes user data, store it
+      if (data.user) {
+        localStorage.setItem("user", JSON.stringify(data.user));
+        console.log("User data stored from login response");
+      } else {
+        // If no user data in response, fetch it separately
+        try {
+          const userResponse = await fetch(
+            "http://localhost:8000/api/v1/user-info/",
+            {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${data.access}`,
+              },
+            },
+          );
+
+          if (userResponse.ok) {
+            const userData = await userResponse.json();
+            localStorage.setItem("user", JSON.stringify(userData));
+            console.log("User data fetched and stored after login");
+          }
+        } catch (userError) {
+          console.error("Error fetching user data after login:", userError);
+        }
+      }
 
       // Redirect to home
       navigate("/");
       setErrorMessage("");
     } catch (error) {
+      console.error("Login error:", error);
       setErrorMessage(error.message);
     } finally {
       setIsLoading(false);

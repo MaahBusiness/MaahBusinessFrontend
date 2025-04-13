@@ -96,111 +96,126 @@ const Reports = () => {
     };
   }, [report]);
 
-  // Fetch inventory data from API
-  const fetchInventoryData = async (
-    useStartDate = startDate,
-    useEndDate = endDate,
-  ) => {
-    setIsLoadingInventory(true);
-    setInventoryError(null);
+  // Modify the saveReport function to create a completely independent copy of the report data
+  const saveReport = (newReport) => {
+    if (!newReport) return;
 
-    if (!token) {
-      setInventoryError("Authentication required. Please log in again.");
-      setIsLoadingInventory(false);
-      return [];
+    // Create a completely new, independent copy of the report
+    const reportToSave = JSON.parse(JSON.stringify(newReport));
+
+    // Ensure dates are in ISO format
+    if (
+      !reportToSave.date_generated ||
+      !reportToSave.date_generated.includes("T")
+    ) {
+      reportToSave.date_generated = new Date().toISOString();
+    }
+
+    if (reportToSave.date_range) {
+      if (
+        reportToSave.date_range.start &&
+        !reportToSave.date_range.start.includes("T")
+      ) {
+        reportToSave.date_range.start = new Date(
+          reportToSave.date_range.start,
+        ).toISOString();
+      }
+      if (
+        reportToSave.date_range.end &&
+        !reportToSave.date_range.end.includes("T")
+      ) {
+        reportToSave.date_range.end = new Date(
+          reportToSave.date_range.end,
+        ).toISOString();
+      }
+    }
+
+    // Update or add the report
+    const existingIndex = savedReports.findIndex(
+      (r) => r.id === reportToSave.id,
+    );
+    let updatedReports;
+
+    if (existingIndex >= 0) {
+      updatedReports = [...savedReports];
+      updatedReports[existingIndex] = reportToSave;
+    } else {
+      updatedReports = [...savedReports, reportToSave];
     }
 
     try {
-      // Build URL with query parameters
-      let url = "http://localhost:8000/api/v1/report/inventory-data/";
-      const params = new URLSearchParams();
-
-      // Only add date parameters if they are not empty strings
-      if (useStartDate && useStartDate.trim() !== "") {
-        params.append("start_date", useStartDate);
-      }
-
-      if (useEndDate && useEndDate.trim() !== "") {
-        params.append("end_date", useEndDate);
-      }
-
-      if (params.toString()) {
-        url += `?${params.toString()}`;
-      }
-
-      console.log("Fetching inventory data from:", url);
-
-      const response = await axios.get(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      console.log("Inventory API response:", response.data);
-
-      // Process the response data
-      let inventoryItems = [];
-
-      if (Array.isArray(response.data)) {
-        inventoryItems = response.data;
-      } else if (
-        response.data.results &&
-        Array.isArray(response.data.results)
-      ) {
-        inventoryItems = response.data.results;
-      } else if (response.data) {
-        // Handle case where a single item is returned
-        inventoryItems = [response.data];
-      }
-
-      // Remove duplicates using product name and category as key
-      const uniqueItems = Array.from(
-        new Map(
-          inventoryItems.map((item) => [
-            `${item.product_name || item.name}-${item.category}`,
-            item,
-          ]),
-        ).values(),
-      );
-
-      setInventoryData(uniqueItems);
-      return uniqueItems;
+      setSavedReports(updatedReports);
+      localStorage.setItem("savedReports", JSON.stringify(updatedReports));
     } catch (err) {
-      console.error("Error fetching inventory data:", err);
-
-      // Handle different error scenarios
-      if (!err.response) {
-        setInventoryError("Network error. Please check your connection.");
-        return [];
-      }
-
-      if (err.response.status === 401) {
-        setInventoryError("Authentication expired. Please log in again.");
-        localStorage.removeItem("token");
-        setToken(null);
-        setTimeout(() => navigate("/login"), 2000);
-        return [];
-      }
-
-      // Special handling for "No inventory report found"
-      if (err.response.data?.error === "No inventory report found.") {
-        console.log("No inventory data found for the selected date range");
-        setInventoryData([]);
-        return [];
-      }
-
-      // Handle other errors
-      setInventoryError(
-        err.response.data?.detail ||
-          err.response.data?.message ||
-          err.response.data?.error ||
-          "Failed to fetch inventory data",
-      );
-      return [];
-    } finally {
-      setIsLoadingInventory(false);
+      console.error("Error saving reports:", err);
+      setError("Failed to save report to local storage");
     }
   };
 
-  // Generate a new report
+  // Modify the loadReport function to create a fresh copy of the report data
+  const loadReport = (reportId) => {
+    const reportToLoad = savedReports.find((r) => r.id === reportId);
+    if (!reportToLoad) return;
+
+    // Create a completely new, independent copy of the report
+    const freshReport = JSON.parse(JSON.stringify(reportToLoad));
+
+    // Reset all state variables to prevent data from previous reports affecting the new one
+    setInventoryData([]);
+    setCurrentPage(1);
+    setError(null);
+    setInventoryError(null);
+    setDebugInfo(null);
+
+    // Now set the new report
+    setReport(freshReport);
+    setReportType(freshReport.report_type);
+
+    // Set date filters from the saved report
+    if (freshReport.date_range) {
+      if (freshReport.date_range.start) {
+        const startDateObj = new Date(freshReport.date_range.start);
+        setStartDate(startDateObj.toISOString().split("T")[0]);
+      } else {
+        setStartDate("");
+      }
+
+      if (freshReport.date_range.end) {
+        const endDateObj = new Date(freshReport.date_range.end);
+        setEndDate(endDateObj.toISOString().split("T")[0]);
+      } else {
+        setEndDate("");
+      }
+    } else {
+      // Ensure dates are cleared if no date range exists
+      setStartDate("");
+      setEndDate("");
+    }
+
+    // For inventory reports, try to fetch fresh data
+    if (freshReport.report_type === "inventory") {
+      fetchInventoryData(
+        freshReport.date_range?.start
+          ? new Date(freshReport.date_range.start).toISOString().split("T")[0]
+          : "",
+        freshReport.date_range?.end
+          ? new Date(freshReport.date_range.end).toISOString().split("T")[0]
+          : "",
+      ).catch((err) => {
+        console.error("Error fetching inventory data for saved report:", err);
+
+        // If API returns "No inventory report found", use saved data
+        if (err.response?.data?.error === "No inventory report found.") {
+          console.log("Using saved inventory data");
+          if (freshReport.report_data?.products) {
+            setInventoryData([...freshReport.report_data.products]);
+          }
+        }
+      });
+    }
+  };
+
+  // Modify the handleGenerateReport function to ensure each report has its own data
   const handleGenerateReport = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -264,9 +279,9 @@ const Reports = () => {
         throw new Error(responseData.message || "Failed to generate report");
       }
 
-      // Create report object
+      // Create a new report object with a unique ID
       const reportData = {
-        id: responseData.data?.report_id || `report-${Date.now()}`,
+        id: `report-${Date.now()}`, // Always generate a new ID for each report
         report_type: responseData.data?.report_data?.report_type || reportType,
         date_generated: new Date().toISOString(),
         generated_by: responseData.data?.report_data?.generated_by || "System",
@@ -286,7 +301,7 @@ const Reports = () => {
 
       // For inventory reports, add the inventory data
       if (reportType === "inventory" && inventoryItems.length > 0) {
-        reportData.report_data.products = inventoryItems;
+        reportData.report_data.products = [...inventoryItems]; // Create a new array
         reportData.report_data.total_products = inventoryItems.length;
         reportData.report_data.expired_count = inventoryItems.filter(
           (item) => item.is_expired,
@@ -301,7 +316,7 @@ const Reports = () => {
 
       // Save and set the report
       saveReport(reportData);
-      setReport(reportData);
+      setReport(JSON.parse(JSON.stringify(reportData))); // Set a fresh copy
     } catch (err) {
       console.error("Error generating report:", err);
 
@@ -310,7 +325,7 @@ const Reports = () => {
       // Create empty report for "No inventory report found" error
       if (err.response?.data?.error === "No inventory report found.") {
         const emptyReport = {
-          id: `report-${Date.now()}`,
+          id: `report-${Date.now()}`, // Always generate a new ID
           report_type: reportType,
           date_generated: new Date().toISOString(),
           generated_by: "System",
@@ -328,10 +343,114 @@ const Reports = () => {
         };
 
         saveReport(emptyReport);
-        setReport(emptyReport);
+        setReport(JSON.parse(JSON.stringify(emptyReport))); // Set a fresh copy
       }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Modify the fetchInventoryData function to use the token
+  const fetchInventoryData = async (
+    useStartDate = startDate,
+    useEndDate = endDate,
+  ) => {
+    setIsLoadingInventory(true);
+    setInventoryError(null);
+
+    if (!token) {
+      setInventoryError("Authentication required. Please log in again.");
+      setIsLoadingInventory(false);
+      return [];
+    }
+
+    try {
+      // Build URL with query parameters
+      let url = "http://localhost:8000/api/v1/report/inventory-data/";
+      const params = new URLSearchParams();
+
+      // Only add date parameters if they are not empty strings
+      if (useStartDate && useStartDate.trim() !== "") {
+        params.append("start_date", useStartDate);
+      }
+
+      if (useEndDate && useEndDate.trim() !== "") {
+        params.append("end_date", useEndDate);
+      }
+
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+      }
+
+      console.log("Fetching inventory data from:", url);
+
+      const response = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      console.log("Inventory API response:", response.data);
+
+      // Process the response data
+      let inventoryItems = [];
+
+      if (Array.isArray(response.data)) {
+        inventoryItems = [...response.data]; // Create a new array
+      } else if (
+        response.data.results &&
+        Array.isArray(response.data.results)
+      ) {
+        inventoryItems = [...response.data.results]; // Create a new array
+      } else if (response.data) {
+        // Handle case where a single item is returned
+        inventoryItems = [{ ...response.data }]; // Create a new object
+      }
+
+      // Remove duplicates using product name and category as key
+      const uniqueItems = Array.from(
+        new Map(
+          inventoryItems.map((item) => [
+            `${item.product_name || item.name}-${item.category}`,
+            { ...item }, // Create a new object for each item
+          ]),
+        ).values(),
+      );
+
+      setInventoryData(uniqueItems);
+      return uniqueItems;
+    } catch (err) {
+      console.error("Error fetching inventory data:", err);
+
+      // Handle different error scenarios
+      if (!err.response) {
+        setInventoryError("Network error. Please check your connection.");
+        return [];
+      }
+
+      if (err.response.status === 401) {
+        setInventoryError("Authentication expired. Please log in again.");
+        localStorage.removeItem("token");
+        setToken(null);
+        setTimeout(() => navigate("/login"), 2000);
+        return [];
+      }
+
+      // Special handling for "No inventory report found"
+      if (err.response.data?.error === "No inventory report found.") {
+        console.log("No inventory data found for the selected date range");
+        setInventoryData([]);
+        return [];
+      }
+
+      // Handle other errors
+      setInventoryError(
+        err.response.data?.detail ||
+          err.response.data?.message ||
+          err.response.data?.error ||
+          "Failed to fetch inventory data",
+      );
+      return [];
+    } finally {
+      setIsLoadingInventory(false);
     }
   };
 
@@ -422,136 +541,6 @@ const Reports = () => {
       data: err.response.data,
       headers: err.response.headers,
     });
-  };
-
-  // Save report to localStorage
-  const saveReport = (newReport) => {
-    if (!newReport) return;
-
-    // Create a deep copy
-    const reportToSave = JSON.parse(JSON.stringify(newReport));
-
-    // Ensure dates are in ISO format
-    if (
-      !reportToSave.date_generated ||
-      !reportToSave.date_generated.includes("T")
-    ) {
-      reportToSave.date_generated = new Date().toISOString();
-    }
-
-    if (reportToSave.date_range) {
-      if (
-        reportToSave.date_range.start &&
-        !reportToSave.date_range.start.includes("T")
-      ) {
-        reportToSave.date_range.start = new Date(
-          reportToSave.date_range.start,
-        ).toISOString();
-      }
-      if (
-        reportToSave.date_range.end &&
-        !reportToSave.date_range.end.includes("T")
-      ) {
-        reportToSave.date_range.end = new Date(
-          reportToSave.date_range.end,
-        ).toISOString();
-      }
-    }
-
-    // Update or add the report
-    const existingIndex = savedReports.findIndex(
-      (r) => r.id === reportToSave.id,
-    );
-    let updatedReports;
-
-    if (existingIndex >= 0) {
-      updatedReports = [...savedReports];
-      updatedReports[existingIndex] = reportToSave;
-    } else {
-      updatedReports = [...savedReports, reportToSave];
-    }
-
-    try {
-      setSavedReports(updatedReports);
-      localStorage.setItem("savedReports", JSON.stringify(updatedReports));
-    } catch (err) {
-      console.error("Error saving reports:", err);
-      setError("Failed to save report to local storage");
-    }
-  };
-
-  // Load a saved report
-  const loadReport = (reportId) => {
-    const reportToLoad = savedReports.find((r) => r.id === reportId);
-    if (!reportToLoad) return;
-
-    // Reset all state variables to prevent data from previous reports affecting the new one
-    setInventoryData([]);
-    setCurrentPage(1);
-    setError(null);
-    setInventoryError(null);
-    setDebugInfo(null);
-
-    // Now set the new report
-    setReport(reportToLoad);
-    setReportType(reportToLoad.report_type);
-
-    // Set date filters from the saved report
-    if (reportToLoad.date_range) {
-      if (reportToLoad.date_range.start) {
-        const startDateObj = new Date(reportToLoad.date_range.start);
-        setStartDate(startDateObj.toISOString().split("T")[0]);
-      } else {
-        setStartDate("");
-      }
-
-      if (reportToLoad.date_range.end) {
-        const endDateObj = new Date(reportToLoad.date_range.end);
-        setEndDate(endDateObj.toISOString().split("T")[0]);
-      } else {
-        setEndDate("");
-      }
-    } else {
-      // Ensure dates are cleared if no date range exists
-      setStartDate("");
-      setEndDate("");
-    }
-
-    // For inventory reports, try to fetch fresh data
-    if (reportToLoad.report_type === "inventory") {
-      fetchInventoryData(
-        reportToLoad.date_range?.start
-          ? new Date(reportToLoad.date_range.start).toISOString().split("T")[0]
-          : "",
-        reportToLoad.date_range?.end
-          ? new Date(reportToLoad.date_range.end).toISOString().split("T")[0]
-          : "",
-      ).catch((err) => {
-        console.error("Error fetching inventory data for saved report:", err);
-
-        // If API returns "No inventory report found", use saved data
-        if (err.response?.data?.error === "No inventory report found.") {
-          console.log("Using saved inventory data");
-          if (reportToLoad.report_data?.products) {
-            setInventoryData(reportToLoad.report_data.products);
-          }
-        }
-      });
-    }
-  };
-
-  // Delete a saved report
-  const deleteReport = (reportId, e) => {
-    e.stopPropagation();
-
-    const updatedReports = savedReports.filter((r) => r.id !== reportId);
-    setSavedReports(updatedReports);
-    localStorage.setItem("savedReports", JSON.stringify(updatedReports));
-
-    // Clear current report if it's the one being deleted
-    if (report && report.id === reportId) {
-      setReport(null);
-    }
   };
 
   // Format currency

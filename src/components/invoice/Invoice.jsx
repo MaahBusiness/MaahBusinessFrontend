@@ -116,7 +116,7 @@ const Invoice = () => {
       if (cachedUser) {
         const userData = JSON.parse(cachedUser);
         // Check if user is a manager based on cached data
-        setIsManager(userData.role === "manager" || userData.role === "admin");
+        setIsManager(userData.role === "manager");
       }
 
       // Fetch latest user information from API
@@ -135,9 +135,7 @@ const Invoice = () => {
         })
         .then((userData) => {
           // Update user role based on fetched data
-          setIsManager(
-            userData.role === "manager" || userData.role === "admin",
-          );
+          setIsManager(userData.role === "manager");
           // Store updated user data
           localStorage.setItem("user", JSON.stringify(userData));
         })
@@ -156,9 +154,17 @@ const Invoice = () => {
 
   // Function to check if user is a manager
   const checkUserRole = () => {
-    // This is a placeholder. In a real app, you would check the user's role from the token or API
-    // For now, we'll assume all authenticated users are managers
-    setIsManager(isAuthenticated);
+    try {
+      const cachedUser = localStorage.getItem("user");
+      if (cachedUser) {
+        const userData = JSON.parse(cachedUser);
+        // Check if user is a manager based on role
+        setIsManager(userData.role === "manager");
+      }
+    } catch (error) {
+      console.error("Error checking user role:", error);
+      setIsManager(false);
+    }
   };
 
   // Update the checkUserRole when authentication status changes
@@ -313,9 +319,8 @@ const Invoice = () => {
     const remaining = total - advancePaid;
     const refund = advancePaid > total ? advancePaid - total : 0;
 
-    // Determine status based on payment
-    // Use "COMPLETED" when fully paid, otherwise don't set a status and let the backend decide
-    const status = remaining > 0 ? "COMPLETED" : "COMPLETED";
+    // Set status to "COMPLETED" for the API, but we'll hide it in the UI
+    const status = "COMPLETED";
 
     return { subtotal, taxAmount, total, remaining, refund, status };
   };
@@ -1003,11 +1008,13 @@ const Invoice = () => {
                       <div className="invoice-id">
                         {invoice.number ? `INV-${invoice.number}` : invoice.id}
                       </div>
-                      <div
-                        className={`invoice-status ${(invoice.status || "").toLowerCase()}`}
-                      >
-                        {invoice.status}
-                      </div>
+                      {invoice.status && invoice.status !== "COMPLETED" && (
+                        <div
+                          className={`invoice-status ${(invoice.status || "").toLowerCase()}`}
+                        >
+                          {invoice.status}
+                        </div>
+                      )}
                     </div>
                     <div className="invoice-card-body">
                       <div className="invoice-client">
@@ -1553,7 +1560,6 @@ const Invoice = () => {
                       ? selectedInvoice.number
                       : selectedInvoice.id}
                   </h4>
-         
                 </div>
                 <div className="invoice-detail-dates">
                   <div className="date-item">

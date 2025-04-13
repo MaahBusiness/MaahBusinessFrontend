@@ -1,6 +1,6 @@
 import { useState } from "react";
-import "./signup.css";
 import { useNavigate, Link } from "react-router-dom";
+import "./signup.css";
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -53,14 +53,24 @@ const Signup = () => {
         throw new Error("Registration failed.");
       }
 
-      // Store user data and token in localStorage (similar to login)
-      localStorage.setItem("token", data.token);
+      // Store token in localStorage
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+        console.log("Token stored successfully:", data.token);
+      } else if (data.access) {
+        // Some APIs return token as 'access'
+        localStorage.setItem("token", data.access);
+        console.log("Token stored successfully:", data.access);
+      } else {
+        console.warn("No token received from registration API");
+      }
 
       // Store user profile data in localStorage for immediate access
       if (data.user) {
         localStorage.setItem("user", JSON.stringify(data.user));
+        console.log("User data stored:", data.user);
       } else {
-        // If the API doesn't return user data, store what we have
+        // If the API doesn't return user data, store what we have from the form
         const userData = {
           username: formData.username,
           email: formData.email,
@@ -69,12 +79,14 @@ const Signup = () => {
           is_active: formData.is_active,
         };
         localStorage.setItem("user", JSON.stringify(userData));
+        console.log("Form data stored as user:", userData);
       }
 
-      // Redirect to home page instead of profile page
+      // Redirect to home page
       navigate("/");
     } catch (error) {
       setErrorMessage(error.message);
+      console.error("Registration error:", error);
     } finally {
       setIsLoading(false);
     }
