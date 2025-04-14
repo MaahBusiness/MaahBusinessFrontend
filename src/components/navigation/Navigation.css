@@ -110,7 +110,7 @@ body {
 
 @media (max-width: 768px) {
   .navbar {
-    padding: 1em;
+    padding: 0.2em;
   }
 
   .nav-brand {

@@ -54,36 +54,69 @@ const Signup = () => {
       }
 
       // Store token in localStorage
+      let authToken = null;
       if (data.token) {
-        localStorage.setItem("token", data.token);
-        console.log("Token stored successfully:", data.token);
+        authToken = data.token;
+        localStorage.setItem("token", authToken);
+        console.log("Token stored successfully:", authToken);
       } else if (data.access) {
         // Some APIs return token as 'access'
-        localStorage.setItem("token", data.access);
-        console.log("Token stored successfully:", data.access);
+        authToken = data.access;
+        localStorage.setItem("token", authToken);
+        console.log("Token stored successfully:", authToken);
       } else {
         console.warn("No token received from registration API");
       }
 
-      // Store user profile data in localStorage for immediate access
+      // Process and store user data
+      let userData = {};
       if (data.user) {
-        localStorage.setItem("user", JSON.stringify(data.user));
-        console.log("User data stored:", data.user);
+        userData = data.user;
       } else {
         // If the API doesn't return user data, store what we have from the form
-        const userData = {
+        userData = {
           username: formData.username,
           email: formData.email,
           phone_number: formData.phone_number,
           role: formData.role,
           is_active: formData.is_active,
         };
-        localStorage.setItem("user", JSON.stringify(userData));
-        console.log("Form data stored as user:", userData);
       }
 
-      // Redirect to home page
-      navigate("/");
+      // Store user profile data in localStorage for immediate access
+      localStorage.setItem("user", JSON.stringify(userData));
+      console.log("User data stored:", userData);
+
+      // If we have a token, attempt to fetch the complete user profile
+      if (authToken) {
+        try {
+          const profileResponse = await fetch(
+            "http://localhost:8000/api/v1/user-info/",
+            {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${authToken}`,
+              },
+            },
+          );
+
+          if (profileResponse.ok) {
+            const profileData = await profileResponse.json();
+            localStorage.setItem("user", JSON.stringify(profileData));
+            console.log("Complete profile data stored:", profileData);
+          }
+        } catch (profileError) {
+          console.warn(
+            "Could not fetch complete profile after signup:",
+            profileError,
+          );
+          // Continue with what we have - not a critical error
+        }
+      }
+
+      // Redirect to profile page or home page
+      navigate("/profile"); // Consider redirecting directly to profile page
     } catch (error) {
       setErrorMessage(error.message);
       console.error("Registration error:", error);

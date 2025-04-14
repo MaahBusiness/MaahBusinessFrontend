@@ -49,7 +49,10 @@ const Dashboard = () => {
     stockData: [],
     alerts: { low_stock: 0, out_of_stock: 0, overstocked: 0 },
   });
-  const [productPerformanceData, setProductPerformanceData] = useState([]);
+  const [productPerformanceData, setProductPerformanceData] = useState({
+    topProducts: [],
+    productPerformance: [],
+  });
   const [salesDataState, setSalesData] = useState({
     salesOverTime: [],
     recentSales: [],
@@ -63,6 +66,7 @@ const Dashboard = () => {
     customers: { value: "0", change: "0", change_percent: "0" },
   });
   const [topSellingProducts, setTopSellingProducts] = useState([]);
+  const [profitData, setProfitData] = useState([]);
 
   // User management state
   const [showUserModal, setShowUserModal] = useState(false);
@@ -178,6 +182,11 @@ const Dashboard = () => {
   // Check if user has manager permissions
   const hasManagerPermission = () => {
     return currentUserRole === "manager";
+  };
+
+  // Add this function to check if the user has permission to view report data
+  const hasReportViewPermission = () => {
+    return currentUserRole === "manager" || currentUserRole === "cashier";
   };
 
   // Fetch users when modal is opened
@@ -466,7 +475,10 @@ const Dashboard = () => {
   const fetchProductsData = async () => {
     if (!hasManagerPermission()) {
       // Return empty data for non-managers
-      setProductPerformanceData([]);
+      setProductPerformanceData({
+        topProducts: [],
+        productPerformance: [],
+      });
       return;
     }
 
@@ -480,12 +492,16 @@ const Dashboard = () => {
       console.log("Product performance data:", response.data);
     } catch (err) {
       console.error("Error fetching product performance data:", err);
-      setProductPerformanceData([]);
+      setProductPerformanceData({
+        topProducts: [],
+        productPerformance: [],
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Modify the fetchSalesData function to use pending_payment as profit
   const fetchSalesData = async () => {
     if (!hasManagerPermission()) {
       // Return empty data for non-managers
@@ -506,6 +522,21 @@ const Dashboard = () => {
       );
       setSalesData(response.data);
       console.log("Sales data:", response.data);
+
+      // Calculate profit data from sales data
+      if (
+        response.data.salesOverTime &&
+        response.data.salesOverTime.length > 0
+      ) {
+        const profitChartData = response.data.salesOverTime.map((item) => ({
+          name: item.period,
+          // Use pending_payment as profit value
+          profit: Number(item.pending_payment || 0),
+          sales: Number(item.sales || 0),
+          pending: Number(item.pending_payment || 0),
+        }));
+        setProfitData(profitChartData);
+      }
     } catch (err) {
       console.error("Error fetching sales data:", err);
       setSalesData({
@@ -638,7 +669,7 @@ const Dashboard = () => {
 
   // Prepare chart data from API responses
   const stockStatus =
-    inventoryData.stockStatus.length > 0
+    inventoryData.stockStatus && inventoryData.stockStatus.length > 0
       ? inventoryData.stockStatus.map((item) => ({
           name: item.name,
           value: Number(item.value),
@@ -651,8 +682,9 @@ const Dashboard = () => {
       : [];
 
   const productPerformance =
-    productPerformanceData.length > 0
-      ? productPerformanceData
+    productPerformanceData.productPerformance &&
+    productPerformanceData.productPerformance.length > 0
+      ? productPerformanceData.productPerformance
           .map((item, index) => ({
             name: item.name,
             value: Number(item.value),
@@ -668,19 +700,18 @@ const Dashboard = () => {
       ? salesDataState.salesOverTime.map((item) => ({
           name: item.period,
           sales: Number(item.sales),
-          target: Number(item.target),
-          profit: Number(item.profit),
-          expenses: Number(item.expenses),
+          profit: Number(item.profit || 0),
+          pending_payment: Number(item.pending_payment || 0),
         }))
       : [];
 
   const recentSalesData =
     salesDataState.recentSales && salesDataState.recentSales.length > 0
       ? salesDataState.recentSales.map((sale) => ({
+          id: sale.id,
           name: sale.customerName,
           amount: sale.amount,
           date: sale.date,
-          avatar: "/placeholder.svg?height=40&width=40",
         }))
       : [];
 
@@ -704,6 +735,19 @@ const Dashboard = () => {
           revenue: Number(item.revenue),
         }))
       : [];
+
+  // Add this function before the return statement in the Dashboard component
+  const calculateGradientOffset = (dataArray, key) => {
+    if (!dataArray || dataArray.length === 0) return 0.5;
+
+    const dataMax = Math.max(...dataArray.map((i) => i[key] || 0));
+    const dataMin = Math.min(...dataArray.map((i) => i[key] || 0));
+
+    if (dataMax <= 0) return 0;
+    if (dataMin >= 0) return 1;
+
+    return dataMax / (dataMax - dataMin);
+  };
 
   return (
     <div className="dashboard">
@@ -767,18 +811,21 @@ const Dashboard = () => {
         <div className="card">
           <h3>Total Revenue</h3>
           <p className="card-value">
-            XFA {Number(dashboardStats.revenue.value).toLocaleString()}
+            {hasReportViewPermission()
+              ? `XFA ${Number(dashboardStats.revenue.value).toLocaleString()}`
+              : "XFA NaN"}
           </p>
           <div className="stat-change">
             <span
               className={
-                Number(dashboardStats.revenue.change_percent) >= 0
+                Number(dashboardStats.revenue.change) >= 0
                   ? "positive"
                   : "negative"
               }
             >
-              {Number(dashboardStats.revenue.change_percent) >= 0 ? "+" : ""}
-              {Number(dashboardStats.revenue.change_percent).toFixed(1)}%
+              {hasReportViewPermission()
+                ? `${Number(dashboardStats.revenue.change) >= 0 ? "+" : ""}${Number(dashboardStats.revenue.change).toFixed(1)}`
+                : "NaN"}
             </span>
             <span className="period">from last {timePeriod}</span>
           </div>
@@ -786,18 +833,21 @@ const Dashboard = () => {
         <div className="card">
           <h3>Orders</h3>
           <p className="card-value">
-            {Number(dashboardStats.orders.value).toLocaleString()}
+            {hasReportViewPermission()
+              ? Number(dashboardStats.orders.value).toLocaleString()
+              : "NaN"}
           </p>
           <div className="stat-change">
             <span
               className={
-                Number(dashboardStats.orders.change_percent) >= 0
+                Number(dashboardStats.orders.change) >= 0
                   ? "positive"
                   : "negative"
               }
             >
-              {Number(dashboardStats.orders.change_percent) >= 0 ? "+" : ""}
-              {Number(dashboardStats.orders.change_percent).toFixed(1)}%
+              {hasReportViewPermission()
+                ? `${Number(dashboardStats.orders.change) >= 0 ? "+" : ""}${Number(dashboardStats.orders.change).toFixed(1)}`
+                : "NaN"}
             </span>
             <span className="period">from last {timePeriod}</span>
           </div>
@@ -805,24 +855,21 @@ const Dashboard = () => {
         <div className="card">
           <h3>Average Order Value</h3>
           <p className="card-value">
-            XFA{" "}
-            {Number(dashboardStats.averageOrderValue.value).toLocaleString()}
+            {hasReportViewPermission()
+              ? `XFA ${Number(dashboardStats.averageOrderValue.value).toLocaleString()}`
+              : "XFA NaN"}
           </p>
           <div className="stat-change">
             <span
               className={
-                Number(dashboardStats.averageOrderValue.change_percent) >= 0
+                Number(dashboardStats.averageOrderValue.change) >= 0
                   ? "positive"
                   : "negative"
               }
             >
-              {Number(dashboardStats.averageOrderValue.change_percent) >= 0
-                ? "+"
-                : ""}
-              {Number(dashboardStats.averageOrderValue.change_percent).toFixed(
-                1,
-              )}
-              %
+              {hasReportViewPermission()
+                ? `${Number(dashboardStats.averageOrderValue.change) >= 0 ? "+" : ""}${Number(dashboardStats.averageOrderValue.change).toFixed(1)}`
+                : "NaN"}
             </span>
             <span className="period">from last {timePeriod}</span>
           </div>
@@ -830,23 +877,163 @@ const Dashboard = () => {
         <div className="card">
           <h3>Customers</h3>
           <p className="card-value">
-            {Number(dashboardStats.customers.value).toLocaleString()}
+            {hasReportViewPermission()
+              ? Number(dashboardStats.customers.value).toLocaleString()
+              : "NaN"}
           </p>
           <div className="stat-change">
             <span
               className={
-                Number(dashboardStats.customers.change_percent) >= 0
+                Number(dashboardStats.customers.change) >= 0
                   ? "positive"
                   : "negative"
               }
             >
-              {Number(dashboardStats.customers.change_percent) >= 0 ? "+" : ""}
-              {Number(dashboardStats.customers.change_percent).toFixed(1)}%
+              {hasReportViewPermission()
+                ? `${Number(dashboardStats.customers.change) >= 0 ? "+" : ""}${Number(dashboardStats.customers.change).toFixed(1)}`
+                : "NaN"}
             </span>
             <span className="period">from last {timePeriod}</span>
           </div>
         </div>
       </div>
+
+      {/* New Profit Analysis Chart */}
+      <div className="chart profit-chart">
+        <h3>Profit Analysis</h3>
+        {profitData.length > 0 ? (
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart
+              width={500}
+              height={300}
+              data={profitData}
+              margin={{
+                top: 5,
+                right: 30,
+                left: 20,
+                bottom: 5,
+              }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <XAxis dataKey="name" stroke="#D1D5DB" />
+              <YAxis stroke="#D1D5DB" />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "#1F2937",
+                  border: "none",
+                  borderRadius: "4px",
+                }}
+                itemStyle={{ color: "#D1D5DB" }}
+              />
+              <Legend wrapperStyle={{ color: "#D1D5DB" }} />
+              <defs>
+                <linearGradient id="profitGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#9333ea" stopOpacity={0.8} />
+                  <stop offset="100%" stopColor="#9333ea" stopOpacity={0.2} />
+                </linearGradient>
+                <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#22c55e" stopOpacity={0.8} />
+                  <stop offset="100%" stopColor="#22c55e" stopOpacity={0.2} />
+                </linearGradient>
+              </defs>
+              <Bar
+                dataKey="profit"
+                name="Profit"
+                fill="url(#profitGradient)"
+                radius={[4, 4, 0, 0]}
+              />
+              <Bar
+                dataKey="sales"
+                name="Sales"
+                fill="url(#salesGradient)"
+                radius={[4, 4, 0, 0]}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="no-data">
+            {hasManagerPermission()
+              ? "No profit data available for this period"
+              : "Manager access required to view profit data"}
+          </div>
+        )}
+      </div>
+
+      {/* New Profit Line Chart */}
+      {/*<div className="chart profit-chart">
+        <h3>Pending Payments Analysis</h3>
+        {profitData.length > 0 ? (
+          <ResponsiveContainer width="100%" height={300}>
+            <AreaChart
+              width={500}
+              height={300}
+              data={profitData}
+              margin={{
+                top: 5,
+                right: 30,
+                left: 20,
+                bottom: 5,
+              }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <XAxis dataKey="name" stroke="#D1D5DB" />
+              <YAxis stroke="#D1D5DB" />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "#1F2937",
+                  border: "none",
+                  borderRadius: "4px",
+                }}
+                itemStyle={{ color: "#D1D5DB" }}
+              />
+              <defs>
+                <linearGradient id="splitProfitColor" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset={calculateGradientOffset(profitData, "profit")} stopColor="#8884d8" stopOpacity={0.8} />
+                  <stop offset={calculateGradientOffset(profitData, "profit")} stopColor="#ef4444" stopOpacity={0.8} />
+                </linearGradient>
+                <linearGradient id="splitSalesColor" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#82ca9d" stopOpacity={0.8} />
+                  <stop offset="100%" stopColor="#82ca9d" stopOpacity={0.1} />
+                </linearGradient>
+                <linearGradient id="splitPendingColor" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#FFCE56" stopOpacity={0.8} />
+                  <stop offset="100%" stopColor="#FFCE56" stopOpacity={0.1} />
+                </linearGradient>
+              </defs>
+              <Area
+                type="monotone"
+                dataKey="profit"
+                name="Pending Payments"
+                stroke="#8884d8"
+                fill="url(#splitProfitColor)"
+                activeDot={{ r: 8 }}
+              />
+              <Area
+                type="monotone"
+                dataKey="sales"
+                name="Sales"
+                stroke="#82ca9d"
+                fill="url(#splitSalesColor)"
+                fillOpacity={0.3}
+              />
+              <Area
+                type="monotone"
+                dataKey="pending"
+                name="Pending Payment"
+                stroke="#FFCE56"
+                fill="url(#splitPendingColor)"
+                fillOpacity={0.3}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="no-data">
+            {hasManagerPermission()
+              ? "No pending payments data available for this period"
+              : "Manager access required to view pending payments data"}
+          </div>
+        )}
+      </div>*/}
 
       <div className="charts-container">
         <div className="chart">
@@ -859,21 +1046,11 @@ const Dashboard = () => {
                     <stop offset="5%" stopColor="#FF6384" stopOpacity={0.8} />
                     <stop offset="95%" stopColor="#FF6384" stopOpacity={0} />
                   </linearGradient>
-                  <linearGradient id="colorTarget" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#36A2EB" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#36A2EB" stopOpacity={0} />
-                  </linearGradient>
                   <linearGradient id="colorProfit" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#4BC0C0" stopOpacity={0.8} />
                     <stop offset="95%" stopColor="#4BC0C0" stopOpacity={0} />
                   </linearGradient>
-                  <linearGradient
-                    id="colorExpenses"
-                    x1="0"
-                    y1="0"
-                    x2="0"
-                    y2="1"
-                  >
+                  <linearGradient id="colorPending" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#FFCE56" stopOpacity={0.8} />
                     <stop offset="95%" stopColor="#FFCE56" stopOpacity={0} />
                   </linearGradient>
@@ -900,14 +1077,6 @@ const Dashboard = () => {
                 />
                 <Area
                   type="monotone"
-                  dataKey="target"
-                  stroke="#36A2EB"
-                  fillOpacity={0.3}
-                  fill="url(#colorTarget)"
-                  name="Target"
-                />
-                <Area
-                  type="monotone"
                   dataKey="profit"
                   stroke="#4BC0C0"
                   fillOpacity={0.3}
@@ -916,11 +1085,11 @@ const Dashboard = () => {
                 />
                 <Area
                   type="monotone"
-                  dataKey="expenses"
+                  dataKey="pending_payment"
                   stroke="#FFCE56"
                   fillOpacity={0.3}
-                  fill="url(#colorExpenses)"
-                  name="Expenses"
+                  fill="url(#colorPending)"
+                  name="Pending Payment"
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -980,25 +1149,30 @@ const Dashboard = () => {
                   data={stockStatus}
                   cx="50%"
                   cy="50%"
-                  labelLine={false}
+                  labelLine={true}
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
-                  label={({ name, percent }) =>
-                    `${name} ${(percent * 100).toFixed(0)}%`
-                  }
+                  nameKey="name"
+                  label={({ name, value }) => `${name}: ${value}`}
                 >
                   {stockStatus.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.fill} />
                   ))}
                 </Pie>
                 <Tooltip
+                  formatter={(value, name) => [`${value}`, name]}
                   contentStyle={{
                     backgroundColor: "#1F2937",
                     border: "none",
                     borderRadius: "4px",
                   }}
                   itemStyle={{ color: "#D1D5DB" }}
+                />
+                <Legend
+                  formatter={(value) => (
+                    <span style={{ color: "#D1D5DB" }}>{value}</span>
+                  )}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -1015,13 +1189,17 @@ const Dashboard = () => {
           <h3>Recent Sales</h3>
           {recentSalesData.length > 0 ? (
             <div className="recent-sales">
-              {recentSalesData.map((sale, index) => (
-                <div key={index} className="sale-item">
+              {recentSalesData.slice(0, 3).map((sale, index) => (
+                <div key={sale.id || index} className="sale-item">
                   <div className="sale-info">
                     <p className="sale-name">{sale.name}</p>
-                    <p className="sale-date">{sale.date}</p>
+                    <p className="sale-date">
+                      {new Date(sale.date).toLocaleString()}
+                    </p>
                   </div>
-                  <p className="sale-amount">XFA {sale.amount}</p>
+                  <p className="sale-amount">
+                    XFA {Number(sale.amount).toLocaleString()}
+                  </p>
                 </div>
               ))}
             </div>
@@ -1036,28 +1214,47 @@ const Dashboard = () => {
 
         <div className="chart">
           <h3>Top Selling Products</h3>
-          {topSellingProducts.length > 0 ? (
+          {productPerformanceData.topProducts &&
+          productPerformanceData.topProducts.length > 0 ? (
             <div className="top-products">
-              {topSellingProducts.map((product, index) => (
-                <div key={index} className="product-item">
-                  <div
-                    className="product-color"
-                    style={{ backgroundColor: product.color }}
-                  ></div>
-                  <div className="product-info">
-                    <div className="product-name">{product.name}</div>
-                    <div className="product-sold">
-                      {product.quantity} units sold
+              {productPerformanceData.topProducts
+                .slice(0, 3)
+                .map((product, index) => (
+                  <div key={index} className="product-item">
+                    <div
+                      className="product-color"
+                      style={{
+                        backgroundColor: [
+                          "#FF6384",
+                          "#FFCE56",
+                          "#4BC0C0",
+                          "#36A2EB",
+                          "#9966FF",
+                        ][index % 5],
+                      }}
+                    ></div>
+                    <div className="product-info">
+                      <div className="product-name">{product.name}</div>
+                      <div className="product-sold">
+                        {product.sold} units sold
+                      </div>
+                    </div>
+                    <div
+                      className="product-revenue"
+                      style={{
+                        color: [
+                          "#FF6384",
+                          "#FFCE56",
+                          "#4BC0C0",
+                          "#36A2EB",
+                          "#9966FF",
+                        ][index % 5],
+                      }}
+                    >
+                      XFA {Number(product.revenue).toLocaleString()}
                     </div>
                   </div>
-                  <div
-                    className="product-revenue"
-                    style={{ color: product.color }}
-                  >
-                    XFA {product.revenue.toFixed(2)}
-                  </div>
-                </div>
-              ))}
+                ))}
             </div>
           ) : (
             <div className="no-data">

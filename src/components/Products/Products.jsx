@@ -16,6 +16,7 @@ import {
   Check,
   Loader,
   Calendar,
+  Lock,
 } from "lucide-react";
 import "./products.css";
 
@@ -33,14 +34,13 @@ const Product = () => {
   const [isLoadingSubcategories, setIsLoadingSubcategories] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingProductId, setEditingProductId] = useState(null);
-  const [showExpiryFilter, setShowExpiryFilter] = useState(false);
-  const [expiryDate, setExpiryDate] = useState("");
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
 
   // Authentication state
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
+  const [hasAccess, setHasAccess] = useState(false);
 
   const [formData, setFormData] = useState({
     id: null,
@@ -82,6 +82,21 @@ const Product = () => {
           const userData = JSON.parse(cachedUser);
           // Use cached data temporarily while we fetch the latest
           setUser(userData);
+
+          // Check if user has access based on role
+          const allowedRoles = [
+            "manager",
+            "cashier",
+            "stock_keeper",
+            "wholesale_client",
+            "sales_agent",
+          ];
+          if (
+            userData.role &&
+            allowedRoles.includes(userData.role.toLowerCase())
+          ) {
+            setHasAccess(true);
+          }
         }
 
         // Fetch latest user information from API
@@ -101,6 +116,21 @@ const Product = () => {
           setUser(userData);
           localStorage.setItem("user", JSON.stringify(userData));
           setIsAuthenticated(true);
+
+          // Check if user has access based on role
+          const allowedRoles = [
+            "manager",
+            "cashier",
+            "stock_keeper",
+            "wholesale_client",
+            "sales_agent",
+          ];
+          if (
+            userData.role &&
+            allowedRoles.includes(userData.role.toLowerCase())
+          ) {
+            setHasAccess(true);
+          }
         } else {
           // If token is invalid, redirect to login
           localStorage.removeItem("token");
@@ -130,6 +160,8 @@ const Product = () => {
   // Fetch products and categories on component mount
   useEffect(() => {
     const fetchData = async () => {
+      if (!hasAccess) return;
+
       setIsLoading(true);
       try {
         const authAxios = getAuthAxios();
@@ -181,7 +213,7 @@ const Product = () => {
       }
     };
 
-    if (isAuthenticated) {
+    if (isAuthenticated && hasAccess) {
       fetchData();
     } else if (localStorage.getItem("token")) {
       // If we have a token but haven't confirmed authentication yet, wait
@@ -190,7 +222,7 @@ const Product = () => {
       // No token, redirect to login
       window.location.href = "/login";
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, hasAccess]);
 
   // Update filtered subcategories when category changes or when subcategories are loaded
   useEffect(() => {
@@ -230,20 +262,14 @@ const Product = () => {
     }
   };
 
-  // Update the fetchProductsByExpiryDate function to properly filter by the exact date
-  const fetchProductsByExpiryDate = async (date) => {
+  // Function to fetch products by expiry date
+  const fetchProductsByExpiryDate = async () => {
     setIsLoading(true);
     try {
       const authAxios = getAuthAxios();
 
-      // Format the date as YYYY-MM-DD for the API
-      const formattedDate = new Date(date).toISOString().split("T")[0];
-      console.log(`Fetching products with expiry date: ${formattedDate}`);
-
-      // Make the API request
-      const response = await authAxios.get(`${apiBaseUrl}/expiry_date/`, {
-        params: { expiry_date: formattedDate },
-      });
+      // Make the API request to get products by expiry date
+      const response = await authAxios.get(`${apiBaseUrl}/expiry_date/`);
 
       console.log("Expiry date filter response:", response.data);
 
@@ -251,28 +277,13 @@ const Product = () => {
       const responseData = response.data;
       const productsToDisplay = [];
 
-      // Function to check if a product's expiry date matches our selected date
-      const matchesSelectedDate = (product) => {
-        if (!product.expiry_date) return false;
-
-        // Convert both dates to YYYY-MM-DD format for comparison
-        const productExpiryDate = new Date(product.expiry_date)
-          .toISOString()
-          .split("T")[0];
-        return productExpiryDate === formattedDate;
-      };
-
       // Process expired products if they exist
       if (
         responseData.expired_products &&
         Array.isArray(responseData.expired_products)
       ) {
-        // Filter only products with matching expiry date
-        const matchingExpiredProducts =
-          responseData.expired_products.filter(matchesSelectedDate);
-
         // Transform each product into the expected format
-        const formattedExpiredProducts = matchingExpiredProducts.map(
+        const formattedExpiredProducts = responseData.expired_products.map(
           (product) => ({
             id: product.id,
             product: product,
@@ -291,28 +302,21 @@ const Product = () => {
         responseData.near_expiry_products &&
         Array.isArray(responseData.near_expiry_products)
       ) {
-        // Filter only products with matching expiry date
-        const matchingNearExpiryProducts =
-          responseData.near_expiry_products.filter(matchesSelectedDate);
-
         // Transform each product into the expected format
-        const formattedNearExpiryProducts = matchingNearExpiryProducts.map(
-          (product) => ({
+        const formattedNearExpiryProducts =
+          responseData.near_expiry_products.map((product) => ({
             id: product.id,
             product: product,
             category: { id: product.category_id, name: "Loading..." },
             subcategory: product.subcategory_id
               ? { id: product.subcategory_id, name: "Loading..." }
               : null,
-          }),
-        );
+          }));
 
         productsToDisplay.push(...formattedNearExpiryProducts);
       }
 
-      console.log(
-        `Found ${productsToDisplay.length} products matching expiry date: ${formattedDate}`,
-      );
+      console.log(`Found ${productsToDisplay.length} products by expiry date`);
 
       // If we have products, try to fetch their category names
       if (productsToDisplay.length > 0) {
@@ -393,7 +397,7 @@ const Product = () => {
       statusElement.className = "status-message info";
       statusElement.textContent = `Found ${productsToDisplay.length} product${
         productsToDisplay.length !== 1 ? "s" : ""
-      } with expiry date: ${new Date(date).toLocaleDateString()}`;
+      } by expiry date`;
       document.body.appendChild(statusElement);
 
       // Remove the status message after 3 seconds
@@ -496,34 +500,8 @@ const Product = () => {
     }
   };
 
-  const handleExpiryDateChange = (e) => {
-    setExpiryDate(e.target.value);
-  };
-
-  // Update the handleExpiryDateFilter function to provide better feedback
-  const handleExpiryDateFilter = () => {
-    if (expiryDate) {
-      console.log(`Applying expiry date filter: ${expiryDate}`);
-      fetchProductsByExpiryDate(expiryDate);
-
-      // Add a status message to inform the user
-      const statusElement = document.createElement("div");
-      statusElement.className = "status-message info";
-      statusElement.textContent = `Filtering products by expiry date: ${new Date(expiryDate).toLocaleDateString()}`;
-      document.body.appendChild(statusElement);
-
-      // Remove the status message after 3 seconds
-      setTimeout(() => {
-        if (document.body.contains(statusElement)) {
-          document.body.removeChild(statusElement);
-        }
-      }, 3000);
-    }
-  };
-
-  // Update the handleClearExpiryFilter function to provide feedback
+  // Handle clearing the expiry filter
   const handleClearExpiryFilter = () => {
-    setExpiryDate("");
     console.log("Clearing expiry date filter");
     fetchProducts();
 
@@ -1024,6 +1002,27 @@ const Product = () => {
     );
   }
 
+  // If authenticated but doesn't have access, show access denied message
+  if (isAuthenticated && !hasAccess) {
+    return (
+      <div className="access-denied-container">
+        <Lock size={48} className="access-denied-icon" />
+        <h2>Access Denied</h2>
+        <p>You don't have permission to view this page.</p>
+        <p>
+          This page is only accessible to managers, cashiers, stock keepers,
+          wholesale clients, and sales agents.
+        </p>
+        <button
+          onClick={() => (window.location.href = "/")}
+          className="back-home-btn"
+        >
+          Back to Home
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="product-container">
       <div className="product-header">
@@ -1052,44 +1051,20 @@ const Product = () => {
           />
         </div>
 
-        {/* Expiry Date Filter */}
+        {/* Expiry Date Filter Button */}
         <div className="expiry-filter-container">
           <button
-            className="filter-toggle-btn"
-            onClick={() => setShowExpiryFilter(!showExpiryFilter)}
+            className="expiry-filter-btn"
+            onClick={fetchProductsByExpiryDate}
           >
-            <Calendar size={18} />{" "}
-            {showExpiryFilter ? "Hide Expiry Filter" : "Filter by Expiry"}
+            <Calendar size={18} /> Get Products by Expiry Date
           </button>
-
-          {showExpiryFilter && (
-            <div className="expiry-filter">
-              <div className="date-input-container">
-                <input
-                  type="date"
-                  value={expiryDate}
-                  onChange={handleExpiryDateChange}
-                  className="expiry-date-input"
-                />
-              </div>
-              <div className="filter-actions">
-                <button
-                  className="apply-filter-btn"
-                  onClick={handleExpiryDateFilter}
-                  disabled={!expiryDate}
-                >
-                  <Search size={14} /> Filter
-                </button>
-                <button
-                  className="clear-filter-btn"
-                  onClick={handleClearExpiryFilter}
-                  disabled={!expiryDate}
-                >
-                  <X size={14} /> Clear
-                </button>
-              </div>
-            </div>
-          )}
+          <button
+            className="clear-filter-btn"
+            onClick={handleClearExpiryFilter}
+          >
+            <X size={14} /> Clear Filter
+          </button>
         </div>
 
         <div className="view-controls">
@@ -1178,14 +1153,9 @@ const Product = () => {
                   </div>
                   <div className="product-price-container">
                     {product.on_promotion && product.promo_price ? (
-                      <>
-                        <span className="product-price discounted">
-                          {product.unit_price || 0} XFA
-                        </span>
-                        <span className="product-price">
-                          {product.promo_price || 0} XFA
-                        </span>
-                      </>
+                      <span className="product-price">
+                        {product.promo_price || 0} XFA
+                      </span>
                     ) : (
                       <span className="product-price">
                         {product.unit_price || 0} XFA
@@ -1197,25 +1167,13 @@ const Product = () => {
             );
           })
         ) : (
-          <div className={`no-products ${expiryDate ? "filtered" : ""}`}>
-            {expiryDate ? (
-              <>
-                <p>
-                  No products found with expiry date:{" "}
-                  <span className="filter-info">
-                    {new Date(expiryDate).toLocaleDateString()}
-                  </span>
-                </p>
-                <button onClick={handleClearExpiryFilter}>
-                  <X size={14} /> Clear Filter
-                </button>
-              </>
-            ) : (
-              <p>
-                No products found. Try adjusting your search or add a new
-                product.
-              </p>
-            )}
+          <div className="no-products">
+            <p>
+              No products found. Try adjusting your search or add a new product.
+            </p>
+            <button onClick={handleClearExpiryFilter}>
+              <X size={14} /> Clear Filter
+            </button>
           </div>
         )}
       </div>
@@ -1611,14 +1569,9 @@ const Product = () => {
                   <div className="product-details-price">
                     {selectedProduct.on_promotion &&
                     selectedProduct.promo_price ? (
-                      <>
-                        <span className="product-price discounted">
-                          {selectedProduct.unit_price || 0} XFA
-                        </span>
-                        <span className="product-price">
-                          {selectedProduct.promo_price || 0} XFA
-                        </span>
-                      </>
+                      <span className="product-price">
+                        {selectedProduct.promo_price || 0} XFA
+                      </span>
                     ) : (
                       <span className="product-price">
                         {selectedProduct.unit_price || 0} XFA

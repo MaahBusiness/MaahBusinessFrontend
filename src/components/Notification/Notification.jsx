@@ -13,7 +13,6 @@ import {
   FaSpinner,
   FaArchive,
   FaSyncAlt,
-  FaEye,
 } from "react-icons/fa";
 import "./notification.css";
 
@@ -56,8 +55,8 @@ const Notification = ({ isDropdown = false }) => {
     setError(null);
 
     try {
-      // Construct the API URL with the correct endpoint and query parameters
-      let apiUrl = `http://localhost:8000/api/v1/notification/my-notifications/`;
+      // Use the new API endpoint
+      let apiUrl = `http://localhost:8000/api/v1/notification/notifications/`;
 
       // Add query parameters
       const params = new URLSearchParams();
@@ -130,7 +129,7 @@ const Notification = ({ isDropdown = false }) => {
 
   // Fetch a single notification
   const fetchNotificationDetails = async (id) => {
-    if (!token) return null;
+    if (!token || !id) return null;
 
     try {
       const response = await fetch(
@@ -144,13 +143,23 @@ const Notification = ({ isDropdown = false }) => {
       );
 
       if (!response.ok) {
+        const errorData = await response.json();
+        if (
+          errorData.notif_id &&
+          errorData.notif_id.includes("This field is required.")
+        ) {
+          throw new Error("Notification ID is required");
+        }
         throw new Error("Failed to fetch notification details");
       }
 
       return await response.json();
     } catch (err) {
       console.error("Error fetching notification details:", err);
-      showStatusMessage("Failed to fetch notification details", "error");
+      showStatusMessage(
+        err.message || "Failed to fetch notification details",
+        "error",
+      );
       return null;
     }
   };
@@ -173,7 +182,7 @@ const Notification = ({ isDropdown = false }) => {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            notification_id: id,
+            notif_id: id,
           }),
         },
       );
@@ -305,10 +314,14 @@ const Notification = ({ isDropdown = false }) => {
 
     try {
       // If we need to fetch more details
-      const details = await fetchNotificationDetails(notification.id);
+      if (notification.id) {
+        const details = await fetchNotificationDetails(notification.id);
 
-      if (details) {
-        setSelectedNotification(details);
+        if (details) {
+          setSelectedNotification(details);
+        } else {
+          setSelectedNotification(notification);
+        }
       } else {
         setSelectedNotification(notification);
       }
@@ -369,7 +382,7 @@ const Notification = ({ isDropdown = false }) => {
   const fetchUnreadCount = async () => {
     try {
       const response = await fetch(
-        `http://localhost:8000/api/v1/notification/my-notifications/?status=UNREAD&page_size=1`,
+        `http://localhost:8000/api/v1/notification/notifications/?status=UNREAD&page_size=1`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -587,15 +600,6 @@ const Notification = ({ isDropdown = false }) => {
                       </div>
                     </div>
                     <div className="notification-actions">
-                      {notification.status === "UNREAD" && (
-                        <button
-                          className="mark-read-btn"
-                          onClick={(e) => markAsRead(notification.id, e)}
-                          title="Mark as read"
-                        >
-                          <FaCheckCircle size={16} />
-                        </button>
-                      )}
                       <button
                         className="archive-btn"
                         onClick={(e) => archiveNotification(notification.id, e)}
@@ -753,22 +757,6 @@ const Notification = ({ isDropdown = false }) => {
                     </div>
                   </div>
                   <div className="notification-actions">
-                    {notification.status === "UNREAD" && (
-                      <button
-                        className="mark-read-btn"
-                        onClick={(e) => markAsRead(notification.id, e)}
-                        title="Mark as read"
-                      >
-                        <FaCheckCircle size={16} />
-                      </button>
-                    )}
-                    <button
-                      className="view-details-btn"
-                      onClick={(e) => viewNotificationDetails(notification, e)}
-                      title="View Details"
-                    >
-                      <FaEye size={16} />
-                    </button>
                     {notification.status !== "ARCHIVED" && (
                       <button
                         className="archive-btn"

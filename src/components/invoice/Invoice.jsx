@@ -91,7 +91,14 @@ const Invoice = () => {
   const [advancePaid, setAdvancePaid] = useState(0);
   const [dueDate, setDueDate] = useState("");
   const [lines, setLines] = useState([
-    { product_id: "", name: "", quantity: 1, price: 0, discount: 0 },
+    {
+      product_id: "",
+      name: "",
+      quantity: 1,
+      price: 0,
+      discount: 0,
+      is_promotion: false,
+    },
   ]);
   const [formError, setFormError] = useState("");
 
@@ -218,6 +225,13 @@ const Invoice = () => {
         .map((item) => {
           // Handle different possible product structures
           const productInfo = item.product || item;
+
+          // Check if product is on promotion
+          const isPromotion =
+            productInfo.is_promotion || productInfo.on_promotion || false;
+          const promotionPrice =
+            productInfo.promotion_price || productInfo.promo_price || 0;
+
           return {
             id: productInfo.id || "",
             name:
@@ -225,6 +239,10 @@ const Invoice = () => {
             price: Number.parseFloat(
               productInfo.unit_price || productInfo.price || 0,
             ),
+            is_promotion: isPromotion,
+            promotion_price: isPromotion
+              ? Number.parseFloat(promotionPrice)
+              : 0,
           };
         })
         .filter((product) => product.id); // Filter out any products without an ID
@@ -320,7 +338,7 @@ const Invoice = () => {
     const refund = advancePaid > total ? advancePaid - total : 0;
 
     // Set status to "COMPLETED" for the API, but we'll hide it in the UI
-    const status = "COMPLETED";
+    const status = "";
 
     return { subtotal, taxAmount, total, remaining, refund, status };
   };
@@ -339,7 +357,14 @@ const Invoice = () => {
   const handleAddLine = () => {
     setLines([
       ...lines,
-      { product_id: "", name: "", quantity: 1, price: 0, discount: 0 },
+      {
+        product_id: "",
+        name: "",
+        quantity: 1,
+        price: 0,
+        discount: 0,
+        is_promotion: false,
+      },
     ]);
   };
 
@@ -366,7 +391,18 @@ const Invoice = () => {
             if (selectedProduct) {
               console.log("Selected product:", selectedProduct);
               updatedLine.name = selectedProduct.name;
-              updatedLine.price = selectedProduct.price;
+
+              // Check if product is on promotion and use promotion price if available
+              if (
+                selectedProduct.is_promotion &&
+                selectedProduct.promotion_price > 0
+              ) {
+                updatedLine.price = selectedProduct.promotion_price;
+                updatedLine.is_promotion = true;
+              } else {
+                updatedLine.price = selectedProduct.price;
+                updatedLine.is_promotion = false;
+              }
             } else {
               console.log("Product not found for ID:", value);
             }
@@ -423,6 +459,7 @@ const Invoice = () => {
           product_id: line.product_id,
           quantity: line.quantity,
           discount: line.discount.toString(),
+          is_promotion: line.is_promotion,
         })),
       };
 
@@ -596,8 +633,6 @@ const Invoice = () => {
     setConfirmArchive(index);
   };
 
-  // Find the confirmArchiveInvoice function and replace it with this updated version:
-
   // Confirm archive
   const confirmArchiveInvoice = async () => {
     const invoiceId = invoices[confirmArchive].id;
@@ -717,7 +752,14 @@ const Invoice = () => {
     setAdvancePaid(0);
     setDueDate("");
     setLines([
-      { product_id: "", name: "", quantity: 1, price: 0, discount: 0 },
+      {
+        product_id: "",
+        name: "",
+        quantity: 1,
+        price: 0,
+        discount: 0,
+        is_promotion: false,
+      },
     ]);
     setFormError("");
   };
@@ -1387,7 +1429,11 @@ const Invoice = () => {
                                 key={product.id}
                                 value={product.id.toString()}
                               >
-                                {product.name} - {product.price} XFA
+                                {product.name} -{" "}
+                                {product.is_promotion &&
+                                product.promotion_price > 0
+                                  ? `${product.promotion_price} XFA (PROMO)`
+                                  : `${product.price} XFA`}
                               </option>
                             ))}
                           </select>
@@ -1421,6 +1467,9 @@ const Invoice = () => {
                               updateLine(index, "price", Number(e.target.value))
                             }
                             disabled={!!line.product_id}
+                            className={
+                              line.is_promotion ? "promotion-price" : ""
+                            }
                           />
                         </div>
                         <div className="line-item-col discount">
@@ -1612,14 +1661,25 @@ const Invoice = () => {
                         const lineSubtotal =
                           Number.parseFloat(line.line_total) ||
                           lineQuantity * linePrice * (1 - lineDiscount / 100);
+                        const isPromotion = line.is_promotion || false;
 
                         return (
                           <tr key={index}>
                             <td>{line.product_name || "Unknown Product"}</td>
                             <td>{lineQuantity}</td>
-                            <td>{linePrice.toFixed(2)} XFA</td>
+                            <td
+                              className={
+                                isPromotion
+                                  ? "promotion-price"
+                                  : "product-price"
+                              }
+                            >
+                              {linePrice.toFixed(2)} XFA
+                            </td>
                             <td>{lineDiscount.toFixed(2)} XFA</td>
-                            <td>{lineSubtotal.toFixed(2)} XFA</td>
+                            <td className="product-subtotal">
+                              {lineSubtotal.toFixed(2)} XFA
+                            </td>
                           </tr>
                         );
                       })}

@@ -24,6 +24,7 @@
   align-items: center;
   margin-bottom: 2rem;
   width: 100%;
+  border-radius: 0.5em;
 }
 
 .dashboard-actions {
@@ -224,12 +225,9 @@
 }
 
 @media (max-width: 1024px) {
-  .dashboard {
-    position: none;
-    top: 0;
-    left: 0;
+  .dashboard-cards {
+    grid-template-columns: repeat(2, 1fr);
   }
-
   .charts-container {
     grid-template-columns: 1fr;
   }
