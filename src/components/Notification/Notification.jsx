@@ -43,6 +43,12 @@ const Notification = ({ isDropdown = false }) => {
     type: "",
   });
 
+  // Add this function near the top of your component
+  const updateNavbarNotificationCount = () => {
+    // Dispatch a custom event that Navbar will listen for
+    window.dispatchEvent(new Event("notificationsUpdated"));
+  };
+
   // Fetch notifications
   const fetchNotifications = async (resetList = true) => {
     if (!token) {
@@ -164,7 +170,39 @@ const Notification = ({ isDropdown = false }) => {
     }
   };
 
-  // Mark notification as read
+  // Update the viewNotificationDetails function to automatically mark notifications as read and open the modal
+  const viewNotificationDetails = async (notification, event) => {
+    if (event) {
+      event.stopPropagation();
+    }
+
+    try {
+      // If we need to fetch more details
+      if (notification.id) {
+        const details = await fetchNotificationDetails(notification.id);
+
+        if (details) {
+          setSelectedNotification(details);
+        } else {
+          setSelectedNotification(notification);
+        }
+      } else {
+        setSelectedNotification(notification);
+      }
+
+      setIsViewModalOpen(true);
+
+      // If the notification is unread, mark it as read
+      if (notification.status === "UNREAD") {
+        await markAsRead(notification.id);
+      }
+    } catch (err) {
+      console.error("Error viewing notification details:", err);
+      showStatusMessage("Failed to load notification details", "error");
+    }
+  };
+
+  // Update the markAsRead function to immediately update the UI and notify the navbar
   const markAsRead = async (id, event) => {
     if (event) {
       event.stopPropagation();
@@ -173,6 +211,24 @@ const Notification = ({ isDropdown = false }) => {
     if (!token) return;
 
     try {
+      // Update local state immediately for better UX
+      setNotifications(
+        notifications.map((notification) =>
+          notification.id === id
+            ? { ...notification, status: "READ" }
+            : notification,
+        ),
+      );
+
+      // Update unread count in localStorage
+      const newUnreadCount = notifications.filter(
+        (n) => n.id !== id && n.status === "UNREAD",
+      ).length;
+      localStorage.setItem("notificationCount", newUnreadCount.toString());
+
+      // Dispatch storage event for navbar to pick up the change
+      window.dispatchEvent(new Event("storage"));
+
       const response = await fetch(
         `http://localhost:8000/api/v1/notification/mark-read/`,
         {
@@ -191,15 +247,6 @@ const Notification = ({ isDropdown = false }) => {
         throw new Error("Failed to mark notification as read");
       }
 
-      // Update local state
-      setNotifications(
-        notifications.map((notification) =>
-          notification.id === id
-            ? { ...notification, status: "READ" }
-            : notification,
-        ),
-      );
-
       // Update unread count in localStorage
       fetchUnreadCount();
 
@@ -207,14 +254,38 @@ const Notification = ({ isDropdown = false }) => {
     } catch (err) {
       console.error("Error marking notification as read:", err);
       showStatusMessage("Failed to mark notification as read", "error");
+
+      // Revert the local state change if the API call failed
+      setNotifications(
+        notifications.map((notification) =>
+          notification.id === id && notification.status === "READ"
+            ? { ...notification, status: "UNREAD" }
+            : notification,
+        ),
+      );
     }
   };
 
-  // Mark all notifications as read
+  // Update the markAllAsRead function to immediately update the UI and notify the navbar
   const markAllAsRead = async () => {
     if (!token) return;
 
     try {
+      // Update local state immediately for better UX
+      setNotifications(
+        notifications.map((notification) =>
+          notification.status === "UNREAD"
+            ? { ...notification, status: "READ" }
+            : notification,
+        ),
+      );
+
+      // Update unread count in localStorage
+      localStorage.setItem("notificationCount", "0");
+
+      // Dispatch storage event for navbar to pick up the change
+      window.dispatchEvent(new Event("storage"));
+
       const response = await fetch(
         `http://localhost:8000/api/v1/notification/mark-all-read/`,
         {
@@ -230,23 +301,43 @@ const Notification = ({ isDropdown = false }) => {
         throw new Error("Failed to mark all notifications as read");
       }
 
-      // Update local state
-      setNotifications(
-        notifications.map((notification) =>
-          notification.status === "UNREAD"
-            ? { ...notification, status: "READ" }
-            : notification,
-        ),
-      );
-
-      // Update unread count in localStorage
-      localStorage.setItem("notificationCount", "0");
-      window.dispatchEvent(new Event("storage"));
-
       showStatusMessage("All notifications marked as read", "success");
     } catch (err) {
       console.error("Error marking all notifications as read:", err);
       showStatusMessage("Failed to mark all notifications as read", "error");
+
+      // Revert the local state change if the API call failed
+      fetchNotifications(true);
+    }
+  };
+
+  // Update the fetchUnreadCount function to ensure it only counts UNREAD notifications
+  const fetchUnreadCount = async () => {
+    try {
+      // Always fetch fresh data from API for unread notifications
+      const response = await fetch(
+        "http://localhost:8000/api/v1/notification/my-notifications/?status=UNREAD",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        // Set count based on the API response
+        const unreadCount = Array.isArray(data) ? data.length : data.count || 0;
+
+        // Update both state and localStorage
+        localStorage.setItem("notificationCount", unreadCount.toString());
+
+        // Dispatch storage event for navbar to pick up the change
+        window.dispatchEvent(new Event("storage"));
+        window.dispatchEvent(new Event("notificationsUpdated"));
+      }
+    } catch (err) {
+      console.error("Error fetching unread count:", err);
     }
   };
 
@@ -306,38 +397,6 @@ const Notification = ({ isDropdown = false }) => {
     }
   };
 
-  // View notification details
-  const viewNotificationDetails = async (notification, event) => {
-    if (event) {
-      event.stopPropagation();
-    }
-
-    try {
-      // If we need to fetch more details
-      if (notification.id) {
-        const details = await fetchNotificationDetails(notification.id);
-
-        if (details) {
-          setSelectedNotification(details);
-        } else {
-          setSelectedNotification(notification);
-        }
-      } else {
-        setSelectedNotification(notification);
-      }
-
-      setIsViewModalOpen(true);
-
-      // If the notification is unread, mark it as read
-      if (notification.status === "UNREAD") {
-        markAsRead(notification.id);
-      }
-    } catch (err) {
-      console.error("Error viewing notification details:", err);
-      showStatusMessage("Failed to load notification details", "error");
-    }
-  };
-
   // Archive old notifications
   const archiveOldNotifications = async () => {
     setArchiveLoading(true);
@@ -375,31 +434,6 @@ const Notification = ({ isDropdown = false }) => {
       showStatusMessage("Failed to archive old notifications", "error");
     } finally {
       setArchiveLoading(false);
-    }
-  };
-
-  // Fetch unread count
-  const fetchUnreadCount = async () => {
-    try {
-      const response = await fetch(
-        `http://localhost:8000/api/v1/notification/notifications/?status=UNREAD&page_size=1`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        const unreadCount = data.count || 0;
-        localStorage.setItem("notificationCount", unreadCount.toString());
-
-        // Dispatch storage event for navbar to pick up the change
-        window.dispatchEvent(new Event("storage"));
-      }
-    } catch (err) {
-      console.error("Error fetching unread count:", err);
     }
   };
 
@@ -446,10 +480,25 @@ const Notification = ({ isDropdown = false }) => {
 
   // Fetch notifications on mount and when filter changes
   useEffect(() => {
-    if (token) {
-      fetchNotifications(true);
-    }
-  }, [token, filter]);
+    // Fetch notifications and unread count on mount
+    fetchNotifications();
+    fetchUnreadCount();
+
+    // Set up interval to periodically check for new notifications
+    const interval = setInterval(() => {
+      fetchUnreadCount();
+    }, 30000); // Check every 30 seconds
+
+    return () => {
+      clearInterval(interval);
+      // Update notification count when component unmounts
+      const unreadCount = notifications.filter(
+        (n) => n.status === "UNREAD",
+      ).length;
+      localStorage.setItem("notificationCount", unreadCount.toString());
+      updateNavbarNotificationCount();
+    };
+  }, []);
 
   // Fetch more notifications when page changes
   useEffect(() => {
@@ -581,7 +630,7 @@ const Notification = ({ isDropdown = false }) => {
                   <div
                     key={notification.id}
                     className={`notification-item ${notification.status.toLowerCase()}`}
-                    onClick={() => viewNotificationDetails(notification)}
+                    onClick={(e) => viewNotificationDetails(notification, e)}
                   >
                     <div className="notification-icon-container">
                       {getNotificationIcon(notification.notification_type)}
@@ -738,7 +787,7 @@ const Notification = ({ isDropdown = false }) => {
                 <div
                   key={notification.id}
                   className={`notification-item ${notification.status.toLowerCase()}`}
-                  onClick={() => viewNotificationDetails(notification)}
+                  onClick={(e) => viewNotificationDetails(notification, e)}
                 >
                   <div className="notification-icon-container">
                     {getNotificationIcon(notification.notification_type)}
@@ -903,14 +952,6 @@ const Notification = ({ isDropdown = false }) => {
                   <span className="detail-label">Created:</span>
                   <span className="detail-value">
                     {formatDate(selectedNotification.created_at)}
-                  </span>
-                </div>
-                <div className="notification-detail-item">
-                  <span className="detail-label">Status:</span>
-                  <span
-                    className={`detail-value status-${selectedNotification.status.toLowerCase()}`}
-                  >
-                    {selectedNotification.status}
                   </span>
                 </div>
               </div>

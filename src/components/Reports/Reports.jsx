@@ -692,7 +692,7 @@ const Reports = () => {
     });
   };
 
-  // Format currency
+  // Format currency - preserve exact decimal values
   const formatCurrency = (amount) => {
     if (amount === undefined || amount === null) return "N/A";
 
@@ -700,12 +700,8 @@ const Reports = () => {
       return "NaN";
     }
 
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "XAF",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
+    // Return the exact value with XAF prefix, preserving decimals
+    return `XAF ${amount}`;
   };
 
   // Format date
@@ -1239,14 +1235,6 @@ const Reports = () => {
                               )}
                             </p>
                           </div>
-                          <div className="stat-card">
-                            <p className="stat-label">Money Outstanding</p>
-                            <p className="stat-value warning">
-                              {formatCurrency(
-                                report.report_data.money_outstanding || 0,
-                              )}
-                            </p>
-                          </div>
                         </div>
 
                         <div className="report-table-section">
@@ -1439,23 +1427,6 @@ const Reports = () => {
                               <p className="summary-value primary">
                                 {formatCurrency(
                                   report.report_data.cash_in_hand || 0,
-                                )}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="summary-card">
-                          <div className="summary-card-header">
-                            <h3 className="summary-card-title">
-                              Money Outstanding
-                            </h3>
-                          </div>
-                          <div className="summary-card-content">
-                            <div className="summary-value-container">
-                              <p className="summary-value warning">
-                                {formatCurrency(
-                                  report.report_data.money_outstanding || 0,
                                 )}
                               </p>
                             </div>

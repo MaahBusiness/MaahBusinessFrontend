@@ -50,6 +50,22 @@
   font-size: 0.7rem;
   font-weight: bold;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+  70% {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
 }
 
 /* Notification Dropdown */
@@ -294,12 +310,12 @@
 }
 
 .notification-item.unread {
-  background-color: rgba(99, 102, 241, 0.1);
-  border-left: 3px solid #6366f1;
+  background-color: rgba(99, 102, 241, 0.15);
+  border-left: 4px solid #6366f1;
 }
 
 .notification-item.unread:hover {
-  background-color: rgba(99, 102, 241, 0.15);
+  background-color: rgba(99, 102, 241, 0.25);
 }
 
 .notification-item.read {
@@ -351,6 +367,11 @@
   word-wrap: break-word;
 }
 
+.notification-item.unread .notification-message {
+  color: #ffffff;
+  font-weight: 500;
+}
+
 .notification-meta {
   display: flex;
   flex-wrap: wrap;
@@ -362,6 +383,10 @@
 .notification-product {
   font-weight: 500;
   color: #6366f1;
+}
+
+.notification-item.unread .notification-product {
+  color: #818cf8;
 }
 
 .notification-time {

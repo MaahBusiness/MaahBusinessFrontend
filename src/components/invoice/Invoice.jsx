@@ -20,19 +20,6 @@ import {
   Clock,
   Archive,
 } from "lucide-react";
-import {
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
 import "./Invoice.css";
 import ArchiveManager from "./ArchiveManager";
 
@@ -221,6 +208,7 @@ const Invoice = () => {
       console.log("Product data array length:", productData.length);
 
       // Map the products correctly, handling different possible structures
+      // Preserve the exact decimal values from the API
       const processedProducts = productData
         .map((item) => {
           // Handle different possible product structures
@@ -236,13 +224,9 @@ const Invoice = () => {
             id: productInfo.id || "",
             name:
               productInfo.name || productInfo.product_name || "Unnamed Product",
-            price: Number.parseFloat(
-              productInfo.unit_price || productInfo.price || 0,
-            ),
+            price: productInfo.unit_price || productInfo.price || 0,
             is_promotion: isPromotion,
-            promotion_price: isPromotion
-              ? Number.parseFloat(promotionPrice)
-              : 0,
+            promotion_price: isPromotion ? promotionPrice : 0,
           };
         })
         .filter((product) => product.id); // Filter out any products without an ID
@@ -328,19 +312,38 @@ const Invoice = () => {
 
   // Helper function to calculate invoice totals
   const calculateTotals = () => {
-    const subtotal = lines.reduce(
-      (sum, item) => sum + (item.quantity * item.price - item.discount),
-      0,
-    );
-    const taxAmount = subtotal * (tax / 100);
+    const subtotal = lines.reduce((sum, item) => {
+      const lineTotal =
+        Number.parseFloat(item.quantity || 0) *
+          Number.parseFloat(item.price || 0) -
+        Number.parseFloat(item.discount || 0);
+      return sum + lineTotal;
+    }, 0);
+
+    const taxAmount = subtotal * (Number.parseFloat(tax || 0) / 100);
     const total = subtotal + taxAmount;
-    const remaining = total - advancePaid;
-    const refund = advancePaid > total ? advancePaid - total : 0;
+    const remaining = total - Number.parseFloat(advancePaid || 0);
+    const refund =
+      Number.parseFloat(advancePaid || 0) > total
+        ? Number.parseFloat(advancePaid || 0) - total
+        : 0;
 
-    // Set status to "COMPLETED" for the API, but we'll hide it in the UI
-    const status = "COMPLETED";
+    // Dynamic status based on payment
+    let status = "COMPLETED";
+    if (remaining > 0) {
+      status = "PENDING";
+    } else if (refund > 0) {
+      status = "REFUND";
+    }
 
-    return { subtotal, taxAmount, total, remaining, refund, status };
+    return {
+      subtotal: String(subtotal),
+      taxAmount: String(taxAmount),
+      total: String(total),
+      remaining: String(remaining),
+      refund: String(refund),
+      status,
+    };
   };
 
   // Function to show status messages
@@ -393,9 +396,10 @@ const Invoice = () => {
               updatedLine.name = selectedProduct.name;
 
               // Check if product is on promotion and use promotion price if available
+              // Preserve the exact decimal value from the API
               if (
                 selectedProduct.is_promotion &&
-                selectedProduct.promotion_price > 0
+                selectedProduct.promotion_price
               ) {
                 updatedLine.price = selectedProduct.promotion_price;
                 updatedLine.is_promotion = true;
@@ -451,7 +455,7 @@ const Invoice = () => {
       const payload = {
         client_name: clientName || "Anonymous", // Default to "Anonymous" if client name is not provided
         tax: tax.toString(),
-        status: status, // Use lowercase status
+        status: status, // Use the dynamic status
         reason: reason || "", // Make reason optional
         due_date: dueDate || null, // Make due date optional
         advance_paid: advancePaid.toString(),
@@ -1002,16 +1006,10 @@ const Invoice = () => {
       {/* View Toggle */}
       <div className="view-toggle">
         <button
-          className={`view-toggle-btn ${currentView === "list" ? "active" : ""}`}
+          className="view-toggle-btn active"
           onClick={() => setCurrentView("list")}
         >
           <FileText size={16} /> Invoice List
-        </button>
-        <button
-          className={`view-toggle-btn ${currentView === "analytics" ? "active" : ""}`}
-          onClick={() => setCurrentView("analytics")}
-        >
-          <BarChart size={16} /> Analytics
         </button>
       </div>
 
@@ -1079,9 +1077,7 @@ const Invoice = () => {
                       </div>
                       <div className="invoice-amount">
                         <DollarSign size={16} />
-                        <span>
-                          {Number.parseFloat(invoice.total || 0).toFixed(2)} XFA
-                        </span>
+                        <span>{invoice.total || "0"} XFA</span>
                       </div>
                       <div className="invoice-items">
                         <ShoppingCart size={16} />
@@ -1181,88 +1177,17 @@ const Invoice = () => {
           <div className="analytics-charts">
             <div className="chart-container">
               <h3>Monthly Revenue</h3>
-              <div className="chart">
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={monthlyRevenueData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                    <XAxis dataKey="month" stroke="#D1D5DB" />
-                    <YAxis stroke="#D1D5DB" />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "#1F2937",
-                        border: "none",
-                        borderRadius: "4px",
-                      }}
-                      itemStyle={{ color: "#D1D5DB" }}
-                    />
-                    <Legend wrapperStyle={{ color: "#D1D5DB" }} />
-                    <Bar dataKey="revenue" name="Revenue" fill="#800020" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+              <div className="chart"></div>
             </div>
 
             <div className="chart-container">
               <h3>Invoice Status</h3>
-              <div className="chart">
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={statusData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      outerRadius={100}
-                      fill="#8884d8"
-                      dataKey="value"
-                      label={({ name, percent }) =>
-                        `${name} ${(percent * 100).toFixed(0)}%`
-                      }
-                    >
-                      {statusData.map((entry, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={COLORS[index % COLORS.length]}
-                        />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "#1F2937",
-                        border: "none",
-                        borderRadius: "4px",
-                      }}
-                      itemStyle={{ color: "#D1D5DB" }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
+              <div className="chart"></div>
             </div>
 
             <div className="chart-container">
               <h3>Revenue by Client</h3>
-              <div className="chart">
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart
-                    layout="vertical"
-                    data={clientDistributionData}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                    <XAxis type="number" stroke="#D1D5DB" />
-                    <YAxis dataKey="name" type="category" stroke="#D1D5DB" />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "#1F2937",
-                        border: "none",
-                        borderRadius: "4px",
-                      }}
-                      itemStyle={{ color: "#D1D5DB" }}
-                    />
-                    <Bar dataKey="value" name="Revenue" fill="#6A1B9A" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+              <div className="chart"></div>
             </div>
           </div>
         </div>
@@ -1408,8 +1333,11 @@ const Invoice = () => {
                   </div>
 
                   {lines.map((line, index) => {
-                    const lineSubtotal =
-                      line.quantity * line.price - line.discount;
+                    const lineSubtotal = String(
+                      Number.parseFloat(line.quantity || 0) *
+                        Number.parseFloat(line.price || 0) -
+                        Number.parseFloat(line.discount || 0),
+                    );
 
                     return (
                       <div key={index} className="line-item">
@@ -1459,12 +1387,11 @@ const Invoice = () => {
                         </div>
                         <div className="line-item-col price">
                           <input
-                            type="number"
-                            min="0"
-                            step="0.01"
+                            type="text"
+                            pattern="[0-9]*\.?[0-9]*"
                             value={line.price}
                             onChange={(e) =>
-                              updateLine(index, "price", Number(e.target.value))
+                              updateLine(index, "price", e.target.value)
                             }
                             disabled={!!line.product_id}
                             className={
@@ -1488,7 +1415,7 @@ const Invoice = () => {
                           />
                         </div>
                         <div className="line-item-col subtotal">
-                          {lineSubtotal.toFixed(2)}
+                          {lineSubtotal}
                         </div>
                         <div className="line-item-col actions">
                           <button
@@ -1521,15 +1448,15 @@ const Invoice = () => {
                     <>
                       <div className="totals-row">
                         <span>Subtotal:</span>
-                        <span>{subtotal.toFixed(2)} XFA</span>
+                        <span>{subtotal} XFA</span>
                       </div>
                       <div className="totals-row">
                         <span>Tax ({tax}%):</span>
-                        <span>{taxAmount.toFixed(2)} XFA</span>
+                        <span>{taxAmount} XFA</span>
                       </div>
                       <div className="totals-row total">
                         <span>Total:</span>
-                        <span>{total.toFixed(2)} XFA</span>
+                        <span>{total} XFA</span>
                       </div>
                       <div className="totals-row">
                         <span>Advance Paid:</span>
@@ -1538,12 +1465,12 @@ const Invoice = () => {
                       {remaining > 0 ? (
                         <div className="totals-row remaining">
                           <span>Remaining:</span>
-                          <span>{remaining.toFixed(2)} XFA</span>
+                          <span>{remaining} XFA</span>
                         </div>
                       ) : refund > 0 ? (
                         <div className="totals-row refund">
                           <span>Refund:</span>
-                          <span>{refund.toFixed(2)} XFA</span>
+                          <span>{refund} XFA</span>
                         </div>
                       ) : (
                         <div className="totals-row paid">
@@ -1553,9 +1480,18 @@ const Invoice = () => {
                           </span>
                         </div>
                       )}
+
                       <div className="totals-row status">
                         <span>Status:</span>
-                        <span className={status.toLowerCase()}>{status}</span>
+                        <span className={status.toLowerCase()}>
+                          {status === "COMPLETED"
+                            ? "COMPLETED (Fully Paid)"
+                            : status === "PENDING"
+                              ? "PENDING (Payment Required)"
+                              : status === "REFUND"
+                                ? "REFUND DUE"
+                                : status}
+                        </span>
                       </div>
                     </>
                   );
@@ -1708,10 +1644,7 @@ const Invoice = () => {
                 </div>
                 <div className="totals-row total">
                   <span>Total:</span>
-                  <span>
-                    {Number.parseFloat(selectedInvoice.total || 0).toFixed(2)}{" "}
-                    XFA
-                  </span>
+                  <span>{selectedInvoice.total || "0"} XFA</span>
                 </div>
                 <div className="totals-row">
                   <span>Advance Paid:</span>

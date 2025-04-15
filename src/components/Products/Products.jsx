@@ -1057,7 +1057,7 @@ const Product = () => {
             className="expiry-filter-btn"
             onClick={fetchProductsByExpiryDate}
           >
-            <Calendar size={18} /> Get Products by Expiry Date
+            <Calendar size={18} /> Expired Products
           </button>
           <button
             className="clear-filter-btn"
@@ -1222,8 +1222,7 @@ const Product = () => {
                     <input
                       id="purchase-price"
                       name="purchase_price"
-                      type="number"
-                      step="0.01"
+                      type="decimal"
                       min="0"
                       value={formData.purchase_price}
                       onChange={handleChange}
@@ -1251,8 +1250,7 @@ const Product = () => {
                         <input
                           id="product-price"
                           name="unit_price"
-                          type="number"
-                          step="0.01"
+                          type="decimal"
                           min="0"
                           value={formData.unit_price}
                           onChange={handleChange}
@@ -1332,7 +1330,7 @@ const Product = () => {
                       <label htmlFor="product-quantity">Quantity *</label>
                       <input
                         id="product-quantity"
-                        type="number"
+                        type="decimal"
                         min="0"
                         name="quantity"
                         value={formData.quantity}
@@ -1347,7 +1345,7 @@ const Product = () => {
                       </label>
                       <input
                         id="product-min-quantity"
-                        type="number"
+                        type="decimal"
                         min="0"
                         name="min_quantity"
                         value={formData.min_quantity}
@@ -1469,8 +1467,7 @@ const Product = () => {
                           <input
                             id="promo-price"
                             name="promo_price"
-                            type="number"
-                            step="0.01"
+                            type="decimal"
                             min="0"
                             value={formData.promo_price}
                             onChange={handleChange}

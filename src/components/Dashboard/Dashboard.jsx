@@ -930,27 +930,27 @@ const Dashboard = () => {
                 type="monotone"
                 dataKey="profit"
                 name="Profit"
-                stroke="#8884d8"
+                stroke="#8b5cf6" /* Updated to purple */
                 strokeWidth={2}
-                dot={{ r: 4, fill: "#8884d8" }}
+                dot={{ r: 4, fill: "#8b5cf6" }}
                 activeDot={{ r: 6 }}
               />
               <Line
                 type="monotone"
                 dataKey="sales"
                 name="Sales"
-                stroke="#22c55e"
+                stroke="#10b981" /* Updated to emerald */
                 strokeWidth={2}
-                dot={{ r: 4, fill: "#22c55e" }}
+                dot={{ r: 4, fill: "#10b981" }}
                 activeDot={{ r: 6 }}
               />
               <Line
                 type="monotone"
                 dataKey="pending"
                 name="Pending Payment"
-                stroke="#FFCE56"
+                stroke="#f59e0b" /* Updated to amber */
                 strokeWidth={2}
-                dot={{ r: 4, fill: "#FFCE56" }}
+                dot={{ r: 4, fill: "#f59e0b" }}
                 activeDot={{ r: 6 }}
               />
             </LineChart>
@@ -972,16 +972,16 @@ const Dashboard = () => {
               <AreaChart data={salesChartData}>
                 <defs>
                   <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#FF6384" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#FF6384" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="colorProfit" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#4BC0C0" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#4BC0C0" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="colorPending" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#FFCE56" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#FFCE56" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
@@ -999,7 +999,7 @@ const Dashboard = () => {
                 <Area
                   type="monotone"
                   dataKey="sales"
-                  stroke="#FF6384"
+                  stroke="#10b981"
                   fillOpacity={1}
                   fill="url(#colorSales)"
                   name="Sales"
@@ -1007,7 +1007,7 @@ const Dashboard = () => {
                 <Area
                   type="monotone"
                   dataKey="profit"
-                  stroke="#4BC0C0"
+                  stroke="#8b5cf6"
                   fillOpacity={0.3}
                   fill="url(#colorProfit)"
                   name="Profit"
@@ -1015,7 +1015,7 @@ const Dashboard = () => {
                 <Area
                   type="monotone"
                   dataKey="pending_payment"
-                  stroke="#FFCE56"
+                  stroke="#f59e0b"
                   fillOpacity={0.3}
                   fill="url(#colorPending)"
                   name="Pending Payment"
