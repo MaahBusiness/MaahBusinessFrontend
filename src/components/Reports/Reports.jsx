@@ -56,6 +56,33 @@ const Reports = () => {
     // Get current user role
     getCurrentUserRole();
 
+    // Check if user has permission to view reports
+    const userRole = localStorage.getItem("userRole") || "";
+    const userData = localStorage.getItem("user");
+    let role = "";
+
+    if (userData) {
+      try {
+        const parsedUser = JSON.parse(userData);
+        if (parsedUser && parsedUser.role) {
+          role = parsedUser.role;
+        }
+      } catch (e) {
+        console.error("Error parsing user data:", e);
+      }
+    }
+
+    if (
+      role !== "manager" &&
+      role !== "cashier" &&
+      userRole !== "manager" &&
+      userRole !== "cashier"
+    ) {
+      setError(
+        "You don't have permission to view reports. Only managers and cashiers can access this page.",
+      );
+    }
+
     // Load saved reports from localStorage
     try {
       const storedReports = localStorage.getItem("savedReports");
@@ -226,16 +253,19 @@ const Reports = () => {
 
   // Delete a saved report
   const deleteReport = (reportId, e) => {
-    if (e) e.stopPropagation();
-
-    const updatedReports = savedReports.filter((r) => r.id !== reportId);
-    setSavedReports(updatedReports);
-
-    try {
-      localStorage.setItem("savedReports", JSON.stringify(updatedReports));
-    } catch (err) {
-      console.error("Error saving updated reports:", err);
+    // Stop event propagation to prevent loading the report when clicking delete
+    if (e) {
+      e.stopPropagation();
     }
+
+    // Filter out the report to delete
+    const updatedReports = savedReports.filter(
+      (report) => report.id !== reportId,
+    );
+
+    // Update state and localStorage
+    setSavedReports(updatedReports);
+    localStorage.setItem("savedReports", JSON.stringify(updatedReports));
 
     // If the current report is the one being deleted, clear it
     if (report && report.id === reportId) {
@@ -243,7 +273,7 @@ const Reports = () => {
     }
   };
 
-  // Modify the loadReport function to create a fresh copy of the report data
+  // Modify the loadReport function to ensure it properly displays the complete API response
   const loadReport = (reportId) => {
     const reportToLoad = savedReports.find((r) => r.id === reportId);
     if (!reportToLoad) return;
@@ -283,6 +313,8 @@ const Reports = () => {
       setEndDate("");
     }
 
+    console.log("Loaded report data:", freshReport.report_data);
+
     // For inventory reports, try to fetch fresh data
     if (freshReport.report_type === "inventory") {
       fetchInventoryData(
@@ -306,18 +338,34 @@ const Reports = () => {
     }
   };
 
-  // Modify the handleGenerateReport function to ensure each report has its own data
-  const handleGenerateReport = async (e) => {
-    e.preventDefault();
+  // Add this function to check if the user has permission to view report data
+  const hasReportViewPermission = () => {
+    const userRole = localStorage.getItem("userRole") || "";
+    const userData = localStorage.getItem("user");
+    let role = "";
 
-    // Check if user has permission to generate reports
-    if (!hasReportAccess()) {
-      setError(
-        "You don't have permission to generate reports. Only managers and cashiers can generate reports.",
-      );
-      return;
+    if (userData) {
+      try {
+        const parsedUser = JSON.parse(userData);
+        if (parsedUser && parsedUser.role) {
+          role = parsedUser.role;
+        }
+      } catch (e) {
+        console.error("Error parsing user data:", e);
+      }
     }
 
+    return (
+      role === "manager" ||
+      role === "cashier" ||
+      userRole === "manager" ||
+      userRole === "cashier"
+    );
+  };
+
+  // Modify the handleGenerateReport function to properly save the complete API response
+  const handleGenerateReport = async (e) => {
+    e.preventDefault();
     setIsLoading(true);
     setError(null);
     setDebugInfo(null);
@@ -332,6 +380,15 @@ const Reports = () => {
       setError("Authentication required. Please log in again.");
       setIsLoading(false);
       navigate("/login");
+      return;
+    }
+
+    // Check if user has permission to generate reports
+    if (!hasReportViewPermission()) {
+      setError(
+        "You don't have permission to generate reports. Only managers and cashiers can generate reports.",
+      );
+      setIsLoading(false);
       return;
     }
 
@@ -362,7 +419,7 @@ const Reports = () => {
         inventoryItems = await fetchInventoryData(startDate, endDate);
       }
 
-      // Generate the report
+      // Generate the report using the API for all report types
       const response = await axios.get(
         `http://localhost:8000/api/v1/report/generate/?${params.toString()}`,
         {
@@ -372,38 +429,8 @@ const Reports = () => {
 
       console.log("Report generation response:", response.data);
 
-      // For sales reports, use the example data structure provided
-      let responseData;
-      if (reportType === "sales") {
-        // Use the example sales data structure
-        responseData = {
-          success: true,
-          data: {
-            report_id: 124,
-            report_data: {
-              total_sales: 45,
-              total_revenue: 12500.5,
-              products_sold: [
-                {
-                  product__name: "Product A",
-                  total_quantity: 15,
-                  total_revenue: 750,
-                },
-                {
-                  product__name: "Product B",
-                  total_quantity: 30,
-                  total_revenue: 1500,
-                },
-              ],
-              report_type: "sales",
-              generated_by: "username",
-            },
-          },
-        };
-      } else {
-        // For other report types, use the actual API response
-        responseData = response.data;
-      }
+      // Process the response
+      const responseData = response.data;
 
       if (!responseData.success && !responseData.data?.report_data) {
         throw new Error(responseData.message || "Failed to generate report");
@@ -427,6 +454,8 @@ const Reports = () => {
         },
         report_data:
           responseData.data?.report_data || createEmptyReportData(reportType),
+        // Store the complete API response for reference
+        api_response: responseData,
       };
 
       // For inventory reports, add the inventory data
@@ -599,8 +628,14 @@ const Reports = () => {
       case "sales":
         return {
           report_type: type,
-          total_sales: 0,
-          total_revenue: 0,
+          total_completed_sales: 0,
+          total_completed_revenue: 0,
+          total_credit_sales: 0,
+          total_credit_amount: 0,
+          total_advance_paid: 0,
+          total_remaining_amount: 0,
+          cash_in_hand: 0,
+          money_outstanding: 0,
           products_sold: [],
         };
       default:
@@ -660,6 +695,10 @@ const Reports = () => {
   // Format currency
   const formatCurrency = (amount) => {
     if (amount === undefined || amount === null) return "N/A";
+
+    if (!hasReportViewPermission()) {
+      return "NaN";
+    }
 
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -902,6 +941,98 @@ const Reports = () => {
     };
   };
 
+  // Add a function to refresh a report from the API
+  const refreshReport = async () => {
+    if (!report) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Create query parameters
+      const params = new URLSearchParams({
+        report_type: report.report_type,
+      });
+
+      // Add date parameters if they exist
+      if (report.date_range?.start) {
+        params.append(
+          "start_date",
+          new Date(report.date_range.start).toISOString(),
+        );
+      }
+
+      if (report.date_range?.end) {
+        params.append(
+          "end_date",
+          new Date(report.date_range.end).toISOString(),
+        );
+      }
+
+      // Generate the report using the API
+      const response = await axios.get(
+        `http://localhost:8000/api/v1/report/generate/?${params.toString()}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+
+      console.log("Refreshed report response:", response.data);
+
+      // Process the response
+      const responseData = response.data;
+
+      if (!responseData.success && !responseData.data?.report_data) {
+        throw new Error(responseData.message || "Failed to refresh report");
+      }
+
+      // Update the report with fresh data
+      const updatedReport = {
+        ...report,
+        date_generated: new Date().toISOString(),
+        report_data:
+          responseData.data?.report_data ||
+          createEmptyReportData(report.report_type),
+        api_response: responseData,
+      };
+
+      // For inventory reports, refresh inventory data
+      if (report.report_type === "inventory") {
+        const inventoryItems = await fetchInventoryData(
+          report.date_range?.start
+            ? new Date(report.date_range.start).toISOString().split("T")[0]
+            : "",
+          report.date_range?.end
+            ? new Date(report.date_range.end).toISOString().split("T")[0]
+            : "",
+        );
+
+        if (inventoryItems.length > 0) {
+          updatedReport.report_data.products = [...inventoryItems];
+          updatedReport.report_data.total_products = inventoryItems.length;
+          updatedReport.report_data.expired_count = inventoryItems.filter(
+            (item) => item.is_expired,
+          ).length;
+          updatedReport.report_data.low_stock_count = inventoryItems.filter(
+            (item) => item.is_critical,
+          ).length;
+          updatedReport.report_data.near_expiry_count = inventoryItems.filter(
+            (item) => item.is_near_expiry,
+          ).length;
+        }
+      }
+
+      // Save and set the updated report
+      saveReport(updatedReport);
+      setReport(JSON.parse(JSON.stringify(updatedReport)));
+    } catch (err) {
+      console.error("Error refreshing report:", err);
+      handleApiError(err, "report refresh");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Check if user has access to the reports page
   if (!hasReportAccess()) {
     return (
@@ -1032,6 +1163,14 @@ const Reports = () => {
                         </span>
                       </div>
                     )}
+                    <button
+                      className="refresh-report-btn"
+                      onClick={refreshReport}
+                      title="Refresh report data from API"
+                    >
+                      <RefreshCw size={16} />
+                      <span>Refresh</span>
+                    </button>
                   </div>
 
                   <div className="report-content-section">
@@ -1040,16 +1179,71 @@ const Reports = () => {
                       <>
                         <div className="report-stats">
                           <div className="stat-card">
-                            <p className="stat-label">Total Sales</p>
+                            <p className="stat-label">Completed Sales</p>
                             <p className="stat-value">
-                              {report.report_data.total_sales || 0}
+                              {report.report_data.total_completed_sales || 0}
                             </p>
                           </div>
                           <div className="stat-card">
-                            <p className="stat-label">Total Revenue</p>
+                            <p className="stat-label">Completed Revenue</p>
                             <p className="stat-value primary">
                               {formatCurrency(
-                                report.report_data.total_revenue || 0,
+                                report.report_data.total_completed_revenue || 0,
+                              )}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="report-stats">
+                          <div className="stat-card">
+                            <p className="stat-label">Credit Sales</p>
+                            <p className="stat-value">
+                              {report.report_data.total_credit_sales || 0}
+                            </p>
+                          </div>
+                          <div className="stat-card">
+                            <p className="stat-label">Credit Amount</p>
+                            <p className="stat-value warning">
+                              {formatCurrency(
+                                report.report_data.total_credit_amount || 0,
+                              )}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="report-stats">
+                          <div className="stat-card">
+                            <p className="stat-label">Advance Paid</p>
+                            <p className="stat-value">
+                              {formatCurrency(
+                                report.report_data.total_advance_paid || 0,
+                              )}
+                            </p>
+                          </div>
+                          <div className="stat-card">
+                            <p className="stat-label">Remaining Amount</p>
+                            <p className="stat-value danger">
+                              {formatCurrency(
+                                report.report_data.total_remaining_amount || 0,
+                              )}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="report-stats">
+                          <div className="stat-card">
+                            <p className="stat-label">Cash in Hand</p>
+                            <p className="stat-value primary">
+                              {formatCurrency(
+                                report.report_data.cash_in_hand || 0,
+                              )}
+                            </p>
+                          </div>
+                          <div className="stat-card">
+                            <p className="stat-label">Money Outstanding</p>
+                            <p className="stat-value warning">
+                              {formatCurrency(
+                                report.report_data.money_outstanding || 0,
                               )}
                             </p>
                           </div>
@@ -1192,12 +1386,14 @@ const Reports = () => {
                       <>
                         <div className="summary-card">
                           <div className="summary-card-header">
-                            <h3 className="summary-card-title">Total Sales</h3>
+                            <h3 className="summary-card-title">
+                              Completed Sales
+                            </h3>
                           </div>
                           <div className="summary-card-content">
                             <div className="summary-value-container">
                               <div className="summary-value">
-                                {report.report_data.total_sales || 0}
+                                {report.report_data.total_completed_sales || 0}
                               </div>
                             </div>
                           </div>
@@ -1206,14 +1402,60 @@ const Reports = () => {
                         <div className="summary-card">
                           <div className="summary-card-header">
                             <h3 className="summary-card-title">
-                              Total Revenue
+                              Completed Revenue
                             </h3>
                           </div>
                           <div className="summary-card-content">
                             <div className="summary-value-container">
                               <p className="summary-value">
                                 {formatCurrency(
-                                  report.report_data.total_revenue || 0,
+                                  report.report_data.total_completed_revenue ||
+                                    0,
+                                )}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="summary-card">
+                          <div className="summary-card-header">
+                            <h3 className="summary-card-title">Credit Sales</h3>
+                          </div>
+                          <div className="summary-card-content">
+                            <div className="summary-value-container">
+                              <p className="summary-value">
+                                {report.report_data.total_credit_sales || 0}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="summary-card">
+                          <div className="summary-card-header">
+                            <h3 className="summary-card-title">Cash in Hand</h3>
+                          </div>
+                          <div className="summary-card-content">
+                            <div className="summary-value-container">
+                              <p className="summary-value primary">
+                                {formatCurrency(
+                                  report.report_data.cash_in_hand || 0,
+                                )}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="summary-card">
+                          <div className="summary-card-header">
+                            <h3 className="summary-card-title">
+                              Money Outstanding
+                            </h3>
+                          </div>
+                          <div className="summary-card-content">
+                            <div className="summary-value-container">
+                              <p className="summary-value warning">
+                                {formatCurrency(
+                                  report.report_data.money_outstanding || 0,
                                 )}
                               </p>
                             </div>
@@ -1331,6 +1573,16 @@ const Reports = () => {
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+        )}
+        {report && report.api_response && debugInfo && (
+          <div className="debug-section">
+            <h3 className="debug-title">API Response</h3>
+            <div className="debug-content">
+              <pre className="debug-json">
+                {JSON.stringify(report.api_response, null, 2)}
+              </pre>
             </div>
           </div>
         )}

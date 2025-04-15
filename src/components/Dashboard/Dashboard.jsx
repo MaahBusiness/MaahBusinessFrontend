@@ -898,17 +898,17 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* New Profit Analysis Chart */}
+      {/* New Profit Analysis Chart - TinyLineChart Style */}
       <div className="chart profit-chart">
         <h3>Profit Analysis</h3>
-        {profitData.length > 0 ? (
+        {profitData.length > 0 && hasReportViewPermission() ? (
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart
+            <LineChart
               width={500}
               height={300}
               data={profitData}
               margin={{
-                top: 5,
+                top: 20,
                 right: 30,
                 left: 20,
                 bottom: 5,
@@ -926,114 +926,43 @@ const Dashboard = () => {
                 itemStyle={{ color: "#D1D5DB" }}
               />
               <Legend wrapperStyle={{ color: "#D1D5DB" }} />
-              <defs>
-                <linearGradient id="profitGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#9333ea" stopOpacity={0.8} />
-                  <stop offset="100%" stopColor="#9333ea" stopOpacity={0.2} />
-                </linearGradient>
-                <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#22c55e" stopOpacity={0.8} />
-                  <stop offset="100%" stopColor="#22c55e" stopOpacity={0.2} />
-                </linearGradient>
-              </defs>
-              <Bar
+              <Line
+                type="monotone"
                 dataKey="profit"
                 name="Profit"
-                fill="url(#profitGradient)"
-                radius={[4, 4, 0, 0]}
-              />
-              <Bar
-                dataKey="sales"
-                name="Sales"
-                fill="url(#salesGradient)"
-                radius={[4, 4, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        ) : (
-          <div className="no-data">
-            {hasManagerPermission()
-              ? "No profit data available for this period"
-              : "Manager access required to view profit data"}
-          </div>
-        )}
-      </div>
-
-      {/* New Profit Line Chart */}
-      {/*<div className="chart profit-chart">
-        <h3>Pending Payments Analysis</h3>
-        {profitData.length > 0 ? (
-          <ResponsiveContainer width="100%" height={300}>
-            <AreaChart
-              width={500}
-              height={300}
-              data={profitData}
-              margin={{
-                top: 5,
-                right: 30,
-                left: 20,
-                bottom: 5,
-              }}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis dataKey="name" stroke="#D1D5DB" />
-              <YAxis stroke="#D1D5DB" />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "#1F2937",
-                  border: "none",
-                  borderRadius: "4px",
-                }}
-                itemStyle={{ color: "#D1D5DB" }}
-              />
-              <defs>
-                <linearGradient id="splitProfitColor" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset={calculateGradientOffset(profitData, "profit")} stopColor="#8884d8" stopOpacity={0.8} />
-                  <stop offset={calculateGradientOffset(profitData, "profit")} stopColor="#ef4444" stopOpacity={0.8} />
-                </linearGradient>
-                <linearGradient id="splitSalesColor" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#82ca9d" stopOpacity={0.8} />
-                  <stop offset="100%" stopColor="#82ca9d" stopOpacity={0.1} />
-                </linearGradient>
-                <linearGradient id="splitPendingColor" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#FFCE56" stopOpacity={0.8} />
-                  <stop offset="100%" stopColor="#FFCE56" stopOpacity={0.1} />
-                </linearGradient>
-              </defs>
-              <Area
-                type="monotone"
-                dataKey="profit"
-                name="Pending Payments"
                 stroke="#8884d8"
-                fill="url(#splitProfitColor)"
-                activeDot={{ r: 8 }}
+                strokeWidth={2}
+                dot={{ r: 4, fill: "#8884d8" }}
+                activeDot={{ r: 6 }}
               />
-              <Area
+              <Line
                 type="monotone"
                 dataKey="sales"
                 name="Sales"
-                stroke="#82ca9d"
-                fill="url(#splitSalesColor)"
-                fillOpacity={0.3}
+                stroke="#22c55e"
+                strokeWidth={2}
+                dot={{ r: 4, fill: "#22c55e" }}
+                activeDot={{ r: 6 }}
               />
-              <Area
+              <Line
                 type="monotone"
                 dataKey="pending"
                 name="Pending Payment"
                 stroke="#FFCE56"
-                fill="url(#splitPendingColor)"
-                fillOpacity={0.3}
+                strokeWidth={2}
+                dot={{ r: 4, fill: "#FFCE56" }}
+                activeDot={{ r: 6 }}
               />
-            </AreaChart>
+            </LineChart>
           </ResponsiveContainer>
         ) : (
           <div className="no-data">
-            {hasManagerPermission()
-              ? "No pending payments data available for this period"
-              : "Manager access required to view pending payments data"}
+            {!hasReportViewPermission()
+              ? "Manager or cashier access required to view profit data"
+              : "No profit data available for this period"}
           </div>
         )}
-      </div>*/}
+      </div>
 
       <div className="charts-container">
         <div className="chart">

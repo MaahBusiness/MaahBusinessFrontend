@@ -338,7 +338,7 @@ const Invoice = () => {
     const refund = advancePaid > total ? advancePaid - total : 0;
 
     // Set status to "COMPLETED" for the API, but we'll hide it in the UI
-    const status = "";
+    const status = "COMPLETED";
 
     return { subtotal, taxAmount, total, remaining, refund, status };
   };
