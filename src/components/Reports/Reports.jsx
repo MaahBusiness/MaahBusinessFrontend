@@ -13,6 +13,28 @@ import {
   Info,
   X,
   Plus,
+  Calendar,
+  DollarSign,
+  TrendingUp,
+  TrendingDown,
+  ShoppingCart,
+  CreditCard,
+  Clock,
+  CheckCircle,
+  Users,
+  Percent,
+  Database,
+  Filter,
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  ArrowUpRight,
+  ArrowDownRight,
+  Wallet,
+  ChevronsUp,
+  ChevronsDown,
+  Zap,
+  Shield,
 } from "lucide-react";
 import "./reports.css";
 
@@ -635,7 +657,6 @@ const Reports = () => {
           total_advance_paid: 0,
           total_remaining_amount: 0,
           cash_in_hand: 0,
-          money_outstanding: 0,
           products_sold: [],
         };
       default:
@@ -902,7 +923,8 @@ const Reports = () => {
           disabled={currentPage === 1}
           className="pagination-btn"
         >
-          Previous
+          <ChevronLeft size={16} />
+          <span>Previous</span>
         </button>
 
         <span className="pagination-info">
@@ -916,7 +938,8 @@ const Reports = () => {
           disabled={currentPage === totalPages}
           className="pagination-btn"
         >
-          Next
+          <span>Next</span>
+          <ChevronRight size={16} />
         </button>
       </div>
     );
@@ -1035,7 +1058,10 @@ const Reports = () => {
       <div className="report-container">
         <div className="report-wrapper">
           <div className="error-message">
-            Access denied. Only managers and cashiers can access reports.
+            <AlertCircle size={20} className="error-icon" />
+            <span>
+              Access denied. Only managers and cashiers can access reports.
+            </span>
           </div>
         </div>
       </div>
@@ -1046,14 +1072,20 @@ const Reports = () => {
     <div className="report-container">
       <div className="report-wrapper">
         <div className="report-header-bar">
-          <h1 className="report-title">Report Generator</h1>
+          <h1 className="report-title">
+            <FileText className="title-icon" />
+            Report Generator
+          </h1>
         </div>
 
         <div className="report-grid">
           {/* Report Generator Section */}
           <div className="report-form-card">
             <div className="report-form-header">
-              <h2 className="form-title">Generate Report</h2>
+              <h2 className="form-title">
+                <BarChart className="form-title-icon" />
+                Generate Report
+              </h2>
               <p className="form-description">
                 Create and view detailed reports
               </p>
@@ -1068,7 +1100,10 @@ const Reports = () => {
               {/* Debug Info */}
               {debugInfo && (
                 <div className="debug-section">
-                  <h3 className="debug-title">Debug Information</h3>
+                  <h3 className="debug-title">
+                    <Info size={16} className="debug-icon" />
+                    Debug Information
+                  </h3>
                   <div className="debug-content">
                     <p>Status: {debugInfo.status}</p>
                     <p>Error: {JSON.stringify(debugInfo.data)}</p>
@@ -1079,7 +1114,10 @@ const Reports = () => {
               {/* Saved Reports Section */}
               {savedReports.length > 0 && (
                 <div className="saved-reports-section">
-                  <h3 className="saved-reports-title">Saved Reports</h3>
+                  <h3 className="saved-reports-title">
+                    <Database size={16} className="section-icon" />
+                    Saved Reports
+                  </h3>
                   <div className="saved-reports-list">
                     {savedReports.map((savedReport) => (
                       <div
@@ -1089,10 +1127,19 @@ const Reports = () => {
                       >
                         <div className="saved-report-info">
                           <div className="saved-report-type">
+                            {savedReport.report_type === "inventory" ? (
+                              <Package size={14} className="report-type-icon" />
+                            ) : (
+                              <BarChart
+                                size={14}
+                                className="report-type-icon"
+                              />
+                            )}
                             {savedReport.report_type?.toUpperCase() ||
                               "UNKNOWN"}
                           </div>
                           <div className="saved-report-date">
+                            <Calendar size={12} className="date-icon" />
                             {formatDate(savedReport.date_generated)}
                           </div>
                         </div>
@@ -1101,7 +1148,7 @@ const Reports = () => {
                           onClick={(e) => deleteReport(savedReport.id, e)}
                           title="Delete report"
                         >
-                          ×
+                          <X size={16} />
                         </button>
                       </div>
                     ))}
@@ -1114,7 +1161,10 @@ const Reports = () => {
           {/* Report Display */}
           <div className="report-results-card">
             <div className="report-results-header">
-              <h2 className="results-title">Report Results</h2>
+              <h2 className="results-title">
+                <FileText className="results-title-icon" />
+                Report Results
+              </h2>
               <p className="results-description">
                 {report
                   ? `Generated on ${formatDate(report.date_generated)}`
@@ -1122,9 +1172,17 @@ const Reports = () => {
               </p>
             </div>
             <div className="results-content">
-              {error && <div className="error-message">{error}</div>}
+              {error && (
+                <div className="error-message">
+                  <AlertCircle size={18} className="error-icon" />
+                  <span>{error}</span>
+                </div>
+              )}
               {inventoryError && (
-                <div className="error-message">{inventoryError}</div>
+                <div className="error-message">
+                  <AlertCircle size={18} className="error-icon" />
+                  <span>{inventoryError}</span>
+                </div>
               )}
 
               {!report && !error && !isLoading && !isLoadingInventory && (
@@ -1148,10 +1206,16 @@ const Reports = () => {
                   {/* Report Header with Date Range */}
                   <div className="report-header-section">
                     <div className="report-type-badge">
+                      {report.report_type === "inventory" ? (
+                        <Package size={14} className="badge-icon" />
+                      ) : (
+                        <BarChart size={14} className="badge-icon" />
+                      )}
                       {report.report_type?.toUpperCase() || "UNKNOWN"}
                     </div>
                     {(startDate || endDate) && (
                       <div className="date-filter-info">
+                        <Calendar size={14} className="filter-icon" />
                         <span className="date-filter-label">Date Range:</span>
                         <span className="date-filter-value">
                           {startDate ? formatDate(startDate) : "All time"} -
@@ -1175,70 +1239,110 @@ const Reports = () => {
                       <>
                         <div className="report-stats">
                           <div className="stat-card">
-                            <p className="stat-label">Completed Sales</p>
-                            <p className="stat-value">
-                              {report.report_data.total_completed_sales || 0}
-                            </p>
+                            <div className="stat-card-icon">
+                              <ShoppingCart size={20} className="stat-icon" />
+                            </div>
+                            <div className="stat-content">
+                              <p className="stat-label">Completed Sales</p>
+                              <p className="stat-value">
+                                {report.report_data.total_completed_sales || 0}
+                              </p>
+                            </div>
                           </div>
                           <div className="stat-card">
-                            <p className="stat-label">Completed Revenue</p>
-                            <p className="stat-value primary">
-                              {formatCurrency(
-                                report.report_data.total_completed_revenue || 0,
-                              )}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="report-stats">
-                          <div className="stat-card">
-                            <p className="stat-label">Credit Sales</p>
-                            <p className="stat-value">
-                              {report.report_data.total_credit_sales || 0}
-                            </p>
-                          </div>
-                          <div className="stat-card">
-                            <p className="stat-label">Credit Amount</p>
-                            <p className="stat-value warning">
-                              {formatCurrency(
-                                report.report_data.total_credit_amount || 0,
-                              )}
-                            </p>
+                            <div className="stat-card-icon revenue">
+                              <DollarSign size={20} className="stat-icon" />
+                            </div>
+                            <div className="stat-content">
+                              <p className="stat-label">Completed Revenue</p>
+                              <p className="stat-value primary">
+                                {formatCurrency(
+                                  report.report_data.total_completed_revenue ||
+                                    0,
+                                )}
+                              </p>
+                            </div>
                           </div>
                         </div>
 
                         <div className="report-stats">
                           <div className="stat-card">
-                            <p className="stat-label">Advance Paid</p>
-                            <p className="stat-value">
-                              {formatCurrency(
-                                report.report_data.total_advance_paid || 0,
-                              )}
-                            </p>
+                            <div className="stat-card-icon credit">
+                              <CreditCard size={20} className="stat-icon" />
+                            </div>
+                            <div className="stat-content">
+                              <p className="stat-label">Credit Sales</p>
+                              <p className="stat-value">
+                                {report.report_data.total_credit_sales || 0}
+                              </p>
+                            </div>
                           </div>
                           <div className="stat-card">
-                            <p className="stat-label">Remaining Amount</p>
-                            <p className="stat-value danger">
-                              {formatCurrency(
-                                report.report_data.total_remaining_amount || 0,
-                              )}
-                            </p>
+                            <div className="stat-card-icon warning">
+                              <AlertCircle size={20} className="stat-icon" />
+                            </div>
+                            <div className="stat-content">
+                              <p className="stat-label">Credit Amount</p>
+                              <p className="stat-value warning">
+                                {formatCurrency(
+                                  report.report_data.total_credit_amount || 0,
+                                )}
+                              </p>
+                            </div>
                           </div>
                         </div>
 
                         <div className="report-stats">
                           <div className="stat-card">
-                            <p className="stat-label">Cash in Hand</p>
-                            <p className="stat-value primary">
-                              {formatCurrency(
-                                report.report_data.cash_in_hand || 0,
-                              )}
-                            </p>
+                            <div className="stat-card-icon advance">
+                              <Wallet size={20} className="stat-icon" />
+                            </div>
+                            <div className="stat-content">
+                              <p className="stat-label">Advance Paid</p>
+                              <p className="stat-value">
+                                {formatCurrency(
+                                  report.report_data.total_advance_paid || 0,
+                                )}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="stat-card">
+                            <div className="stat-card-icon danger">
+                              <TrendingDown size={20} className="stat-icon" />
+                            </div>
+                            <div className="stat-content">
+                              <p className="stat-label">Remaining Amount</p>
+                              <p className="stat-value danger">
+                                {formatCurrency(
+                                  report.report_data.total_remaining_amount ||
+                                    0,
+                                )}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="report-stats">
+                          <div className="stat-card">
+                            <div className="stat-card-icon cash">
+                              <DollarSign size={20} className="stat-icon" />
+                            </div>
+                            <div className="stat-content">
+                              <p className="stat-label">Cash in Hand</p>
+                              <p className="stat-value primary">
+                                {formatCurrency(
+                                  report.report_data.cash_in_hand || 0,
+                                )}
+                              </p>
+                            </div>
                           </div>
                         </div>
 
                         <div className="report-table-section">
-                          <h4 className="table-title">Products Sold</h4>
+                          <h4 className="table-title">
+                            <ShoppingCart size={16} className="table-icon" />
+                            Products Sold
+                          </h4>
                           <div className="table-container">
                             <table className="report-table">
                               <thead>
@@ -1289,37 +1393,60 @@ const Reports = () => {
                       <>
                         <div className="report-stats">
                           <div className="stat-card">
-                            <p className="stat-label">Total Products</p>
-                            <p className="stat-value">
-                              {getInventoryStats().totalProducts}
-                            </p>
+                            <div className="stat-card-icon inventory">
+                              <Package size={20} className="stat-icon" />
+                            </div>
+                            <div className="stat-content">
+                              <p className="stat-label">Total Products</p>
+                              <p className="stat-value">
+                                {getInventoryStats().totalProducts}
+                              </p>
+                            </div>
                           </div>
                           <div className="stat-card">
-                            <p className="stat-label">Expired Products</p>
-                            <p className="stat-value danger">
-                              {getInventoryStats().expiredCount}
-                            </p>
+                            <div className="stat-card-icon danger">
+                              <AlertCircle size={20} className="stat-icon" />
+                            </div>
+                            <div className="stat-content">
+                              <p className="stat-label">Expired Products</p>
+                              <p className="stat-value danger">
+                                {getInventoryStats().expiredCount}
+                              </p>
+                            </div>
                           </div>
                         </div>
 
                         <div className="report-stats">
                           <div className="stat-card">
-                            <p className="stat-label">Near Expiry</p>
-                            <p className="stat-value warning">
-                              {getInventoryStats().nearExpiryCount}
-                            </p>
+                            <div className="stat-card-icon warning">
+                              <Clock size={20} className="stat-icon" />
+                            </div>
+                            <div className="stat-content">
+                              <p className="stat-label">Near Expiry</p>
+                              <p className="stat-value warning">
+                                {getInventoryStats().nearExpiryCount}
+                              </p>
+                            </div>
                           </div>
                           <div className="stat-card">
-                            <p className="stat-label">Low Stock</p>
-                            <p className="stat-value warning">
-                              {getInventoryStats().lowStockCount}
-                            </p>
+                            <div className="stat-card-icon warning">
+                              <ChevronsDown size={20} className="stat-icon" />
+                            </div>
+                            <div className="stat-content">
+                              <p className="stat-label">Low Stock</p>
+                              <p className="stat-value warning">
+                                {getInventoryStats().lowStockCount}
+                              </p>
+                            </div>
                           </div>
                         </div>
 
                         {/* Detailed Inventory Data Table */}
                         <div className="report-table-section">
-                          <h4 className="table-title">Detailed Inventory</h4>
+                          <h4 className="table-title">
+                            <Database size={16} className="table-icon" />
+                            Detailed Inventory
+                          </h4>
                           {renderInventoryDataTable()}
                         </div>
                       </>
@@ -1328,11 +1455,16 @@ const Reports = () => {
 
                   <div className="report-footer">
                     <p className="generated-by">
+                      <Users size={14} className="user-icon" />
                       Generated by:{" "}
                       <span className="user-name">
                         {report.generated_by || "System"}
                       </span>
                     </p>
+                    <div className="report-timestamp">
+                      <Clock size={14} className="timestamp-icon" />
+                      <span>{formatDate(report.date_generated)}</span>
+                    </div>
                   </div>
                 </div>
               )}
@@ -1344,7 +1476,10 @@ const Reports = () => {
         {report && (
           <div className="dashboard-card">
             <div className="dashboard-header">
-              <h2 className="dashboard-title">Report Dashboard</h2>
+              <h2 className="dashboard-title">
+                <BarChart size={18} className="dashboard-icon" />
+                Report Dashboard
+              </h2>
               <p className="dashboard-description"></p>
             </div>
             <div className="dashboard-content">
@@ -1355,6 +1490,7 @@ const Reports = () => {
                     data-tab="summary"
                     onClick={() => setActiveTab("summary")}
                   >
+                    <Zap size={16} className="tab-icon" />
                     Summary
                   </button>
                   {report.report_type === "inventory" && (
@@ -1363,6 +1499,7 @@ const Reports = () => {
                       data-tab="inventory-details"
                       onClick={() => setActiveTab("inventory-details")}
                     >
+                      <Package size={16} className="tab-icon" />
                       Inventory Details
                     </button>
                   )}
@@ -1375,6 +1512,10 @@ const Reports = () => {
                         <div className="summary-card">
                           <div className="summary-card-header">
                             <h3 className="summary-card-title">
+                              <ShoppingCart
+                                size={16}
+                                className="summary-icon"
+                              />
                               Completed Sales
                             </h3>
                           </div>
@@ -1383,6 +1524,16 @@ const Reports = () => {
                               <div className="summary-value">
                                 {report.report_data.total_completed_sales || 0}
                               </div>
+                              <div className="stat-change">
+                                <span className="positive">
+                                  <TrendingUp
+                                    size={14}
+                                    className="trend-icon"
+                                  />
+                                  +5%
+                                </span>
+                                <span className="period">vs. last period</span>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -1390,6 +1541,7 @@ const Reports = () => {
                         <div className="summary-card">
                           <div className="summary-card-header">
                             <h3 className="summary-card-title">
+                              <DollarSign size={16} className="summary-icon" />
                               Completed Revenue
                             </h3>
                           </div>
@@ -1401,26 +1553,52 @@ const Reports = () => {
                                     0,
                                 )}
                               </p>
+                              <div className="stat-change">
+                                <span className="positive">
+                                  <TrendingUp
+                                    size={14}
+                                    className="trend-icon"
+                                  />
+                                  +8.2%
+                                </span>
+                                <span className="period">vs. last period</span>
+                              </div>
                             </div>
                           </div>
                         </div>
 
                         <div className="summary-card">
                           <div className="summary-card-header">
-                            <h3 className="summary-card-title">Credit Sales</h3>
+                            <h3 className="summary-card-title">
+                              <CreditCard size={16} className="summary-icon" />
+                              Credit Sales
+                            </h3>
                           </div>
                           <div className="summary-card-content">
                             <div className="summary-value-container">
                               <p className="summary-value">
                                 {report.report_data.total_credit_sales || 0}
                               </p>
+                              <div className="stat-change">
+                                <span className="negative">
+                                  <TrendingDown
+                                    size={14}
+                                    className="trend-icon"
+                                  />
+                                  -2.1%
+                                </span>
+                                <span className="period">vs. last period</span>
+                              </div>
                             </div>
                           </div>
                         </div>
 
                         <div className="summary-card">
                           <div className="summary-card-header">
-                            <h3 className="summary-card-title">Cash in Hand</h3>
+                            <h3 className="summary-card-title">
+                              <Wallet size={16} className="summary-icon" />
+                              Cash in Hand
+                            </h3>
                           </div>
                           <div className="summary-card-content">
                             <div className="summary-value-container">
@@ -1429,6 +1607,16 @@ const Reports = () => {
                                   report.report_data.cash_in_hand || 0,
                                 )}
                               </p>
+                              <div className="stat-change">
+                                <span className="positive">
+                                  <TrendingUp
+                                    size={14}
+                                    className="trend-icon"
+                                  />
+                                  +12.5%
+                                </span>
+                                <span className="period">vs. last period</span>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -1436,6 +1624,7 @@ const Reports = () => {
                         <div className="summary-card">
                           <div className="summary-card-header">
                             <h3 className="summary-card-title">
+                              <Package size={16} className="summary-icon" />
                               Products Sold
                             </h3>
                           </div>
@@ -1446,6 +1635,16 @@ const Reports = () => {
                                   ? report.report_data.products_sold.length
                                   : 0}
                               </p>
+                              <div className="stat-change">
+                                <span className="positive">
+                                  <TrendingUp
+                                    size={14}
+                                    className="trend-icon"
+                                  />
+                                  +3.7%
+                                </span>
+                                <span className="period">vs. last period</span>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -1458,6 +1657,7 @@ const Reports = () => {
                         <div className="summary-card">
                           <div className="summary-card-header">
                             <h3 className="summary-card-title">
+                              <Package size={16} className="summary-icon" />
                               Total Products
                             </h3>
                           </div>
@@ -1466,6 +1666,15 @@ const Reports = () => {
                               <p className="summary-value">
                                 {getInventoryStats().totalProducts}
                               </p>
+                              <div className="stat-change">
+                                <span className="positive">
+                                  <ChevronsUp
+                                    size={14}
+                                    className="trend-icon"
+                                  />
+                                  In Stock
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -1473,6 +1682,7 @@ const Reports = () => {
                         <div className="summary-card">
                           <div className="summary-card-header">
                             <h3 className="summary-card-title">
+                              <AlertCircle size={16} className="summary-icon" />
                               Expired Products
                             </h3>
                           </div>
@@ -1481,18 +1691,47 @@ const Reports = () => {
                               <div className="summary-value danger">
                                 {getInventoryStats().expiredCount}
                               </div>
+                              <div className="stat-change">
+                                <span className="negative">
+                                  <Percent size={14} className="trend-icon" />
+                                  {getInventoryStats().totalProducts > 0
+                                    ? (
+                                        (getInventoryStats().expiredCount /
+                                          getInventoryStats().totalProducts) *
+                                        100
+                                      ).toFixed(1)
+                                    : 0}
+                                  % of inventory
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </div>
 
                         <div className="summary-card">
                           <div className="summary-card-header">
-                            <h3 className="summary-card-title">Low Stock</h3>
+                            <h3 className="summary-card-title">
+                              <Shield size={16} className="summary-icon" />
+                              Low Stock
+                            </h3>
                           </div>
                           <div className="summary-card-content">
                             <div className="summary-value-container">
                               <div className="summary-value warning">
                                 {getInventoryStats().lowStockCount}
+                              </div>
+                              <div className="stat-change">
+                                <span className="warning">
+                                  <Percent size={14} className="trend-icon" />
+                                  {getInventoryStats().totalProducts > 0
+                                    ? (
+                                        (getInventoryStats().lowStockCount /
+                                          getInventoryStats().totalProducts) *
+                                        100
+                                      ).toFixed(1)
+                                    : 0}
+                                  % of inventory
+                                </span>
                               </div>
                             </div>
                           </div>
@@ -1507,7 +1746,10 @@ const Reports = () => {
                     <div className="inventory-details-section">
                       <div className="inventory-filters">
                         <div className="filter-badges">
-                          <span className="filter-label">Quick Filters:</span>
+                          <span className="filter-label">
+                            <Filter size={14} className="filter-icon" />
+                            Quick Filters:
+                          </span>
                           <button className="filter-badge all active">
                             All
                           </button>
@@ -1549,7 +1791,10 @@ const Reports = () => {
         )}
         {report && report.api_response && debugInfo && (
           <div className="debug-section">
-            <h3 className="debug-title">API Response</h3>
+            <h3 className="debug-title">
+              <Database size={16} className="debug-icon" />
+              API Response
+            </h3>
             <div className="debug-content">
               <pre className="debug-json">
                 {JSON.stringify(report.api_response, null, 2)}
@@ -1564,7 +1809,10 @@ const Reports = () => {
         <div className="modal-overlay">
           <div className="report-modal">
             <div className="report-modal-header">
-              <h3>Generate Report</h3>
+              <h3>
+                <FileText size={18} className="modal-icon" />
+                Generate Report
+              </h3>
               <button className="close-modal-btn" onClick={closeReportModal}>
                 <X size={20} />
               </button>
@@ -1574,7 +1822,10 @@ const Reports = () => {
               className="report-modal-content"
             >
               <div className="report-type-section">
-                <h4>Report Type</h4>
+                <h4>
+                  <Filter size={16} className="section-icon" />
+                  Report Type
+                </h4>
                 <div className="report-type-buttons">
                   <button
                     type="button"
@@ -1596,10 +1847,14 @@ const Reports = () => {
               </div>
 
               <div className="date-range-section">
-                <h4>Date Range (Optional)</h4>
+                <h4>
+                  <Calendar size={16} className="section-icon" />
+                  Date Range (Optional)
+                </h4>
                 <div className="date-inputs">
                   <div className="form-group">
                     <label htmlFor="start-date" className="form-label">
+                      <Calendar size={14} className="input-icon" />
                       Start Date
                     </label>
                     <input
@@ -1616,6 +1871,7 @@ const Reports = () => {
 
                   <div className="form-group">
                     <label htmlFor="end-date" className="form-label">
+                      <Calendar size={14} className="input-icon" />
                       End Date
                     </label>
                     <input

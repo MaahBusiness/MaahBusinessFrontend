@@ -1,19 +1,34 @@
+"use client";
+
 import "./home.css";
 import img from "../../../public/assets/hero.jpg";
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 
 const Home = () => {
   const navigate = useNavigate();
+
+  // Add subtle animation effect when component mounts
+  useEffect(() => {
+    const heroElement = document.querySelector(".hero");
+    if (heroElement) {
+      heroElement.style.opacity = "0";
+      setTimeout(() => {
+        heroElement.style.opacity = "1";
+        heroElement.style.transition = "opacity 0.8s ease-in-out";
+      }, 100);
+    }
+  }, []);
 
   return (
     <div>
       <div className="hero">
         <div className="hero_context">
-          <h1>Welcome to Stock Management System</h1>
+          <h1>Streamline Your Inventory Management</h1>
           <p>
-            {" "}
-            Manage your inventory efficiently with real-time tracking, easy
-            updates, and seamless stock management. Get started today!
+            Take control of your stock with our powerful management system.
+            Track inventory in real-time, generate detailed reports, and make
+            data-driven decisions to optimize your business operations.
           </p>
           <button
             className="btn"
@@ -24,7 +39,10 @@ const Home = () => {
           </button>
         </div>
         <div className="hero_image">
-          <img src={img} alt="Stock management dashboard preview" />
+          <img
+            src={img || "/placeholder.svg"}
+            alt="Stock management dashboard preview"
+          />
         </div>
       </div>
     </div>

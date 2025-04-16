@@ -3,8 +3,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import {
-  BarChart,
-  Bar,
   XAxis,
   YAxis,
   Tooltip,
@@ -20,6 +18,8 @@ import {
   Line,
   RadialBarChart,
   RadialBar,
+  BarChart,
+  Bar,
 } from "recharts";
 import {
   X,
@@ -34,6 +34,12 @@ import {
   EyeOff,
   Users,
   Calendar,
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
+  ShoppingBag,
+  CreditCard,
+  UserPlus,
 } from "lucide-react";
 import "./dashboard.css";
 
@@ -641,7 +647,7 @@ const Dashboard = () => {
         .slice(0, 5)
         .map((product, index) => ({
           ...product,
-          color: ["#FF6384", "#FFCE56", "#4BC0C0", "#36A2EB", "#9966FF"][
+          color: ["#6366f1", "#ec4899", "#10b981", "#3b82f6", "#f59e0b"][
             index % 5
           ],
         }));
@@ -667,17 +673,19 @@ const Dashboard = () => {
     }
   }, [isAuthenticated, timePeriod, currentUserRole]);
 
-  // Prepare chart data from API responses
+  // Update the colors in the dashboard component
+
+  // Update the chart colors for better visibility
   const stockStatus =
     inventoryData.stockStatus && inventoryData.stockStatus.length > 0
       ? inventoryData.stockStatus.map((item) => ({
           name: item.name,
           value: Number(item.value),
           fill: item.name.toLowerCase().includes("in stock")
-            ? "#4CAF50"
+            ? "#10b981"
             : item.name.toLowerCase().includes("low stock")
-              ? "#FFC107"
-              : "#F44336",
+              ? "#f59e0b"
+              : "#ef4444",
         }))
       : [];
 
@@ -688,12 +696,21 @@ const Dashboard = () => {
           .map((item, index) => ({
             name: item.name,
             value: Number(item.value),
-            fill: ["#FF6384", "#FFCE56", "#4BC0C0", "#36A2EB", "#9966FF"][
+            fill: ["#6366f1", "#4f46e5", "#10b981", "#3b82f6", "#f59e0b"][
               index % 5
             ],
           }))
           .sort((a, b) => b.value - a.value)
       : [];
+
+  // Update the tooltip styles for better visibility
+  const tooltipStyle = {
+    backgroundColor: "#252525",
+    border: "none",
+    borderRadius: "8px",
+    boxShadow: "0 10px 25px rgba(0, 0, 0, 0.3)",
+    color: "#ffffff",
+  };
 
   const salesChartData =
     salesDataState.salesOverTime && salesDataState.salesOverTime.length > 0
@@ -721,7 +738,7 @@ const Dashboard = () => {
           .map((category, index) => ({
             name: category.name,
             value: Number(category.value),
-            fill: ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF"][
+            fill: ["#6366f1", "#ec4899", "#10b981", "#3b82f6", "#f59e0b"][
               index % 5
             ],
           }))
@@ -748,6 +765,14 @@ const Dashboard = () => {
 
     return dataMax / (dataMax - dataMin);
   };
+
+  // Card icons for the dashboard
+  const cardIcons = [
+    <DollarSign key="revenue" size={28} className="card-icon revenue" />,
+    <ShoppingBag key="orders" size={28} className="card-icon orders" />,
+    <CreditCard key="average" size={28} className="card-icon average" />,
+    <UserPlus key="customers" size={28} className="card-icon customers" />,
+  ];
 
   return (
     <div className="dashboard">
@@ -808,102 +833,134 @@ const Dashboard = () => {
       )}
 
       <div className="dashboard-cards">
-        <div className="card">
-          <h3>Total Revenue</h3>
-          <p className="card-value">
-            {hasReportViewPermission()
-              ? `XFA ${Number(dashboardStats.revenue.value).toLocaleString()}`
-              : "XFA NaN"}
-          </p>
-          <div className="stat-change">
-            <span
-              className={
-                Number(dashboardStats.revenue.change) >= 0
-                  ? "positive"
-                  : "negative"
-              }
-            >
+        <div className="card revenue-card">
+          {cardIcons[0]}
+          <div>
+            <h3>Total Revenue</h3>
+            <p className="card-value">
               {hasReportViewPermission()
-                ? `${Number(dashboardStats.revenue.change) >= 0 ? "+" : ""}${Number(dashboardStats.revenue.change).toFixed(1)}`
-                : "NaN"}
-            </span>
-            <span className="period">from last {timePeriod}</span>
+                ? `XFA ${Number(dashboardStats.revenue.value).toLocaleString()}`
+                : "XFA NaN"}
+            </p>
+            <div className="stat-change">
+              <span
+                className={
+                  Number(dashboardStats.revenue.change) >= 0
+                    ? "positive"
+                    : "negative"
+                }
+              >
+                {hasReportViewPermission()
+                  ? `${Number(dashboardStats.revenue.change) >= 0 ? "+" : ""}${Number(dashboardStats.revenue.change).toFixed(1)}`
+                  : "NaN"}
+                {Number(dashboardStats.revenue.change) >= 0 ? (
+                  <TrendingUp size={14} className="trend-icon" />
+                ) : (
+                  <TrendingDown size={14} className="trend-icon" />
+                )}
+              </span>
+              <span className="period">from last {timePeriod}</span>
+            </div>
           </div>
         </div>
-        <div className="card">
-          <h3>Orders</h3>
-          <p className="card-value">
-            {hasReportViewPermission()
-              ? Number(dashboardStats.orders.value).toLocaleString()
-              : "NaN"}
-          </p>
-          <div className="stat-change">
-            <span
-              className={
-                Number(dashboardStats.orders.change) >= 0
-                  ? "positive"
-                  : "negative"
-              }
-            >
+        <div className="card orders-card">
+          {cardIcons[1]}
+          <div>
+            <h3>Orders</h3>
+            <p className="card-value">
               {hasReportViewPermission()
-                ? `${Number(dashboardStats.orders.change) >= 0 ? "+" : ""}${Number(dashboardStats.orders.change).toFixed(1)}`
+                ? Number(dashboardStats.orders.value).toLocaleString()
                 : "NaN"}
-            </span>
-            <span className="period">from last {timePeriod}</span>
+            </p>
+            <div className="stat-change">
+              <span
+                className={
+                  Number(dashboardStats.orders.change) >= 0
+                    ? "positive"
+                    : "negative"
+                }
+              >
+                {hasReportViewPermission()
+                  ? `${Number(dashboardStats.orders.change) >= 0 ? "+" : ""}${Number(dashboardStats.orders.change).toFixed(1)}`
+                  : "NaN"}
+                {Number(dashboardStats.orders.change) >= 0 ? (
+                  <TrendingUp size={14} className="trend-icon" />
+                ) : (
+                  <TrendingDown size={14} className="trend-icon" />
+                )}
+              </span>
+              <span className="period">from last {timePeriod}</span>
+            </div>
           </div>
         </div>
-        <div className="card">
-          <h3>Average Order Value</h3>
-          <p className="card-value">
-            {hasReportViewPermission()
-              ? `XFA ${Number(dashboardStats.averageOrderValue.value).toLocaleString()}`
-              : "XFA NaN"}
-          </p>
-          <div className="stat-change">
-            <span
-              className={
-                Number(dashboardStats.averageOrderValue.change) >= 0
-                  ? "positive"
-                  : "negative"
-              }
-            >
+        <div className="card average-card">
+          {cardIcons[2]}
+          <div>
+            <h3>Average Order Value</h3>
+            <p className="card-value">
               {hasReportViewPermission()
-                ? `${Number(dashboardStats.averageOrderValue.change) >= 0 ? "+" : ""}${Number(dashboardStats.averageOrderValue.change).toFixed(1)}`
-                : "NaN"}
-            </span>
-            <span className="period">from last {timePeriod}</span>
+                ? `XFA ${Number(dashboardStats.averageOrderValue.value).toLocaleString()}`
+                : "XFA NaN"}
+            </p>
+            <div className="stat-change">
+              <span
+                className={
+                  Number(dashboardStats.averageOrderValue.change) >= 0
+                    ? "positive"
+                    : "negative"
+                }
+              >
+                {hasReportViewPermission()
+                  ? `${Number(dashboardStats.averageOrderValue.change) >= 0 ? "+" : ""}${Number(dashboardStats.averageOrderValue.change).toFixed(1)}`
+                  : "NaN"}
+                {Number(dashboardStats.averageOrderValue.change) >= 0 ? (
+                  <TrendingUp size={14} className="trend-icon" />
+                ) : (
+                  <TrendingDown size={14} className="trend-icon" />
+                )}
+              </span>
+              <span className="period">from last {timePeriod}</span>
+            </div>
           </div>
         </div>
-        <div className="card">
-          <h3>Customers</h3>
-          <p className="card-value">
-            {hasReportViewPermission()
-              ? Number(dashboardStats.customers.value).toLocaleString()
-              : "NaN"}
-          </p>
-          <div className="stat-change">
-            <span
-              className={
-                Number(dashboardStats.customers.change) >= 0
-                  ? "positive"
-                  : "negative"
-              }
-            >
+        <div className="card customers-card">
+          {cardIcons[3]}
+          <div>
+            <h3>Customers</h3>
+            <p className="card-value">
               {hasReportViewPermission()
-                ? `${Number(dashboardStats.customers.change) >= 0 ? "+" : ""}${Number(dashboardStats.customers.change).toFixed(1)}`
+                ? Number(dashboardStats.customers.value).toLocaleString()
                 : "NaN"}
-            </span>
-            <span className="period">from last {timePeriod}</span>
+            </p>
+            <div className="stat-change">
+              <span
+                className={
+                  Number(dashboardStats.customers.change) >= 0
+                    ? "positive"
+                    : "negative"
+                }
+              >
+                {hasReportViewPermission()
+                  ? `${Number(dashboardStats.customers.change) >= 0 ? "+" : ""}${Number(dashboardStats.customers.change).toFixed(1)}`
+                  : "NaN"}
+                {Number(dashboardStats.customers.change) >= 0 ? (
+                  <TrendingUp size={14} className="trend-icon" />
+                ) : (
+                  <TrendingDown size={14} className="trend-icon" />
+                )}
+              </span>
+              <span className="period">from last {timePeriod}</span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* New Profit Analysis Chart - TinyLineChart Style */}
+      {/* Update the Profit Analysis Chart */}
       <div className="chart profit-chart">
         <h3>Profit Analysis</h3>
         {profitData.length > 0 && hasReportViewPermission() ? (
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart
+            <AreaChart
               width={500}
               height={300}
               data={profitData}
@@ -914,46 +971,61 @@ const Dashboard = () => {
                 bottom: 5,
               }}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis dataKey="name" stroke="#D1D5DB" />
-              <YAxis stroke="#D1D5DB" />
+              <defs>
+                <linearGradient id="colorProfit" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8} />
+                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0.1} />
+                </linearGradient>
+                <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
+                  <stop offset="95%" stopColor="#10b981" stopOpacity={0.1} />
+                </linearGradient>
+                <linearGradient id="colorPending" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.8} />
+                  <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.1} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+              <XAxis dataKey="name" stroke="#ffffff" />
+              <YAxis stroke="#ffffff" />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: "#1F2937",
+                  backgroundColor: "#252525",
                   border: "none",
-                  borderRadius: "4px",
+                  borderRadius: "8px",
+                  boxShadow: "0 10px 25px rgba(0, 0, 0, 0.3)",
                 }}
-                itemStyle={{ color: "#D1D5DB" }}
+                itemStyle={{ color: "#ffffff" }}
               />
-              <Legend wrapperStyle={{ color: "#D1D5DB" }} />
-              <Line
+              <Legend wrapperStyle={{ color: "#ffffff" }} />
+              <Area
                 type="monotone"
                 dataKey="profit"
                 name="Profit"
-                stroke="#8b5cf6" /* Updated to purple */
-                strokeWidth={2}
-                dot={{ r: 4, fill: "#8b5cf6" }}
-                activeDot={{ r: 6 }}
+                stackId="1"
+                stroke="#6366f1"
+                fillOpacity={1}
+                fill="url(#colorProfit)"
               />
-              <Line
+              <Area
                 type="monotone"
                 dataKey="sales"
                 name="Sales"
-                stroke="#10b981" /* Updated to emerald */
-                strokeWidth={2}
-                dot={{ r: 4, fill: "#10b981" }}
-                activeDot={{ r: 6 }}
+                stackId="2"
+                stroke="#10b981"
+                fillOpacity={1}
+                fill="url(#colorSales)"
               />
-              <Line
+              <Area
                 type="monotone"
                 dataKey="pending"
                 name="Pending Payment"
-                stroke="#f59e0b" /* Updated to amber */
-                strokeWidth={2}
-                dot={{ r: 4, fill: "#f59e0b" }}
-                activeDot={{ r: 6 }}
+                stackId="3"
+                stroke="#f59e0b"
+                fillOpacity={1}
+                fill="url(#colorPending)"
               />
-            </LineChart>
+            </AreaChart>
           </ResponsiveContainer>
         ) : (
           <div className="no-data">
@@ -964,6 +1036,8 @@ const Dashboard = () => {
         )}
       </div>
 
+      {/* Update all other chart tooltips for consistency */}
+      {/* For example, in the Sales Performance chart: */}
       <div className="charts-container">
         <div className="chart">
           <h3>Sales Performance</h3>
@@ -976,26 +1050,27 @@ const Dashboard = () => {
                     <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="colorProfit" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="colorPending" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.8} />
                     <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                <XAxis dataKey="name" stroke="#D1D5DB" />
-                <YAxis stroke="#D1D5DB" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                <XAxis dataKey="name" stroke="#ffffff" />
+                <YAxis stroke="#ffffff" />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: "#1F2937",
+                    backgroundColor: "#252525",
                     border: "none",
-                    borderRadius: "4px",
+                    borderRadius: "8px",
+                    boxShadow: "0 10px 25px rgba(0, 0, 0, 0.3)",
                   }}
-                  itemStyle={{ color: "#D1D5DB" }}
+                  itemStyle={{ color: "#ffffff" }}
                 />
-                <Legend wrapperStyle={{ color: "#D1D5DB" }} />
+                <Legend wrapperStyle={{ color: "#ffffff" }} />
                 <Area
                   type="monotone"
                   dataKey="sales"
@@ -1007,7 +1082,7 @@ const Dashboard = () => {
                 <Area
                   type="monotone"
                   dataKey="profit"
-                  stroke="#8b5cf6"
+                  stroke="#6366f1"
                   fillOpacity={0.3}
                   fill="url(#colorProfit)"
                   name="Profit"
@@ -1037,21 +1112,45 @@ const Dashboard = () => {
             <ResponsiveContainer width="100%" height={300}>
               <BarChart
                 layout="vertical"
+                width={500}
+                height={300}
                 data={productPerformance}
-                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                margin={{
+                  top: 20,
+                  right: 30,
+                  left: 20,
+                  bottom: 5,
+                }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                <XAxis type="number" stroke="#D1D5DB" />
-                <YAxis dataKey="name" type="category" stroke="#D1D5DB" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#1F2937",
-                    border: "none",
-                    borderRadius: "4px",
-                  }}
-                  itemStyle={{ color: "#D1D5DB" }}
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="#333"
+                  horizontal={false}
                 />
-                <Bar dataKey="value" name="Sales">
+                <XAxis type="number" stroke="#ffffff" />
+                <YAxis
+                  dataKey="name"
+                  type="category"
+                  stroke="#ffffff"
+                  width={120}
+                  tickFormatter={(value) => {
+                    return value.length > 15
+                      ? value.substring(0, 15) + "..."
+                      : value;
+                  }}
+                />
+                <Tooltip
+                  formatter={(value, name) => [`${value}`, "Value"]}
+                  contentStyle={{
+                    backgroundColor: "#252525",
+                    border: "none",
+                    borderRadius: "8px",
+                    boxShadow: "0 10px 25px rgba(0, 0, 0, 0.3)",
+                  }}
+                  itemStyle={{ color: "#ffffff" }}
+                />
+                <Legend wrapperStyle={{ color: "#ffffff" }} />
+                <Bar dataKey="value" name="Performance">
                   {productPerformance.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.fill} />
                   ))}
@@ -1061,8 +1160,8 @@ const Dashboard = () => {
           ) : (
             <div className="no-data">
               {hasManagerPermission()
-                ? "No product performance data available for this period"
-                : "Manager access required to view product data"}
+                ? "No product performance data available"
+                : "Manager access required to view product performance"}
             </div>
           )}
         </div>
@@ -1092,15 +1191,16 @@ const Dashboard = () => {
                 <Tooltip
                   formatter={(value, name) => [`${value}`, name]}
                   contentStyle={{
-                    backgroundColor: "#1F2937",
+                    backgroundColor: "#252525",
                     border: "none",
-                    borderRadius: "4px",
+                    borderRadius: "8px",
+                    boxShadow: "0 10px 25px rgba(0, 0, 0, 0.3)",
                   }}
-                  itemStyle={{ color: "#D1D5DB" }}
+                  itemStyle={{ color: "#ffffff" }}
                 />
                 <Legend
                   formatter={(value) => (
-                    <span style={{ color: "#D1D5DB" }}>{value}</span>
+                    <span style={{ color: "#ffffff" }}>{value}</span>
                   )}
                 />
               </PieChart>
@@ -1154,11 +1254,11 @@ const Dashboard = () => {
                       className="product-color"
                       style={{
                         backgroundColor: [
-                          "#FF6384",
-                          "#FFCE56",
-                          "#4BC0C0",
-                          "#36A2EB",
-                          "#9966FF",
+                          "#6366f1",
+                          "#ec4899",
+                          "#10b981",
+                          "#3b82f6",
+                          "#f59e0b",
                         ][index % 5],
                       }}
                     ></div>
@@ -1172,11 +1272,11 @@ const Dashboard = () => {
                       className="product-revenue"
                       style={{
                         color: [
-                          "#FF6384",
-                          "#FFCE56",
-                          "#4BC0C0",
-                          "#36A2EB",
-                          "#9966FF",
+                          "#6366f1",
+                          "#ec4899",
+                          "#10b981",
+                          "#3b82f6",
+                          "#f59e0b",
                         ][index % 5],
                       }}
                     >
@@ -1202,24 +1302,30 @@ const Dashboard = () => {
           {monthlyRevenueData.length > 0 ? (
             <ResponsiveContainer width="100%" height={250}>
               <LineChart data={monthlyRevenueData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                <XAxis dataKey="month" stroke="#D1D5DB" />
-                <YAxis stroke="#D1D5DB" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                <XAxis dataKey="month" stroke="#ffffff" />
+                <YAxis stroke="#ffffff" />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: "#1F2937",
+                    backgroundColor: "#252525",
                     border: "none",
-                    borderRadius: "4px",
+                    borderRadius: "8px",
+                    boxShadow: "0 10px 25px rgba(0, 0, 0, 0.3)",
                   }}
-                  itemStyle={{ color: "#D1D5DB" }}
+                  itemStyle={{ color: "#ffffff" }}
                 />
                 <Line
                   type="monotone"
                   dataKey="revenue"
-                  stroke="#4BC0C0"
-                  strokeWidth={2}
-                  dot={{ r: 4, fill: "#4BC0C0" }}
-                  activeDot={{ r: 6, fill: "#4BC0C0" }}
+                  stroke="#6366f1"
+                  strokeWidth={3}
+                  dot={{ r: 5, fill: "#6366f1", strokeWidth: 0 }}
+                  activeDot={{
+                    r: 7,
+                    fill: "#6366f1",
+                    stroke: "#fff",
+                    strokeWidth: 2,
+                  }}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -1245,7 +1351,7 @@ const Dashboard = () => {
                 data={salesByCategoryData}
               >
                 <RadialBar
-                  label={{ fill: "#D1D5DB", position: "insideStart" }}
+                  label={{ fill: "#ffffff", position: "insideStart" }}
                   background
                   dataKey="value"
                 />
@@ -1254,15 +1360,16 @@ const Dashboard = () => {
                   layout="vertical"
                   verticalAlign="middle"
                   align="right"
-                  wrapperStyle={{ color: "#D1D5DB" }}
+                  wrapperStyle={{ color: "#ffffff" }}
                 />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: "#1F2937",
+                    backgroundColor: "#252525",
                     border: "none",
-                    borderRadius: "4px",
+                    borderRadius: "8px",
+                    boxShadow: "0 10px 25px rgba(0, 0, 0, 0.3)",
                   }}
-                  itemStyle={{ color: "#D1D5DB" }}
+                  itemStyle={{ color: "#ffffff" }}
                 />
               </RadialBarChart>
             </ResponsiveContainer>

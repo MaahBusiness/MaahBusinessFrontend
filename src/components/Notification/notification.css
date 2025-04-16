@@ -1,5 +1,5 @@
 .notification-center {
-  position: relative;
+  position: absolute;
   display: inline-block;
 }
 
@@ -854,6 +854,9 @@
 }
 
 @media (max-width: 768px) {
+  .notification-page {
+    width: 100%;
+  }
   .notification-dropdown {
     width: 320px;
     right: -100px;

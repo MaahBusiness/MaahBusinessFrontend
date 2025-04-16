@@ -19,6 +19,13 @@ import {
   ChevronRight,
   Clock,
   Archive,
+  Grid,
+  List,
+  CreditCard,
+  CheckCircle,
+  XCircle,
+  Info,
+  ArrowRight,
 } from "lucide-react";
 import "./Invoice.css";
 import ArchiveManager from "./ArchiveManager";
@@ -88,6 +95,8 @@ const Invoice = () => {
     },
   ]);
   const [formError, setFormError] = useState("");
+
+  const [invoiceDisplayMode, setInvoiceDisplayMode] = useState("grid"); // grid or list
 
   // Check authentication on component mount
   useEffect(() => {
@@ -331,10 +340,11 @@ const Invoice = () => {
     // Dynamic status based on payment
     let status = "COMPLETED";
     if (remaining > 0) {
-      status = "PENDING";
+      status = "CREDIT"; // This is correct - keep using CREDIT for invoices with remaining balance
     } else if (refund > 0) {
-      status = "REFUND";
+      status = "COMPLETED"; // Change from REFUND to COMPLETED for refunds
     }
+    // Note: CANCELLED status would be set manually, not automatically calculated
 
     return {
       subtotal: String(subtotal),
@@ -627,7 +637,10 @@ const Invoice = () => {
   };
 
   // Handle archiving an invoice (appears as delete to the user)
-  const handleArchiveInvoice = (index) => {
+  const handleArchiveInvoice = (index, e) => {
+    // Prevent event propagation to avoid triggering the card click
+    e.stopPropagation();
+
     // Check if user is authenticated
     if (!isAuthenticated) {
       showStatusMessage("Authentication required. Please log in.", "error");
@@ -888,6 +901,34 @@ const Invoice = () => {
     }
   };
 
+  // Get status description based on status
+  const getStatusDescription = (status) => {
+    switch (status) {
+      case "COMPLETED":
+        return "Payment received in full";
+      case "CANCELLED":
+        return "Invoice has been cancelled";
+      case "CREDIT":
+        return "Payment pending";
+      default:
+        return "";
+    }
+  };
+
+  // Get status icon based on status
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case "COMPLETED":
+        return <CheckCircle size={16} />;
+      case "CANCELLED":
+        return <XCircle size={16} />;
+      case "CREDIT":
+        return <CreditCard size={16} />;
+      default:
+        return <Info size={16} />;
+    }
+  };
+
   // Handle PDF export
   const handleExportPDF = async (invoiceId) => {
     if (!isAuthenticated) {
@@ -1011,6 +1052,21 @@ const Invoice = () => {
         >
           <FileText size={16} /> Invoice List
         </button>
+
+        <div style={{ display: "flex", gap: "0.5rem" }}>
+          <button
+            className={`view-toggle-btn ${invoiceDisplayMode === "grid" ? "active" : ""}`}
+            onClick={() => setInvoiceDisplayMode("grid")}
+          >
+            <Grid size={16} /> Grid View
+          </button>
+          <button
+            className={`view-toggle-btn ${invoiceDisplayMode === "list" ? "active" : ""}`}
+            onClick={() => setInvoiceDisplayMode("list")}
+          >
+            <List size={16} /> List View
+          </button>
+        </div>
       </div>
 
       {/* List View */}
@@ -1041,60 +1097,71 @@ const Invoice = () => {
             </div>
           ) : (
             <>
-              <div className="invoice-list">
+              <div
+                className={`invoice-list ${invoiceDisplayMode === "list" ? "invoice-list-table" : ""}`}
+              >
                 {filteredInvoices.map((invoice, index) => (
                   <div key={invoice.id} className="invoice-card">
                     <div className="invoice-card-header">
                       <div className="invoice-id">
                         {invoice.number ? `INV-${invoice.number}` : invoice.id}
                       </div>
-                      {invoice.status && invoice.status !== "COMPLETED" && (
+                      {invoice.status && (
                         <div
                           className={`invoice-status ${(invoice.status || "").toLowerCase()}`}
                         >
-                          {invoice.status}
+                          {getStatusIcon(invoice.status)}
+                          <div className="status-content">
+                            <span className="status-text">
+                              {invoice.status}
+                            </span>
+                            <span className="status-description">
+                              {getStatusDescription(invoice.status)}
+                            </span>
+                          </div>
                         </div>
                       )}
                     </div>
-                    <div className="invoice-card-body">
+                    <div
+                      className="invoice-card-body"
+                      onClick={() => handleViewInvoice(index)}
+                    >
                       <div className="invoice-client">
-                        <User size={16} />
+                        <User size={16} className="icon-user" />
                         <span>{invoice.client_name || "Anonymous"}</span>
                       </div>
                       <div className="invoice-reason">
-                        <FileText size={16} />
+                        <FileText size={16} className="icon-reason" />
                         <span>{invoice.reason || "N/A"}</span>
                       </div>
                       <div className="invoice-date">
-                        <Calendar size={16} />
+                        <Calendar size={16} className="icon-calendar" />
                         <span>Due: {formatDate(invoice.due_date)}</span>
                       </div>
                       <div className="invoice-date">
-                        <Clock size={16} />
+                        <Clock size={16} className="icon-clock" />
                         <span>
                           Created: {formatDateTime(invoice.created_at)}
                         </span>
                       </div>
                       <div className="invoice-amount">
-                        <DollarSign size={16} />
+                        <DollarSign size={16} className="icon-dollar" />
                         <span>{invoice.total || "0"} XFA</span>
                       </div>
                       <div className="invoice-items">
-                        <ShoppingCart size={16} />
+                        <ShoppingCart size={16} className="icon-cart" />
                         <span>{invoice.lines?.length || 0} items</span>
+                      </div>
+                      <div className="card-action-hint">
+                        <ArrowRight size={16} />
+                        <span>Click to view details</span>
                       </div>
                     </div>
                     <div className="invoice-card-footer">
-                      <button
-                        className="invoice-action-btn view"
-                        onClick={() => handleViewInvoice(index)}
-                      >
-                        View Details
-                      </button>
                       <div className="invoice-actions">
                         <button
                           className="invoice-action-btn delete"
-                          onClick={() => handleArchiveInvoice(index)}
+                          onClick={(e) => handleArchiveInvoice(index, e)}
                         >
                           <Trash2 size={14} />
                         </button>
@@ -1196,7 +1263,7 @@ const Invoice = () => {
       {/* Create Invoice Modal */}
       {showModal && (
         <div className="modal-overlay">
-          <div className="modal-content">
+          <div className="modal-content invoice-create-modal">
             <div className="modal-header">
               <h3>Create New Invoice</h3>
               <button
@@ -1486,7 +1553,7 @@ const Invoice = () => {
                         <span className={status.toLowerCase()}>
                           {status === "COMPLETED"
                             ? "COMPLETED (Fully Paid)"
-                            : status === "PENDING"
+                            : status === "CREDIT"
                               ? "PENDING (Payment Required)"
                               : status === "REFUND"
                                 ? "REFUND DUE"
