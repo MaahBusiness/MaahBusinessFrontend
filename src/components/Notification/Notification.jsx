@@ -13,6 +13,13 @@ import {
   FaSpinner,
   FaArchive,
   FaSyncAlt,
+  FaInfoCircle,
+  FaShieldAlt,
+  FaExclamation,
+  FaTag,
+  FaEye,
+  FaFilter,
+  FaChevronDown, // Added FaChevronDown import
 } from "react-icons/fa";
 import "./notification.css";
 
@@ -511,11 +518,15 @@ const Notification = ({ isDropdown = false }) => {
   const getNotificationIcon = (type) => {
     switch (type) {
       case "CRITICAL_STOCK":
-        return <FaExclamationTriangle className="notification-icon critical" />;
+        return <FaExclamation className="notification-icon critical" />;
       case "EXPIRED":
         return <FaCalendarAlt className="notification-icon expired" />;
       case "NEAR_EXPIRY":
         return <FaClock className="notification-icon warning" />;
+      case "SYSTEM":
+        return <FaShieldAlt className="notification-icon system" />;
+      case "INFO":
+        return <FaInfoCircle className="notification-icon info" />;
       default:
         return <FaBox className="notification-icon" />;
     }
@@ -593,19 +604,19 @@ const Notification = ({ isDropdown = false }) => {
                 className={`filter-btn ${filter === "all" ? "active" : ""}`}
                 onClick={() => setFilter("all")}
               >
-                All
+                <FaFilter className="filter-icon" /> All
               </button>
               <button
                 className={`filter-btn ${filter === "UNREAD" ? "active" : ""}`}
                 onClick={() => setFilter("UNREAD")}
               >
-                Unread
+                <FaBell className="filter-icon" /> Unread
               </button>
               <button
                 className="filter-btn"
                 onClick={() => setShowArchiveModal(true)}
               >
-                Archive
+                <FaArchive className="filter-icon" /> Archive
               </button>
             </div>
 
@@ -641,9 +652,11 @@ const Notification = ({ isDropdown = false }) => {
                       </div>
                       <div className="notification-meta">
                         <span className="notification-product">
+                          <FaTag className="meta-icon" />
                           {notification.product_name || "System Notification"}
                         </span>
                         <span className="notification-time">
+                          <FaClock className="meta-icon" />
                           {formatDate(notification.created_at)}
                         </span>
                       </div>
@@ -654,7 +667,7 @@ const Notification = ({ isDropdown = false }) => {
                         onClick={(e) => archiveNotification(notification.id, e)}
                         title="Archive"
                       >
-                        <FaTimesCircle size={16} />
+                        <FaArchive size={16} />
                       </button>
                     </div>
                   </div>
@@ -673,7 +686,9 @@ const Notification = ({ isDropdown = false }) => {
                         <FaSpinner className="spin" /> Loading...
                       </>
                     ) : (
-                      "Load More"
+                      <>
+                        <FaChevronDown /> Load More
+                      </>
                     )}
                   </button>
                 </div>
@@ -693,13 +708,19 @@ const Notification = ({ isDropdown = false }) => {
     <div className="notification-page">
       {statusMessage.show && (
         <div className={`status-message ${statusMessage.type}`}>
+          {statusMessage.type === "success" && <FaCheckCircle />}
+          {statusMessage.type === "error" && <FaExclamationTriangle />}
+          {statusMessage.type === "warning" && <FaExclamation />}
+          {statusMessage.type === "info" && <FaInfoCircle />}
           {statusMessage.message}
         </div>
       )}
 
       <div className="notification-container">
         <div className="notification-header">
-          <h1>Notifications</h1>
+          <h1>
+            <FaBell className="title-icon" /> Notifications
+          </h1>
           <div className="notification-actions">
             <button
               className="mark-all-read-btn"
@@ -734,7 +755,7 @@ const Notification = ({ isDropdown = false }) => {
               setCurrentPage(1);
             }}
           >
-            All
+            <FaFilter className="filter-icon" /> All
           </button>
           <button
             className={`filter-btn ${filter === "UNREAD" ? "active" : ""}`}
@@ -743,7 +764,7 @@ const Notification = ({ isDropdown = false }) => {
               setCurrentPage(1);
             }}
           >
-            Unread
+            <FaBell className="filter-icon" /> Unread
           </button>
           <button
             className={`filter-btn ${filter === "READ" ? "active" : ""}`}
@@ -752,7 +773,7 @@ const Notification = ({ isDropdown = false }) => {
               setCurrentPage(1);
             }}
           >
-            Read
+            <FaCheckCircle className="filter-icon" /> Read
           </button>
           <button
             className={`filter-btn ${filter === "ARCHIVED" ? "active" : ""}`}
@@ -761,7 +782,7 @@ const Notification = ({ isDropdown = false }) => {
               setCurrentPage(1);
             }}
           >
-            Archived
+            <FaArchive className="filter-icon" /> Archived
           </button>
         </div>
 
@@ -798,9 +819,11 @@ const Notification = ({ isDropdown = false }) => {
                     </div>
                     <div className="notification-meta">
                       <span className="notification-product">
+                        <FaTag className="meta-icon" />
                         {notification.product_name || "System Notification"}
                       </span>
                       <span className="notification-time">
+                        <FaClock className="meta-icon" />
                         {formatDate(notification.created_at)}
                       </span>
                     </div>
@@ -812,7 +835,7 @@ const Notification = ({ isDropdown = false }) => {
                         onClick={(e) => archiveNotification(notification.id, e)}
                         title="Archive"
                       >
-                        <FaTimesCircle size={16} />
+                        <FaArchive size={16} />
                       </button>
                     )}
                   </div>
@@ -831,7 +854,9 @@ const Notification = ({ isDropdown = false }) => {
                         <FaSpinner className="spin" /> Loading...
                       </>
                     ) : (
-                      "Load More"
+                      <>
+                        <FaChevronDown /> Load More
+                      </>
                     )}
                   </button>
                 </div>
@@ -855,7 +880,9 @@ const Notification = ({ isDropdown = false }) => {
           <div className="modal-overlay">
             <div className="modal-content">
               <div className="modal-header">
-                <h3>Archive Old Notifications</h3>
+                <h3>
+                  <FaArchive className="modal-icon" /> Archive Old Notifications
+                </h3>
                 <button
                   className="close-modal-btn"
                   onClick={() => setShowArchiveModal(false)}
@@ -894,7 +921,7 @@ const Notification = ({ isDropdown = false }) => {
                   onClick={() => setShowArchiveModal(false)}
                   disabled={archiveLoading}
                 >
-                  Cancel
+                  <FaTimesCircle /> Cancel
                 </button>
                 <button
                   className="archive-btn"
@@ -921,7 +948,9 @@ const Notification = ({ isDropdown = false }) => {
           <div className="modal-overlay">
             <div className="modal-content notification-details-modal">
               <div className="modal-header">
-                <h3>Notification Details</h3>
+                <h3>
+                  <FaEye className="modal-icon" /> Notification Details
+                </h3>
                 <button
                   className="close-modal-btn"
                   onClick={() => setIsViewModalOpen(false)}

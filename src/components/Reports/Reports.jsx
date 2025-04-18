@@ -1,4 +1,5 @@
 "use client";
+
 import axios from "axios";
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
@@ -10,31 +11,18 @@ import {
   BarChart,
   RefreshCw,
   AlertCircle,
-  Info,
   X,
   Plus,
   Calendar,
   DollarSign,
-  TrendingUp,
-  TrendingDown,
   ShoppingCart,
-  CreditCard,
   Clock,
-  CheckCircle,
   Users,
-  Percent,
   Database,
   Filter,
   ChevronLeft,
   ChevronRight,
-  Search,
-  ArrowUpRight,
-  ArrowDownRight,
-  Wallet,
-  ChevronsUp,
-  ChevronsDown,
-  Zap,
-  Shield,
+  Download,
 } from "lucide-react";
 import "./reports.css";
 
@@ -44,15 +32,17 @@ const Reports = () => {
   // Basic state
   const [token, setToken] = useState(localStorage.getItem("token"));
   const [error, setError] = useState(null);
-  const [debugInfo, setDebugInfo] = useState(null);
   const [currentUserRole, setCurrentUserRole] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
 
   // Report generation state
   const [reportType, setReportType] = useState("inventory");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [period, setPeriod] = useState("daily");
   const [showReportModal, setShowReportModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   // Report data state
   const [report, setReport] = useState(null);
@@ -75,50 +65,34 @@ const Reports = () => {
       return;
     }
 
-    // Get current user role
-    getCurrentUserRole();
+    // Get current user role and user info
+    getCurrentUserInfo();
 
-    // Check if user has permission to view reports
-    const userRole = localStorage.getItem("userRole") || "";
-    const userData = localStorage.getItem("user");
-    let role = "";
+    // Load saved reports from localStorage first
+    loadSavedReportsFromLocalStorage();
 
-    if (userData) {
-      try {
-        const parsedUser = JSON.parse(userData);
-        if (parsedUser && parsedUser.role) {
-          role = parsedUser.role;
-        }
-      } catch (e) {
-        console.error("Error parsing user data:", e);
-      }
-    }
-
-    if (
-      role !== "manager" &&
-      role !== "cashier" &&
-      userRole !== "manager" &&
-      userRole !== "cashier"
-    ) {
-      setError(
-        "You don't have permission to view reports. Only managers and cashiers can access this page.",
-      );
-    }
-
-    // Load saved reports from localStorage
-    try {
-      const storedReports = localStorage.getItem("savedReports");
-      if (storedReports) {
-        setSavedReports(JSON.parse(storedReports));
-      }
-    } catch (err) {
-      console.error("Error loading saved reports:", err);
-      localStorage.removeItem("savedReports");
-    }
+    // Then fetch reports from API
+    fetchAllReports();
   }, [navigate, token]);
 
-  // Get current user role
-  const getCurrentUserRole = async () => {
+  // Load saved reports from localStorage
+  const loadSavedReportsFromLocalStorage = () => {
+    try {
+      const savedReportsData = localStorage.getItem("savedReportsData");
+      if (savedReportsData) {
+        const parsedReports = JSON.parse(savedReportsData);
+        if (Array.isArray(parsedReports) && parsedReports.length > 0) {
+          console.log("Loaded reports from localStorage:", parsedReports);
+          setSavedReports(parsedReports);
+        }
+      }
+    } catch (error) {
+      console.error("Error loading saved reports from localStorage:", error);
+    }
+  };
+
+  // Get current user info
+  const getCurrentUserInfo = async () => {
     try {
       // Try to get the user info from localStorage first
       try {
@@ -127,10 +101,8 @@ const Reports = () => {
           const parsedUser = JSON.parse(userData);
           if (parsedUser && parsedUser.role) {
             setCurrentUserRole(parsedUser.role);
-            console.log(
-              "Current user role set from localStorage:",
-              parsedUser.role,
-            );
+            setCurrentUser(parsedUser);
+            console.log("Current user set from localStorage:", parsedUser);
             return;
           }
         }
@@ -149,9 +121,10 @@ const Reports = () => {
         );
         console.log("User info data:", userInfoResponse.data);
 
-        if (userInfoResponse.data && userInfoResponse.data.role) {
+        if (userInfoResponse.data) {
           setCurrentUserRole(userInfoResponse.data.role);
-          console.log("Current user role set to:", userInfoResponse.data.role);
+          setCurrentUser(userInfoResponse.data);
+          console.log("Current user set to:", userInfoResponse.data);
           return;
         }
       } catch (userInfoError) {
@@ -163,9 +136,9 @@ const Reports = () => {
 
       // If we couldn't determine the role, set a default
       console.warn(
-        "Could not determine user role from any source, defaulting to non-manager",
+        "Could not determine user role from any source, defaulting to cashier",
       );
-      setCurrentUserRole("cashier"); // Default to non-manager role
+      setCurrentUserRole("cashier");
     } catch (err) {
       console.error("Error fetching current user:", err);
     }
@@ -173,7 +146,7 @@ const Reports = () => {
 
   // Check if user has permission to access reports
   const hasReportAccess = () => {
-    return currentUserRole === "manager" || currentUserRole === "cashier";
+    return ["manager", "cashier", "stock_keeper"].includes(currentUserRole);
   };
 
   // Create axios instance with authentication headers
@@ -217,7 +190,43 @@ const Reports = () => {
     };
   }, [report]);
 
-  // Modify the saveReport function to create a completely independent copy of the report data
+  // Helper function to determine report type from report data
+  const determineReportType = (reportData) => {
+    // Check direct report_type property
+    if (reportData.report_type) {
+      return reportData.report_type;
+    }
+
+    // Check report_data.report_type
+    if (reportData.report_data && reportData.report_data.report_type) {
+      return reportData.report_data.report_type;
+    }
+
+    // Check for inventory_report or sales_report properties
+    if (reportData.inventory_report) {
+      return "inventory";
+    }
+
+    if (reportData.sales_report) {
+      return "sales";
+    }
+
+    // Check for specific properties in report_data that would indicate a sales report
+    if (reportData.report_data) {
+      if (
+        reportData.report_data.total_completed_sales !== undefined ||
+        reportData.report_data.total_completed_revenue !== undefined ||
+        reportData.report_data.products_sold
+      ) {
+        return "sales";
+      }
+    }
+
+    // Default to the current reportType if we can't determine
+    return reportType || "unknown";
+  };
+
+  // Save report to local state and localStorage
   const saveReport = (newReport) => {
     if (!newReport) return;
 
@@ -225,35 +234,31 @@ const Reports = () => {
     const reportToSave = JSON.parse(JSON.stringify(newReport));
 
     // Ensure dates are in ISO format
-    if (
-      !reportToSave.date_generated ||
-      !reportToSave.date_generated.includes("T")
-    ) {
-      reportToSave.date_generated = new Date().toISOString();
+    if (!reportToSave.created_at && !reportToSave.generated_at) {
+      reportToSave.created_at = new Date().toISOString();
     }
 
-    if (reportToSave.date_range) {
-      if (
-        reportToSave.date_range.start &&
-        !reportToSave.date_range.start.includes("T")
-      ) {
-        reportToSave.date_range.start = new Date(
-          reportToSave.date_range.start,
-        ).toISOString();
-      }
-      if (
-        reportToSave.date_range.end &&
-        !reportToSave.date_range.end.includes("T")
-      ) {
-        reportToSave.date_range.end = new Date(
-          reportToSave.date_range.end,
-        ).toISOString();
-      }
+    // Generate a unique ID if not present
+    if (!reportToSave.report_id && !reportToSave.id) {
+      reportToSave.report_id = crypto.randomUUID();
+    }
+
+    // Standardize the ID field
+    if (reportToSave.report_id && !reportToSave.id) {
+      reportToSave.id = reportToSave.report_id;
+    } else if (reportToSave.id && !reportToSave.report_id) {
+      reportToSave.report_id = reportToSave.id;
+    }
+
+    // Ensure report_type is set
+    if (!reportToSave.report_type) {
+      reportToSave.report_type = determineReportType(reportToSave);
     }
 
     // Update or add the report
+    const reportId = reportToSave.id || reportToSave.report_id;
     const existingIndex = savedReports.findIndex(
-      (r) => r.id === reportToSave.id,
+      (r) => (r.id || r.report_id) === reportId,
     );
     let updatedReports;
 
@@ -266,14 +271,16 @@ const Reports = () => {
 
     try {
       setSavedReports(updatedReports);
-      localStorage.setItem("savedReports", JSON.stringify(updatedReports));
+      // Store the updated reports in localStorage with a unique key
+      localStorage.setItem("savedReportsData", JSON.stringify(updatedReports));
+      console.log("Saved reports to localStorage:", updatedReports);
     } catch (err) {
       console.error("Error saving reports:", err);
       setError("Failed to save report to local storage");
     }
   };
 
-  // Delete a saved report
+  // Update the deleteReport function to also update localStorage
   const deleteReport = (reportId, e) => {
     // Stop event propagation to prevent loading the report when clicking delete
     if (e) {
@@ -281,126 +288,184 @@ const Reports = () => {
     }
 
     // Filter out the report to delete
-    const updatedReports = savedReports.filter(
-      (report) => report.id !== reportId,
-    );
+    const updatedReports = savedReports.filter((report) => {
+      const id = report.id || report.report_id;
+      return id !== reportId;
+    });
 
     // Update state and localStorage
     setSavedReports(updatedReports);
-    localStorage.setItem("savedReports", JSON.stringify(updatedReports));
+    localStorage.setItem("savedReportsData", JSON.stringify(updatedReports));
+    console.log("Updated reports after deletion:", updatedReports);
 
     // If the current report is the one being deleted, clear it
-    if (report && report.id === reportId) {
+    if (report && (report.id === reportId || report.report_id === reportId)) {
       setReport(null);
     }
   };
 
-  // Modify the loadReport function to ensure it properly displays the complete API response
+  // Download a report as PDF
+  const downloadReport = async (reportId, e) => {
+    // Stop event propagation to prevent loading the report when clicking download
+    if (e) {
+      e.stopPropagation();
+    }
+
+    if (!token) {
+      setError("Authentication required. Please log in again.");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+
+      // Use the correct download endpoint from the API with POST method
+      const response = await axios({
+        method: "post",
+        url: "http://localhost:8000/api/v1/report/download-report/",
+        data: { report_id: reportId },
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: "blob", // Important for handling file downloads
+      });
+
+      // Create a download link for the file
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `report-${reportId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+
+      // Clean up
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(link);
+
+      setIsLoading(false);
+    } catch (err) {
+      console.error("Error downloading report:", err);
+      setError("Failed to download report. Please try again.");
+      setIsLoading(false);
+    }
+  };
+
+  // Load a report from saved reports
   const loadReport = (reportId) => {
-    const reportToLoad = savedReports.find((r) => r.id === reportId);
-    if (!reportToLoad) return;
+    const reportToLoad = savedReports.find((r) => {
+      const id = r.id || r.report_id;
+      return id === reportId;
+    });
+
+    if (!reportToLoad) {
+      console.error("Report not found:", reportId);
+      return;
+    }
 
     // Create a completely new, independent copy of the report
     const freshReport = JSON.parse(JSON.stringify(reportToLoad));
+    console.log("Loading report:", freshReport);
 
     // Reset all state variables to prevent data from previous reports affecting the new one
     setInventoryData([]);
     setCurrentPage(1);
     setError(null);
     setInventoryError(null);
-    setDebugInfo(null);
+
+    // Determine report type
+    const type = determineReportType(freshReport);
+    console.log("Determined report type:", type);
+
+    // Set report type
+    setReportType(type);
 
     // Now set the new report
     setReport(freshReport);
-    setReportType(freshReport.report_type);
 
-    // Set date filters from the saved report
-    if (freshReport.date_range) {
-      if (freshReport.date_range.start) {
-        const startDateObj = new Date(freshReport.date_range.start);
-        setStartDate(startDateObj.toISOString().split("T")[0]);
-      } else {
-        setStartDate("");
-      }
-
-      if (freshReport.date_range.end) {
-        const endDateObj = new Date(freshReport.date_range.end);
-        setEndDate(endDateObj.toISOString().split("T")[0]);
-      } else {
-        setEndDate("");
-      }
+    // Set date filters from the saved report if they exist
+    if (freshReport.start_date) {
+      const startDateObj = new Date(freshReport.start_date);
+      setStartDate(startDateObj.toISOString().split("T")[0]);
     } else {
-      // Ensure dates are cleared if no date range exists
       setStartDate("");
+    }
+
+    if (freshReport.end_date) {
+      const endDateObj = new Date(freshReport.end_date);
+      setEndDate(endDateObj.toISOString().split("T")[0]);
+    } else {
       setEndDate("");
     }
 
-    console.log("Loaded report data:", freshReport.report_data);
-
-    // For inventory reports, try to fetch fresh data
-    if (freshReport.report_type === "inventory") {
-      fetchInventoryData(
-        freshReport.date_range?.start
-          ? new Date(freshReport.date_range.start).toISOString().split("T")[0]
-          : "",
-        freshReport.date_range?.end
-          ? new Date(freshReport.date_range.end).toISOString().split("T")[0]
-          : "",
-      ).catch((err) => {
+    // For inventory reports, try to fetch fresh inventory data
+    if (type === "inventory") {
+      fetchInventoryData(startDate, endDate).catch((err) => {
         console.error("Error fetching inventory data for saved report:", err);
-
-        // If API returns "No inventory report found", use saved data
-        if (err.response?.data?.error === "No inventory report found.") {
-          console.log("Using saved inventory data");
-          if (freshReport.report_data?.products) {
-            setInventoryData([...freshReport.report_data.products]);
-          }
-        }
       });
     }
   };
 
-  // Add this function to check if the user has permission to view report data
+  // Check if user has permission to view report data
   const hasReportViewPermission = () => {
-    const userRole = localStorage.getItem("userRole") || "";
-    const userData = localStorage.getItem("user");
-    let role = "";
-
-    if (userData) {
-      try {
-        const parsedUser = JSON.parse(userData);
-        if (parsedUser && parsedUser.role) {
-          role = parsedUser.role;
-        }
-      } catch (e) {
-        console.error("Error parsing user data:", e);
-      }
-    }
-
-    return (
-      role === "manager" ||
-      role === "cashier" ||
-      userRole === "manager" ||
-      userRole === "cashier"
-    );
+    return ["manager", "cashier", "stock_keeper"].includes(currentUserRole);
   };
 
-  // Modify the handleGenerateReport function to properly save the complete API response
+  // Fetch all reports from the API
+  const fetchAllReports = async () => {
+    if (!token) {
+      setError("Authentication required. Please log in again.");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+
+      const response = await axios.get(
+        "http://localhost:8000/api/v1/report/all-report/",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+
+      console.log("All reports response:", response.data);
+
+      // Process the reports and update the savedReports state
+      if (Array.isArray(response.data) && response.data.length > 0) {
+        // Process each report to ensure it has a report_type
+        const processedReports = response.data.map((report) => {
+          if (!report.report_type) {
+            report.report_type = determineReportType(report);
+          }
+          return report;
+        });
+
+        // Store reports in localStorage with a unique key
+        localStorage.setItem(
+          "savedReportsData",
+          JSON.stringify(processedReports),
+        );
+        setSavedReports(processedReports);
+        console.log("Saved processed reports:", processedReports);
+      }
+
+      setIsLoading(false);
+    } catch (err) {
+      console.error("Error fetching all reports:", err);
+      setError("Failed to fetch reports. Please try again.");
+      setIsLoading(false);
+    }
+  };
+
+  // Generate a new report
   const handleGenerateReport = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
+    setIsGenerating(true);
     setError(null);
-    setDebugInfo(null);
     setCurrentPage(1);
-    // Reset inventory data to prevent data from previous reports affecting the new one
     setInventoryData([]);
-    // Reset the report to null to clear any previous report data
-    setReport(null);
     closeReportModal();
 
     if (!token) {
       setError("Authentication required. Please log in again.");
-      setIsLoading(false);
+      setIsGenerating(false);
       navigate("/login");
       return;
     }
@@ -408,40 +473,43 @@ const Reports = () => {
     // Check if user has permission to generate reports
     if (!hasReportViewPermission()) {
       setError(
-        "You don't have permission to generate reports. Only managers and cashiers can generate reports.",
+        "You don't have permission to generate reports. Only managers, cashiers, and stock keepers can generate reports.",
       );
-      setIsLoading(false);
+      setIsGenerating(false);
       return;
     }
 
     try {
-      // Create query parameters
-      const params = new URLSearchParams({
-        report_type: reportType,
-      });
+      // Build query parameters for the GET request
+      const params = new URLSearchParams();
+      params.append("report_type", reportType);
 
-      // Format dates for API - only add if they are not empty
-      if (startDate && startDate.trim() !== "") {
-        const formattedStartDate = new Date(startDate);
-        formattedStartDate.setUTCHours(0, 0, 0, 0);
-        params.append("start_date", formattedStartDate.toISOString());
+      // Only add period if no dates are provided
+      if (
+        (!startDate || startDate.trim() === "") &&
+        (!endDate || endDate.trim() === "")
+      ) {
+        params.append("period", period);
       }
+      // Only add dates if they are provided
+      else {
+        // Format dates for API - only add if they are not empty strings
+        if (startDate && startDate.trim() !== "") {
+          const formattedStartDate = new Date(startDate);
+          formattedStartDate.setUTCHours(0, 0, 0, 0);
+          params.append("start_date", formattedStartDate.toISOString());
+        }
 
-      if (endDate && endDate.trim() !== "") {
-        const formattedEndDate = new Date(endDate);
-        formattedEndDate.setUTCHours(23, 59, 59, 999);
-        params.append("end_date", formattedEndDate.toISOString());
+        if (endDate && endDate.trim() !== "") {
+          const formattedEndDate = new Date(endDate);
+          formattedEndDate.setUTCHours(23, 59, 59, 999);
+          params.append("end_date", formattedEndDate.toISOString());
+        }
       }
 
       console.log("Generating report with params:", params.toString());
 
-      // For inventory reports, fetch inventory data first with the same date parameters
-      let inventoryItems = [];
-      if (reportType === "inventory") {
-        inventoryItems = await fetchInventoryData(startDate, endDate);
-      }
-
-      // Generate the report using the API for all report types
+      // Generate the report using the API
       const response = await axios.get(
         `http://localhost:8000/api/v1/report/generate/?${params.toString()}`,
         {
@@ -451,87 +519,54 @@ const Reports = () => {
 
       console.log("Report generation response:", response.data);
 
-      // Process the response
-      const responseData = response.data;
+      // Process the response according to the API schema
+      if (response.data && response.data.success && response.data.data) {
+        const reportData = response.data.data;
 
-      if (!responseData.success && !responseData.data?.report_data) {
-        throw new Error(responseData.message || "Failed to generate report");
+        // Create a standardized report object
+        const newReport = {
+          id: reportData.report_id,
+          report_id: reportData.report_id,
+          report_type: reportData.report_data.report_type || reportType,
+          created_at: reportData.report_data.created_at,
+          generated_by: reportData.report_data.generated_by,
+          report_data: reportData.report_data,
+        };
+
+        console.log("Created new report object:", newReport);
+
+        // Save and set the report
+        saveReport(newReport);
+        setReport(newReport);
+
+        // If it's an inventory report, fetch inventory data
+        if (reportType === "inventory") {
+          fetchInventoryData(startDate, endDate);
+        }
+      } else {
+        setError("Invalid response format from the server. Please try again.");
       }
-
-      // Create a new report object with a unique ID
-      const reportData = {
-        id: `report-${Date.now()}`, // Always generate a new ID for each report
-        report_type: responseData.data?.report_data?.report_type || reportType,
-        date_generated: new Date().toISOString(),
-        generated_by: responseData.data?.report_data?.generated_by || "System",
-        date_range: {
-          start:
-            startDate && startDate.trim() !== ""
-              ? new Date(startDate).toISOString()
-              : null,
-          end:
-            endDate && endDate.trim() !== ""
-              ? new Date(endDate).toISOString()
-              : null,
-        },
-        report_data:
-          responseData.data?.report_data || createEmptyReportData(reportType),
-        // Store the complete API response for reference
-        api_response: responseData,
-      };
-
-      // For inventory reports, add the inventory data
-      if (reportType === "inventory" && inventoryItems.length > 0) {
-        reportData.report_data.products = [...inventoryItems]; // Create a new array
-        reportData.report_data.total_products = inventoryItems.length;
-        reportData.report_data.expired_count = inventoryItems.filter(
-          (item) => item.is_expired,
-        ).length;
-        reportData.report_data.low_stock_count = inventoryItems.filter(
-          (item) => item.is_critical,
-        ).length;
-        reportData.report_data.near_expiry_count = inventoryItems.filter(
-          (item) => item.is_near_expiry,
-        ).length;
-      }
-
-      // Save and set the report
-      saveReport(reportData);
-      setReport(JSON.parse(JSON.stringify(reportData))); // Set a fresh copy
     } catch (err) {
       console.error("Error generating report:", err);
 
-      handleApiError(err, "report generation");
-
-      // Create empty report for "No inventory report found" error
-      if (err.response?.data?.error === "No inventory report found.") {
-        const emptyReport = {
-          id: `report-${Date.now()}`, // Always generate a new ID
-          report_type: reportType,
-          date_generated: new Date().toISOString(),
-          generated_by: "System",
-          date_range: {
-            start:
-              startDate && startDate.trim() !== ""
-                ? new Date(startDate).toISOString()
-                : null,
-            end:
-              endDate && endDate.trim() !== ""
-                ? new Date(endDate).toISOString()
-                : null,
-          },
-          report_data: createEmptyReportData(reportType),
-        };
-
-        saveReport(emptyReport);
-        setReport(JSON.parse(JSON.stringify(emptyReport))); // Set a fresh copy
+      // Handle API error
+      if (err.response) {
+        setError(
+          err.response.data?.error?.non_field_errors?.[0] ||
+            err.response.data?.error?.report_type?.[0] ||
+            err.response.data?.error ||
+            err.response.data?.message ||
+            "Failed to generate report. Please check your inputs.",
+        );
+      } else {
+        setError("Network error. Please check your connection.");
       }
     } finally {
-      setIsLoading(false);
+      setIsGenerating(false);
     }
   };
 
-  // Modify the fetchInventoryData function to use the token
+  // Fetch inventory data
   const fetchInventoryData = async (
     useStartDate = startDate,
     useEndDate = endDate,
@@ -547,7 +582,7 @@ const Reports = () => {
 
     try {
       // Build URL with query parameters
-      let url = "http://localhost:8000/api/v1/report/inventory-data/";
+      let url = "http://localhost:8000/api/v1/dashboard/inventory/";
       const params = new URLSearchParams();
 
       // Only add date parameters if they are not empty strings
@@ -572,32 +607,12 @@ const Reports = () => {
       console.log("Inventory API response:", response.data);
 
       // Process the response data
-      let inventoryItems = [];
-
-      if (Array.isArray(response.data)) {
-        inventoryItems = [...response.data]; // Create a new array
-      } else if (
-        response.data.results &&
-        Array.isArray(response.data.results)
-      ) {
-        inventoryItems = [...response.data.results]; // Create a new array
-      } else if (response.data) {
-        // Handle case where a single item is returned
-        inventoryItems = [{ ...response.data }]; // Create a new object
+      if (response.data) {
+        setInventoryData(response.data);
+        return response.data;
       }
 
-      // Remove duplicates using product name and category as key
-      const uniqueItems = Array.from(
-        new Map(
-          inventoryItems.map((item) => [
-            `${item.product_name || item.name}-${item.category}`,
-            { ...item }, // Create a new object for each item
-          ]),
-        ).values(),
-      );
-
-      setInventoryData(uniqueItems);
-      return uniqueItems;
+      return [];
     } catch (err) {
       console.error("Error fetching inventory data:", err);
 
@@ -615,13 +630,6 @@ const Reports = () => {
         return [];
       }
 
-      // Special handling for "No inventory report found"
-      if (err.response.data?.error === "No inventory report found.") {
-        console.log("No inventory data found for the selected date range");
-        setInventoryData([]);
-        return [];
-      }
-
       // Handle other errors
       setInventoryError(
         err.response.data?.detail ||
@@ -635,85 +643,7 @@ const Reports = () => {
     }
   };
 
-  // Create empty report data structure based on report type
-  const createEmptyReportData = (type) => {
-    switch (type) {
-      case "inventory":
-        return {
-          report_type: type,
-          total_products: 0,
-          expired_count: 0,
-          low_stock_count: 0,
-          near_expiry_count: 0,
-          products: [],
-        };
-      case "sales":
-        return {
-          report_type: type,
-          total_completed_sales: 0,
-          total_completed_revenue: 0,
-          total_credit_sales: 0,
-          total_credit_amount: 0,
-          total_advance_paid: 0,
-          total_remaining_amount: 0,
-          cash_in_hand: 0,
-          products_sold: [],
-        };
-      default:
-        return { report_type: type };
-    }
-  };
-
-  // Handle API errors
-  const handleApiError = (err, context) => {
-    if (!err.response) {
-      setError(
-        `Network error during ${context}. Please check your connection.`,
-      );
-      return;
-    }
-
-    if (err.response.status === 401) {
-      setError("Authentication expired. Please log in again.");
-      localStorage.removeItem("token");
-      setToken(null);
-      setTimeout(() => navigate("/login"), 2000);
-      return;
-    }
-
-    // Set detailed error message
-    let errorMessage = `Error during ${context}: `;
-
-    if (err.response.status === 400) {
-      errorMessage +=
-        err.response.data?.detail ||
-        err.response.data?.message ||
-        err.response.data?.error ||
-        "Invalid request parameters";
-    } else if (err.response.status === 500) {
-      errorMessage +=
-        err.response.data?.detail ||
-        err.response.data?.message ||
-        "Internal server error";
-    } else {
-      errorMessage +=
-        err.response.data?.detail ||
-        err.response.data?.message ||
-        err.response.data?.error ||
-        "Unknown error";
-    }
-
-    setError(errorMessage);
-
-    // Save debug info
-    setDebugInfo({
-      status: err.response.status,
-      data: err.response.data,
-      headers: err.response.headers,
-    });
-  };
-
-  // Format currency - preserve exact decimal values
+  // Format currency
   const formatCurrency = (amount) => {
     if (amount === undefined || amount === null) return "N/A";
 
@@ -721,16 +651,33 @@ const Reports = () => {
       return "NaN";
     }
 
-    // Return the exact value with XAF prefix, preserving decimals
-    return `XAF ${amount}`;
+    // Check if the amount is negative
+    const isNegative = amount < 0;
+    // Use absolute value for display but keep the minus sign
+    const displayAmount = isNegative
+      ? `XAF -${Math.abs(amount)}`
+      : `XAF ${amount}`;
+
+    // Return with a CSS class for negative values
+    return isNegative
+      ? `<span class="negative-value">${displayAmount}</span>`
+      : displayAmount;
   };
 
-  // Format date
+  // Format date with readable time
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
 
     try {
-      return format(new Date(dateString), "PPP");
+      const date = new Date(dateString);
+
+      // Format the date part
+      const formattedDate = format(date, "PPP");
+
+      // Format the time part in 12-hour format with AM/PM
+      const formattedTime = format(date, "h:mm a");
+
+      return `${formattedDate} at ${formattedTime}`;
     } catch (err) {
       console.error("Invalid date:", dateString);
       return "Invalid Date";
@@ -742,14 +689,17 @@ const Reports = () => {
     setReportType(type);
     setError(null);
 
-    // Clear inventory data when switching report types to prevent data leakage
+    // Clear inventory data when switching report types
     if (type !== "inventory") {
       setInventoryData([]);
       setInventoryError(null);
-    } else {
-      // Only fetch inventory data if we're switching to inventory report type
-      fetchInventoryData("", "");
     }
+  };
+
+  // Handle period selection
+  const handlePeriodSelect = (selectedPeriod) => {
+    setPeriod(selectedPeriod);
+    setError(null);
   };
 
   // Modal controls
@@ -758,6 +708,7 @@ const Reports = () => {
     setReportType("inventory");
     setStartDate("");
     setEndDate("");
+    setPeriod("daily");
     setError(null);
     setShowReportModal(true);
   };
@@ -766,33 +717,21 @@ const Reports = () => {
     setShowReportModal(false);
   };
 
-  // Render inventory data table with pagination
+  // Render inventory data table
   const renderInventoryDataTable = () => {
-    // Determine which data to use - prioritize fresh inventory data
-    const dataToUse =
-      inventoryData.length > 0
-        ? inventoryData
-        : report?.report_data?.products || [];
-
-    if (!dataToUse || dataToUse.length === 0) {
+    // Check if we have inventory data
+    if (
+      !inventoryData ||
+      !inventoryData.stockData ||
+      inventoryData.stockData.length === 0
+    ) {
       return (
         <div className="empty-inventory-message">
-          <Package size={48} />
+          <Package size={48} className="icon-package" />
           <p>No inventory data found for the selected date range</p>
           <button
             className="refresh-inventory-btn"
-            onClick={() =>
-              fetchInventoryData(
-                report?.date_range?.start
-                  ? new Date(report.date_range.start)
-                      .toISOString()
-                      .split("T")[0]
-                  : "",
-                report?.date_range?.end
-                  ? new Date(report.date_range.end).toISOString().split("T")[0]
-                  : "",
-              )
-            }
+            onClick={() => fetchInventoryData(startDate, endDate)}
           >
             <RefreshCw size={16} />
             Refresh Inventory Data
@@ -804,8 +743,11 @@ const Reports = () => {
     // Calculate pagination
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentItems = dataToUse.slice(indexOfFirstItem, indexOfLastItem);
-    const totalPages = Math.ceil(dataToUse.length / itemsPerPage);
+    const currentItems = inventoryData.stockData.slice(
+      indexOfFirstItem,
+      indexOfLastItem,
+    );
+    const totalPages = Math.ceil(inventoryData.stockData.length / itemsPerPage);
 
     return (
       <div className="table-container">
@@ -813,102 +755,108 @@ const Reports = () => {
           <thead>
             <tr>
               <th>Product</th>
-              <th>Category</th>
-              <th>Subcategory</th>
-              <th className="text-right">Price</th>
-              <th className="text-right">Quantity</th>
-              <th className="text-right">Min Qty</th>
-              <th>Expiry Date</th>
+              <th className="text-right">In Stock</th>
+              <th className="text-right">Low Stock</th>
+              <th>Status</th>
             </tr>
           </thead>
           <tbody>
-            {currentItems.length > 0 ? (
-              currentItems.map((item, index) => (
-                <tr
-                  key={index}
-                  className={
-                    item.is_expired
-                      ? "expired-row"
-                      : item.is_critical
-                        ? "critical-row"
-                        : ""
-                  }
-                >
-                  <td>{item.product_name || item.name}</td>
-                  <td>{item.category}</td>
-                  <td>{item.subcategory}</td>
-                  <td className="text-right">
-                    {formatCurrency(item.unit_price)}
+            {currentItems.map((item, index) => {
+              // Determine row class based on status
+              const isLowStock = item.lowStock > 0;
+              const isOutOfStock = item.outOfStock !== "In stock";
+              const rowClass = isOutOfStock
+                ? "out-of-stock-row"
+                : isLowStock
+                  ? "low-stock-row"
+                  : "";
+
+              return (
+                <tr key={index} className={rowClass}>
+                  <td>{item.name}</td>
+                  <td className="text-right">{item.inStock}</td>
+                  <td className="text-right">{item.lowStock}</td>
+                  <td className={isOutOfStock ? "status-warning" : ""}>
+                    {item.outOfStock}
                   </td>
-                  <td className="text-right">{item.quantity}</td>
-                  <td className="text-right">{item.min_quantity}</td>
-                  <td>{formatDate(item.expiry_date)}</td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={7} className="text-center">
-                  No data available
-                </td>
-              </tr>
-            )}
+              );
+            })}
           </tbody>
         </table>
 
         {/* Pagination controls */}
-        {renderPaginationControls(dataToUse.length, totalPages)}
+        {renderPaginationControls(inventoryData.stockData.length, totalPages)}
       </div>
     );
   };
 
-  // Render paginated table for any data type
-  const renderPaginatedTable = (items, columns) => {
-    if (!items || !Array.isArray(items) || items.length === 0) {
+  // Render sales data table
+  const renderSalesDataTable = () => {
+    // Check if we have sales data
+    if (
+      !report ||
+      !report.report_data ||
+      !report.report_data.products_sold ||
+      report.report_data.products_sold.length === 0
+    ) {
       return (
-        <tbody>
-          <tr>
-            <td colSpan={columns.length}>No data available</td>
-          </tr>
-        </tbody>
+        <div className="empty-inventory-message">
+          <ShoppingCart size={48} className="icon-shopping-cart" />
+          <p>No sales data found for the selected date range</p>
+        </div>
       );
     }
 
     // Calculate pagination
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentItems = items.slice(indexOfFirstItem, indexOfLastItem);
-    const totalPages = Math.ceil(items.length / itemsPerPage);
+    const currentItems = report.report_data.products_sold.slice(
+      indexOfFirstItem,
+      indexOfLastItem,
+    );
+    const totalPages = Math.ceil(
+      report.report_data.products_sold.length / itemsPerPage,
+    );
 
     return (
-      <>
-        <tbody>
-          {currentItems.map((item, index) => (
-            <tr key={index}>
-              {columns.map((column, colIndex) => (
-                <td
-                  key={colIndex}
-                  className={`${column.align === "right" ? "text-right" : ""} ${column.className || ""}`}
-                >
-                  {column.format
-                    ? column.format(item[column.key])
-                    : item[column.key]}
-                </td>
-              ))}
+      <div className="table-container">
+        <table className="report-table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th className="text-right">Unit Price</th>
+              <th className="text-right">Quantity</th>
+              <th className="text-right">Revenue</th>
+              <th>Period</th>
             </tr>
-          ))}
-        </tbody>
+          </thead>
+          <tbody>
+            {currentItems.map((item, index) => (
+              <tr key={index}>
+                <td>{item.product__name}</td>
+                <td className="text-right">
+                  {formatCurrency(item.unit_price)}
+                </td>
+                <td className="text-right">{item.total_quantity}</td>
+                <td
+                  className="text-right"
+                  dangerouslySetInnerHTML={{
+                    __html: formatCurrency(item.total_revenue),
+                  }}
+                ></td>
+                <td>{formatDate(item.period)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
 
         {/* Pagination controls */}
-        {items.length > itemsPerPage && (
-          <tfoot>
-            <tr>
-              <td colSpan={columns.length}>
-                {renderPaginationControls(items.length, totalPages)}
-              </td>
-            </tr>
-          </tfoot>
+        {renderPaginationControls(
+          report.report_data.products_sold.length,
+          totalPages,
         )}
-      </>
+      </div>
     );
   };
 
@@ -947,20 +895,41 @@ const Reports = () => {
 
   // Get inventory stats
   const getInventoryStats = () => {
-    const dataToUse =
-      inventoryData.length > 0
-        ? inventoryData
-        : report?.report_data?.products || [];
+    if (!inventoryData || !inventoryData.stockStatus) {
+      return {
+        totalProducts: 0,
+        inStock: 0,
+        lowStock: 0,
+        outOfStock: 0,
+        overstocked: 0,
+      };
+    }
 
-    return {
-      totalProducts: dataToUse.length,
-      expiredCount: dataToUse.filter((item) => item.is_expired).length,
-      lowStockCount: dataToUse.filter((item) => item.is_critical).length,
-      nearExpiryCount: dataToUse.filter((item) => item.is_near_expiry).length,
+    const stats = {
+      totalProducts: 0,
+      inStock: 0,
+      lowStock: 0,
+      outOfStock: 0,
+      overstocked: inventoryData.alerts?.overstocked || 0,
     };
+
+    // Calculate totals from stockStatus
+    inventoryData.stockStatus.forEach((status) => {
+      stats.totalProducts += status.value;
+
+      if (status.name === "In Stock") {
+        stats.inStock = status.value;
+      } else if (status.name === "Low Stock") {
+        stats.lowStock = status.value;
+      } else if (status.name === "Out of Stock") {
+        stats.outOfStock = status.value;
+      }
+    });
+
+    return stats;
   };
 
-  // Add a function to refresh a report from the API
+  // Refresh a report
   const refreshReport = async () => {
     if (!report) return;
 
@@ -968,24 +937,35 @@ const Reports = () => {
     setError(null);
 
     try {
-      // Create query parameters
-      const params = new URLSearchParams({
-        report_type: report.report_type,
-      });
+      // Build query parameters
+      const params = new URLSearchParams();
+      const currentReportType =
+        report.report_type ||
+        (report.report_data && report.report_data.report_type) ||
+        determineReportType(report);
 
-      // Add date parameters if they exist
-      if (report.date_range?.start) {
-        params.append(
-          "start_date",
-          new Date(report.date_range.start).toISOString(),
-        );
+      params.append("report_type", currentReportType);
+
+      // Only add period if no dates are provided
+      if (
+        (!startDate || startDate.trim() === "") &&
+        (!endDate || endDate.trim() === "")
+      ) {
+        params.append("period", period);
       }
+      // Only add dates if they are provided
+      else {
+        if (startDate) {
+          const formattedStartDate = new Date(startDate);
+          formattedStartDate.setUTCHours(0, 0, 0, 0);
+          params.append("start_date", formattedStartDate.toISOString());
+        }
 
-      if (report.date_range?.end) {
-        params.append(
-          "end_date",
-          new Date(report.date_range.end).toISOString(),
-        );
+        if (endDate) {
+          const formattedEndDate = new Date(endDate);
+          formattedEndDate.setUTCHours(23, 59, 59, 999);
+          params.append("end_date", formattedEndDate.toISOString());
+        }
       }
 
       // Generate the report using the API
@@ -999,54 +979,45 @@ const Reports = () => {
       console.log("Refreshed report response:", response.data);
 
       // Process the response
-      const responseData = response.data;
+      if (response.data && response.data.success && response.data.data) {
+        const reportData = response.data.data;
 
-      if (!responseData.success && !responseData.data?.report_data) {
-        throw new Error(responseData.message || "Failed to refresh report");
-      }
+        // Create a standardized report object
+        const newReport = {
+          id: reportData.report_id,
+          report_id: reportData.report_id,
+          report_type: reportData.report_data.report_type || currentReportType,
+          created_at: reportData.report_data.created_at,
+          generated_by: reportData.report_data.generated_by,
+          report_data: reportData.report_data,
+        };
 
-      // Update the report with fresh data
-      const updatedReport = {
-        ...report,
-        date_generated: new Date().toISOString(),
-        report_data:
-          responseData.data?.report_data ||
-          createEmptyReportData(report.report_type),
-        api_response: responseData,
-      };
+        console.log("Created refreshed report object:", newReport);
 
-      // For inventory reports, refresh inventory data
-      if (report.report_type === "inventory") {
-        const inventoryItems = await fetchInventoryData(
-          report.date_range?.start
-            ? new Date(report.date_range.start).toISOString().split("T")[0]
-            : "",
-          report.date_range?.end
-            ? new Date(report.date_range.end).toISOString().split("T")[0]
-            : "",
-        );
+        // Save and set the report
+        saveReport(newReport);
+        setReport(newReport);
 
-        if (inventoryItems.length > 0) {
-          updatedReport.report_data.products = [...inventoryItems];
-          updatedReport.report_data.total_products = inventoryItems.length;
-          updatedReport.report_data.expired_count = inventoryItems.filter(
-            (item) => item.is_expired,
-          ).length;
-          updatedReport.report_data.low_stock_count = inventoryItems.filter(
-            (item) => item.is_critical,
-          ).length;
-          updatedReport.report_data.near_expiry_count = inventoryItems.filter(
-            (item) => item.is_near_expiry,
-          ).length;
+        // If it's an inventory report, fetch inventory data
+        if (currentReportType === "inventory") {
+          fetchInventoryData(startDate, endDate);
         }
+      } else {
+        setError("Invalid response format from the server. Please try again.");
       }
-
-      // Save and set the updated report
-      saveReport(updatedReport);
-      setReport(JSON.parse(JSON.stringify(updatedReport)));
     } catch (err) {
       console.error("Error refreshing report:", err);
-      handleApiError(err, "report refresh");
+      if (err.response) {
+        setError(
+          err.response.data?.error?.non_field_errors?.[0] ||
+            err.response.data?.error?.report_type?.[0] ||
+            err.response.data?.error ||
+            err.response.data?.message ||
+            "Failed to refresh report. Please try again.",
+        );
+      } else {
+        setError("Network error. Please check your connection.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -1060,13 +1031,31 @@ const Reports = () => {
           <div className="error-message">
             <AlertCircle size={20} className="error-icon" />
             <span>
-              Access denied. Only managers and cashiers can access reports.
+              Access denied. Only managers, cashiers, and stock keepers can
+              access reports.
             </span>
           </div>
         </div>
       </div>
     );
   }
+
+  // Helper function to safely access nested report data
+  const getReportData = (path) => {
+    if (!report) return null;
+
+    // Handle direct properties on report
+    if (report[path] !== undefined) {
+      return report[path];
+    }
+
+    // Handle properties in report_data
+    if (report.report_data && report.report_data[path] !== undefined) {
+      return report.report_data[path];
+    }
+
+    return null;
+  };
 
   return (
     <div className="report-container">
@@ -1097,20 +1086,6 @@ const Reports = () => {
                 <span>Generate New Report</span>
               </button>
 
-              {/* Debug Info */}
-              {debugInfo && (
-                <div className="debug-section">
-                  <h3 className="debug-title">
-                    <Info size={16} className="debug-icon" />
-                    Debug Information
-                  </h3>
-                  <div className="debug-content">
-                    <p>Status: {debugInfo.status}</p>
-                    <p>Error: {JSON.stringify(debugInfo.data)}</p>
-                  </div>
-                </div>
-              )}
-
               {/* Saved Reports Section */}
               {savedReports.length > 0 && (
                 <div className="saved-reports-section">
@@ -1119,39 +1094,64 @@ const Reports = () => {
                     Saved Reports
                   </h3>
                   <div className="saved-reports-list">
-                    {savedReports.map((savedReport) => (
-                      <div
-                        key={savedReport.id}
-                        className="saved-report-item"
-                        onClick={() => loadReport(savedReport.id)}
-                      >
-                        <div className="saved-report-info">
-                          <div className="saved-report-type">
-                            {savedReport.report_type === "inventory" ? (
-                              <Package size={14} className="report-type-icon" />
-                            ) : (
-                              <BarChart
-                                size={14}
-                                className="report-type-icon"
-                              />
-                            )}
-                            {savedReport.report_type?.toUpperCase() ||
-                              "UNKNOWN"}
+                    {savedReports.map((savedReport) => {
+                      const reportId = savedReport.id || savedReport.report_id;
+                      const reportType =
+                        savedReport.report_type ||
+                        (savedReport.report_data &&
+                          savedReport.report_data.report_type) ||
+                        determineReportType(savedReport);
+                      const createdAt =
+                        savedReport.created_at ||
+                        (savedReport.report_data &&
+                          savedReport.report_data.created_at) ||
+                        savedReport.generated_at;
+
+                      return (
+                        <div
+                          key={reportId}
+                          className="saved-report-item"
+                          onClick={() => loadReport(reportId)}
+                        >
+                          <div className="saved-report-info">
+                            <div className="saved-report-type">
+                              {reportType === "inventory" ? (
+                                <Package
+                                  size={14}
+                                  className="report-type-icon"
+                                />
+                              ) : (
+                                <BarChart
+                                  size={14}
+                                  className="report-type-icon"
+                                />
+                              )}
+                              {reportType.toUpperCase()}
+                            </div>
+                            <div className="saved-report-date">
+                              <Calendar size={12} className="date-icon" />
+                              {formatDate(createdAt)}
+                            </div>
                           </div>
-                          <div className="saved-report-date">
-                            <Calendar size={12} className="date-icon" />
-                            {formatDate(savedReport.date_generated)}
+                          <div className="saved-report-actions">
+                            <button
+                              className="download-report-btn"
+                              onClick={(e) => downloadReport(reportId, e)}
+                              title="Download report"
+                            >
+                              <Download size={16} />
+                            </button>
+                            <button
+                              className="delete-report-btn"
+                              onClick={(e) => deleteReport(reportId, e)}
+                              title="Delete report"
+                            >
+                              <X size={16} />
+                            </button>
                           </div>
                         </div>
-                        <button
-                          className="delete-report-btn"
-                          onClick={(e) => deleteReport(savedReport.id, e)}
-                          title="Delete report"
-                        >
-                          <X size={16} />
-                        </button>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -1167,7 +1167,7 @@ const Reports = () => {
               </h2>
               <p className="results-description">
                 {report
-                  ? `Generated on ${formatDate(report.date_generated)}`
+                  ? `Generated on ${formatDate(report.created_at || (report.report_data && report.report_data.created_at))}`
                   : "No report generated yet"}
               </p>
             </div>
@@ -1185,7 +1185,7 @@ const Reports = () => {
                 </div>
               )}
 
-              {!report && !error && !isLoading && !isLoadingInventory && (
+              {!report && !error && !isGenerating && !isLoadingInventory && (
                 <div className="empty-state">
                   <FileText className="empty-icon" />
                   <p className="empty-text">
@@ -1194,7 +1194,7 @@ const Reports = () => {
                 </div>
               )}
 
-              {(isLoading || isLoadingInventory) && (
+              {(isGenerating || isLoadingInventory) && (
                 <div className="loading-state">
                   <Loader2 className="loading-icon spin" />
                   <p className="loading-text">Generating your report...</p>
@@ -1206,12 +1206,19 @@ const Reports = () => {
                   {/* Report Header with Date Range */}
                   <div className="report-header-section">
                     <div className="report-type-badge">
-                      {report.report_type === "inventory" ? (
+                      {report.report_type === "inventory" ||
+                      (report.report_data &&
+                        report.report_data.report_type === "inventory") ? (
                         <Package size={14} className="badge-icon" />
                       ) : (
                         <BarChart size={14} className="badge-icon" />
                       )}
-                      {report.report_type?.toUpperCase() || "UNKNOWN"}
+                      {(
+                        report.report_type ||
+                        (report.report_data &&
+                          report.report_data.report_type) ||
+                        determineReportType(report)
+                      ).toUpperCase()}
                     </div>
                     {(startDate || endDate) && (
                       <div className="date-filter-info">
@@ -1235,31 +1242,37 @@ const Reports = () => {
 
                   <div className="report-content-section">
                     {/* Sales Report */}
-                    {report.report_type === "sales" && report.report_data && (
+                    {(report.report_type === "sales" ||
+                      (report.report_data &&
+                        report.report_data.report_type === "sales")) && (
                       <>
                         <div className="report-stats">
                           <div className="stat-card">
-                            <div className="stat-card-icon">
-                              <ShoppingCart size={20} className="stat-icon" />
+                            <div className="stat-card-icon sales">
+                              <ShoppingCart
+                                size={20}
+                                className="icon-shopping-cart"
+                              />
                             </div>
                             <div className="stat-content">
                               <p className="stat-label">Completed Sales</p>
                               <p className="stat-value">
-                                {report.report_data.total_completed_sales || 0}
+                                {getReportData("total_completed_sales") || 0}
                               </p>
                             </div>
                           </div>
                           <div className="stat-card">
                             <div className="stat-card-icon revenue">
-                              <DollarSign size={20} className="stat-icon" />
+                              <DollarSign size={20} className="icon-dollar" />
                             </div>
                             <div className="stat-content">
                               <p className="stat-label">Completed Revenue</p>
-                              <p className="stat-value primary">
+                              <p
+                                className={`stat-value ${(getReportData("total_completed_revenue") || 0) < 0 ? "negative-value" : "primary"}`}
+                              >
                                 {formatCurrency(
-                                  report.report_data.total_completed_revenue ||
-                                    0,
-                                )}
+                                  getReportData("total_completed_revenue") || 0,
+                                ).replace(/<\/?span.*?>/g, "")}
                               </p>
                             </div>
                           </div>
@@ -1268,25 +1281,63 @@ const Reports = () => {
                         <div className="report-stats">
                           <div className="stat-card">
                             <div className="stat-card-icon credit">
-                              <CreditCard size={20} className="stat-icon" />
+                              <ShoppingCart size={20} className="icon-credit" />
                             </div>
                             <div className="stat-content">
                               <p className="stat-label">Credit Sales</p>
                               <p className="stat-value">
-                                {report.report_data.total_credit_sales || 0}
+                                {getReportData("total_credit_sales") || 0}
                               </p>
                             </div>
                           </div>
                           <div className="stat-card">
-                            <div className="stat-card-icon warning">
-                              <AlertCircle size={20} className="stat-icon" />
+                            <div className="stat-card-icon credit-revenue">
+                              <DollarSign
+                                size={20}
+                                className="icon-credit-revenue"
+                              />
                             </div>
                             <div className="stat-content">
-                              <p className="stat-label">Credit Amount</p>
-                              <p className="stat-value warning">
+                              <p className="stat-label">Credit Revenue</p>
+                              <p
+                                className={`stat-value ${(getReportData("total_credit_revenue") || 0) < 0 ? "negative-value" : "primary"}`}
+                              >
                                 {formatCurrency(
-                                  report.report_data.total_credit_amount || 0,
-                                )}
+                                  getReportData("total_credit_revenue") || 0,
+                                ).replace(/<\/?span.*?>/g, "")}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="report-stats">
+                          <div className="stat-card">
+                            <div className="stat-card-icon total">
+                              <DollarSign size={20} className="icon-total" />
+                            </div>
+                            <div className="stat-content">
+                              <p className="stat-label">Total General</p>
+                              <p
+                                className={`stat-value ${(getReportData("total_general") || 0) < 0 ? "negative-value" : "primary"}`}
+                              >
+                                {formatCurrency(
+                                  getReportData("total_general") || 0,
+                                ).replace(/<\/?span.*?>/g, "")}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="stat-card">
+                            <div className="stat-card-icon profit">
+                              <DollarSign size={20} className="icon-profit" />
+                            </div>
+                            <div className="stat-content">
+                              <p className="stat-label">Total Profit</p>
+                              <p
+                                className={`stat-value ${(getReportData("total_profit") || 0) < 0 ? "negative-value" : "primary"}`}
+                              >
+                                {formatCurrency(
+                                  getReportData("total_profit") || 0,
+                                ).replace(/<\/?span.*?>/g, "")}
                               </p>
                             </div>
                           </div>
@@ -1295,28 +1346,34 @@ const Reports = () => {
                         <div className="report-stats">
                           <div className="stat-card">
                             <div className="stat-card-icon advance">
-                              <Wallet size={20} className="stat-icon" />
+                              <DollarSign size={20} className="icon-advance" />
                             </div>
                             <div className="stat-content">
                               <p className="stat-label">Advance Paid</p>
-                              <p className="stat-value">
+                              <p
+                                className={`stat-value ${(getReportData("total_advance_paid") || 0) < 0 ? "negative-value" : "primary"}`}
+                              >
                                 {formatCurrency(
-                                  report.report_data.total_advance_paid || 0,
-                                )}
+                                  getReportData("total_advance_paid") || 0,
+                                ).replace(/<\/?span.*?>/g, "")}
                               </p>
                             </div>
                           </div>
                           <div className="stat-card">
-                            <div className="stat-card-icon danger">
-                              <TrendingDown size={20} className="stat-icon" />
+                            <div className="stat-card-icon outstanding">
+                              <DollarSign
+                                size={20}
+                                className="icon-outstanding"
+                              />
                             </div>
                             <div className="stat-content">
-                              <p className="stat-label">Remaining Amount</p>
-                              <p className="stat-value danger">
+                              <p className="stat-label">Money Outstanding</p>
+                              <p
+                                className={`stat-value ${(getReportData("money_outstanding") || 0) < 0 ? "negative-value" : "primary"}`}
+                              >
                                 {formatCurrency(
-                                  report.report_data.total_remaining_amount ||
-                                    0,
-                                )}
+                                  getReportData("money_outstanding") || 0,
+                                ).replace(/<\/?span.*?>/g, "")}
                               </p>
                             </div>
                           </div>
@@ -1324,15 +1381,35 @@ const Reports = () => {
 
                         <div className="report-stats">
                           <div className="stat-card">
-                            <div className="stat-card-icon cash">
-                              <DollarSign size={20} className="stat-icon" />
+                            <div className="stat-card-icon credit-profit">
+                              <DollarSign
+                                size={20}
+                                className="icon-credit-profit"
+                              />
                             </div>
                             <div className="stat-content">
-                              <p className="stat-label">Cash in Hand</p>
-                              <p className="stat-value primary">
+                              <p className="stat-label">Credit Profit</p>
+                              <p
+                                className={`stat-value ${(getReportData("credit_profit") || 0) < 0 ? "negative-value" : "primary"}`}
+                              >
                                 {formatCurrency(
-                                  report.report_data.cash_in_hand || 0,
-                                )}
+                                  getReportData("credit_profit") || 0,
+                                ).replace(/<\/?span.*?>/g, "")}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="stat-card">
+                            <div className="stat-card-icon marge">
+                              <DollarSign size={20} className="icon-marge" />
+                            </div>
+                            <div className="stat-content">
+                              <p className="stat-label">Marge</p>
+                              <p
+                                className={`stat-value ${(getReportData("marge") || 0) < 0 ? "negative-value" : "primary"}`}
+                              >
+                                {formatCurrency(
+                                  getReportData("marge") || 0,
+                                ).replace(/<\/?span.*?>/g, "")}
                               </p>
                             </div>
                           </div>
@@ -1343,114 +1420,77 @@ const Reports = () => {
                             <ShoppingCart size={16} className="table-icon" />
                             Products Sold
                           </h4>
-                          <div className="table-container">
-                            <table className="report-table">
-                              <thead>
-                                <tr>
-                                  <th>Product</th>
-                                  <th className="text-right">Quantity</th>
-                                  <th className="text-right">Revenue</th>
-                                </tr>
-                              </thead>
-                              {Array.isArray(
-                                report.report_data.products_sold,
-                              ) ? (
-                                renderPaginatedTable(
-                                  report.report_data.products_sold,
-                                  [
-                                    { key: "product__name", label: "Product" },
-                                    {
-                                      key: "total_quantity",
-                                      label: "Quantity",
-                                      align: "right",
-                                    },
-                                    {
-                                      key: "total_revenue",
-                                      label: "Revenue",
-                                      align: "right",
-                                      format: formatCurrency,
-                                      className: "primary",
-                                    },
-                                  ],
-                                )
-                              ) : (
-                                <tbody>
-                                  <tr>
-                                    <td colSpan="3">
-                                      No product data available
-                                    </td>
-                                  </tr>
-                                </tbody>
-                              )}
-                            </table>
-                          </div>
+                          {renderSalesDataTable()}
                         </div>
                       </>
                     )}
 
                     {/* Inventory Report */}
-                    {report.report_type === "inventory" && (
-                      <>
-                        <div className="report-stats">
-                          <div className="stat-card">
-                            <div className="stat-card-icon inventory">
-                              <Package size={20} className="stat-icon" />
+                    {(report.report_type === "inventory" ||
+                      (report.report_data &&
+                        report.report_data.report_type === "inventory")) &&
+                      inventoryData && (
+                        <>
+                          <div className="report-stats">
+                            <div className="stat-card">
+                              <div className="stat-card-icon inventory">
+                                <Package size={20} className="stat-icon" />
+                              </div>
+                              <div className="stat-content">
+                                <p className="stat-label">Total Products</p>
+                                <p className="stat-value">
+                                  {getInventoryStats().totalProducts}
+                                </p>
+                              </div>
                             </div>
-                            <div className="stat-content">
-                              <p className="stat-label">Total Products</p>
-                              <p className="stat-value">
-                                {getInventoryStats().totalProducts}
-                              </p>
+                            <div className="stat-card">
+                              <div className="stat-card-icon">
+                                <Package size={20} className="stat-icon" />
+                              </div>
+                              <div className="stat-content">
+                                <p className="stat-label">In Stock</p>
+                                <p className="stat-value">
+                                  {getInventoryStats().inStock}
+                                </p>
+                              </div>
                             </div>
                           </div>
-                          <div className="stat-card">
-                            <div className="stat-card-icon danger">
-                              <AlertCircle size={20} className="stat-icon" />
-                            </div>
-                            <div className="stat-content">
-                              <p className="stat-label">Expired Products</p>
-                              <p className="stat-value danger">
-                                {getInventoryStats().expiredCount}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
 
-                        <div className="report-stats">
-                          <div className="stat-card">
-                            <div className="stat-card-icon warning">
-                              <Clock size={20} className="stat-icon" />
+                          <div className="report-stats">
+                            <div className="stat-card">
+                              <div className="stat-card-icon warning">
+                                <AlertCircle size={20} className="stat-icon" />
+                              </div>
+                              <div className="stat-content">
+                                <p className="stat-label">Low Stock</p>
+                                <p className="stat-value warning">
+                                  {getInventoryStats().lowStock}
+                                </p>
+                              </div>
                             </div>
-                            <div className="stat-content">
-                              <p className="stat-label">Near Expiry</p>
-                              <p className="stat-value warning">
-                                {getInventoryStats().nearExpiryCount}
-                              </p>
+                            <div className="stat-card">
+                              <div className="stat-card-icon">
+                                <Package size={20} className="stat-icon" />
+                              </div>
+                              <div className="stat-content">
+                                <p className="stat-label">Overstocked</p>
+                                <p className="stat-value">
+                                  {getInventoryStats().overstocked}
+                                </p>
+                              </div>
                             </div>
                           </div>
-                          <div className="stat-card">
-                            <div className="stat-card-icon warning">
-                              <ChevronsDown size={20} className="stat-icon" />
-                            </div>
-                            <div className="stat-content">
-                              <p className="stat-label">Low Stock</p>
-                              <p className="stat-value warning">
-                                {getInventoryStats().lowStockCount}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
 
-                        {/* Detailed Inventory Data Table */}
-                        <div className="report-table-section">
-                          <h4 className="table-title">
-                            <Database size={16} className="table-icon" />
-                            Detailed Inventory
-                          </h4>
-                          {renderInventoryDataTable()}
-                        </div>
-                      </>
-                    )}
+                          {/* Detailed Inventory Data Table */}
+                          <div className="report-table-section">
+                            <h4 className="table-title">
+                              <Database size={16} className="table-icon" />
+                              Detailed Inventory
+                            </h4>
+                            {renderInventoryDataTable()}
+                          </div>
+                        </>
+                      )}
                   </div>
 
                   <div className="report-footer">
@@ -1458,12 +1498,21 @@ const Reports = () => {
                       <Users size={14} className="user-icon" />
                       Generated by:{" "}
                       <span className="user-name">
-                        {report.generated_by || "System"}
+                        {report.generated_by ||
+                          (report.report_data &&
+                            report.report_data.generated_by) ||
+                          "System"}
                       </span>
                     </p>
                     <div className="report-timestamp">
                       <Clock size={14} className="timestamp-icon" />
-                      <span>{formatDate(report.date_generated)}</span>
+                      <span>
+                        {formatDate(
+                          report.created_at ||
+                            (report.report_data &&
+                              report.report_data.created_at),
+                        )}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -1471,337 +1520,6 @@ const Reports = () => {
             </div>
           </div>
         </div>
-
-        {/* Report Dashboard */}
-        {report && (
-          <div className="dashboard-card">
-            <div className="dashboard-header">
-              <h2 className="dashboard-title">
-                <BarChart size={18} className="dashboard-icon" />
-                Report Dashboard
-              </h2>
-              <p className="dashboard-description"></p>
-            </div>
-            <div className="dashboard-content">
-              <div className="dashboard-tabs">
-                <div className="tabs-list">
-                  <button
-                    className="tab-trigger active"
-                    data-tab="summary"
-                    onClick={() => setActiveTab("summary")}
-                  >
-                    <Zap size={16} className="tab-icon" />
-                    Summary
-                  </button>
-                  {report.report_type === "inventory" && (
-                    <button
-                      className="tab-trigger"
-                      data-tab="inventory-details"
-                      onClick={() => setActiveTab("inventory-details")}
-                    >
-                      <Package size={16} className="tab-icon" />
-                      Inventory Details
-                    </button>
-                  )}
-                </div>
-
-                <div className="tab-content active" id="summary">
-                  <div className="summary-cards">
-                    {report.report_type === "sales" && report.report_data && (
-                      <>
-                        <div className="summary-card">
-                          <div className="summary-card-header">
-                            <h3 className="summary-card-title">
-                              <ShoppingCart
-                                size={16}
-                                className="summary-icon"
-                              />
-                              Completed Sales
-                            </h3>
-                          </div>
-                          <div className="summary-card-content">
-                            <div className="summary-value-container">
-                              <div className="summary-value">
-                                {report.report_data.total_completed_sales || 0}
-                              </div>
-                              <div className="stat-change">
-                                <span className="positive">
-                                  <TrendingUp
-                                    size={14}
-                                    className="trend-icon"
-                                  />
-                                  +5%
-                                </span>
-                                <span className="period">vs. last period</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="summary-card">
-                          <div className="summary-card-header">
-                            <h3 className="summary-card-title">
-                              <DollarSign size={16} className="summary-icon" />
-                              Completed Revenue
-                            </h3>
-                          </div>
-                          <div className="summary-card-content">
-                            <div className="summary-value-container">
-                              <p className="summary-value">
-                                {formatCurrency(
-                                  report.report_data.total_completed_revenue ||
-                                    0,
-                                )}
-                              </p>
-                              <div className="stat-change">
-                                <span className="positive">
-                                  <TrendingUp
-                                    size={14}
-                                    className="trend-icon"
-                                  />
-                                  +8.2%
-                                </span>
-                                <span className="period">vs. last period</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="summary-card">
-                          <div className="summary-card-header">
-                            <h3 className="summary-card-title">
-                              <CreditCard size={16} className="summary-icon" />
-                              Credit Sales
-                            </h3>
-                          </div>
-                          <div className="summary-card-content">
-                            <div className="summary-value-container">
-                              <p className="summary-value">
-                                {report.report_data.total_credit_sales || 0}
-                              </p>
-                              <div className="stat-change">
-                                <span className="negative">
-                                  <TrendingDown
-                                    size={14}
-                                    className="trend-icon"
-                                  />
-                                  -2.1%
-                                </span>
-                                <span className="period">vs. last period</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="summary-card">
-                          <div className="summary-card-header">
-                            <h3 className="summary-card-title">
-                              <Wallet size={16} className="summary-icon" />
-                              Cash in Hand
-                            </h3>
-                          </div>
-                          <div className="summary-card-content">
-                            <div className="summary-value-container">
-                              <p className="summary-value primary">
-                                {formatCurrency(
-                                  report.report_data.cash_in_hand || 0,
-                                )}
-                              </p>
-                              <div className="stat-change">
-                                <span className="positive">
-                                  <TrendingUp
-                                    size={14}
-                                    className="trend-icon"
-                                  />
-                                  +12.5%
-                                </span>
-                                <span className="period">vs. last period</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="summary-card">
-                          <div className="summary-card-header">
-                            <h3 className="summary-card-title">
-                              <Package size={16} className="summary-icon" />
-                              Products Sold
-                            </h3>
-                          </div>
-                          <div className="summary-card-content">
-                            <div className="summary-value-container">
-                              <p className="summary-value">
-                                {Array.isArray(report.report_data.products_sold)
-                                  ? report.report_data.products_sold.length
-                                  : 0}
-                              </p>
-                              <div className="stat-change">
-                                <span className="positive">
-                                  <TrendingUp
-                                    size={14}
-                                    className="trend-icon"
-                                  />
-                                  +3.7%
-                                </span>
-                                <span className="period">vs. last period</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </>
-                    )}
-
-                    {/* Inventory Dashboard Summary */}
-                    {report.report_type === "inventory" && (
-                      <>
-                        <div className="summary-card">
-                          <div className="summary-card-header">
-                            <h3 className="summary-card-title">
-                              <Package size={16} className="summary-icon" />
-                              Total Products
-                            </h3>
-                          </div>
-                          <div className="summary-card-content">
-                            <div className="summary-value-container">
-                              <p className="summary-value">
-                                {getInventoryStats().totalProducts}
-                              </p>
-                              <div className="stat-change">
-                                <span className="positive">
-                                  <ChevronsUp
-                                    size={14}
-                                    className="trend-icon"
-                                  />
-                                  In Stock
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="summary-card">
-                          <div className="summary-card-header">
-                            <h3 className="summary-card-title">
-                              <AlertCircle size={16} className="summary-icon" />
-                              Expired Products
-                            </h3>
-                          </div>
-                          <div className="summary-card-content">
-                            <div className="summary-value-container">
-                              <div className="summary-value danger">
-                                {getInventoryStats().expiredCount}
-                              </div>
-                              <div className="stat-change">
-                                <span className="negative">
-                                  <Percent size={14} className="trend-icon" />
-                                  {getInventoryStats().totalProducts > 0
-                                    ? (
-                                        (getInventoryStats().expiredCount /
-                                          getInventoryStats().totalProducts) *
-                                        100
-                                      ).toFixed(1)
-                                    : 0}
-                                  % of inventory
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="summary-card">
-                          <div className="summary-card-header">
-                            <h3 className="summary-card-title">
-                              <Shield size={16} className="summary-icon" />
-                              Low Stock
-                            </h3>
-                          </div>
-                          <div className="summary-card-content">
-                            <div className="summary-value-container">
-                              <div className="summary-value warning">
-                                {getInventoryStats().lowStockCount}
-                              </div>
-                              <div className="stat-change">
-                                <span className="warning">
-                                  <Percent size={14} className="trend-icon" />
-                                  {getInventoryStats().totalProducts > 0
-                                    ? (
-                                        (getInventoryStats().lowStockCount /
-                                          getInventoryStats().totalProducts) *
-                                        100
-                                      ).toFixed(1)
-                                    : 0}
-                                  % of inventory
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {report.report_type === "inventory" && (
-                  <div className="tab-content" id="inventory-details">
-                    <div className="inventory-details-section">
-                      <div className="inventory-filters">
-                        <div className="filter-badges">
-                          <span className="filter-label">
-                            <Filter size={14} className="filter-icon" />
-                            Quick Filters:
-                          </span>
-                          <button className="filter-badge all active">
-                            All
-                          </button>
-                          <button className="filter-badge critical">
-                            Low Stock
-                          </button>
-                          <button className="filter-badge expired">
-                            Expired
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="inventory-details-table">
-                        {renderInventoryDataTable()}
-                      </div>
-
-                      <div className="inventory-summary">
-                        <div className="inventory-summary-item">
-                          <Info size={16} />
-                          <span>
-                            Products with quantity below minimum stock level are
-                            marked as <strong>Low Stock</strong>
-                          </span>
-                        </div>
-                        <div className="inventory-summary-item">
-                          <AlertCircle size={16} />
-                          <span>
-                            Products past their expiration date are marked as{" "}
-                            <strong>Expired</strong>
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-        {report && report.api_response && debugInfo && (
-          <div className="debug-section">
-            <h3 className="debug-title">
-              <Database size={16} className="debug-icon" />
-              API Response
-            </h3>
-            <div className="debug-content">
-              <pre className="debug-json">
-                {JSON.stringify(report.api_response, null, 2)}
-              </pre>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Report Generation Modal */}
@@ -1842,6 +1560,48 @@ const Reports = () => {
                   >
                     <BarChart size={18} />
                     <span>Sales</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Period Selection */}
+              <div className="report-type-section">
+                <h4>
+                  <Clock size={16} className="section-icon" />
+                  Period
+                </h4>
+                <div className="report-type-buttons">
+                  <button
+                    type="button"
+                    className={`report-type-btn ${period === "daily" ? "active" : ""}`}
+                    onClick={() => handlePeriodSelect("daily")}
+                  >
+                    <Calendar size={18} />
+                    <span>Daily</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`report-type-btn ${period === "weekly" ? "active" : ""}`}
+                    onClick={() => handlePeriodSelect("weekly")}
+                  >
+                    <Calendar size={18} />
+                    <span>Weekly</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`report-type-btn ${period === "monthly" ? "active" : ""}`}
+                    onClick={() => handlePeriodSelect("monthly")}
+                  >
+                    <Calendar size={18} />
+                    <span>Monthly</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`report-type-btn ${period === "yearly" ? "active" : ""}`}
+                    onClick={() => handlePeriodSelect("yearly")}
+                  >
+                    <Calendar size={18} />
+                    <span>Yearly</span>
                   </button>
                 </div>
               </div>
@@ -1899,9 +1659,9 @@ const Reports = () => {
                 <button
                   type="submit"
                   className="generate-btn"
-                  disabled={isLoading}
+                  disabled={isGenerating}
                 >
-                  {isLoading ? (
+                  {isGenerating ? (
                     <span className="btn-content">
                       <Loader2 className="btn-icon spin" />
                       Generating...
