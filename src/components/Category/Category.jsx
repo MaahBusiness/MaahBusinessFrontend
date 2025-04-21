@@ -1702,3 +1702,5 @@ const Category = () => {
 };
 
 export default Category;
+
+// i want u to work on the segmentation so that the charts can get values according to days which are the 24h , week which are the values of days, months which are the value of the weeks and year which are the values of the months and I want u to check that if the segmentation is already working if not implement it so it can do it on this dashboard

@@ -25,21 +25,6 @@ import {
   Download,
 } from "lucide-react";
 import "./reports.css";
-import {
-  FaFileAlt,
-  FaDownload,
-  FaTrash,
-  FaCalendarAlt,
-  FaFilter,
-  FaChartBar,
-  FaExclamationTriangle,
-  FaUser,
-  FaClock,
-  FaSync,
-  FaChevronLeft,
-  FaChevronRight,
-} from "react-icons/fa";
-import { FiRefreshCw, FiEye, FiEyeOff } from "react-icons/fi";
 
 const Reports = () => {
   const navigate = useNavigate();
@@ -54,7 +39,7 @@ const Reports = () => {
   const [reportType, setReportType] = useState("inventory");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [period, setPeriod] = useState("");
+  const [period, setPeriod] = useState("daily");
   const [showReportModal, setShowReportModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -71,7 +56,9 @@ const Reports = () => {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [reportsPerPage, setReportsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [reportsCurrentPage, setReportsCurrentPage] = useState(1);
+  const [reportsPerPage] = useState(10);
 
   // Authentication check on mount
   useEffect(() => {
@@ -98,7 +85,9 @@ const Reports = () => {
         const parsedReports = JSON.parse(savedReportsData);
         if (Array.isArray(parsedReports) && parsedReports.length > 0) {
           console.log("Loaded reports from localStorage:", parsedReports);
-          setSavedReports(parsedReports);
+          // Sort reports by creation date (newest first)
+          const sortedReports = sortReportsByDate(parsedReports);
+          setSavedReports(sortedReports);
         }
       }
     } catch (error) {
@@ -241,6 +230,19 @@ const Reports = () => {
     return reportType || "unknown";
   };
 
+  // Helper function to sort reports by date (newest first)
+  const sortReportsByDate = (reports) => {
+    return [...reports].sort((a, b) => {
+      const dateA = new Date(
+        a.created_at || (a.report_data && a.report_data.created_at) || 0,
+      );
+      const dateB = new Date(
+        b.created_at || (b.report_data && b.report_data.created_at) || 0,
+      );
+      return dateB - dateA; // Descending order (newest first)
+    });
+  };
+
   // Save report to local state and localStorage
   const saveReport = (newReport) => {
     if (!newReport) return;
@@ -283,6 +285,9 @@ const Reports = () => {
     } else {
       updatedReports = [...savedReports, reportToSave];
     }
+
+    // Sort reports by date (newest first)
+    updatedReports = sortReportsByDate(updatedReports);
 
     try {
       setSavedReports(updatedReports);
@@ -452,13 +457,13 @@ const Reports = () => {
           return report;
         });
 
+        // Sort reports by date (newest first)
+        const sortedReports = sortReportsByDate(processedReports);
+
         // Store reports in localStorage with a unique key
-        localStorage.setItem(
-          "savedReportsData",
-          JSON.stringify(processedReports),
-        );
-        setSavedReports(processedReports);
-        console.log("Saved processed reports:", processedReports);
+        localStorage.setItem("savedReportsData", JSON.stringify(sortedReports));
+        setSavedReports(sortedReports);
+        console.log("Saved processed reports:", sortedReports);
       }
 
       setIsLoading(false);
@@ -546,6 +551,10 @@ const Reports = () => {
           created_at: reportData.report_data.created_at,
           generated_by: reportData.report_data.generated_by,
           report_data: reportData.report_data,
+          // Store the period and date range for future reference
+          period: !startDate && !endDate ? period : null,
+          start_date: startDate ? new Date(startDate).toISOString() : null,
+          end_date: endDate ? new Date(endDate).toISOString() : null,
         };
 
         console.log("Created new report object:", newReport);
@@ -554,9 +563,18 @@ const Reports = () => {
         saveReport(newReport);
         setReport(newReport);
 
-        // If it's an inventory report, fetch inventory data
+        // If it's an inventory report, fetch inventory data with the same parameters
         if (reportType === "inventory") {
-          fetchInventoryData(startDate, endDate);
+          if (
+            (!startDate || startDate.trim() === "") &&
+            (!endDate || endDate.trim() === "")
+          ) {
+            // If no dates were provided, use the period
+            await fetchInventoryData("", "");
+          } else {
+            // Otherwise use the date range
+            await fetchInventoryData(startDate, endDate);
+          }
         }
       } else {
         setError("Invalid response format from the server. Please try again.");
@@ -596,30 +614,110 @@ const Reports = () => {
     }
 
     try {
-      // Build URL with query parameters
+      // First try to get the report data from the report generation API
+      const reportParams = new URLSearchParams();
+      reportParams.append("report_type", "inventory");
+
+      // Add date parameters if provided
+      if (useStartDate && useStartDate.trim() !== "") {
+        const formattedStartDate = new Date(useStartDate);
+        formattedStartDate.setUTCHours(0, 0, 0, 0);
+        reportParams.append("start_date", formattedStartDate.toISOString());
+      }
+
+      if (useEndDate && useEndDate.trim() !== "") {
+        const formattedEndDate = new Date(useEndDate);
+        formattedEndDate.setUTCHours(23, 59, 59, 999);
+        reportParams.append("end_date", formattedEndDate.toISOString());
+      }
+
+      // Add period parameter if no dates are provided
+      if (
+        (!useStartDate || useStartDate.trim() === "") &&
+        (!useEndDate || useEndDate.trim() === "")
+      ) {
+        reportParams.append("period", period);
+      }
+
+      console.log(
+        "Generating inventory report with params:",
+        reportParams.toString(),
+      );
+
+      // Try to get the report data first
+      try {
+        const reportResponse = await axios.get(
+          `http://localhost:8000/api/v1/report/generate/?${reportParams.toString()}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
+
+        console.log(
+          "Inventory report generation response:",
+          reportResponse.data,
+        );
+
+        if (
+          reportResponse.data &&
+          reportResponse.data.success &&
+          reportResponse.data.data
+        ) {
+          // If we got a valid report, use that data
+          const reportData = reportResponse.data.data;
+
+          // If the report has product data, we can use it directly
+          if (
+            reportData.report_data &&
+            reportData.report_data.product_list &&
+            reportData.report_data.product_list.length > 0
+          ) {
+            setIsLoadingInventory(false);
+            return reportData.report_data;
+          }
+        }
+      } catch (reportError) {
+        console.error("Error generating inventory report:", reportError);
+        // Continue to try the dashboard API if report generation fails
+      }
+
+      // If report generation didn't return useful data, try the dashboard API
+      // Build URL with query parameters for the dashboard API
       let url = "http://localhost:8000/api/v1/dashboard/inventory/";
       const params = new URLSearchParams();
 
       // Only add date parameters if they are not empty strings
       if (useStartDate && useStartDate.trim() !== "") {
-        params.append("start_date", useStartDate);
+        const formattedStartDate = new Date(useStartDate);
+        formattedStartDate.setUTCHours(0, 0, 0, 0);
+        params.append("start_date", formattedStartDate.toISOString());
       }
 
       if (useEndDate && useEndDate.trim() !== "") {
-        params.append("end_date", useEndDate);
+        const formattedEndDate = new Date(useEndDate);
+        formattedEndDate.setUTCHours(23, 59, 59, 999);
+        params.append("end_date", formattedEndDate.toISOString());
+      }
+
+      // Add period parameter if no dates are provided
+      if (
+        (!useStartDate || useStartDate.trim() === "") &&
+        (!useEndDate || useEndDate.trim() === "")
+      ) {
+        params.append("period", period);
       }
 
       if (params.toString()) {
         url += `?${params.toString()}`;
       }
 
-      console.log("Fetching inventory data from:", url);
+      console.log("Fetching inventory data from dashboard API:", url);
 
       const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      console.log("Inventory API response:", response.data);
+      console.log("Inventory dashboard API response:", response.data);
 
       // Process the response data
       if (response.data) {
@@ -670,8 +768,8 @@ const Reports = () => {
     const isNegative = amount < 0;
     // Use absolute value for display but keep the minus sign
     const displayAmount = isNegative
-      ? `XAF -${Math.abs(amount)}`
-      : `XAF ${amount}`;
+      ? `XAF -${Math.abs(amount).toLocaleString()}`
+      : `XAF ${amount.toLocaleString()}`;
 
     // Return with a CSS class for negative values
     return isNegative
@@ -714,9 +812,6 @@ const Reports = () => {
   // Handle period selection
   const handlePeriodSelect = (selectedPeriod) => {
     setPeriod(selectedPeriod);
-    // Clear start and end dates when a period is selected
-    setStartDate("");
-    setEndDate("");
     setError(null);
   };
 
@@ -726,7 +821,7 @@ const Reports = () => {
     setReportType("inventory");
     setStartDate("");
     setEndDate("");
-    setPeriod("");
+    setPeriod("daily");
     setError(null);
     setShowReportModal(true);
   };
@@ -759,15 +854,13 @@ const Reports = () => {
     }
 
     // Calculate pagination
-    const indexOfLastItem = currentPage * reportsPerPage;
-    const indexOfFirstItem = indexOfLastItem - reportsPerPage;
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentItems = inventoryData.stockData.slice(
       indexOfFirstItem,
       indexOfLastItem,
     );
-    const totalPages = Math.ceil(
-      inventoryData.stockData.length / reportsPerPage,
-    );
+    const totalPages = Math.ceil(inventoryData.stockData.length / itemsPerPage);
 
     return (
       <div className="table-container">
@@ -829,14 +922,14 @@ const Reports = () => {
     }
 
     // Calculate pagination
-    const indexOfLastItem = currentPage * reportsPerPage;
-    const indexOfFirstItem = indexOfLastItem - reportsPerPage;
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentItems = report.report_data.products_sold.slice(
       indexOfFirstItem,
       indexOfLastItem,
     );
     const totalPages = Math.ceil(
-      report.report_data.products_sold.length / reportsPerPage,
+      report.report_data.products_sold.length / itemsPerPage,
     );
 
     return (
@@ -852,22 +945,28 @@ const Reports = () => {
             </tr>
           </thead>
           <tbody>
-            {currentItems.map((item, index) => (
-              <tr key={index}>
-                <td>{item.product__name}</td>
-                <td className="text-right">
-                  {formatCurrency(item.unit_price)}
-                </td>
-                <td className="text-right">{item.total_quantity}</td>
-                <td
-                  className="text-right"
-                  dangerouslySetInnerHTML={{
-                    __html: formatCurrency(item.total_revenue),
-                  }}
-                ></td>
-                <td>{formatDate(item.period)}</td>
-              </tr>
-            ))}
+            {currentItems.map((item, index) => {
+              // Determine if the revenue is negative
+              const isNegative = item.total_revenue < 0;
+              const rowClass = isNegative ? "negative-row" : "positive-row";
+
+              return (
+                <tr key={index} className={rowClass}>
+                  <td>{item.product__name}</td>
+                  <td className="text-right">
+                    {formatCurrency(item.unit_price)}
+                  </td>
+                  <td className="text-right">{item.total_quantity}</td>
+                  <td
+                    className="text-right"
+                    dangerouslySetInnerHTML={{
+                      __html: formatCurrency(item.total_revenue),
+                    }}
+                  ></td>
+                  <td>{formatDate(item.period)}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
 
@@ -882,16 +981,17 @@ const Reports = () => {
 
   // Reusable pagination controls
   const renderPaginationControls = (totalItems, totalPages) => {
-    if (totalItems <= reportsPerPage) return null;
+    if (totalItems <= itemsPerPage) return null;
 
     return (
       <div className="pagination">
         <button
-          className="pagination-btn prev"
           onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
           disabled={currentPage === 1}
+          className="pagination-btn"
         >
-          <ChevronRight size={16} />
+          <ChevronLeft size={16} />
+          <span>Previous</span>
         </button>
 
         <span className="pagination-info">
@@ -899,12 +999,13 @@ const Reports = () => {
         </span>
 
         <button
-          className="pagination-btn next"
           onClick={() =>
             setCurrentPage((prev) => Math.min(prev + 1, totalPages))
           }
           disabled={currentPage === totalPages}
+          className="pagination-btn"
         >
+          <span>Next</span>
           <ChevronRight size={16} />
         </button>
       </div>
@@ -1041,6 +1142,37 @@ const Reports = () => {
     }
   };
 
+  // Function to handle pagination for saved reports
+  const renderReportsPaginationControls = (totalReports, totalPages) => {
+    if (totalReports <= reportsPerPage) return null;
+
+    return (
+      <div className="pagination reports-pagination">
+        <button
+          onClick={() => setReportsCurrentPage((prev) => Math.max(prev - 1, 1))}
+          disabled={reportsCurrentPage === 1}
+          className="pagination-btn"
+        >
+          <ChevronLeft size={16} />
+        </button>
+
+        <span className="pagination-info">
+          Page {reportsCurrentPage} of {totalPages}
+        </span>
+
+        <button
+          onClick={() =>
+            setReportsCurrentPage((prev) => Math.min(prev + 1, totalPages))
+          }
+          disabled={reportsCurrentPage === totalPages}
+          className="pagination-btn"
+        >
+          <ChevronRight size={16} />
+        </button>
+      </div>
+    );
+  };
+
   // Check if user has access to the reports page
   if (!hasReportAccess()) {
     return (
@@ -1075,34 +1207,27 @@ const Reports = () => {
     return null;
   };
 
-  // Calculate pagination
-  const indexOfLastReport = currentPage * reportsPerPage;
-  const indexOfFirstReport = indexOfLastReport - reportsPerPage;
-  const currentReports = savedReports.slice(
-    indexOfFirstReport,
-    indexOfLastReport,
-  );
-  const totalPages = Math.ceil(savedReports.length / reportsPerPage);
-
-  // Change page
-  const paginate = (pageNumber) => setCurrentPage(pageNumber);
-
   return (
     <div className="report-container">
       <div className="report-wrapper">
         <div className="report-header-bar">
-          <h2 className="report-title">
-            <FaFileAlt className="title-icon" />
-            Reports
-          </h2>
+          <h1 className="report-title">
+            <FileText className="title-icon" />
+            Report Generator
+          </h1>
         </div>
+
         <div className="report-grid">
+          {/* Report Generator Section */}
           <div className="report-form-card">
             <div className="report-form-header">
-              <h3 className="form-title">
-                <FaChartBar className="form-title-icon" />
+              <h2 className="form-title">
+                <BarChart className="form-title-icon" />
                 Generate Report
-              </h3>
+              </h2>
+              <p className="form-description">
+                Create and view detailed reports
+              </p>
             </div>
             <div className="form-content">
               {/* Generate Report Button */}
@@ -1114,94 +1239,94 @@ const Reports = () => {
               {/* Saved Reports Section */}
               {savedReports.length > 0 && (
                 <div className="saved-reports-section">
-                  <h4 className="saved-reports-title">
-                    <FaFileAlt className="section-icon" />
-                    Your Reports
-                  </h4>
+                  <h3 className="saved-reports-title">
+                    <Database size={16} className="section-icon" />
+                    Saved Reports
+                  </h3>
                   <div className="saved-reports-list">
-                    {currentReports.map((report) => {
-                      const reportId = report.id || report.report_id;
-                      const reportType =
-                        report.report_type ||
-                        (report.report_data &&
-                          report.report_data.report_type) ||
-                        determineReportType(report);
-                      const createdAt =
-                        report.created_at ||
-                        (report.report_data && report.report_data.created_at) ||
-                        report.generated_at;
+                    {(() => {
+                      // Calculate pagination
+                      const indexOfLastReport =
+                        reportsCurrentPage * reportsPerPage;
+                      const indexOfFirstReport =
+                        indexOfLastReport - reportsPerPage;
+                      const currentReports = savedReports.slice(
+                        indexOfFirstReport,
+                        indexOfLastReport,
+                      );
+                      const totalPages = Math.ceil(
+                        savedReports.length / reportsPerPage,
+                      );
 
                       return (
-                        <div
-                          key={reportId}
-                          className="saved-report-item"
-                          onClick={() => loadReport(reportId)}
-                        >
-                          <div className="saved-report-info">
-                            <div className="saved-report-type">
-                              {reportType === "inventory" ? (
-                                <Package
-                                  size={14}
-                                  className="report-type-icon"
-                                />
-                              ) : (
-                                <BarChart
-                                  size={14}
-                                  className="report-type-icon"
-                                />
-                              )}
-                              {reportType.toUpperCase()}
-                            </div>
-                            <div className="saved-report-date">
-                              <FaCalendarAlt className="date-icon" />
-                              {formatDate(createdAt)}
-                            </div>
-                          </div>
-                          <div className="saved-report-actions">
-                            <button
-                              className="download-report-btn"
-                              onClick={(e) => downloadReport(reportId, e)}
-                              title="Download report"
-                            >
-                              <FaDownload />
-                            </button>
-                            <button
-                              className="delete-report-btn"
-                              onClick={(e) => deleteReport(reportId, e)}
-                              title="Delete report"
-                            >
-                              <FaTrash />
-                            </button>
-                          </div>
-                        </div>
+                        <>
+                          {currentReports.map((savedReport) => {
+                            const reportId =
+                              savedReport.id || savedReport.report_id;
+                            const reportType =
+                              savedReport.report_type ||
+                              (savedReport.report_data &&
+                                savedReport.report_data.report_type) ||
+                              determineReportType(savedReport);
+                            const createdAt =
+                              savedReport.created_at ||
+                              (savedReport.report_data &&
+                                savedReport.report_data.created_at) ||
+                              savedReport.generated_at;
+
+                            return (
+                              <div
+                                key={reportId}
+                                className="saved-report-item"
+                                onClick={() => loadReport(reportId)}
+                              >
+                                <div className="saved-report-info">
+                                  <div className="saved-report-type">
+                                    {reportType === "inventory" ? (
+                                      <Package
+                                        size={14}
+                                        className="report-type-icon"
+                                      />
+                                    ) : (
+                                      <BarChart
+                                        size={14}
+                                        className="report-type-icon"
+                                      />
+                                    )}
+                                    {reportType.toUpperCase()}
+                                  </div>
+                                  <div className="saved-report-date">
+                                    <Calendar size={12} className="date-icon" />
+                                    {formatDate(createdAt)}
+                                  </div>
+                                </div>
+                                <div className="saved-report-actions">
+                                  <button
+                                    className="download-report-btn"
+                                    onClick={(e) => downloadReport(reportId, e)}
+                                    title="Download report"
+                                  >
+                                    <Download size={16} />
+                                  </button>
+                                  <button
+                                    className="delete-report-btn"
+                                    onClick={(e) => deleteReport(reportId, e)}
+                                    title="Delete report"
+                                  >
+                                    <X size={16} />
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                          {renderReportsPaginationControls(
+                            savedReports.length,
+                            totalPages,
+                          )}
+                        </>
                       );
-                    })}
+                    })()}
                   </div>
-
-                  {/* Pagination */}
-                  {totalPages > 1 && (
-                    <div className="pagination">
-                      <button
-                        className="pagination-btn prev"
-                        onClick={() => paginate(currentPage - 1)}
-                        disabled={currentPage === 1}
-                      >
-                        <ChevronRight size={16} />
-                      </button>
-
-                      <div className="pagination-info">
-                        Page {currentPage} of {totalPages}
-                      </div>
-
-                      <button
-                        className="pagination-btn next"
-                        onClick={() => paginate(currentPage + 1)}
-                        disabled={currentPage === totalPages}
-                      >
-                        <ChevronRight size={16} />
-                      </button>
-                    </div>
-                  )}
                 </div>
               )}
             </div>
@@ -1210,10 +1335,10 @@ const Reports = () => {
           {/* Report Display */}
           <div className="report-results-card">
             <div className="report-results-header">
-              <h3 className="results-title">
-                <FaFileAlt className="results-title-icon" />
+              <h2 className="results-title">
+                <FileText className="results-title-icon" />
                 Report Results
-              </h3>
+              </h2>
               <p className="results-description">
                 {report
                   ? `Generated on ${formatDate(report.created_at || (report.report_data && report.report_data.created_at))}`
@@ -1223,20 +1348,20 @@ const Reports = () => {
             <div className="results-content">
               {error && (
                 <div className="error-message">
-                  <FaExclamationTriangle className="error-icon" />
-                  {error}
+                  <AlertCircle size={18} className="error-icon" />
+                  <span>{error}</span>
                 </div>
               )}
               {inventoryError && (
                 <div className="error-message">
-                  <FaExclamationTriangle className="error-icon" />
-                  {inventoryError}
+                  <AlertCircle size={18} className="error-icon" />
+                  <span>{inventoryError}</span>
                 </div>
               )}
 
               {!report && !error && !isGenerating && !isLoadingInventory && (
                 <div className="empty-state">
-                  <FaFileAlt className="empty-icon" />
+                  <FileText className="empty-icon" />
                   <p className="empty-text">
                     Click "Generate New Report" to create a report
                   </p>
@@ -1245,7 +1370,7 @@ const Reports = () => {
 
               {(isGenerating || isLoadingInventory) && (
                 <div className="loading-state">
-                  <FaSync className="loading-icon spin" />
+                  <Loader2 className="loading-icon spin" />
                   <p className="loading-text">Generating your report...</p>
                 </div>
               )}
@@ -1271,7 +1396,7 @@ const Reports = () => {
                     </div>
                     {(startDate || endDate) && (
                       <div className="date-filter-info">
-                        <FaCalendarAlt className="filter-icon" />
+                        <Calendar size={14} className="filter-icon" />
                         <span className="date-filter-label">Date Range:</span>
                         <span className="date-filter-value">
                           {startDate ? formatDate(startDate) : "All time"} -
@@ -1284,13 +1409,12 @@ const Reports = () => {
                       onClick={refreshReport}
                       title="Refresh report data from API"
                     >
-                      <FaSync />
+                      <RefreshCw size={16} />
                       <span>Refresh</span>
                     </button>
                   </div>
 
                   <div className="report-content-section">
-                    {/* Sales Report */}
                     {(report.report_type === "sales" ||
                       (report.report_data &&
                         report.report_data.report_type === "sales")) && (
@@ -1376,16 +1500,16 @@ const Reports = () => {
                             </div>
                           </div>
                           <div className="stat-card">
-                            <div className="stat-card-icon profit">
-                              <DollarSign size={20} className="icon-profit" />
+                            <div className="stat-card-icon discount">
+                              <DollarSign size={20} className="icon-discount" />
                             </div>
                             <div className="stat-content">
-                              <p className="stat-label">Total Profit</p>
+                              <p className="stat-label">Total Discount</p>
                               <p
-                                className={`stat-value ${(getReportData("total_profit") || 0) < 0 ? "negative-value" : "primary"}`}
+                                className={`stat-value ${(getReportData("total_discount") || 0) < 0 ? "negative-value" : "primary"}`}
                               >
                                 {formatCurrency(
-                                  getReportData("total_profit") || 0,
+                                  getReportData("total_discount") || 0,
                                 ).replace(/<\/?span.*?>/g, "")}
                               </p>
                             </div>
@@ -1448,16 +1572,79 @@ const Reports = () => {
                             </div>
                           </div>
                           <div className="stat-card">
-                            <div className="stat-card-icon marge">
-                              <DollarSign size={20} className="icon-marge" />
+                            <div className="stat-card-icon marge-brute">
+                              <DollarSign
+                                size={20}
+                                className="icon-marge-brute"
+                              />
                             </div>
                             <div className="stat-content">
-                              <p className="stat-label">Marge</p>
+                              <p className="stat-label">Marge Brute</p>
                               <p
-                                className={`stat-value ${(getReportData("marge") || 0) < 0 ? "negative-value" : "primary"}`}
+                                className={`stat-value ${(getReportData("marge_brute") || 0) < 0 ? "negative-value" : "primary"}`}
                               >
                                 {formatCurrency(
-                                  getReportData("marge") || 0,
+                                  getReportData("marge_brute") || 0,
+                                ).replace(/<\/?span.*?>/g, "")}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="report-stats">
+                          <div className="stat-card">
+                            <div className="stat-card-icon marge-nette">
+                              <DollarSign
+                                size={20}
+                                className="icon-marge-nette"
+                              />
+                            </div>
+                            <div className="stat-content">
+                              <p className="stat-label">Marge Nette</p>
+                              <p
+                                className={`stat-value ${(getReportData("marge_nette") || 0) < 0 ? "negative-value" : "primary"}`}
+                              >
+                                {formatCurrency(
+                                  getReportData("marge_nette") || 0,
+                                ).replace(/<\/?span.*?>/g, "")}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="stat-card">
+                            <div className="stat-card-icon profit-brute">
+                              <DollarSign
+                                size={20}
+                                className="icon-profit-brute"
+                              />
+                            </div>
+                            <div className="stat-content">
+                              <p className="stat-label">Total Profit Brute</p>
+                              <p
+                                className={`stat-value ${(getReportData("total_profit_brute") || 0) < 0 ? "negative-value" : "primary"}`}
+                              >
+                                {formatCurrency(
+                                  getReportData("total_profit_brute") || 0,
+                                ).replace(/<\/?span.*?>/g, "")}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="report-stats">
+                          <div className="stat-card">
+                            <div className="stat-card-icon profit-nette">
+                              <DollarSign
+                                size={20}
+                                className="icon-profit-nette"
+                              />
+                            </div>
+                            <div className="stat-content">
+                              <p className="stat-label">Total Profit Nette</p>
+                              <p
+                                className={`stat-value ${(getReportData("total_profit_nette") || 0) < 0 ? "negative-value" : "primary"}`}
+                              >
+                                {formatCurrency(
+                                  getReportData("total_profit_nette") || 0,
                                 ).replace(/<\/?span.*?>/g, "")}
                               </p>
                             </div>
@@ -1474,77 +1661,245 @@ const Reports = () => {
                       </>
                     )}
 
-                    {/* Inventory Report */}
                     {(report.report_type === "inventory" ||
                       (report.report_data &&
-                        report.report_data.report_type === "inventory")) &&
-                      inventoryData && (
-                        <>
-                          <div className="report-stats">
-                            <div className="stat-card">
-                              <div className="stat-card-icon inventory">
-                                <Package size={20} className="stat-icon" />
+                        report.report_data.report_type === "inventory")) && (
+                      <>
+                        {/* Display inventory data from report_data if available */}
+                        {report.report_data &&
+                          report.report_data.product_list && (
+                            <>
+                              <div className="report-stats">
+                                <div className="stat-card">
+                                  <div className="stat-card-icon inventory">
+                                    <Package size={20} className="stat-icon" />
+                                  </div>
+                                  <div className="stat-content">
+                                    <p className="stat-label">Total Products</p>
+                                    <p className="stat-value">
+                                      {getReportData("total_products") || 0}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="stat-card">
+                                  <div className="stat-card-icon warning">
+                                    <AlertCircle
+                                      size={20}
+                                      className="stat-icon"
+                                    />
+                                  </div>
+                                  <div className="stat-content">
+                                    <p className="stat-label">
+                                      Low Stock Products
+                                    </p>
+                                    <p className="stat-value warning">
+                                      {getReportData("low_stock_products") || 0}
+                                    </p>
+                                  </div>
+                                </div>
                               </div>
-                              <div className="stat-content">
-                                <p className="stat-label">Total Products</p>
-                                <p className="stat-value">
-                                  {getInventoryStats().totalProducts}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="stat-card">
-                              <div className="stat-card-icon">
-                                <Package size={20} className="stat-icon" />
-                              </div>
-                              <div className="stat-content">
-                                <p className="stat-label">In Stock</p>
-                                <p className="stat-value">
-                                  {getInventoryStats().inStock}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
 
-                          <div className="report-stats">
-                            <div className="stat-card">
-                              <div className="stat-card-icon warning">
-                                <AlertCircle size={20} className="stat-icon" />
+                              <div className="report-stats">
+                                <div className="stat-card">
+                                  <div className="stat-card-icon danger">
+                                    <AlertCircle
+                                      size={20}
+                                      className="stat-icon"
+                                    />
+                                  </div>
+                                  <div className="stat-content">
+                                    <p className="stat-label">
+                                      Expired Products
+                                    </p>
+                                    <p className="stat-value danger">
+                                      {getReportData("expired_products") || 0}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="stat-card">
+                                  <div className="stat-card-icon warning">
+                                    <AlertCircle
+                                      size={20}
+                                      className="stat-icon"
+                                    />
+                                  </div>
+                                  <div className="stat-content">
+                                    <p className="stat-label">Near Expiry</p>
+                                    <p className="stat-value warning">
+                                      {getReportData("near_expiry_count") || 0}
+                                    </p>
+                                  </div>
+                                </div>
                               </div>
-                              <div className="stat-content">
-                                <p className="stat-label">Low Stock</p>
-                                <p className="stat-value warning">
-                                  {getInventoryStats().lowStock}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="stat-card">
-                              <div className="stat-card-icon">
-                                <Package size={20} className="stat-icon" />
-                              </div>
-                              <div className="stat-content">
-                                <p className="stat-label">Overstocked</p>
-                                <p className="stat-value">
-                                  {getInventoryStats().overstocked}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
 
-                          {/* Detailed Inventory Data Table */}
-                          <div className="report-table-section">
-                            <h4 className="table-title">
-                              <Database size={16} className="table-icon" />
-                              Detailed Inventory
-                            </h4>
-                            {renderInventoryDataTable()}
-                          </div>
-                        </>
-                      )}
+                              {/* Display product list from report_data if available */}
+                              {report.report_data.product_list &&
+                              report.report_data.product_list.length > 0 ? (
+                                <div className="report-table-section">
+                                  <h4 className="table-title">
+                                    <Database
+                                      size={16}
+                                      className="table-icon"
+                                    />
+                                    Detailed Inventory
+                                  </h4>
+                                  <div className="table-container">
+                                    <table className="report-table">
+                                      <thead>
+                                        <tr>
+                                          <th>Product</th>
+                                          <th className="text-right">
+                                            Quantity
+                                          </th>
+                                          <th className="text-right">Status</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {report.report_data.product_list.map(
+                                          (item, index) => (
+                                            <tr key={index}>
+                                              <td>{item.name}</td>
+                                              <td className="text-right">
+                                                {item.quantity}
+                                              </td>
+                                              <td
+                                                className={
+                                                  item.status === "Low Stock" ||
+                                                  item.status === "Out of Stock"
+                                                    ? "status-warning"
+                                                    : ""
+                                                }
+                                              >
+                                                {item.status}
+                                              </td>
+                                            </tr>
+                                          ),
+                                        )}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="empty-inventory-message">
+                                  <Package size={48} className="icon-package" />
+                                  <p>
+                                    No inventory data found for the selected
+                                    date range
+                                  </p>
+                                  <button
+                                    className="refresh-inventory-btn"
+                                    onClick={() =>
+                                      fetchInventoryData(startDate, endDate)
+                                    }
+                                  >
+                                    <RefreshCw size={16} />
+                                    Refresh Inventory Data
+                                  </button>
+                                </div>
+                              )}
+                            </>
+                          )}
+
+                        {/* Display inventory data from inventoryData if available */}
+                        {inventoryData &&
+                          inventoryData.stockData &&
+                          inventoryData.stockData.length > 0 && (
+                            <>
+                              <div className="report-stats">
+                                <div className="stat-card">
+                                  <div className="stat-card-icon inventory">
+                                    <Package size={20} className="stat-icon" />
+                                  </div>
+                                  <div className="stat-content">
+                                    <p className="stat-label">Total Products</p>
+                                    <p className="stat-value">
+                                      {getInventoryStats().totalProducts}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="stat-card">
+                                  <div className="stat-card-icon">
+                                    <Package size={20} className="stat-icon" />
+                                  </div>
+                                  <div className="stat-content">
+                                    <p className="stat-label">In Stock</p>
+                                    <p className="stat-value">
+                                      {getInventoryStats().inStock}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="report-stats">
+                                <div className="stat-card">
+                                  <div className="stat-card-icon warning">
+                                    <AlertCircle
+                                      size={20}
+                                      className="stat-icon"
+                                    />
+                                  </div>
+                                  <div className="stat-content">
+                                    <p className="stat-label">Low Stock</p>
+                                    <p className="stat-value warning">
+                                      {getInventoryStats().lowStock}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="stat-card">
+                                  <div className="stat-card-icon">
+                                    <Package size={20} className="stat-icon" />
+                                  </div>
+                                  <div className="stat-content">
+                                    <p className="stat-label">Overstocked</p>
+                                    <p className="stat-value">
+                                      {getInventoryStats().overstocked}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Detailed Inventory Data Table */}
+                              <div className="report-table-section">
+                                <h4 className="table-title">
+                                  <Database size={16} className="table-icon" />
+                                  Detailed Inventory
+                                </h4>
+                                {renderInventoryDataTable()}
+                              </div>
+                            </>
+                          )}
+
+                        {/* Show message if no inventory data is available */}
+                        {(!report.report_data ||
+                          !report.report_data.product_list ||
+                          report.report_data.product_list.length === 0) &&
+                          (!inventoryData ||
+                            !inventoryData.stockData ||
+                            inventoryData.stockData.length === 0) && (
+                            <div className="empty-inventory-message">
+                              <Package size={48} className="icon-package" />
+                              <p>
+                                No inventory data found for the selected date
+                                range
+                              </p>
+                              <button
+                                className="refresh-inventory-btn"
+                                onClick={() =>
+                                  fetchInventoryData(startDate, endDate)
+                                }
+                              >
+                                <RefreshCw size={16} />
+                                Refresh Inventory Data
+                              </button>
+                            </div>
+                          )}
+                      </>
+                    )}
                   </div>
 
                   <div className="report-footer">
                     <p className="generated-by">
-                      <FaUser className="user-icon" />
+                      <Users size={14} className="user-icon" />
                       Generated by:{" "}
                       <span className="user-name">
                         {report.generated_by ||
@@ -1554,7 +1909,7 @@ const Reports = () => {
                       </span>
                     </p>
                     <div className="report-timestamp">
-                      <FaClock className="timestamp-icon" />
+                      <Clock size={14} className="timestamp-icon" />
                       <span>
                         {formatDate(
                           report.created_at ||
@@ -1577,7 +1932,7 @@ const Reports = () => {
           <div className="report-modal">
             <div className="report-modal-header">
               <h3>
-                <FaFileAlt className="modal-icon" />
+                <FileText size={18} className="modal-icon" />
                 Generate Report
               </h3>
               <button className="close-modal-btn" onClick={closeReportModal}>
@@ -1590,7 +1945,7 @@ const Reports = () => {
             >
               <div className="report-type-section">
                 <h4>
-                  <FaFilter className="section-icon" />
+                  <Filter size={16} className="section-icon" />
                   Report Type
                 </h4>
                 <div className="report-type-buttons">
@@ -1616,7 +1971,7 @@ const Reports = () => {
               {/* Period Selection */}
               <div className="report-type-section">
                 <h4>
-                  <FaClock className="section-icon" />
+                  <Clock size={16} className="section-icon" />
                   Period
                 </h4>
                 <div className="report-type-buttons">
@@ -1657,13 +2012,13 @@ const Reports = () => {
 
               <div className="date-range-section">
                 <h4>
-                  <Calendar className="section-icon" />
+                  <Calendar size={16} className="section-icon" />
                   Date Range (Optional)
                 </h4>
                 <div className="date-inputs">
                   <div className="form-group">
                     <label htmlFor="start-date" className="form-label">
-                      <Calendar className="input-icon" />
+                      <Calendar size={14} className="input-icon" />
                       Start Date
                     </label>
                     <input
@@ -1673,19 +2028,14 @@ const Reports = () => {
                       onChange={(e) => {
                         setStartDate(e.target.value);
                         console.log("Start date set to:", e.target.value);
-                        // Clear period when date is manually set
-                        if (e.target.value) {
-                          setPeriod("");
-                        }
                       }}
                       className="form-input"
-                      disabled={period !== ""}
                     />
                   </div>
 
                   <div className="form-group">
                     <label htmlFor="end-date" className="form-label">
-                      <Calendar className="input-icon" />
+                      <Calendar size={14} className="input-icon" />
                       End Date
                     </label>
                     <input
@@ -1695,13 +2045,8 @@ const Reports = () => {
                       onChange={(e) => {
                         setEndDate(e.target.value);
                         console.log("End date set to:", e.target.value);
-                        // Clear period when date is manually set
-                        if (e.target.value) {
-                          setPeriod("");
-                        }
                       }}
                       className="form-input"
-                      disabled={period !== ""}
                     />
                   </div>
                 </div>
@@ -1727,7 +2072,7 @@ const Reports = () => {
                     </span>
                   ) : (
                     <span className="btn-content">
-                      <FaFileAlt className="btn-icon" />
+                      <FileText className="btn-icon" />
                       Generate Report
                     </span>
                   )}
