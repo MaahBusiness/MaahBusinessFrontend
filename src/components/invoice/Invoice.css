@@ -6,7 +6,6 @@
   width: 95%;
   margin: 0 auto;
   color: #f8f9fa;
-  background-color: #121212;
 }
 .header-actions {
   display: flex;
@@ -23,7 +22,10 @@
   align-items: center;
   margin-bottom: 2rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid #333;
+  background-color: #1e1e1e;
+  padding: 1em;
+  border-radius: 0.5em;
+
   position: relative;
   z-index: 1;
 }

@@ -44,6 +44,10 @@ const Product = () => {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [productsPerPage] = useState(10);
+
   // Authentication state
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
@@ -974,6 +978,18 @@ const Product = () => {
     );
   });
 
+  // Calculate pagination values
+  const indexOfLastProduct = currentPage * productsPerPage;
+  const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
+  const currentProducts = filteredProducts.slice(
+    indexOfFirstProduct,
+    indexOfLastProduct,
+  );
+  const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+
+  // Change page
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
   const getStockStatus = (product) => {
     if (!product) return "unknown";
 
@@ -1109,7 +1125,7 @@ const Product = () => {
               </div>
             ))
         ) : filteredProducts.length > 0 ? (
-          filteredProducts.map((item) => {
+          currentProducts.map((item) => {
             // Extract product and category from the item
             const product = item.product;
             const category = item.category;
@@ -1184,6 +1200,31 @@ const Product = () => {
           </div>
         )}
       </div>
+
+      {/* Pagination Controls */}
+      {!isLoading && filteredProducts.length > 0 && (
+        <div className="pagination-controls">
+          <button
+            className="pagination-btn"
+            onClick={() => paginate(currentPage - 1)}
+            disabled={currentPage === 1}
+            aria-label="Previous page"
+          >
+            &lt;
+          </button>
+          <span className="pagination-info">
+            Page {currentPage} of {totalPages}
+          </span>
+          <button
+            className="pagination-btn"
+            onClick={() => paginate(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            aria-label="Next page"
+          >
+            &gt;
+          </button>
+        </div>
+      )}
 
       {/* Add/Edit Product Modal */}
       {showForm && (
