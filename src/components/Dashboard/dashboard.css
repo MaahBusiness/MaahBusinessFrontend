@@ -162,165 +162,85 @@
 
 /* Update the card styling to be more modern and responsive */
 .card {
+  background: #1f2937;
   border-radius: 1rem;
-  padding: 1rem;
-  background-color: #1e1e1e;
-  border: 1px solid #333;
-  position: relative;
-  transition: all 0.3s ease;
-  overflow: hidden;
+  padding: 1.5rem;
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: flex-start;
-  height: 140px;
-  cursor: pointer;
+  align-items: flex-start;
   gap: 1rem;
-}
-
-.card::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 4px;
-  background: linear-gradient(90deg, #2604a1, #6366f1);
-  opacity: 0;
-  transition: opacity 0.3s ease;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 .card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-  border-color: #6366f1;
+  transform: translateY(-2px);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
-.card:hover::before {
-  opacity: 1;
+.card-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
 }
 
-/* Card variants - removed blur effects */
-.revenue-card {
-  border-left: 4px solid #6366f1;
-}
-
-.orders-card {
-  border-left: 4px solid #10b981;
-}
-
-.average-card {
-  border-left: 4px solid #3b82f6;
-}
-
-.customers-card {
-  border-left: 4px solid #f59e0b;
-}
-
-/* Enhanced card icon styling */
 .card-icon {
-  width: 35px;
-  height: 35px;
-  padding: 0.3em;
-  border-radius: 3em;
-  margin-right: 0.5rem;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  color: #ffffff;
+  transition: transform 0.2s;
 }
 
 .card:hover .card-icon {
-  transform: scale(1.4);
-  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2);
+  transform: scale(1.1);
 }
 
-.card-icon::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255, 255, 255, 0.1);
-  z-index: 0;
+/* Specific icon colors */
+.revenue-card .card-icon {
+  color: #6366f1;
 }
 
-.card-icon svg {
-  position: relative;
-  z-index: 1;
-  font-size: 24px;
+.orders-card .card-icon {
+  color: #10b981;
 }
 
-.card-icon.revenue {
-  color: #ffffff;
-  background-color: #6366f1;
-  border: 1px solid rgba(99, 102, 241, 0.3);
+.average-order-value-card {
+  width: 300px;
+  padding: 16px;
+  flex: 1;
+  min-width: 250px;
 }
 
-.card-icon.orders {
-  color: #ffffff;
-  background-color: #10b981;
-  border: 1px solid rgba(16, 185, 129, 0.3);
+.average-order-value-card .card-icon {
+  color: #f59e0b;
 }
 
-.card-icon.average {
-  color: #ffffff;
-  background-color: #3b82f6;
-  border: 1px solid rgba(59, 130, 246, 0.3);
-}
-
-.card-icon.customers {
-  color: #ffffff;
-  background-color: #f59e0b;
-  border: 1px solid rgba(245, 158, 11, 0.3);
+.customers-card .card-icon {
+  color: #ec4899;
 }
 
 .card h3 {
-  font-size: 1rem;
-  color: #e0e0e0;
-  margin-bottom: 0.5rem;
+  color: #9ca3af;
+  font-size: 0.875rem;
   font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  margin-bottom: 0.5rem;
 }
 
-/* Update the card value and trend colors */
 .card-value {
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: #ffffff;
-  margin: 0.25rem 0 0.5rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-top: 0.5rem;
 }
 
 .trend-icon {
-  margin-left: 0.25rem;
-}
-
-.stat-change {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  margin-top: 0.25rem;
-  font-size: 0.75rem;
-}
-
-/* Update the positive/negative colors */
-.positive {
-  color: #10b981; /* Emerald */
-  display: flex;
-  align-items: center;
-  font-weight: 600;
-}
-
-.negative {
-  color: #ef4444; /* Red */
-  display: flex;
-  align-items: center;
-  font-weight: 600;
-}
-
-.period {
-  color: #d1d5db;
-  font-size: 0.7rem;
+  width: 14px;
+  height: 14px;
+  margin-right: 4px;
 }
 
 /* Update the charts container to match the 4-column grid */
@@ -1002,7 +922,7 @@
     left: 0;
   }
   .dashboard-cards {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
   }
   .dashboard-header {
     flex-direction: column;
@@ -1049,6 +969,19 @@
   .create-user-btn {
     width: 100%;
     justify-content: center;
+  }
+
+  .card {
+    padding: 1.25rem;
+  }
+
+  .card-icon-wrapper {
+    width: 40px;
+    height: 40px;
+  }
+
+  .card-value {
+    font-size: 1.25rem;
   }
 }
 
@@ -1142,4 +1075,11 @@
   z-index: 100;
   color: white;
   border-radius: 8px;
+}
+
+.revenue-card {
+  width: 300px;
+  padding: 16px;
+  flex: 1;
+  min-width: 250px;
 }

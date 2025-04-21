@@ -924,7 +924,7 @@ const Category = () => {
             className="add-category-btn"
             onClick={() => openCategoryModal()}
           >
-            <Plus size={16} /> Add
+            <Package size={16} /> Add New Category
           </button>
         </div>
 

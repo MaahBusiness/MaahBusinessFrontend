@@ -25,6 +25,21 @@ import {
   Download,
 } from "lucide-react";
 import "./reports.css";
+import {
+  FaFileAlt,
+  FaDownload,
+  FaTrash,
+  FaCalendarAlt,
+  FaFilter,
+  FaChartBar,
+  FaExclamationTriangle,
+  FaUser,
+  FaClock,
+  FaSync,
+  FaChevronLeft,
+  FaChevronRight,
+} from "react-icons/fa";
+import { FiRefreshCw, FiEye, FiEyeOff } from "react-icons/fi";
 
 const Reports = () => {
   const navigate = useNavigate();
@@ -56,7 +71,7 @@ const Reports = () => {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [reportsPerPage, setReportsPerPage] = useState(10);
 
   // Authentication check on mount
   useEffect(() => {
@@ -699,6 +714,9 @@ const Reports = () => {
   // Handle period selection
   const handlePeriodSelect = (selectedPeriod) => {
     setPeriod(selectedPeriod);
+    // Clear start and end dates when a period is selected
+    setStartDate("");
+    setEndDate("");
     setError(null);
   };
 
@@ -741,13 +759,15 @@ const Reports = () => {
     }
 
     // Calculate pagination
-    const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const indexOfLastItem = currentPage * reportsPerPage;
+    const indexOfFirstItem = indexOfLastItem - reportsPerPage;
     const currentItems = inventoryData.stockData.slice(
       indexOfFirstItem,
       indexOfLastItem,
     );
-    const totalPages = Math.ceil(inventoryData.stockData.length / itemsPerPage);
+    const totalPages = Math.ceil(
+      inventoryData.stockData.length / reportsPerPage,
+    );
 
     return (
       <div className="table-container">
@@ -809,14 +829,14 @@ const Reports = () => {
     }
 
     // Calculate pagination
-    const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const indexOfLastItem = currentPage * reportsPerPage;
+    const indexOfFirstItem = indexOfLastItem - reportsPerPage;
     const currentItems = report.report_data.products_sold.slice(
       indexOfFirstItem,
       indexOfLastItem,
     );
     const totalPages = Math.ceil(
-      report.report_data.products_sold.length / itemsPerPage,
+      report.report_data.products_sold.length / reportsPerPage,
     );
 
     return (
@@ -862,17 +882,16 @@ const Reports = () => {
 
   // Reusable pagination controls
   const renderPaginationControls = (totalItems, totalPages) => {
-    if (totalItems <= itemsPerPage) return null;
+    if (totalItems <= reportsPerPage) return null;
 
     return (
       <div className="pagination">
         <button
+          className="pagination-btn prev"
           onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
           disabled={currentPage === 1}
-          className="pagination-btn"
         >
-          <ChevronLeft size={16} />
-          <span>Previous</span>
+          <ChevronRight size={16} />
         </button>
 
         <span className="pagination-info">
@@ -880,13 +899,12 @@ const Reports = () => {
         </span>
 
         <button
+          className="pagination-btn next"
           onClick={() =>
             setCurrentPage((prev) => Math.min(prev + 1, totalPages))
           }
           disabled={currentPage === totalPages}
-          className="pagination-btn"
         >
-          <span>Next</span>
           <ChevronRight size={16} />
         </button>
       </div>
@@ -1057,27 +1075,34 @@ const Reports = () => {
     return null;
   };
 
+  // Calculate pagination
+  const indexOfLastReport = currentPage * reportsPerPage;
+  const indexOfFirstReport = indexOfLastReport - reportsPerPage;
+  const currentReports = savedReports.slice(
+    indexOfFirstReport,
+    indexOfLastReport,
+  );
+  const totalPages = Math.ceil(savedReports.length / reportsPerPage);
+
+  // Change page
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
   return (
     <div className="report-container">
       <div className="report-wrapper">
         <div className="report-header-bar">
-          <h1 className="report-title">
-            <FileText className="title-icon" />
-            Report Generator
-          </h1>
+          <h2 className="report-title">
+            <FaFileAlt className="title-icon" />
+            Reports
+          </h2>
         </div>
-
         <div className="report-grid">
-          {/* Report Generator Section */}
           <div className="report-form-card">
             <div className="report-form-header">
-              <h2 className="form-title">
-                <BarChart className="form-title-icon" />
+              <h3 className="form-title">
+                <FaChartBar className="form-title-icon" />
                 Generate Report
-              </h2>
-              <p className="form-description">
-                Create and view detailed reports
-              </p>
+              </h3>
             </div>
             <div className="form-content">
               {/* Generate Report Button */}
@@ -1089,23 +1114,22 @@ const Reports = () => {
               {/* Saved Reports Section */}
               {savedReports.length > 0 && (
                 <div className="saved-reports-section">
-                  <h3 className="saved-reports-title">
-                    <Database size={16} className="section-icon" />
-                    Saved Reports
-                  </h3>
+                  <h4 className="saved-reports-title">
+                    <FaFileAlt className="section-icon" />
+                    Your Reports
+                  </h4>
                   <div className="saved-reports-list">
-                    {savedReports.map((savedReport) => {
-                      const reportId = savedReport.id || savedReport.report_id;
+                    {currentReports.map((report) => {
+                      const reportId = report.id || report.report_id;
                       const reportType =
-                        savedReport.report_type ||
-                        (savedReport.report_data &&
-                          savedReport.report_data.report_type) ||
-                        determineReportType(savedReport);
+                        report.report_type ||
+                        (report.report_data &&
+                          report.report_data.report_type) ||
+                        determineReportType(report);
                       const createdAt =
-                        savedReport.created_at ||
-                        (savedReport.report_data &&
-                          savedReport.report_data.created_at) ||
-                        savedReport.generated_at;
+                        report.created_at ||
+                        (report.report_data && report.report_data.created_at) ||
+                        report.generated_at;
 
                       return (
                         <div
@@ -1129,7 +1153,7 @@ const Reports = () => {
                               {reportType.toUpperCase()}
                             </div>
                             <div className="saved-report-date">
-                              <Calendar size={12} className="date-icon" />
+                              <FaCalendarAlt className="date-icon" />
                               {formatDate(createdAt)}
                             </div>
                           </div>
@@ -1139,20 +1163,45 @@ const Reports = () => {
                               onClick={(e) => downloadReport(reportId, e)}
                               title="Download report"
                             >
-                              <Download size={16} />
+                              <FaDownload />
                             </button>
                             <button
                               className="delete-report-btn"
                               onClick={(e) => deleteReport(reportId, e)}
                               title="Delete report"
                             >
-                              <X size={16} />
+                              <FaTrash />
                             </button>
                           </div>
                         </div>
                       );
                     })}
                   </div>
+
+                  {/* Pagination */}
+                  {totalPages > 1 && (
+                    <div className="pagination">
+                      <button
+                        className="pagination-btn prev"
+                        onClick={() => paginate(currentPage - 1)}
+                        disabled={currentPage === 1}
+                      >
+                        <ChevronRight size={16} />
+                      </button>
+
+                      <div className="pagination-info">
+                        Page {currentPage} of {totalPages}
+                      </div>
+
+                      <button
+                        className="pagination-btn next"
+                        onClick={() => paginate(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                      >
+                        <ChevronRight size={16} />
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -1161,10 +1210,10 @@ const Reports = () => {
           {/* Report Display */}
           <div className="report-results-card">
             <div className="report-results-header">
-              <h2 className="results-title">
-                <FileText className="results-title-icon" />
+              <h3 className="results-title">
+                <FaFileAlt className="results-title-icon" />
                 Report Results
-              </h2>
+              </h3>
               <p className="results-description">
                 {report
                   ? `Generated on ${formatDate(report.created_at || (report.report_data && report.report_data.created_at))}`
@@ -1174,20 +1223,20 @@ const Reports = () => {
             <div className="results-content">
               {error && (
                 <div className="error-message">
-                  <AlertCircle size={18} className="error-icon" />
-                  <span>{error}</span>
+                  <FaExclamationTriangle className="error-icon" />
+                  {error}
                 </div>
               )}
               {inventoryError && (
                 <div className="error-message">
-                  <AlertCircle size={18} className="error-icon" />
-                  <span>{inventoryError}</span>
+                  <FaExclamationTriangle className="error-icon" />
+                  {inventoryError}
                 </div>
               )}
 
               {!report && !error && !isGenerating && !isLoadingInventory && (
                 <div className="empty-state">
-                  <FileText className="empty-icon" />
+                  <FaFileAlt className="empty-icon" />
                   <p className="empty-text">
                     Click "Generate New Report" to create a report
                   </p>
@@ -1196,7 +1245,7 @@ const Reports = () => {
 
               {(isGenerating || isLoadingInventory) && (
                 <div className="loading-state">
-                  <Loader2 className="loading-icon spin" />
+                  <FaSync className="loading-icon spin" />
                   <p className="loading-text">Generating your report...</p>
                 </div>
               )}
@@ -1222,7 +1271,7 @@ const Reports = () => {
                     </div>
                     {(startDate || endDate) && (
                       <div className="date-filter-info">
-                        <Calendar size={14} className="filter-icon" />
+                        <FaCalendarAlt className="filter-icon" />
                         <span className="date-filter-label">Date Range:</span>
                         <span className="date-filter-value">
                           {startDate ? formatDate(startDate) : "All time"} -
@@ -1235,7 +1284,7 @@ const Reports = () => {
                       onClick={refreshReport}
                       title="Refresh report data from API"
                     >
-                      <RefreshCw size={16} />
+                      <FaSync />
                       <span>Refresh</span>
                     </button>
                   </div>
@@ -1495,7 +1544,7 @@ const Reports = () => {
 
                   <div className="report-footer">
                     <p className="generated-by">
-                      <Users size={14} className="user-icon" />
+                      <FaUser className="user-icon" />
                       Generated by:{" "}
                       <span className="user-name">
                         {report.generated_by ||
@@ -1505,7 +1554,7 @@ const Reports = () => {
                       </span>
                     </p>
                     <div className="report-timestamp">
-                      <Clock size={14} className="timestamp-icon" />
+                      <FaClock className="timestamp-icon" />
                       <span>
                         {formatDate(
                           report.created_at ||
@@ -1528,7 +1577,7 @@ const Reports = () => {
           <div className="report-modal">
             <div className="report-modal-header">
               <h3>
-                <FileText size={18} className="modal-icon" />
+                <FaFileAlt className="modal-icon" />
                 Generate Report
               </h3>
               <button className="close-modal-btn" onClick={closeReportModal}>
@@ -1541,7 +1590,7 @@ const Reports = () => {
             >
               <div className="report-type-section">
                 <h4>
-                  <Filter size={16} className="section-icon" />
+                  <FaFilter className="section-icon" />
                   Report Type
                 </h4>
                 <div className="report-type-buttons">
@@ -1567,7 +1616,7 @@ const Reports = () => {
               {/* Period Selection */}
               <div className="report-type-section">
                 <h4>
-                  <Clock size={16} className="section-icon" />
+                  <FaClock className="section-icon" />
                   Period
                 </h4>
                 <div className="report-type-buttons">
@@ -1608,13 +1657,13 @@ const Reports = () => {
 
               <div className="date-range-section">
                 <h4>
-                  <Calendar size={16} className="section-icon" />
+                  <Calendar className="section-icon" />
                   Date Range (Optional)
                 </h4>
                 <div className="date-inputs">
                   <div className="form-group">
                     <label htmlFor="start-date" className="form-label">
-                      <Calendar size={14} className="input-icon" />
+                      <Calendar className="input-icon" />
                       Start Date
                     </label>
                     <input
@@ -1624,14 +1673,19 @@ const Reports = () => {
                       onChange={(e) => {
                         setStartDate(e.target.value);
                         console.log("Start date set to:", e.target.value);
+                        // Clear period when date is manually set
+                        if (e.target.value) {
+                          setPeriod("");
+                        }
                       }}
                       className="form-input"
+                      disabled={period !== ""}
                     />
                   </div>
 
                   <div className="form-group">
                     <label htmlFor="end-date" className="form-label">
-                      <Calendar size={14} className="input-icon" />
+                      <Calendar className="input-icon" />
                       End Date
                     </label>
                     <input
@@ -1641,8 +1695,13 @@ const Reports = () => {
                       onChange={(e) => {
                         setEndDate(e.target.value);
                         console.log("End date set to:", e.target.value);
+                        // Clear period when date is manually set
+                        if (e.target.value) {
+                          setPeriod("");
+                        }
                       }}
                       className="form-input"
+                      disabled={period !== ""}
                     />
                   </div>
                 </div>
@@ -1668,7 +1727,7 @@ const Reports = () => {
                     </span>
                   ) : (
                     <span className="btn-content">
-                      <FileText className="btn-icon" />
+                      <FaFileAlt className="btn-icon" />
                       Generate Report
                     </span>
                   )}

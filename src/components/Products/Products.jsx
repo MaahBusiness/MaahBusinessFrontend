@@ -17,6 +17,13 @@ import {
   Loader,
   Calendar,
   Lock,
+  ChevronDown,
+  ChevronUp,
+  Filter,
+  RefreshCw,
+  Tag,
+  DollarSign,
+  Box,
 } from "lucide-react";
 import "./products.css";
 

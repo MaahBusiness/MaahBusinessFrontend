@@ -93,6 +93,7 @@ src/
 
    # Chat functionality
    npm install socket.io-client
+   npm install chart.js react-chartjs-2
    ```
 
 4. Run the development server:

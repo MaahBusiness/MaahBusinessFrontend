@@ -3,45 +3,54 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import {
-  XAxis,
-  YAxis,
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
   Tooltip,
   Legend,
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  CartesianGrid,
-  LineChart,
-  Line,
-  RadialBarChart,
-  RadialBar,
-  BarChart,
-  Bar,
-} from "recharts";
+  RadialLinearScale,
+} from "chart.js";
+import { Line, Bar, Doughnut } from "react-chartjs-2";
 import {
+  FaMoneyBillWave,
+  FaShoppingCart,
+  FaChartLine,
+  FaUsers,
+  FaEye,
+  FaEyeSlash,
+} from "react-icons/fa";
+import {
+  Calendar,
+  User,
+  Users,
+  Loader,
   X,
+  Search,
+  Plus,
+  Save,
   Edit,
   Trash,
-  Save,
-  User,
-  Search,
-  Loader,
-  Plus,
-  Eye,
-  EyeOff,
-  Users,
-  Calendar,
-  TrendingUp,
-  TrendingDown,
-  DollarSign,
-  ShoppingBag,
-  CreditCard,
-  UserPlus,
 } from "lucide-react";
 import "./dashboard.css";
+
+// Register ChartJS components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend,
+  RadialLinearScale,
+);
 
 const Dashboard = () => {
   const [invoices, setInvoices] = useState([]);
@@ -445,10 +454,22 @@ const Dashboard = () => {
     );
   });
 
+  // Add this function after getAuthAxios
+  const handleAuthError = (error) => {
+    if (error.response && error.response.status === 401) {
+      // Clear invalid token and user data
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      setIsAuthenticated(false);
+      setCurrentUserRole(null);
+      // Redirect to login page
+      window.location.href = "/login";
+    }
+  };
+
   // Functions to fetch data from the APIs
   const fetchInventoryData = async () => {
     if (!hasManagerPermission()) {
-      // Return empty data for non-managers
       setInventoryData({
         stockStatus: [],
         stockData: [],
@@ -467,7 +488,7 @@ const Dashboard = () => {
       console.log("Inventory data:", response.data);
     } catch (err) {
       console.error("Error fetching inventory data:", err);
-      // Set empty data on error
+      handleAuthError(err);
       setInventoryData({
         stockStatus: [],
         stockData: [],
@@ -480,7 +501,6 @@ const Dashboard = () => {
 
   const fetchProductsData = async () => {
     if (!hasManagerPermission()) {
-      // Return empty data for non-managers
       setProductPerformanceData({
         topProducts: [],
         productPerformance: [],
@@ -498,6 +518,7 @@ const Dashboard = () => {
       console.log("Product performance data:", response.data);
     } catch (err) {
       console.error("Error fetching product performance data:", err);
+      handleAuthError(err);
       setProductPerformanceData({
         topProducts: [],
         productPerformance: [],
@@ -510,7 +531,6 @@ const Dashboard = () => {
   // Modify the fetchSalesData function to use pending_payment as profit
   const fetchSalesData = async () => {
     if (!hasManagerPermission()) {
-      // Return empty data for non-managers
       setSalesData({
         salesOverTime: [],
         recentSales: [],
@@ -536,15 +556,14 @@ const Dashboard = () => {
       ) {
         const profitChartData = response.data.salesOverTime.map((item) => ({
           name: item.period,
-          // Use pending_payment as profit value
-          profit: Number(item.pending_payment || 0),
-          sales: Number(item.sales || 0),
+          profit: Number(item.profit || 0),
           pending: Number(item.pending_payment || 0),
         }));
         setProfitData(profitChartData);
       }
     } catch (err) {
       console.error("Error fetching sales data:", err);
+      handleAuthError(err);
       setSalesData({
         salesOverTime: [],
         recentSales: [],
@@ -644,7 +663,7 @@ const Dashboard = () => {
       // Convert to array and sort by quantity
       const topProducts = Object.values(productCounts)
         .sort((a, b) => b.quantity - a.quantity)
-        .slice(0, 5)
+        .slice(0, 10) // Limit to 10 products
         .map((product, index) => ({
           ...product,
           color: ["#6366f1", "#ec4899", "#10b981", "#3b82f6", "#f59e0b"][
@@ -743,6 +762,7 @@ const Dashboard = () => {
             ],
           }))
           .sort((a, b) => b.value - a.value)
+          .slice(0, 10) // Limit to 10 categories
       : [];
 
   const monthlyRevenueData =
@@ -766,12 +786,52 @@ const Dashboard = () => {
     return dataMax / (dataMax - dataMin);
   };
 
-  // Card icons for the dashboard
+  // Update the card icons section
   const cardIcons = [
-    <DollarSign key="revenue" size={28} className="card-icon revenue" />,
-    <ShoppingBag key="orders" size={28} className="card-icon orders" />,
-    <CreditCard key="average" size={28} className="card-icon average" />,
-    <UserPlus key="customers" size={28} className="card-icon customers" />,
+    {
+      id: "revenue",
+      icon: <FaMoneyBillWave className="card-icon" />,
+      label: "Total Revenue",
+      value: hasReportViewPermission()
+        ? `XFA ${Number(dashboardStats.revenue.value).toLocaleString()}`
+        : "XFA NaN",
+      change: dashboardStats.revenue.change,
+      changePercentage: dashboardStats.revenue.change_percent,
+      period: "vs last month",
+    },
+    {
+      id: "orders",
+      icon: <FaShoppingCart className="card-icon" />,
+      label: "Total Orders",
+      value: hasReportViewPermission()
+        ? Number(dashboardStats.orders.value).toLocaleString()
+        : "NaN",
+      change: dashboardStats.orders.change,
+      changePercentage: dashboardStats.orders.change_percent,
+      period: "vs last month",
+    },
+    {
+      id: "average-order-value",
+      icon: <FaChartLine className="card-icon" />,
+      label: "Average Order Value",
+      value: hasReportViewPermission()
+        ? `XFA ${Number(dashboardStats.averageOrderValue.value).toLocaleString()}`
+        : "XFA NaN",
+      change: dashboardStats.averageOrderValue.change,
+      changePercentage: dashboardStats.averageOrderValue.change_percent,
+      period: "vs last month",
+    },
+    {
+      id: "customers",
+      icon: <FaUsers className="card-icon" />,
+      label: "Total Customers",
+      value: hasReportViewPermission()
+        ? Number(dashboardStats.customers.value).toLocaleString()
+        : "NaN",
+      change: dashboardStats.customers.change,
+      changePercentage: dashboardStats.customers.change_percent,
+      period: "vs last month",
+    },
   ];
 
   return (
@@ -833,200 +893,74 @@ const Dashboard = () => {
       )}
 
       <div className="dashboard-cards">
-        <div className="card revenue-card">
-          {cardIcons[0]}
-          <div>
-            <h3>Total Revenue</h3>
-            <p className="card-value">
-              {hasReportViewPermission()
-                ? `XFA ${Number(dashboardStats.revenue.value).toLocaleString()}`
-                : "XFA NaN"}
-            </p>
-            <div className="stat-change">
-              <span
-                className={
-                  Number(dashboardStats.revenue.change) >= 0
-                    ? "positive"
-                    : "negative"
-                }
-              >
-                {hasReportViewPermission()
-                  ? `${Number(dashboardStats.revenue.change) >= 0 ? "+" : ""}${Number(dashboardStats.revenue.change).toFixed(1)}`
-                  : "NaN"}
-                {Number(dashboardStats.revenue.change) >= 0 ? (
-                  <TrendingUp size={14} className="trend-icon" />
-                ) : (
-                  <TrendingDown size={14} className="trend-icon" />
-                )}
-              </span>
-              <span className="period">from last {timePeriod}</span>
+        {cardIcons.map((card) => (
+          <div key={card.id} className={`card ${card.id}-card`}>
+            <div className="card-icon-wrapper">{card.icon}</div>
+            <div className="card-content">
+              <h3>{card.label}</h3>
+              <div className="card-value">{card.value}</div>
             </div>
           </div>
-        </div>
-        <div className="card orders-card">
-          {cardIcons[1]}
-          <div>
-            <h3>Orders</h3>
-            <p className="card-value">
-              {hasReportViewPermission()
-                ? Number(dashboardStats.orders.value).toLocaleString()
-                : "NaN"}
-            </p>
-            <div className="stat-change">
-              <span
-                className={
-                  Number(dashboardStats.orders.change) >= 0
-                    ? "positive"
-                    : "negative"
-                }
-              >
-                {hasReportViewPermission()
-                  ? `${Number(dashboardStats.orders.change) >= 0 ? "+" : ""}${Number(dashboardStats.orders.change).toFixed(1)}`
-                  : "NaN"}
-                {Number(dashboardStats.orders.change) >= 0 ? (
-                  <TrendingUp size={14} className="trend-icon" />
-                ) : (
-                  <TrendingDown size={14} className="trend-icon" />
-                )}
-              </span>
-              <span className="period">from last {timePeriod}</span>
-            </div>
-          </div>
-        </div>
-        <div className="card average-card">
-          {cardIcons[2]}
-          <div>
-            <h3>Average Order Value</h3>
-            <p className="card-value">
-              {hasReportViewPermission()
-                ? `XFA ${Number(dashboardStats.averageOrderValue.value).toLocaleString()}`
-                : "XFA NaN"}
-            </p>
-            <div className="stat-change">
-              <span
-                className={
-                  Number(dashboardStats.averageOrderValue.change) >= 0
-                    ? "positive"
-                    : "negative"
-                }
-              >
-                {hasReportViewPermission()
-                  ? `${Number(dashboardStats.averageOrderValue.change) >= 0 ? "+" : ""}${Number(dashboardStats.averageOrderValue.change).toFixed(1)}`
-                  : "NaN"}
-                {Number(dashboardStats.averageOrderValue.change) >= 0 ? (
-                  <TrendingUp size={14} className="trend-icon" />
-                ) : (
-                  <TrendingDown size={14} className="trend-icon" />
-                )}
-              </span>
-              <span className="period">from last {timePeriod}</span>
-            </div>
-          </div>
-        </div>
-        <div className="card customers-card">
-          {cardIcons[3]}
-          <div>
-            <h3>Customers</h3>
-            <p className="card-value">
-              {hasReportViewPermission()
-                ? Number(dashboardStats.customers.value).toLocaleString()
-                : "NaN"}
-            </p>
-            <div className="stat-change">
-              <span
-                className={
-                  Number(dashboardStats.customers.change) >= 0
-                    ? "positive"
-                    : "negative"
-                }
-              >
-                {hasReportViewPermission()
-                  ? `${Number(dashboardStats.customers.change) >= 0 ? "+" : ""}${Number(dashboardStats.customers.change).toFixed(1)}`
-                  : "NaN"}
-                {Number(dashboardStats.customers.change) >= 0 ? (
-                  <TrendingUp size={14} className="trend-icon" />
-                ) : (
-                  <TrendingDown size={14} className="trend-icon" />
-                )}
-              </span>
-              <span className="period">from last {timePeriod}</span>
-            </div>
-          </div>
-        </div>
+        ))}
       </div>
 
       {/* Update the Profit Analysis Chart */}
       <div className="chart profit-chart">
         <h3>Profit Analysis</h3>
         {profitData.length > 0 && hasReportViewPermission() ? (
-          <ResponsiveContainer width="100%" height={300}>
-            <AreaChart
-              width={500}
-              height={300}
-              data={profitData}
-              margin={{
-                top: 20,
-                right: 30,
-                left: 20,
-                bottom: 5,
+          <div style={{ height: "300px" }}>
+            <Line
+              data={{
+                labels: profitData.map((item) => item.name),
+                datasets: [
+                  {
+                    label: "Profit",
+                    data: profitData.map((item) => item.profit),
+                    borderColor: "#6366f1",
+                    backgroundColor: "rgba(99, 102, 241, 0.1)",
+                    fill: true,
+                  },
+                  {
+                    label: "Pending Payment",
+                    data: profitData.map((item) => item.pending),
+                    borderColor: "#f59e0b",
+                    backgroundColor: "rgba(245, 158, 11, 0.1)",
+                    fill: true,
+                  },
+                ],
               }}
-            >
-              <defs>
-                <linearGradient id="colorProfit" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0.1} />
-                </linearGradient>
-                <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0.1} />
-                </linearGradient>
-                <linearGradient id="colorPending" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.1} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-              <XAxis dataKey="name" stroke="#ffffff" />
-              <YAxis stroke="#ffffff" />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "#252525",
-                  border: "none",
-                  borderRadius: "8px",
-                  boxShadow: "0 10px 25px rgba(0, 0, 0, 0.3)",
-                }}
-                itemStyle={{ color: "#ffffff" }}
-              />
-              <Legend wrapperStyle={{ color: "#ffffff" }} />
-              <Area
-                type="monotone"
-                dataKey="profit"
-                name="Profit"
-                stackId="1"
-                stroke="#6366f1"
-                fillOpacity={1}
-                fill="url(#colorProfit)"
-              />
-              <Area
-                type="monotone"
-                dataKey="sales"
-                name="Sales"
-                stackId="2"
-                stroke="#10b981"
-                fillOpacity={1}
-                fill="url(#colorSales)"
-              />
-              <Area
-                type="monotone"
-                dataKey="pending"
-                name="Pending Payment"
-                stackId="3"
-                stroke="#f59e0b"
-                fillOpacity={1}
-                fill="url(#colorPending)"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: {
+                    position: "top",
+                    labels: {
+                      color: "#ffffff",
+                    },
+                  },
+                },
+                scales: {
+                  x: {
+                    grid: {
+                      color: "rgba(255, 255, 255, 0.1)",
+                    },
+                    ticks: {
+                      color: "#ffffff",
+                    },
+                  },
+                  y: {
+                    grid: {
+                      color: "rgba(255, 255, 255, 0.1)",
+                    },
+                    ticks: {
+                      color: "#ffffff",
+                    },
+                  },
+                },
+              }}
+            />
+          </div>
         ) : (
           <div className="no-data">
             {!hasReportViewPermission()
@@ -1042,61 +976,66 @@ const Dashboard = () => {
         <div className="chart">
           <h3>Sales Performance</h3>
           {salesChartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={salesChartData}>
-                <defs>
-                  <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="colorProfit" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="colorPending" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                <XAxis dataKey="name" stroke="#ffffff" />
-                <YAxis stroke="#ffffff" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#252525",
-                    border: "none",
-                    borderRadius: "8px",
-                    boxShadow: "0 10px 25px rgba(0, 0, 0, 0.3)",
-                  }}
-                  itemStyle={{ color: "#ffffff" }}
-                />
-                <Legend wrapperStyle={{ color: "#ffffff" }} />
-                <Area
-                  type="monotone"
-                  dataKey="sales"
-                  stroke="#10b981"
-                  fillOpacity={1}
-                  fill="url(#colorSales)"
-                  name="Sales"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="profit"
-                  stroke="#6366f1"
-                  fillOpacity={0.3}
-                  fill="url(#colorProfit)"
-                  name="Profit"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="pending_payment"
-                  stroke="#f59e0b"
-                  fillOpacity={0.3}
-                  fill="url(#colorPending)"
-                  name="Pending Payment"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            <div style={{ height: "300px" }}>
+              <Line
+                data={{
+                  labels: salesChartData.map((item) => item.name),
+                  datasets: [
+                    {
+                      label: "Sales",
+                      data: salesChartData.map((item) => item.sales),
+                      borderColor: "#10b981",
+                      backgroundColor: "rgba(16, 185, 129, 0.1)",
+                      fill: true,
+                    },
+                    {
+                      label: "Profit",
+                      data: salesChartData.map((item) => item.profit),
+                      borderColor: "#6366f1",
+                      backgroundColor: "rgba(99, 102, 241, 0.1)",
+                      fill: true,
+                    },
+                    {
+                      label: "Pending Payment",
+                      data: salesChartData.map((item) => item.pending_payment),
+                      borderColor: "#f59e0b",
+                      backgroundColor: "rgba(245, 158, 11, 0.1)",
+                      fill: true,
+                    },
+                  ],
+                }}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      position: "top",
+                      labels: {
+                        color: "#ffffff",
+                      },
+                    },
+                  },
+                  scales: {
+                    x: {
+                      grid: {
+                        color: "rgba(255, 255, 255, 0.1)",
+                      },
+                      ticks: {
+                        color: "#ffffff",
+                      },
+                    },
+                    y: {
+                      grid: {
+                        color: "rgba(255, 255, 255, 0.1)",
+                      },
+                      ticks: {
+                        color: "#ffffff",
+                      },
+                    },
+                  },
+                }}
+              />
+            </div>
           ) : (
             <div className="no-data">
               {hasManagerPermission()
@@ -1109,54 +1048,50 @@ const Dashboard = () => {
         <div className="chart">
           <h3>Product Performance</h3>
           {productPerformance.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart
-                layout="vertical"
-                width={500}
-                height={300}
-                data={productPerformance}
-                margin={{
-                  top: 20,
-                  right: 30,
-                  left: 20,
-                  bottom: 5,
+            <div style={{ height: "300px" }}>
+              <Bar
+                data={{
+                  labels: productPerformance.map((item) => item.name),
+                  datasets: [
+                    {
+                      label: "Performance",
+                      data: productPerformance.map((item) => item.value),
+                      backgroundColor: productPerformance.map(
+                        (item) => item.fill,
+                      ),
+                    },
+                  ],
                 }}
-              >
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="#333"
-                  horizontal={false}
-                />
-                <XAxis type="number" stroke="#ffffff" />
-                <YAxis
-                  dataKey="name"
-                  type="category"
-                  stroke="#ffffff"
-                  width={120}
-                  tickFormatter={(value) => {
-                    return value.length > 15
-                      ? value.substring(0, 15) + "..."
-                      : value;
-                  }}
-                />
-                <Tooltip
-                  formatter={(value, name) => [`${value}`, "Value"]}
-                  contentStyle={{
-                    backgroundColor: "#252525",
-                    border: "none",
-                    borderRadius: "8px",
-                    boxShadow: "0 10px 25px rgba(0, 0, 0, 0.3)",
-                  }}
-                  itemStyle={{ color: "#ffffff" }}
-                />
-                <Legend wrapperStyle={{ color: "#ffffff" }} />
-                <Bar dataKey="value" name="Performance">
-                  {productPerformance.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.fill} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+                options={{
+                  indexAxis: "y",
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      display: false,
+                    },
+                  },
+                  scales: {
+                    x: {
+                      grid: {
+                        color: "rgba(255, 255, 255, 0.1)",
+                      },
+                      ticks: {
+                        color: "#ffffff",
+                      },
+                    },
+                    y: {
+                      grid: {
+                        color: "rgba(255, 255, 255, 0.1)",
+                      },
+                      ticks: {
+                        color: "#ffffff",
+                      },
+                    },
+                  },
+                }}
+              />
+            </div>
           ) : (
             <div className="no-data">
               {hasManagerPermission()
@@ -1171,40 +1106,31 @@ const Dashboard = () => {
         <div className="chart">
           <h3>Stock Status</h3>
           {stockStatus.length > 0 ? (
-            <ResponsiveContainer width="100%" height={200}>
-              <PieChart>
-                <Pie
-                  data={stockStatus}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={true}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                  nameKey="name"
-                  label={({ name, value }) => `${name}: ${value}`}
-                >
-                  {stockStatus.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.fill} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  formatter={(value, name) => [`${value}`, name]}
-                  contentStyle={{
-                    backgroundColor: "#252525",
-                    border: "none",
-                    borderRadius: "8px",
-                    boxShadow: "0 10px 25px rgba(0, 0, 0, 0.3)",
-                  }}
-                  itemStyle={{ color: "#ffffff" }}
-                />
-                <Legend
-                  formatter={(value) => (
-                    <span style={{ color: "#ffffff" }}>{value}</span>
-                  )}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+            <div style={{ height: "200px" }}>
+              <Doughnut
+                data={{
+                  labels: stockStatus.map((item) => item.name),
+                  datasets: [
+                    {
+                      data: stockStatus.map((item) => item.value),
+                      backgroundColor: stockStatus.map((item) => item.fill),
+                    },
+                  ],
+                }}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      position: "right",
+                      labels: {
+                        color: "#ffffff",
+                      },
+                    },
+                  },
+                }}
+              />
+            </div>
           ) : (
             <div className="no-data">
               {hasManagerPermission()
@@ -1218,7 +1144,7 @@ const Dashboard = () => {
           <h3>Recent Sales</h3>
           {recentSalesData.length > 0 ? (
             <div className="recent-sales">
-              {recentSalesData.slice(0, 3).map((sale, index) => (
+              {recentSalesData.slice(0, 10).map((sale, index) => (
                 <div key={sale.id || index} className="sale-item">
                   <div className="sale-info">
                     <p className="sale-name">{sale.name}</p>
@@ -1247,7 +1173,7 @@ const Dashboard = () => {
           productPerformanceData.topProducts.length > 0 ? (
             <div className="top-products">
               {productPerformanceData.topProducts
-                .slice(0, 3)
+                .slice(0, 10)
                 .map((product, index) => (
                   <div key={index} className="product-item">
                     <div
@@ -1300,35 +1226,49 @@ const Dashboard = () => {
         <div className="chart">
           <h3>Monthly Revenue Trend</h3>
           {monthlyRevenueData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={monthlyRevenueData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                <XAxis dataKey="month" stroke="#ffffff" />
-                <YAxis stroke="#ffffff" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#252525",
-                    border: "none",
-                    borderRadius: "8px",
-                    boxShadow: "0 10px 25px rgba(0, 0, 0, 0.3)",
-                  }}
-                  itemStyle={{ color: "#ffffff" }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="revenue"
-                  stroke="#6366f1"
-                  strokeWidth={3}
-                  dot={{ r: 5, fill: "#6366f1", strokeWidth: 0 }}
-                  activeDot={{
-                    r: 7,
-                    fill: "#6366f1",
-                    stroke: "#fff",
-                    strokeWidth: 2,
-                  }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            <div style={{ height: "250px" }}>
+              <Line
+                data={{
+                  labels: monthlyRevenueData.map((item) => item.month),
+                  datasets: [
+                    {
+                      label: "Revenue",
+                      data: monthlyRevenueData.map((item) => item.revenue),
+                      borderColor: "#6366f1",
+                      backgroundColor: "rgba(99, 102, 241, 0.1)",
+                      tension: 0.4,
+                    },
+                  ],
+                }}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      display: false,
+                    },
+                  },
+                  scales: {
+                    x: {
+                      grid: {
+                        color: "rgba(255, 255, 255, 0.1)",
+                      },
+                      ticks: {
+                        color: "#ffffff",
+                      },
+                    },
+                    y: {
+                      grid: {
+                        color: "rgba(255, 255, 255, 0.1)",
+                      },
+                      ticks: {
+                        color: "#ffffff",
+                      },
+                    },
+                  },
+                }}
+              />
+            </div>
           ) : (
             <div className="no-data">
               {hasManagerPermission()
@@ -1341,38 +1281,62 @@ const Dashboard = () => {
         <div className="chart">
           <h3>Sales by Category</h3>
           {salesByCategoryData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={250}>
-              <RadialBarChart
-                cx="50%"
-                cy="50%"
-                innerRadius="10%"
-                outerRadius="80%"
-                barSize={10}
-                data={salesByCategoryData}
-              >
-                <RadialBar
-                  label={{ fill: "#ffffff", position: "insideStart" }}
-                  background
-                  dataKey="value"
-                />
-                <Legend
-                  iconSize={10}
-                  layout="vertical"
-                  verticalAlign="middle"
-                  align="right"
-                  wrapperStyle={{ color: "#ffffff" }}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#252525",
-                    border: "none",
-                    borderRadius: "8px",
-                    boxShadow: "0 10px 25px rgba(0, 0, 0, 0.3)",
-                  }}
-                  itemStyle={{ color: "#ffffff" }}
-                />
-              </RadialBarChart>
-            </ResponsiveContainer>
+            <div style={{ height: "250px" }}>
+              <Doughnut
+                data={{
+                  labels: salesByCategoryData.map((item) => item.name),
+                  datasets: [
+                    {
+                      data: salesByCategoryData.map((item) => item.value),
+                      backgroundColor: [
+                        "#6366f1",
+                        "#ec4899",
+                        "#10b981",
+                        "#3b82f6",
+                        "#f59e0b",
+                        "#8b5cf6",
+                        "#ef4444",
+                        "#14b8a6",
+                        "#f97316",
+                        "#06b6d4",
+                      ],
+                      borderWidth: 1,
+                    },
+                  ],
+                }}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      position: "right",
+                      labels: {
+                        color: "#ffffff",
+                        padding: 15,
+                        font: {
+                          size: 12,
+                        },
+                      },
+                    },
+                    tooltip: {
+                      callbacks: {
+                        label: function (context) {
+                          const label = context.label || "";
+                          const value = context.raw || 0;
+                          const total = context.dataset.data.reduce(
+                            (a, b) => a + b,
+                            0,
+                          );
+                          const percentage = ((value / total) * 100).toFixed(1);
+                          return `${label}: ${value.toLocaleString()} (${percentage}%)`;
+                        },
+                      },
+                    },
+                  },
+                  cutout: "60%",
+                }}
+              />
+            </div>
           ) : (
             <div className="no-data">
               {hasManagerPermission()
@@ -1677,7 +1641,11 @@ const Dashboard = () => {
                     className="toggle-password-btn"
                     onClick={() => setShowPassword(!showPassword)}
                   >
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    {showPassword ? (
+                      <FaEyeSlash size={16} />
+                    ) : (
+                      <FaEye size={16} />
+                    )}
                   </button>
                 </div>
               </div>
