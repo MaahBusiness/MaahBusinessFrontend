@@ -126,10 +126,10 @@ const Signup = () => {
   };
 
   return (
-    <div className="signup-container">
-      <form onSubmit={handleSubmit} className="login signup">
-        <h2>Sign Up</h2>
-        <p className="Lab"> Enter Username </p>
+    <div className="auth-signup-container">
+      <form onSubmit={handleSubmit} className="auth-signup-form">
+        <h2 className="auth-signup-title">Sign Up</h2>
+        <p className="auth-label">Enter Username</p>
         <input
           type="text"
           name="username"
@@ -139,8 +139,9 @@ const Signup = () => {
             setFormData({ ...formData, username: e.target.value })
           }
           required
+          className="auth-input"
         />
-        <p className="Lab"> Enter Email </p>
+        <p className="auth-label">Enter Email</p>
         <input
           type="email"
           name="email"
@@ -148,8 +149,9 @@ const Signup = () => {
           value={formData.email}
           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
           required
+          className="auth-input"
         />
-        <p className="Lab"> Enter Number </p>
+        <p className="auth-label">Enter Number</p>
         <input
           type="number"
           name="phone_number"
@@ -158,8 +160,9 @@ const Signup = () => {
           onChange={(e) =>
             setFormData({ ...formData, phone_number: e.target.value })
           }
+          className="auth-input"
         />
-        <p className="Lab"> Enter Password </p>
+        <p className="auth-label">Enter Password</p>
         <input
           type="password"
           name="password"
@@ -169,13 +172,15 @@ const Signup = () => {
             setFormData({ ...formData, password: e.target.value })
           }
           required
+          className="auth-input"
         />
-        <p className="Lab"> Select Role </p>
+        <p className="auth-label">Select Role</p>
         <select
           name="role"
           value={formData.role}
           onChange={(e) => setFormData({ ...formData, role: e.target.value })}
           required
+          className="auth-select"
         >
           <option value="manager">Manager</option>
           <option value="cashier">Cashier</option>
@@ -183,31 +188,33 @@ const Signup = () => {
           <option value="wholesale_client">Wholesale Client</option>
           <option value="sales_agent">Sales Agent</option>
         </select>
-        <button type="submit" className="signupbtn" disabled={isLoading}>
+        <button type="submit" className="auth-submit-btn" disabled={isLoading}>
           {isLoading ? "Registering..." : "Register"}
         </button>
-        <p className="login-link">
+        <p className="auth-link-text">
           Already have an account?{" "}
           <Link to="/login">
-            <span>Sign in</span>
+            <span className="auth-link">Sign in</span>
           </Link>
         </p>
       </form>
 
-      {errorMessage && <p className="error">{errorMessage}</p>}
+      {errorMessage && <p className="auth-error">{errorMessage}</p>}
 
       {modalErrorMessages.length > 0 && (
-        <div className="modaal-overlay">
-          <div className="modaal-content">
-            <h3>Error Messages</h3>
-            <ul>
+        <div className="auth-modal-overlay">
+          <div className="auth-modal-content">
+            <h3 className="auth-modal-title">Error Messages</h3>
+            <ul className="auth-modal-list">
               {modalErrorMessages.map((msg, index) => (
-                <li key={index}>{msg}</li>
+                <li key={index} className="auth-modal-item">
+                  {msg}
+                </li>
               ))}
             </ul>
             <button
               onClick={() => setModalErrorMessages([])}
-              className="close-btn"
+              className="auth-modal-close-btn"
             >
               Back
             </button>

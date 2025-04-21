@@ -1262,8 +1262,8 @@ const Invoice = () => {
 
       {/* Create Invoice Modal */}
       {showModal && (
-        <div className="modal-overlay">
-          <div className="modal-content invoice-create-modal">
+        <div className="invoice-modal-overlay">
+          <div className="invoice-modal-content invoice-create-modal-wide">
             <div className="modal-header">
               <h3>Create New Invoice</h3>
               <button
@@ -1408,7 +1408,10 @@ const Invoice = () => {
 
                     return (
                       <div key={index} className="line-item">
-                        <div className="line-item-col product">
+                        <div
+                          className="line-item-col product"
+                          data-label="Product"
+                        >
                           <select
                             value={line.product_id}
                             onChange={(e) =>
@@ -1433,7 +1436,10 @@ const Invoice = () => {
                             ))}
                           </select>
                         </div>
-                        <div className="line-item-col quantity">
+                        <div
+                          className="line-item-col quantity"
+                          data-label="Quantity"
+                        >
                           <input
                             type="number"
                             min="1"
@@ -1452,7 +1458,10 @@ const Invoice = () => {
                             }
                           />
                         </div>
-                        <div className="line-item-col price">
+                        <div
+                          className="line-item-col price"
+                          data-label="Price (XFA)"
+                        >
                           <input
                             type="text"
                             pattern="[0-9]*\.?[0-9]*"
@@ -1466,7 +1475,10 @@ const Invoice = () => {
                             }
                           />
                         </div>
-                        <div className="line-item-col discount">
+                        <div
+                          className="line-item-col discount"
+                          data-label="Discount (XFA)"
+                        >
                           <input
                             type="number"
                             min="0"
@@ -1481,10 +1493,16 @@ const Invoice = () => {
                             }
                           />
                         </div>
-                        <div className="line-item-col subtotal">
+                        <div
+                          className="line-item-col subtotal"
+                          data-label="Subtotal"
+                        >
                           {lineSubtotal}
                         </div>
-                        <div className="line-item-col actions">
+                        <div
+                          className="line-item-col actions"
+                          data-label="Actions"
+                        >
                           <button
                             type="button"
                             className="remove-line-btn"
@@ -1592,8 +1610,8 @@ const Invoice = () => {
 
       {/* View Invoice Modal */}
       {selectedInvoice && (
-        <div className="modal-overlay">
-          <div className="modal-content invoice-detail-modal">
+        <div className="invoice-modal-overlay">
+          <div className="invoice-modal-content invoice-detail-modal">
             <div className="modal-header">
               <h3>Invoice Details</h3>
               <button
@@ -1803,8 +1821,8 @@ const Invoice = () => {
 
       {/* Confirm Archive Modal */}
       {confirmArchive !== null && (
-        <div className="modal-overlay">
-          <div className="modal-content confirm-modal">
+        <div className="invoice-modal-overlay">
+          <div className="invoice-modal-content confirm-modal">
             <div className="modal-header">
               <h3>Confirm Delete</h3>
               <button
@@ -1845,8 +1863,8 @@ const Invoice = () => {
 
       {/* Payment Modal */}
       {selectedInvoice && showPaymentModal && (
-        <div className="modal-overlay">
-          <div className="modal-content payment-modal">
+        <div className="invoice-modal-overlay">
+          <div className="invoice-modal-content payment-modal">
             <div className="modal-header">
               <h3>Pay Invoice Debt</h3>
               <button

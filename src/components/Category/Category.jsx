@@ -1113,8 +1113,9 @@ const Category = () => {
                       >
                         <h4>{subcategory.name}</h4>
                         <p>{subcategory.description}</p>
-                        <button className="view-details-btn">
-                          <Info size={14} /> View Details
+                        <button className="view-details-btnn">
+                          <Info size={16} />
+                          <span>View Details</span>
                         </button>
                       </div>
                       <div className="subcategory-actions">

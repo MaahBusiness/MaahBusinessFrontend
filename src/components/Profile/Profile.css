@@ -1,9 +1,14 @@
 /* Profile Layout and Shared Styles */
 .profile-layout {
   padding: 2rem;
-  width: 50%;
+  width: 75%;
+  max-width: 1200px;
   margin: 0 auto;
   color: #e0e0e0;
+  position: relative;
+  left: 5%;
+
+  border-radius: 12px;
 }
 
 .profile-header {
@@ -61,6 +66,7 @@
 
 .profile-content {
   padding: 2rem;
+  background-color: #1e1e1e;
 }
 
 /* Profile Card Styles */
@@ -89,6 +95,7 @@
 /* Profile Info Styles */
 .profile-details {
   padding: 1.5rem;
+  background-color: #1e1e1e;
 }
 
 .profile-detail-item {
@@ -114,9 +121,11 @@
   flex: 1;
   color: #e0e0e0;
 }
+
 /* Form Styles */
 .profile-form {
   padding: 1.5rem;
+  background-color: #1e1e1e;
 }
 
 .form-group {
@@ -133,8 +142,8 @@
 .form-group input {
   width: 100%;
   padding: 0.75rem 1rem;
-  background-color: #16213e;
-  border: 1px solid #0f3460;
+  background-color: #252525;
+  border: 1px solid #333;
   border-radius: 6px;
   color: #e0e0e0;
   font-size: 1rem;
@@ -144,6 +153,7 @@
 .form-group input:focus {
   border-color: #494cf3;
   outline: none;
+  box-shadow: 0 0 0 2px rgba(73, 76, 243, 0.2);
 }
 
 .form-group small {
@@ -159,11 +169,11 @@
 }
 
 .input-error {
-  border-color: #494cf3 !important;
+  border-color: #ef4444 !important;
 }
 
 .error-message {
-  color: #494cf3;
+  color: #ef4444;
   font-size: 0.875rem;
   margin-top: 0.5rem;
   display: block;
@@ -174,6 +184,7 @@
   gap: 1rem;
   margin-top: 2rem;
 }
+
 .logout-button {
   background: #494cf3;
   padding: 1em 1.5em;
@@ -181,6 +192,14 @@
   width: 100%;
   margin: 1em auto;
   color: #fff;
+  border: none;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.logout-button:hover {
+  background: #3a3cd9;
 }
 
 /* Button Styles */
@@ -201,13 +220,17 @@
   border: 1px solid #494cf3;
 }
 
+.profile-edit-button:hover {
+  background-color: rgba(73, 76, 243, 0.1);
+}
+
 .btn-save {
   background-color: #494cf3;
   color: white;
 }
 
 .btn-save:hover {
-  background-color: #494cf3;
+  background-color: #3a3cd9;
 }
 
 .btn-cancel {
@@ -222,10 +245,11 @@
 
 /* Password Requirements */
 .password-requirements {
-  background-color: #434599;
+  background-color: #252525;
   padding: 1rem;
   border-radius: 6px;
   margin-bottom: 1.5rem;
+  border: 1px solid #333;
 }
 
 .password-requirements h4 {
@@ -262,22 +286,22 @@
 }
 
 .profile-modal-content {
-  background-color: #16213e;
+  background-color: #1e1e1e;
   padding: 2rem;
   border-radius: 12px;
   max-width: 400px;
   width: 90%;
   text-align: center;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-  border: 1px solid #0f3460;
+  border: 1px solid #333;
 }
 
 .profile-modal-content.error {
-  border-top: 4px solid #ef476f;
+  border-top: 4px solid #ef4444;
 }
 
 .profile-modal-content.success {
-  border-top: 4px solid #06d6a0;
+  border-top: 4px solid #10b981;
 }
 
 .profile-modal-content h3 {
@@ -288,7 +312,7 @@
 
 .profile-modal-content button {
   padding: 0.75rem 1.5rem;
-  background-color: #e94560;
+  background-color: #494cf3;
   color: white;
   font-weight: 500;
   border-radius: 6px;
@@ -298,14 +322,44 @@
 }
 
 .profile-modal-content button:hover {
-  background-color: #d63d57;
+  background-color: #3a3cd9;
+}
+
+.success-message {
+  background-color: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  border: 1px solid #10b981;
+  border-radius: 4px;
+  padding: 10px 15px;
+  margin-bottom: 20px;
 }
 
 /* Responsive Styles */
+@media (max-width: 1024px) {
+  .profile-layout {
+    width: 90%;
+    padding: 1.5rem;
+    left: 5%;
+  }
+
+  .profile-content {
+    padding: 1.5rem;
+  }
+}
+
 @media (max-width: 768px) {
   .profile-layout {
     padding: 1rem;
-    width: 90%;
+    width: 95%;
+    left: 0;
+  }
+
+  .profile-header h2 {
+    font-size: 1.5rem;
+  }
+
+  .profile-subtitle {
+    font-size: 0.875rem;
   }
 
   .profile-nav {
@@ -341,13 +395,60 @@
   .btn-cancel {
     width: 100%;
   }
+
+  .profile-card-header {
+    padding: 1rem;
+  }
+
+  .profile-card-header h3 {
+    font-size: 1.125rem;
+  }
+
+  .profile-details,
+  .profile-form {
+    padding: 1rem;
+  }
+
+  .profile-modal-content {
+    padding: 1.5rem;
+  }
 }
 
-.success-message {
-  background-color: #6366f1;
-  color: #fff;
-  border: 1px solid #6366f1;
-  border-radius: 4px;
-  padding: 10px 15px;
-  margin-bottom: 20px;
+@media (max-width: 480px) {
+  .profile-layout {
+    width: 100%;
+    padding: 0.75rem;
+    border-radius: 0;
+    left: 0;
+  }
+
+  .profile-header h2 {
+    font-size: 1.25rem;
+  }
+
+  .profile-subtitle {
+    font-size: 0.75rem;
+  }
+
+  .profile-wrapper {
+    border-radius: 8px;
+  }
+
+  .profile-content {
+    padding: 0.75rem;
+  }
+
+  .profile-details,
+  .profile-form {
+    padding: 0.75rem;
+  }
+
+  .form-group input {
+    padding: 0.625rem 0.75rem;
+    font-size: 0.875rem;
+  }
+
+  .profile-modal-content {
+    padding: 1rem;
+  }
 }

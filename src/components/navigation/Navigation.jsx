@@ -124,8 +124,8 @@ const Navbar = () => {
                 className={`notification ${isNotificationPage ? "active" : ""}`}
               >
                 <Link to="/Notification">
-                  <div className="notification-container">
-                    <FaBell size={24} title="Notificationss" />
+                  <div className="notification-containerr">
+                    <FaBell size={22} title="Notifications" />
                     {notificationCount > 0 && (
                       <span className="notification-badge">
                         {notificationCount > 99 ? "99+" : notificationCount}

@@ -11,20 +11,21 @@
 .header-actions {
   display: flex;
   gap: 1rem;
+  position: relative;
+  z-index: 1;
 }
 /* Header Styles */
 .invoice-manager-header {
   display: flex;
+  width: 80%;
+  margin: 1em auto;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
-  background-color: #1e1e1e;
-  padding: 1.5rem;
-  border-radius: 0.75rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  width: 70%;
-  margin: 1em auto;
-  border: 1px solid #333;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #333;
+  position: relative;
+  z-index: 1;
 }
 
 .invoice-manager-header h2 {
@@ -62,15 +63,16 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.75rem 1.25rem;
   background-color: #6366f1;
-  color: white;
+  color: #fff;
   border: none;
   border-radius: 0.5rem;
-  font-weight: 500;
-  font-size: 0.875rem;
+  padding: 0.75rem 1.25rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
+  position: relative;
+  z-index: 1;
 }
 
 .add-button:active {
@@ -79,26 +81,32 @@
 }
 
 .view-toggle {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  width: 70%;
   margin: 1em auto;
+  width: 80%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  position: relative;
+  z-index: 1;
 }
 
 .view-toggle-btn {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.75rem 1.25rem;
   background-color: #252525;
   color: #a0a0a0;
   border: 1px solid #333;
   border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
   font-weight: 500;
-  font-size: 0.875rem;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
+  position: relative;
+  z-index: 1;
 }
 
 .view-toggle-btn:hover {
@@ -646,7 +654,7 @@
 }
 
 /* Modal Styles */
-.modal-overlay {
+.invoice-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -661,11 +669,11 @@
   backdrop-filter: blur(4px);
 }
 
-.modal-content {
+.invoice-modal-content {
   background-color: #1e1e1e;
   border-radius: 1rem;
-  width: 100%;
-  max-width: 800px;
+  width: 80%;
+
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
@@ -849,12 +857,16 @@
 
 /* Line Items */
 .line-items {
+  display: grid;
+  width: 100%;
   border: 1px solid #333;
   border-radius: 0.375rem;
   overflow: hidden;
+  background: #1e1e1e;
 }
 
 .line-item-header {
+  width: 100%;
   display: flex;
   background-color: #252525;
   padding: 0.75rem;
@@ -862,20 +874,35 @@
   color: #a0a0a0;
   font-size: 0.75rem;
   text-transform: uppercase;
+  border-bottom: 1px solid #333;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .line-item {
   display: flex;
-  padding: 0.75rem;
+  padding: 1rem;
+  align-items: center;
   border-top: 1px solid #333;
+  transition: background-color 0.2s ease;
+  position: relative;
+}
+
+.line-item:hover {
+  background-color: #252525;
 }
 
 .line-item-col {
-  padding: 0 0.5rem;
+  padding: 0 0.75rem;
+  display: flex;
+  align-items: center;
+  min-width: 0;
 }
 
 .line-item-col.product {
   flex: 2;
+  min-width: 200px;
 }
 
 .line-item-col.quantity,
@@ -883,12 +910,16 @@
 .line-item-col.discount,
 .line-item-col.subtotal {
   flex: 1;
+  min-width: 100px;
+  justify-content: flex-end;
 }
 
 .line-item-col.price input,
 .line-item-col.subtotal {
   color: #f0f0f0;
   font-weight: 600;
+  text-align: right;
+  width: 100%;
 }
 
 .line-item-col.subtotal {
@@ -900,7 +931,32 @@
   flex: 0.5;
   display: flex;
   justify-content: center;
-  align-items: center;
+}
+
+.line-item-col select,
+.line-item-col input {
+  width: 100%;
+  padding: 0.5rem;
+  background-color: #252525;
+  border: 1px solid #333;
+  border-radius: 0.375rem;
+  color: #f0f0f0;
+  font-size: 0.875rem;
+  transition: all 0.3s ease;
+}
+
+.line-item-col select:focus,
+.line-item-col input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+  outline: none;
+}
+
+.line-item-col select:disabled,
+.line-item-col input:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  background-color: #2a2a2a;
 }
 
 .remove-line-btn {
@@ -1055,13 +1111,13 @@
   font-weight: 500;
   font-size: 0.875rem;
   cursor: pointer;
+  width: 100%;
   transition: all 0.3s ease;
 }
 
 .cancel-btn {
-  background-color: transparent;
-  color: #a0a0a0;
-  border: 1px solid #a0a0a0;
+  background-color: #dc2626;
+  color: white;
 }
 
 .cancel-btn:hover {
@@ -1331,34 +1387,6 @@ select option:hover {
   animation: slideOut 0.3s ease-in forwards;
 }
 
-/* Modal */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.7);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-  padding: 1rem;
-  backdrop-filter: blur(4px);
-}
-
-.modal-content {
-  background-color: #1e1e1e;
-  border-radius: 1rem;
-  width: 100%;
-  max-width: 600px;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-  border: 1px solid #333;
-  animation: modalFadeIn 0.3s ease-out;
-}
-
 /* Notification Details Modal */
 .notification-details-modal {
   max-width: 600px;
@@ -1505,8 +1533,8 @@ select option:hover {
 
 .cancel-btn {
   padding: 0.75rem 1.5rem;
-  background-color: transparent;
-  color: #a0a0a0;
+  background-color: #dc2626;
+  width: 50%;
   border: 1px solid #333;
   border-radius: 0.5rem;
   font-weight: 500;
@@ -1650,46 +1678,31 @@ select option:hover {
   }
 
   .invoice-manager-header,
-  .view-toggle,
-  .search-container,
-  .invoice-list,
-  .empty-state {
-    width: 100%;
-  }
-
-  .invoice-manager-header {
-    flex-direction: column;
-    gap: 1rem;
-    align-items: flex-start;
-    padding: 1.25rem;
-  }
-
   .invoice-manager-header h2 {
-    font-size: 1.5rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
   }
 
   .add-button {
     width: 100%;
-    justify-content: center;
   }
 
   .view-toggle {
-    flex-direction: row;
-    justify-content: space-between;
+    flex-direction: column;
+    width: 100%;
   }
 
   .view-toggle-btn {
-    flex: 1;
-    justify-content: center;
+    width: 100%;
   }
 
   .invoice-list {
-    grid-template-columns: 1fr;
+    margin-top: 1rem;
   }
 
   .form-grid {
     grid-template-columns: 1fr;
-    gap: 1rem;
   }
 
   .analytics-summary {
@@ -1699,7 +1712,7 @@ select option:hover {
   .section-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.75rem;
+    gap: 0.5rem;
   }
 
   .add-line-btn {
@@ -1708,12 +1721,26 @@ select option:hover {
 
   .line-item {
     flex-direction: column;
+    align-items: flex-start;
+    padding: 1.5rem;
     gap: 0.75rem;
   }
 
   .line-item-col {
-    padding: 0;
     width: 100%;
+    padding: 0.5rem 0;
+    justify-content: space-between;
+  }
+
+  .line-item-col.product {
+    min-width: 0;
+  }
+
+  .line-item-col.quantity,
+  .line-item-col.price,
+  .line-item-col.discount,
+  .line-item-col.subtotal {
+    min-width: 0;
   }
 
   .line-item-header {
@@ -1725,16 +1752,25 @@ select option:hover {
   .line-item-col.price::before,
   .line-item-col.discount::before,
   .line-item-col.subtotal::before {
-    content: attr(class);
+    content: attr(data-label);
     display: block;
     text-transform: capitalize;
     font-weight: 500;
     color: #a0a0a0;
     margin-bottom: 0.25rem;
+    font-size: 0.75rem;
   }
 
   .line-item-col.actions {
-    align-self: flex-end;
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: auto;
+  }
+
+  .line-item-col.price input,
+  .line-item-col.subtotal {
+    text-align: right;
   }
 
   .invoice-detail-header {
@@ -1745,10 +1781,12 @@ select option:hover {
   .invoice-items-table {
     display: block;
     overflow-x: auto;
+    white-space: nowrap;
   }
 
   .modal-footer {
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 0.5rem;
   }
 
   .cancel-btn,
@@ -1757,10 +1795,7 @@ select option:hover {
   .edit-btn,
   .delete-btn,
   .download-btn {
-    flex: 1;
-    padding: 0.75rem 1rem;
-    min-width: 120px;
-    justify-content: center;
+    width: 100%;
   }
 }
 
@@ -1771,38 +1806,34 @@ select option:hover {
 
   .invoice-manager-header {
     padding: 1rem;
-    margin-bottom: 1rem;
   }
 
   .invoice-manager-header h2 {
-    font-size: 1.25rem;
+    font-size: 1.5rem;
   }
 
   .view-toggle {
-    margin-bottom: 1rem;
+    gap: 0.5rem;
   }
 
   .view-toggle-btn {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.75rem;
+    padding: 0.5rem;
   }
 
   .search-container {
-    margin-bottom: 1rem;
+    width: 100%;
   }
 
   .empty-state {
-    padding: 2rem 1rem;
+    padding: 2rem;
   }
 
   .invoice-card-footer {
-    flex-direction: column;
-    gap: 0.75rem;
+    padding: 0.75rem;
   }
 
   .invoice-actions {
-    width: 100%;
-    justify-content: space-between;
+    gap: 0.5rem;
   }
 
   .summary-card {
@@ -1810,8 +1841,8 @@ select option:hover {
   }
 
   .summary-icon {
-    width: 40px;
-    height: 40px;
+    width: 2.5rem;
+    height: 2.5rem;
   }
 
   .summary-value {
@@ -1819,7 +1850,7 @@ select option:hover {
   }
 
   .summary-trend {
-    font-size: 0.7rem;
+    font-size: 0.75rem;
   }
 
   .chart-container {
@@ -1827,24 +1858,23 @@ select option:hover {
   }
 
   .chart {
-    height: 350px;
+    height: 200px;
   }
 
   .modal-content {
-    border-radius: 0.5rem;
-  }
-
-  .modal-header {
-    padding: 0.75rem 1rem;
-  }
-
-  .modal-body {
     padding: 1rem;
   }
 
+  .modal-header {
+    padding: 0.75rem;
+  }
+
+  .modal-body {
+    padding: 0.75rem;
+  }
+
   .modal-footer {
-    padding: 0.75rem 1rem;
-    flex-direction: column;
+    padding: 0.75rem;
   }
 
   .cancel-btn,
@@ -1853,17 +1883,17 @@ select option:hover {
   .edit-btn,
   .delete-btn,
   .download-btn {
-    width: 100%;
+    padding: 0.5rem 1rem;
   }
 
   .form-section h4 {
-    font-size: 0.9rem;
+    font-size: 1rem;
   }
 }
 
 @media (max-width: 400px) {
   .invoice-card-body {
-    gap: 0.5rem;
+    padding: 1rem;
   }
 
   .invoice-client,
@@ -1871,15 +1901,17 @@ select option:hover {
   .invoice-date,
   .invoice-amount,
   .invoice-items {
-    font-size: 0.8rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
   }
 
   .analytics-summary {
-    gap: 1rem;
+    gap: 0.75rem;
   }
 
   .summary-value {
-    font-size: 1.1rem;
+    font-size: 1.125rem;
   }
 
   .summary-trend {
@@ -1887,9 +1919,8 @@ select option:hover {
   }
 
   .status-message {
-    left: 20px;
-    right: 20px;
-    max-width: none;
+    padding: 0.75rem;
+    font-size: 0.875rem;
   }
 }
 
@@ -2197,4 +2228,29 @@ body {
 .pagination-info {
   font-size: 0.875rem;
   color: #a0a0a0;
+}
+
+.invoice-create-modal-wide {
+  max-width: 1400px;
+  width: 80%;
+  background-color: #1e1e1e;
+  border-radius: 1.2rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  padding: 2rem;
+  margin: 2rem auto;
+  color: #fff;
+}
+
+@media (max-width: 768px) {
+  .invoice-create-modal-wide {
+    width: 95%;
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .invoice-create-modal-wide {
+    width: 98%;
+    padding: 1rem;
+  }
 }

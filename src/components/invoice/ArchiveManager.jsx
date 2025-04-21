@@ -297,8 +297,8 @@ const ArchiveManager = ({ onBack }) => {
 
       {/* View Invoice Modal */}
       {selectedInvoice && (
-        <div className="modal-overlay">
-          <div className="modal-content invoice-detail-modal">
+        <div className="invoice-modal-overlay">
+          <div className="invoice-modal-content invoice-detail-modal">
             <div className="modal-header">
               <h3>Archived Invoice Details</h3>
               <button

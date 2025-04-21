@@ -699,7 +699,8 @@
 /* Form Actions */
 .form-actions {
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
+  align-items: center;
   gap: 1rem;
   margin-top: 1.5rem;
   padding-top: 1rem;
@@ -721,20 +722,20 @@
   font-weight: 500;
   font-size: 0.875rem;
   cursor: pointer;
+  color: #fff;
   transition: all 0.3s ease;
   border: none;
 }
 
 .cancel-btn {
-  background-color: transparent;
-  color: #a0a0a0;
+  background-color: #dc2626;
+  color: #fff;
   border: 1px solid #a0a0a0;
 }
 
 .create-btn {
   background-color: #6366f1;
   color: white;
-  box-shadow: 0 4px 6px rgba(99, 102, 241, 0.2);
 }
 
 .create-btn:active {

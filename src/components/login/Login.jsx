@@ -84,39 +84,41 @@ const Login = () => {
   };
 
   return (
-    <div className="login">
-      <h2>Login</h2>
-      <form onSubmit={handleSubmit}>
-        <p className="Lab">Enter Username</p>
+    <div className="auth-login-container">
+      <h2 className="auth-login-title">Login</h2>
+      <form onSubmit={handleSubmit} className="auth-login-form">
+        <p className="auth-label">Enter Username</p>
         <input
           type="text"
           placeholder="Enter Username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           required
+          className="auth-input"
         />
-        <p className="Lab">Enter Password</p>
+        <p className="auth-label">Enter Password</p>
         <input
           type="password"
           placeholder="Enter Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
+          className="auth-input"
         />
-        <button type="submit" className="loginbtn" disabled={isLoading}>
+        <button type="submit" className="auth-submit-btn" disabled={isLoading}>
           {isLoading ? "Logging in..." : "Login"}
         </button>
-        {errorMessage && <p className="error">{errorMessage}</p>}
-        <p>
+        {errorMessage && <p className="auth-error">{errorMessage}</p>}
+        <p className="auth-link-text">
           I don't have an account?{" "}
           <Link to="/signup">
-            <span>Sign up</span>
+            <span className="auth-link">Sign up</span>
           </Link>
         </p>
-        <p>
+        <p className="auth-link-text">
           Forgot your password?{" "}
           <Link to="/forgot-password">
-            <span>Reset it</span>
+            <span className="auth-link">Reset it</span>
           </Link>
         </p>
       </form>

@@ -15,7 +15,10 @@
   font-size: 1.4rem;
   font-weight: 600;
 }
-
+.notification-containerr {
+  border-radius: 50%;
+  padding: 0.5em;
+}
 .nav-brand a {
   color: #6366f1;
   text-decoration: none;

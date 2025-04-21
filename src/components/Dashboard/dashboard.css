@@ -379,45 +379,58 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+/* Custom scrollbar for top products */
+.top-products::-webkit-scrollbar {
+  width: 4px;
+}
+
+.top-products::-webkit-scrollbar-track {
+  background: #1e1e1e;
+  border-radius: 2px;
+}
+
+.top-products::-webkit-scrollbar-thumb {
+  background: #6366f1;
+  border-radius: 2px;
+}
+
+.top-products::-webkit-scrollbar-thumb:hover {
+  background: #4f46e5;
 }
 
 .product-item {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  padding: 1rem;
-  border-radius: 0.5rem;
-  transition: all 0.2s ease;
-  cursor: pointer;
+  gap: 0.5rem;
+  padding: 0.75rem;
   margin-bottom: 0.5rem;
-}
-
-.product-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  border-color: #6366f1;
+  background-color: #252525;
+  border: 1px solid #333;
+  border-radius: 0.5rem;
 }
 
 .product-color {
   width: 4px;
-  height: 40px;
-  border-radius: 4px;
-  margin-right: 1rem;
-  flex-shrink: 0;
-  transition: width 0.2s ease;
-}
-
-.product-item:hover .product-color {
-  width: 6px;
+  height: 24px;
+  border-radius: 2px;
+  margin-right: 0;
 }
 
 .product-info {
-  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
   min-width: 0;
-  overflow: hidden;
 }
 
 .product-name {
-  font-size: 0.9375rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #ffffff;
   white-space: nowrap;
@@ -427,13 +440,14 @@
 
 .product-sold {
   font-size: 0.75rem;
-  color: #d1d5db;
-  margin-top: 0.25rem;
+  color: #9ca3af;
 }
 
 .product-revenue {
-  font-size: 0.9375rem;
-  font-weight: 700;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #6366f1;
+  padding-left: 0.5rem;
   white-space: nowrap;
 }
 
@@ -923,6 +937,26 @@
   }
   .dashboard-cards {
     grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 0 0.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .card {
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+    width: 70%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .card-icon-wrapper {
+    width: 36px;
+    height: 36px;
+  }
+  .card-value {
+    font-size: 1.125rem;
   }
   .dashboard-header {
     flex-direction: column;
@@ -971,17 +1005,126 @@
     justify-content: center;
   }
 
-  .card {
-    padding: 1.25rem;
+  /* Specific styles for customers card on mobile */
+  .customers-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.875rem;
+    width: 100%;
   }
 
-  .card-icon-wrapper {
-    width: 40px;
-    height: 40px;
+  .customers-card .card-icon-wrapper {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
   }
 
-  .card-value {
-    font-size: 1.25rem;
+  .customers-card .card-content {
+    width: 100%;
+  }
+
+  .customers-card h3 {
+    font-size: 0.875rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .customers-card .card-value {
+    font-size: 1rem;
+    margin-top: 0.25rem;
+  }
+
+  .average-order-value-card {
+    width: 100%;
+    min-width: unset;
+    padding: 1rem;
+  }
+
+  .orders-card {
+    width: 100%;
+    min-width: unset;
+    padding: 1rem;
+  }
+
+  .revenue-card {
+    width: 100%;
+
+    padding: 1rem;
+  }
+
+  .product-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.3em;
+    margin-bottom: 0.5rem;
+    background-color: #252525;
+    border: 1px solid #333;
+    border-radius: 0.5rem;
+  }
+
+  .product-color {
+    width: 4px;
+    height: 24px;
+    border-radius: 2px;
+    margin-right: 0;
+  }
+
+  .product-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+  }
+
+  .product-name {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #ffffff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .product-sold {
+    font-size: 0.75rem;
+    color: #9ca3af;
+  }
+
+  .product-revenue {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #6366f1;
+    padding-left: 0.5rem;
+    white-space: nowrap;
+  }
+
+  .top-products {
+    display: flex;
+    flex-direction: column;
+    gap: 0rem;
+    max-height: 250px;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+  }
+
+  .top-products::-webkit-scrollbar {
+    width: 3px;
+  }
+
+  .top-products::-webkit-scrollbar-track {
+    background: #1e1e1e;
+    border-radius: 2px;
+  }
+
+  .top-products::-webkit-scrollbar-thumb {
+    background: #6366f1;
+    border-radius: 2px;
+  }
+
+  .top-products::-webkit-scrollbar-thumb:hover {
+    background: #4f46e5;
   }
 }
 
@@ -1075,11 +1218,4 @@
   z-index: 100;
   color: white;
   border-radius: 8px;
-}
-
-.revenue-card {
-  width: 300px;
-  padding: 16px;
-  flex: 1;
-  min-width: 250px;
 }
