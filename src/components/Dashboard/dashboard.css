@@ -242,7 +242,7 @@
 }
 
 .card-value {
-  font-size: 1.5rem;
+  font-size: 1.2rem;
   font-weight: 600;
   margin-top: 0.5rem;
 }
@@ -968,7 +968,7 @@
     height: 36px;
   }
   .card-value {
-    font-size: 1.125rem;
+    font-size: 0.75rem;
   }
   .dashboard-header {
     flex-direction: column;
