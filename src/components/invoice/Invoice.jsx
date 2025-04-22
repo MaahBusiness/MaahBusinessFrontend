@@ -1353,8 +1353,8 @@ const Invoice = () => {
                     <label htmlFor="advance-paid">Advance Paid (XFA)</label>
                     <input
                       id="advance-paid"
-                      type="decimal"
-                      min="0"
+                      type="number"
+                      step="0.01"
                       placeholder="Enter advance payment"
                       value={advancePaid}
                       onChange={(e) => setAdvancePaid(Number(e.target.value))}
@@ -1467,7 +1467,8 @@ const Invoice = () => {
                           data-label="Discount (XFA)"
                         >
                           <input
-                            type="decimal"
+                            type="number"
+                            step="0.01"
                             min="0"
                             value={line.discount}
                             onChange={(e) =>
@@ -1887,9 +1888,10 @@ const Invoice = () => {
                 <label htmlFor="payment-amount">Payment Amount (XFA)</label>
                 <input
                   id="payment-amount"
-                  type="decimal"
+                  type="number"
                   min="0"
                   max={Number.parseFloat(selectedInvoice.remaining_amount || 0)}
+                  step="0.01"
                   value={paymentAmount}
                   onChange={(e) => setPaymentAmount(Number(e.target.value))}
                   className="payment-input"
