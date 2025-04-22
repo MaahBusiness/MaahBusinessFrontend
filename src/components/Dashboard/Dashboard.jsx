@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import axios from "axios"
+import { useState, useEffect } from "react";
+import axios from "axios";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -14,11 +14,29 @@ import {
   Tooltip,
   Legend,
   RadialLinearScale,
-} from "chart.js"
-import { Line, Bar, Doughnut } from "react-chartjs-2"
-import { FaMoneyBillWave, FaShoppingCart, FaChartLine, FaUsers, FaEye, FaEyeSlash } from "react-icons/fa"
-import { Calendar, User, Users, Loader, X, Search, Plus, Save, Edit, Trash } from "lucide-react"
-import "./dashboard.css"
+} from "chart.js";
+import { Line, Bar, Doughnut } from "react-chartjs-2";
+import {
+  FaMoneyBillWave,
+  FaShoppingCart,
+  FaChartLine,
+  FaUsers,
+  FaEye,
+  FaEyeSlash,
+} from "react-icons/fa";
+import {
+  Calendar,
+  User,
+  Users,
+  Loader,
+  X,
+  Search,
+  Plus,
+  Save,
+  Edit,
+  Trash,
+} from "lucide-react";
+import "./dashboard.css";
 
 // Register ChartJS components
 ChartJS.register(
@@ -32,52 +50,52 @@ ChartJS.register(
   Tooltip,
   Legend,
   RadialLinearScale,
-)
+);
 
 const Dashboard = () => {
-  const [invoices, setInvoices] = useState([])
-  const [products, setProducts] = useState([])
-  const [timePeriod, setTimePeriod] = useState("monthly")
-  const [isLoading, setIsLoading] = useState(false)
+  const [invoices, setInvoices] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [timePeriod, setTimePeriod] = useState("monthly");
+  const [isLoading, setIsLoading] = useState(false);
   // Add a separate state for globalPendingPayment to ensure it's accessible
-  const [globalPendingPayment, setGlobalPendingPayment] = useState("")
+  const [globalPendingPayment, setGlobalPendingPayment] = useState("");
 
   // State for API data
   const [inventoryData, setInventoryData] = useState({
     stockStatus: [],
     stockData: [],
     alerts: { low_stock: 0, out_of_stock: 0, overstocked: 0 },
-  })
+  });
   const [productPerformanceData, setProductPerformanceData] = useState({
     topProducts: [],
     productPerformance: [],
-  })
+  });
   const [salesDataState, setSalesData] = useState({
     salesOverTime: [],
     recentSales: [],
     salesByCategory: [],
     monthlyRevenue: [],
     globalPendingPayment: [],
-  })
+  });
   const [dashboardStats, setDashboardStats] = useState({
     revenue: { value: "0", change: "0", change_percent: "0" },
     orders: { value: "0", change: "0", change_percent: "0" },
     averageOrderValue: { value: "0", change: "0", change_percent: "0" },
     customers: { value: "0", change: "0", change_percent: "0" },
-  })
-  const [topSellingProducts, setTopSellingProducts] = useState([])
-  const [profitData, setProfitData] = useState([])
+  });
+  const [topSellingProducts, setTopSellingProducts] = useState([]);
+  const [profitData, setProfitData] = useState([]);
 
   // User management state
-  const [showUserModal, setShowUserModal] = useState(false)
-  const [users, setUsers] = useState([])
-  const [error, setError] = useState(null)
-  const [editingUser, setEditingUser] = useState(null)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [confirmDelete, setConfirmDelete] = useState(null)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [currentUserRole, setCurrentUserRole] = useState(null)
-  const [showCreateUserModal, setShowCreateUserModal] = useState(false)
+  const [showUserModal, setShowUserModal] = useState(false);
+  const [users, setUsers] = useState([]);
+  const [error, setError] = useState(null);
+  const [editingUser, setEditingUser] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUserRole, setCurrentUserRole] = useState(null);
+  const [showCreateUserModal, setShowCreateUserModal] = useState(false);
   const [newUser, setNewUser] = useState({
     username: "",
     email: "",
@@ -85,160 +103,184 @@ const Dashboard = () => {
     password: "",
     role: "cashier",
     is_active: true,
-  })
-  const [showPassword, setShowPassword] = useState(false)
-  const [debugInfo, setDebugInfo] = useState(null)
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [debugInfo, setDebugInfo] = useState(null);
 
   // Available roles
-  const availableRoles = ["manager", "cashier", "stock_keeper", "wholesale_client", "sales_agent"]
+  const availableRoles = [
+    "manager",
+    "cashier",
+    "stock_keeper",
+    "wholesale_client",
+    "sales_agent",
+  ];
 
   // Check authentication and get current user role on component mount
   useEffect(() => {
-    const token = localStorage.getItem("token")
-    setIsAuthenticated(!!token)
+    const token = localStorage.getItem("token");
+    setIsAuthenticated(!!token);
 
     if (token) {
-      getCurrentUserRole()
+      getCurrentUserRole();
     } else {
-      setError("Please log in to manage users")
+      setError("Please log in to manage users");
     }
-  }, [])
+  }, []);
 
   // Create axios instance with authentication headers
   const getAuthAxios = () => {
-    const token = localStorage.getItem("token")
+    const token = localStorage.getItem("token");
     return axios.create({
       headers: {
         Authorization: token ? `Bearer ${token}` : "",
       },
-    })
-  }
+    });
+  };
 
   // Get current user role
   const getCurrentUserRole = async () => {
     try {
-      const authAxios = getAuthAxios()
+      const authAxios = getAuthAxios();
 
       // Try to get the user info from localStorage first
       try {
-        const userData = localStorage.getItem("user")
+        const userData = localStorage.getItem("user");
         if (userData) {
-          const parsedUser = JSON.parse(userData)
+          const parsedUser = JSON.parse(userData);
           if (parsedUser && parsedUser.role) {
-            setCurrentUserRole(parsedUser.role)
-            console.log("Current user role set from localStorage:", parsedUser.role)
-            return
+            setCurrentUserRole(parsedUser.role);
+            console.log(
+              "Current user role set from localStorage:",
+              parsedUser.role,
+            );
+            return;
           }
         }
       } catch (localStorageError) {
-        console.error("Error getting user from localStorage:", localStorageError)
+        console.error(
+          "Error getting user from localStorage:",
+          localStorageError,
+        );
       }
 
       // Try the user-info endpoint as a fallback
       try {
-        const userInfoResponse = await authAxios.get("http://localhost:8000/api/v1/user-info/")
-        console.log("User info data:", userInfoResponse.data)
+        const userInfoResponse = await authAxios.get(
+          "http://localhost:8000/api/v1/user-info/",
+        );
+        console.log("User info data:", userInfoResponse.data);
 
         if (userInfoResponse.data && userInfoResponse.data.role) {
-          setCurrentUserRole(userInfoResponse.data.role)
-          console.log("Current user role set to:", userInfoResponse.data.role)
-          return
+          setCurrentUserRole(userInfoResponse.data.role);
+          console.log("Current user role set to:", userInfoResponse.data.role);
+          return;
         }
       } catch (userInfoError) {
-        console.error("Error fetching from /user-info/ endpoint:", userInfoError)
+        console.error(
+          "Error fetching from /user-info/ endpoint:",
+          userInfoError,
+        );
       }
 
       // If we couldn't determine the role, set a default
-      console.warn("Could not determine user role from any source, defaulting to non-manager")
-      setCurrentUserRole("cashier") // Default to non-manager role
+      console.warn(
+        "Could not determine user role from any source, defaulting to non-manager",
+      );
+      setCurrentUserRole("cashier"); // Default to non-manager role
     } catch (err) {
-      console.error("Error fetching current user:", err)
+      console.error("Error fetching current user:", err);
       if (err.response && err.response.status === 401) {
-        setIsAuthenticated(false)
-        localStorage.removeItem("token")
+        setIsAuthenticated(false);
+        localStorage.removeItem("token");
       }
     }
-  }
+  };
 
   // Check if user has manager permissions
   const hasManagerPermission = () => {
-    return currentUserRole === "manager"
-  }
+    return currentUserRole === "manager";
+  };
 
   // Add this function to check if the user has permission to view report data
   const hasReportViewPermission = () => {
-    return currentUserRole === "manager" || currentUserRole === "cashier"
-  }
+    return currentUserRole === "manager" || currentUserRole === "cashier";
+  };
 
   // Fetch users when modal is opened
   useEffect(() => {
     if (showUserModal) {
-      fetchUsers()
+      fetchUsers();
     }
-  }, [showUserModal])
+  }, [showUserModal]);
 
   // Function to fetch users
   const fetchUsers = async () => {
     if (!isAuthenticated) {
-      setError("Please log in to view users")
-      return
+      setError("Please log in to view users");
+      return;
     }
 
     try {
-      setIsLoading(true)
-      setError(null)
-      const authAxios = getAuthAxios()
-      const response = await authAxios.get("http://localhost:8000/api/v1/users/")
+      setIsLoading(true);
+      setError(null);
+      const authAxios = getAuthAxios();
+      const response = await authAxios.get(
+        "http://localhost:8000/api/v1/users/",
+      );
 
-      console.log("Users data:", response.data)
+      console.log("Users data:", response.data);
 
       // Process users to ensure we don't expose sensitive data
       const processedUsers = response.data.map((user) => ({
         ...user,
         // Don't include password in the frontend state
         password: undefined,
-      }))
+      }));
 
-      setUsers(processedUsers)
+      setUsers(processedUsers);
     } catch (err) {
-      console.error("Error fetching users:", err)
+      console.error("Error fetching users:", err);
 
       // Handle authentication errors
       if (err.response && err.response.status === 401) {
-        setIsAuthenticated(false)
-        localStorage.removeItem("token")
-        setError("Authentication expired. Please log in again.")
+        setIsAuthenticated(false);
+        localStorage.removeItem("token");
+        setError("Authentication expired. Please log in again.");
       } else {
-        setError("Failed to load users. Please try again.")
+        setError("Failed to load users. Please try again.");
       }
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   // Function to create a new user
   const createUser = async () => {
     if (!isAuthenticated) {
-      setError("Please log in to create users")
-      return
+      setError("Please log in to create users");
+      return;
     }
 
     // Validate form
     if (!newUser.username || !newUser.email || !newUser.password) {
-      setError("Username, email, and password are required")
-      return
+      setError("Username, email, and password are required");
+      return;
     }
 
     try {
-      setIsLoading(true)
-      setError(null)
-      const authAxios = getAuthAxios()
+      setIsLoading(true);
+      setError(null);
+      const authAxios = getAuthAxios();
 
-      const response = await authAxios.post("http://localhost:8000/api/v1/users/", newUser)
-      console.log("User created:", response.data)
+      const response = await authAxios.post(
+        "http://localhost:8000/api/v1/users/",
+        newUser,
+      );
+      console.log("User created:", response.data);
 
       // Refresh user list
-      fetchUsers()
+      fetchUsers();
 
       // Reset form and close modal
       setNewUser({
@@ -248,47 +290,55 @@ const Dashboard = () => {
         password: "",
         role: "cashier",
         is_active: true,
-      })
-      setShowCreateUserModal(false)
-      setShowPassword(false)
+      });
+      setShowCreateUserModal(false);
+      setShowPassword(false);
     } catch (err) {
-      console.error("Error creating user:", err)
+      console.error("Error creating user:", err);
 
       // Handle authentication errors
       if (err.response && err.response.status === 401) {
-        setIsAuthenticated(false)
-        localStorage.removeItem("token")
-        setError("Authentication expired. Please log in again.")
+        setIsAuthenticated(false);
+        localStorage.removeItem("token");
+        setError("Authentication expired. Please log in again.");
       } else if (err.response && err.response.data) {
-        setError(`Failed to create user: ${JSON.stringify(err.response.data)}`)
+        setError(`Failed to create user: ${JSON.stringify(err.response.data)}`);
       } else {
-        setError("Failed to create user. Please try again.")
+        setError("Failed to create user. Please try again.");
       }
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   // Function to update user
   const updateUser = async (user) => {
     if (!isAuthenticated) {
-      setError("Please log in to update users")
-      return
+      setError("Please log in to update users");
+      return;
     }
 
     try {
-      setIsLoading(true)
-      setError(null)
-      const authAxios = getAuthAxios()
+      setIsLoading(true);
+      setError(null);
+      const authAxios = getAuthAxios();
 
       // If role has changed, use the assign-role API
       if (editingUser.originalRole !== user.role) {
-        console.log("Updating role from", editingUser.originalRole, "to", user.role)
-        const roleResponse = await authAxios.post("http://localhost:8000/api/v1/users/assign-role/", {
-          user_id: user.id,
-          role: user.role,
-        })
-        console.log("Role update response:", roleResponse.data)
+        console.log(
+          "Updating role from",
+          editingUser.originalRole,
+          "to",
+          user.role,
+        );
+        const roleResponse = await authAxios.post(
+          "http://localhost:8000/api/v1/users/assign-role/",
+          {
+            user_id: user.id,
+            role: user.role,
+          },
+        );
+        console.log("Role update response:", roleResponse.data);
       }
 
       // Update other user fields
@@ -297,97 +347,106 @@ const Dashboard = () => {
         email: user.email,
         phone_number: user.phone_number,
         is_active: user.is_active,
-      }
+      };
 
-      const updateResponse = await authAxios.put(`http://localhost:8000/api/v1/users/${user.id}/`, userToUpdate)
-      console.log("User update response:", updateResponse.data)
+      const updateResponse = await authAxios.put(
+        `http://localhost:8000/api/v1/users/${user.id}/`,
+        userToUpdate,
+      );
+      console.log("User update response:", updateResponse.data);
 
       // Update users list
-      setUsers(users.map((u) => (u.id === user.id ? { ...u, ...userToUpdate, role: user.role } : u)))
-      setEditingUser(null)
+      setUsers(
+        users.map((u) =>
+          u.id === user.id ? { ...u, ...userToUpdate, role: user.role } : u,
+        ),
+      );
+      setEditingUser(null);
     } catch (err) {
-      console.error("Error updating user:", err)
+      console.error("Error updating user:", err);
 
       // Handle authentication errors
       if (err.response && err.response.status === 401) {
-        setIsAuthenticated(false)
-        localStorage.removeItem("token")
-        setError("Authentication expired. Please log in again.")
+        setIsAuthenticated(false);
+        localStorage.removeItem("token");
+        setError("Authentication expired. Please log in again.");
       } else {
-        setError("Failed to update user. Please try again.")
+        setError("Failed to update user. Please try again.");
       }
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   // Function to delete user
   const deleteUser = async (userId) => {
     if (!isAuthenticated) {
-      setError("Please log in to delete users")
-      return
+      setError("Please log in to delete users");
+      return;
     }
 
     try {
-      setIsLoading(true)
-      setError(null)
-      const authAxios = getAuthAxios()
-      const response = await authAxios.delete(`http://localhost:8000/api/v1/users/${userId}/`)
-      console.log("User delete response:", response.data)
+      setIsLoading(true);
+      setError(null);
+      const authAxios = getAuthAxios();
+      const response = await authAxios.delete(
+        `http://localhost:8000/api/v1/users/${userId}/`,
+      );
+      console.log("User delete response:", response.data);
 
       // Remove user from list
-      setUsers(users.filter((u) => u.id !== userId))
-      setConfirmDelete(null)
+      setUsers(users.filter((u) => u.id !== userId));
+      setConfirmDelete(null);
     } catch (err) {
-      console.error("Error deleting user:", err)
+      console.error("Error deleting user:", err);
 
       // Handle authentication errors
       if (err.response && err.response.status === 401) {
-        setIsAuthenticated(false)
-        localStorage.removeItem("token")
-        setError("Authentication expired. Please log in again.")
+        setIsAuthenticated(false);
+        localStorage.removeItem("token");
+        setError("Authentication expired. Please log in again.");
       } else {
-        setError("Failed to delete user. Please try again.")
+        setError("Failed to delete user. Please try again.");
       }
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   // Handle input change for editing user
   const handleInputChange = (field, value) => {
     setEditingUser({
       ...editingUser,
       [field]: value,
-    })
-  }
+    });
+  };
 
   // Handle input change for new user
   const handleNewUserInputChange = (field, value) => {
     setNewUser({
       ...newUser,
       [field]: value,
-    })
-  }
+    });
+  };
 
   // Handle login redirect
   const handleLogin = () => {
-    window.location.href = "/login"
-  }
+    window.location.href = "/login";
+  };
 
   // Start editing a user
   const startEditing = (user) => {
     setEditingUser({
       ...user,
       originalRole: user.role, // Store original role to check if it changed
-    })
-  }
+    });
+  };
 
   // Filter users based on search term and hide manager users if not a manager
   const filteredUsers = users.filter((user) => {
     // First check if we should hide manager users
     if (user.role === "manager" && currentUserRole !== "manager") {
-      return false
+      return false;
     }
 
     // Then apply search filter
@@ -395,21 +454,21 @@ const Dashboard = () => {
       user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.phone_number?.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  })
+    );
+  });
 
   // Add this function after getAuthAxios
   const handleAuthError = (error) => {
     if (error.response && error.response.status === 401) {
       // Clear invalid token and user data
-      localStorage.removeItem("token")
-      localStorage.removeItem("user")
-      setIsAuthenticated(false)
-      setCurrentUserRole(null)
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      setIsAuthenticated(false);
+      setCurrentUserRole(null);
       // Redirect to login page
-      window.location.href = "/login"
+      window.location.href = "/login";
     }
-  }
+  };
 
   // Functions to fetch data from the APIs
   const fetchInventoryData = async () => {
@@ -418,55 +477,59 @@ const Dashboard = () => {
         stockStatus: [],
         stockData: [],
         alerts: { low_stock: 0, out_of_stock: 0, overstocked: 0 },
-      })
-      return
+      });
+      return;
     }
 
     try {
-      setIsLoading(true)
-      const authAxios = getAuthAxios()
-      const response = await authAxios.get("http://localhost:8000/api/v1/dashboard/inventory/")
-      setInventoryData(response.data)
-      console.log("Inventory data:", response.data)
+      setIsLoading(true);
+      const authAxios = getAuthAxios();
+      const response = await authAxios.get(
+        "http://localhost:8000/api/v1/dashboard/inventory/",
+      );
+      setInventoryData(response.data);
+      console.log("Inventory data:", response.data);
     } catch (err) {
-      console.error("Error fetching inventory data:", err)
-      handleAuthError(err)
+      console.error("Error fetching inventory data:", err);
+      handleAuthError(err);
       setInventoryData({
         stockStatus: [],
         stockData: [],
         alerts: { low_stock: 0, out_of_stock: 0, overstocked: 0 },
-      })
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const fetchProductsData = async () => {
     if (!hasManagerPermission()) {
       setProductPerformanceData({
         topProducts: [],
         productPerformance: [],
-      })
-      return
+      });
+      return;
     }
 
     try {
-      setIsLoading(true)
-      const authAxios = getAuthAxios()
-      const response = await authAxios.get(`http://localhost:8000/api/v1/dashboard/products/?period=${timePeriod}`)
-      setProductPerformanceData(response.data)
-      console.log("Product performance data:", response.data)
+      setIsLoading(true);
+      const authAxios = getAuthAxios();
+      const response = await authAxios.get(
+        `http://localhost:8000/api/v1/dashboard/products/?period=${timePeriod}`,
+      );
+      setProductPerformanceData(response.data);
+      console.log("Product performance data:", response.data);
     } catch (err) {
-      console.error("Error fetching product performance data:", err)
-      handleAuthError(err)
+      console.error("Error fetching product performance data:", err);
+      handleAuthError(err);
       setProductPerformanceData({
         topProducts: [],
         productPerformance: [],
-      })
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   // Modify the fetchSalesData function to use globalPendingPayment
   const fetchSalesData = async () => {
@@ -477,35 +540,39 @@ const Dashboard = () => {
         salesByCategory: [],
         monthlyRevenue: [],
         globalPendingPayment: [],
-      })
-      setGlobalPendingPayment()
-      return
+      });
+      setGlobalPendingPayment();
+      return;
     }
 
     try {
-      setIsLoading(true)
-      const authAxios = getAuthAxios()
-      const response = await authAxios.get(`http://localhost:8000/api/v1/dashboard/sales/?period=${timePeriod}`)
+      setIsLoading(true);
+      const authAxios = getAuthAxios();
+      const response = await authAxios.get(
+        `http://localhost:8000/api/v1/dashboard/sales/?period=${timePeriod}`,
+      );
 
       // Log the raw response to see what we're getting
-      console.log("Raw sales data response:", response.data)
+      console.log("Raw sales data response:", response.data);
 
       // Extract and parse the globalPendingPayment value
-      const pendingPaymentValue = Number.parseFloat(response.data.globalPendingPayment || "0")
+      const pendingPaymentValue = Number.parseFloat(
+        response.data.globalPendingPayment || "0",
+      );
 
       // Store the value in a separate state for easier access
-      setGlobalPendingPayment(pendingPaymentValue)
+      setGlobalPendingPayment(pendingPaymentValue);
 
       // Log the parsed value to verify
-      console.log("Parsed globalPendingPayment:", pendingPaymentValue)
+      console.log("Parsed globalPendingPayment:", pendingPaymentValue);
 
       // Update the sales data state
       const salesData = {
         ...response.data,
         globalPendingPayment: response.data.globalPendingPayment || "0",
-      }
+      };
 
-      setSalesData(salesData)
+      setSalesData(salesData);
 
       // Calculate profit data from sales data
       if (salesData.salesOverTime && salesData.salesOverTime.length > 0) {
@@ -514,28 +581,28 @@ const Dashboard = () => {
           profit: Number.parseFloat(item.profit || 0),
           // Use the parsed pendingPaymentValue for each data point
           globalPendingPayment: pendingPaymentValue,
-        }))
+        }));
 
         // Log the profit chart data to verify
-        console.log("Profit chart data:", profitChartData)
+        console.log("Profit chart data:", profitChartData);
 
-        setProfitData(profitChartData)
+        setProfitData(profitChartData);
       }
     } catch (err) {
-      console.error("Error fetching sales data:", err)
-      handleAuthError(err)
+      console.error("Error fetching sales data:", err);
+      handleAuthError(err);
       setSalesData({
         salesOverTime: [],
         recentSales: [],
         salesByCategory: [],
         monthlyRevenue: [],
         globalPendingPayment: [],
-      })
-      setGlobalPendingPayment()
+      });
+      setGlobalPendingPayment();
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const fetchDashboardStats = async () => {
     if (!hasManagerPermission()) {
@@ -545,64 +612,69 @@ const Dashboard = () => {
         orders: { value: "0", change: "0", change_percent: "0" },
         averageOrderValue: { value: "0", change: "0", change_percent: "0" },
         customers: { value: "0", change: "0", change_percent: "0" },
-      })
-      return
+      });
+      return;
     }
 
     try {
-      setIsLoading(true)
-      const authAxios = getAuthAxios()
-      const response = await authAxios.get(`http://localhost:8000/api/v1/dashboard/stats/?period=${timePeriod}`)
-      setDashboardStats(response.data)
-      console.log("Dashboard stats:", response.data)
+      setIsLoading(true);
+      const authAxios = getAuthAxios();
+      const response = await authAxios.get(
+        `http://localhost:8000/api/v1/dashboard/stats/?period=${timePeriod}`,
+      );
+      setDashboardStats(response.data);
+      console.log("Dashboard stats:", response.data);
     } catch (err) {
-      console.error("Error fetching dashboard stats:", err)
+      console.error("Error fetching dashboard stats:", err);
       setDashboardStats({
         revenue: { value: "0", change: "0", change_percent: "0" },
         orders: { value: "0", change: "0", change_percent: "0" },
         averageOrderValue: { value: "0", change: "0", change_percent: "0" },
         customers: { value: "0", change: "0", change_percent: "0" },
-      })
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   // Fetch top selling products from invoices
   const fetchTopSellingProducts = async () => {
     if (!hasManagerPermission()) {
       // Return empty data for non-managers
-      setTopSellingProducts([])
-      return
+      setTopSellingProducts([]);
+      return;
     }
 
     try {
-      setIsLoading(true)
-      const authAxios = getAuthAxios()
+      setIsLoading(true);
+      const authAxios = getAuthAxios();
 
       // Get invoices with line items
-      const response = await authAxios.get("http://localhost:8000/api/v1/invoice/invoices/")
+      const response = await authAxios.get(
+        "http://localhost:8000/api/v1/invoice/invoices/",
+      );
 
       // Extract all line items from invoices
-      let allLineItems = []
+      let allLineItems = [];
       if (response.data && response.data.results) {
         response.data.results.forEach((invoice) => {
           if (invoice.lines && Array.isArray(invoice.lines)) {
-            allLineItems = [...allLineItems, ...invoice.lines]
+            allLineItems = [...allLineItems, ...invoice.lines];
           }
-        })
+        });
       }
 
       // Count product occurrences and total quantities
-      const productCounts = {}
-      const productRevenue = {}
+      const productCounts = {};
+      const productRevenue = {};
 
       allLineItems.forEach((line) => {
-        const productId = line.product_id
-        const productName = line.product_name || "Unknown Product"
-        const quantity = Number.parseInt(line.quantity) || 0
-        const price = Number.parseFloat(line.unit_price || line.price || 0)
-        const lineTotal = quantity * price * (1 - Number.parseFloat(line.discount || 0) / 100)
+        const productId = line.product_id;
+        const productName = line.product_name || "Unknown Product";
+        const quantity = Number.parseInt(line.quantity) || 0;
+        const price = Number.parseFloat(line.unit_price || line.price || 0);
+        const lineTotal =
+          quantity * price * (1 - Number.parseFloat(line.discount || 0) / 100);
 
         if (!productCounts[productId]) {
           productCounts[productId] = {
@@ -610,12 +682,12 @@ const Dashboard = () => {
             name: productName,
             quantity: 0,
             revenue: 0,
-          }
+          };
         }
 
-        productCounts[productId].quantity += quantity
-        productCounts[productId].revenue += lineTotal
-      })
+        productCounts[productId].quantity += quantity;
+        productCounts[productId].revenue += lineTotal;
+      });
 
       // Convert to array and sort by quantity
       const topProducts = Object.values(productCounts)
@@ -623,29 +695,31 @@ const Dashboard = () => {
         .slice(0, 10) // Limit to 10 products
         .map((product, index) => ({
           ...product,
-          color: ["#6366f1", "#ec4899", "#10b981", "#3b82f6", "#f59e0b"][index % 5],
-        }))
+          color: ["#6366f1", "#ec4899", "#10b981", "#3b82f6", "#f59e0b"][
+            index % 5
+          ],
+        }));
 
-      setTopSellingProducts(topProducts)
-      console.log("Top selling products:", topProducts)
+      setTopSellingProducts(topProducts);
+      console.log("Top selling products:", topProducts);
     } catch (err) {
-      console.error("Error fetching top selling products:", err)
-      setTopSellingProducts([])
+      console.error("Error fetching top selling products:", err);
+      setTopSellingProducts([]);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   // Add a useEffect to fetch data when the component mounts or when timePeriod changes
   useEffect(() => {
     if (isAuthenticated) {
-      fetchInventoryData()
-      fetchProductsData()
-      fetchSalesData()
-      fetchDashboardStats()
-      fetchTopSellingProducts()
+      fetchInventoryData();
+      fetchProductsData();
+      fetchSalesData();
+      fetchDashboardStats();
+      fetchTopSellingProducts();
     }
-  }, [isAuthenticated, timePeriod, currentUserRole])
+  }, [isAuthenticated, timePeriod, currentUserRole]);
 
   // Update the colors in the dashboard component
 
@@ -661,18 +735,21 @@ const Dashboard = () => {
               ? "#f59e0b"
               : "#ef4444",
         }))
-      : []
+      : [];
 
   const productPerformance =
-    productPerformanceData.productPerformance && productPerformanceData.productPerformance.length > 0
+    productPerformanceData.productPerformance &&
+    productPerformanceData.productPerformance.length > 0
       ? productPerformanceData.productPerformance
           .map((item, index) => ({
             name: item.name,
             value: Number(item.value),
-            fill: ["#6366f1", "#4f46e5", "#10b981", "#3b82f6", "#f59e0b"][index % 5],
+            fill: ["#6366f1", "#4f46e5", "#10b981", "#3b82f6", "#f59e0b"][
+              index % 5
+            ],
           }))
           .sort((a, b) => b.value - a.value)
-      : []
+      : [];
 
   // Update the tooltip styles for better visibility
   const tooltipStyle = {
@@ -681,11 +758,11 @@ const Dashboard = () => {
     borderRadius: "8px",
     boxShadow: "0 10px 25px rgba(0, 0, 0, 0.3)",
     color: "#ffffff",
-  }
+  };
 
   // Log the current state values for debugging
-  console.log("salesDataState:", salesDataState)
-  console.log("globalPendingPayment state:", globalPendingPayment)
+  console.log("salesDataState:", salesDataState);
+  console.log("globalPendingPayment state:", globalPendingPayment);
 
   // Update the salesChartData calculation to use the separate globalPendingPayment state
   const salesChartData =
@@ -697,10 +774,10 @@ const Dashboard = () => {
           // Use the separate globalPendingPayment state
           globalPendingPayment: globalPendingPayment,
         }))
-      : []
+      : [];
 
   // Log the prepared chart data for debugging
-  console.log("Prepared salesChartData:", salesChartData)
+  console.log("Prepared salesChartData:", salesChartData);
 
   const recentSalesData =
     salesDataState.recentSales && salesDataState.recentSales.length > 0
@@ -710,7 +787,7 @@ const Dashboard = () => {
           amount: sale.amount,
           date: sale.date,
         }))
-      : []
+      : [];
 
   const salesByCategoryData =
     salesDataState.salesByCategory && salesDataState.salesByCategory.length > 0
@@ -718,11 +795,13 @@ const Dashboard = () => {
           .map((category, index) => ({
             name: category.name,
             value: Number(category.value),
-            fill: ["#6366f1", "#ec4899", "#10b981", "#3b82f6", "#f59e0b"][index % 5],
+            fill: ["#6366f1", "#ec4899", "#10b981", "#3b82f6", "#f59e0b"][
+              index % 5
+            ],
           }))
           .sort((a, b) => b.value - a.value)
           .slice(0, 10) // Limit to 10 categories
-      : []
+      : [];
 
   const monthlyRevenueData =
     salesDataState.monthlyRevenue && salesDataState.monthlyRevenue.length > 0
@@ -730,20 +809,20 @@ const Dashboard = () => {
           month: item.month,
           revenue: Number(item.revenue),
         }))
-      : []
+      : [];
 
   // Add this function before the return statement in the Dashboard component
   const calculateGradientOffset = (dataArray, key) => {
-    if (!dataArray || dataArray.length === 0) return 0.5
+    if (!dataArray || dataArray.length === 0) return 0.5;
 
-    const dataMax = Math.max(...dataArray.map((i) => i[key] || 0))
-    const dataMin = Math.min(...dataArray.map((i) => i[key] || 0))
+    const dataMax = Math.max(...dataArray.map((i) => i[key] || 0));
+    const dataMin = Math.min(...dataArray.map((i) => i[key] || 0));
 
-    if (dataMax <= 0) return 0
-    if (dataMin >= 0) return 1
+    if (dataMax <= 0) return 0;
+    if (dataMin >= 0) return 1;
 
-    return dataMax / (dataMax - dataMin)
-  }
+    return dataMax / (dataMax - dataMin);
+  };
 
   // Format currency function
   const formatCurrency = (value) => {
@@ -752,8 +831,8 @@ const Dashboard = () => {
       currency: "XAF",
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
-    }).format(value)
-  }
+    }).format(value);
+  };
 
   // Update the card icons section
   const cardIcons = [
@@ -761,7 +840,9 @@ const Dashboard = () => {
       id: "revenue",
       icon: <FaMoneyBillWave className="card-icon" />,
       label: "Total Revenue",
-      value: hasReportViewPermission() ? `XFA ${Number(dashboardStats.revenue.value).toLocaleString()}` : "XFA NaN",
+      value: hasReportViewPermission()
+        ? `XFA ${Number(dashboardStats.revenue.value).toLocaleString()}`
+        : "XFA NaN",
       change: dashboardStats.revenue.change,
       changePercentage: dashboardStats.revenue.change_percent,
       period: "vs last month",
@@ -770,7 +851,9 @@ const Dashboard = () => {
       id: "orders",
       icon: <FaShoppingCart className="card-icon" />,
       label: "Total Orders",
-      value: hasReportViewPermission() ? Number(dashboardStats.orders.value).toLocaleString() : "NaN",
+      value: hasReportViewPermission()
+        ? Number(dashboardStats.orders.value).toLocaleString()
+        : "NaN",
       change: dashboardStats.orders.change,
       changePercentage: dashboardStats.orders.change_percent,
       period: "vs last month",
@@ -790,20 +873,24 @@ const Dashboard = () => {
       id: "customers",
       icon: <FaUsers className="card-icon" />,
       label: "Total Customers",
-      value: hasReportViewPermission() ? Number(dashboardStats.customers.value).toLocaleString() : "NaN",
+      value: hasReportViewPermission()
+        ? Number(dashboardStats.customers.value).toLocaleString()
+        : "NaN",
       change: dashboardStats.customers.change,
       changePercentage: dashboardStats.customers.change_percent,
       period: "vs last month",
     },
-  ]
+  ];
 
   // Add a new card for globalPendingPayment
   const globalPendingPaymentCard = {
     id: "globalPendingPayment",
     icon: <FaMoneyBillWave className="card-icon" />,
     label: "Global Pending Payment",
-    value: hasReportViewPermission() ? `XFA ${globalPendingPayment.toLocaleString()}` : "XFA NaN",
-  }
+    value: hasReportViewPermission()
+      ? `XFA ${globalPendingPayment.toLocaleString()}`
+      : "XFA NaN",
+  };
 
   return (
     <div className="dashboard">
@@ -812,7 +899,11 @@ const Dashboard = () => {
           <h2>Dashboard</h2>
           <div className="period-filter">
             <Calendar size={16} />
-            <select value={timePeriod} onChange={(e) => setTimePeriod(e.target.value)} className="period-selector">
+            <select
+              value={timePeriod}
+              onChange={(e) => setTimePeriod(e.target.value)}
+              className="period-selector"
+            >
               <option value="daily">Daily</option>
               <option value="weekly">Weekly</option>
               <option value="monthly">Monthly</option>
@@ -828,7 +919,10 @@ const Dashboard = () => {
             </div>
           )}
           {isAuthenticated && hasManagerPermission() && (
-            <button className="manage-users-btn" onClick={() => setShowUserModal(true)}>
+            <button
+              className="manage-users-btn"
+              onClick={() => setShowUserModal(true)}
+            >
               <Users size={18} /> Manage Users
             </button>
           )}
@@ -849,7 +943,10 @@ const Dashboard = () => {
 
       {!hasManagerPermission() && (
         <div className="non-manager-notice">
-          <p>Limited dashboard view. Manager access required to view complete data.</p>
+          <p>
+            Limited dashboard view. Manager access required to view complete
+            data.
+          </p>
         </div>
       )}
 
@@ -866,7 +963,9 @@ const Dashboard = () => {
 
         {/* Add a dedicated card for globalPendingPayment */}
         <div className="card globalPendingPayment-card">
-          <div className="card-icon-wrapper">{globalPendingPaymentCard.icon}</div>
+          <div className="card-icon-wrapper">
+            {globalPendingPaymentCard.icon}
+          </div>
           <div className="card-content">
             <h3>{globalPendingPaymentCard.label}</h3>
             <div className="card-value">{globalPendingPaymentCard.value}</div>
@@ -917,14 +1016,14 @@ const Dashboard = () => {
                     bodyColor: tooltipStyle.color,
                     callbacks: {
                       label: (context) => {
-                        let label = context.dataset.label || ""
+                        let label = context.dataset.label || "";
                         if (label) {
-                          label += ": "
+                          label += ": ";
                         }
                         if (context.parsed.y !== null) {
-                          label += formatCurrency(context.parsed.y)
+                          label += formatCurrency(context.parsed.y);
                         }
-                        return label
+                        return label;
                       },
                     },
                   },
@@ -987,7 +1086,9 @@ const Dashboard = () => {
                     },
                     {
                       label: "Global Pending Payment",
-                      data: Array(salesChartData.length).fill(globalPendingPayment),
+                      data: Array(salesChartData.length).fill(
+                        globalPendingPayment,
+                      ),
                       borderColor: "#f59e0b",
                       backgroundColor: "rgba(245, 158, 11, 0.1)",
                       fill: true,
@@ -1012,14 +1113,14 @@ const Dashboard = () => {
                       bodyColor: tooltipStyle.color,
                       callbacks: {
                         label: (context) => {
-                          let label = context.dataset.label || ""
+                          let label = context.dataset.label || "";
                           if (label) {
-                            label += ": "
+                            label += ": ";
                           }
                           if (context.parsed.y !== null) {
-                            label += formatCurrency(context.parsed.y)
+                            label += formatCurrency(context.parsed.y);
                           }
-                          return label
+                          return label;
                         },
                       },
                     },
@@ -1066,7 +1167,9 @@ const Dashboard = () => {
                     {
                       label: "Performance",
                       data: productPerformance.map((item) => item.value),
-                      backgroundColor: productPerformance.map((item) => item.fill),
+                      backgroundColor: productPerformance.map(
+                        (item) => item.fill,
+                      ),
                     },
                   ],
                 }}
@@ -1166,9 +1269,13 @@ const Dashboard = () => {
                 <div key={sale.id || index} className="sale-item">
                   <div className="sale-info">
                     <p className="sale-name">{sale.name}</p>
-                    <p className="sale-date">{new Date(sale.date).toLocaleString()}</p>
+                    <p className="sale-date">
+                      {new Date(sale.date).toLocaleString()}
+                    </p>
                   </div>
-                  <p className="sale-amount">XFA {Number(sale.amount).toLocaleString()}</p>
+                  <p className="sale-amount">
+                    XFA {Number(sale.amount).toLocaleString()}
+                  </p>
                 </div>
               ))}
             </div>
@@ -1183,30 +1290,47 @@ const Dashboard = () => {
 
         <div className="chart">
           <h3>Top Selling Products</h3>
-          {productPerformanceData.topProducts && productPerformanceData.topProducts.length > 0 ? (
+          {productPerformanceData.topProducts &&
+          productPerformanceData.topProducts.length > 0 ? (
             <div className="top-products">
-              {productPerformanceData.topProducts.slice(0, 10).map((product, index) => (
-                <div key={index} className="product-item">
-                  <div
-                    className="product-color"
-                    style={{
-                      backgroundColor: ["#6366f1", "#ec4899", "#10b981", "#3b82f6", "#f59e0b"][index % 5],
-                    }}
-                  ></div>
-                  <div className="product-info">
-                    <div className="product-name">{product.name}</div>
-                    <div className="product-sold">{product.sold} units sold</div>
+              {productPerformanceData.topProducts
+                .slice(0, 10)
+                .map((product, index) => (
+                  <div key={index} className="product-item">
+                    <div
+                      className="product-color"
+                      style={{
+                        backgroundColor: [
+                          "#6366f1",
+                          "#ec4899",
+                          "#10b981",
+                          "#3b82f6",
+                          "#f59e0b",
+                        ][index % 5],
+                      }}
+                    ></div>
+                    <div className="product-info">
+                      <div className="product-name">{product.name}</div>
+                      <div className="product-sold">
+                        {product.sold} units sold
+                      </div>
+                    </div>
+                    <div
+                      className="product-revenue"
+                      style={{
+                        color: [
+                          "#6366f1",
+                          "#ec4899",
+                          "#10b981",
+                          "#3b82f6",
+                          "#f59e0b",
+                        ][index % 5],
+                      }}
+                    >
+                      XFA {Number(product.revenue).toLocaleString()}
+                    </div>
                   </div>
-                  <div
-                    className="product-revenue"
-                    style={{
-                      color: ["#6366f1", "#ec4899", "#10b981", "#3b82f6", "#f59e0b"][index % 5],
-                    }}
-                  >
-                    XFA {Number(product.revenue).toLocaleString()}
-                  </div>
-                </div>
-              ))}
+                ))}
             </div>
           ) : (
             <div className="no-data">
@@ -1251,14 +1375,14 @@ const Dashboard = () => {
                     bodyColor: tooltipStyle.color,
                     callbacks: {
                       label: (context) => {
-                        let label = context.dataset.label || ""
+                        let label = context.dataset.label || "";
                         if (label) {
-                          label += ": "
+                          label += ": ";
                         }
                         if (context.parsed.y !== null) {
-                          label += formatCurrency(context.parsed.y)
+                          label += formatCurrency(context.parsed.y);
                         }
-                        return label
+                        return label;
                       },
                     },
                   },
@@ -1337,11 +1461,14 @@ const Dashboard = () => {
                       callbacks: {
                         title: (context) => context[0].label,
                         label: (context) => {
-                          const label = context.label || ""
-                          const value = context.raw || 0
-                          const total = context.dataset.data.reduce((a, b) => a + b, 0)
-                          const percentage = ((value / total) * 100).toFixed(1)
-                          return `${label}: ${formatCurrency(value)} (${percentage}%)`
+                          const label = context.label || "";
+                          const value = context.raw || 0;
+                          const total = context.dataset.data.reduce(
+                            (a, b) => a + b,
+                            0,
+                          );
+                          const percentage = ((value / total) * 100).toFixed(1);
+                          return `${label}: ${formatCurrency(value)} (${percentage}%)`;
                         },
                       },
                       backgroundColor: tooltipStyle.backgroundColor,
@@ -1372,10 +1499,10 @@ const Dashboard = () => {
               <button
                 className="close-modal-btn"
                 onClick={() => {
-                  setShowUserModal(false)
-                  setEditingUser(null)
-                  setConfirmDelete(null)
-                  setError(null)
+                  setShowUserModal(false);
+                  setEditingUser(null);
+                  setConfirmDelete(null);
+                  setError(null);
                 }}
               >
                 <X size={20} />
@@ -1387,7 +1514,10 @@ const Dashboard = () => {
                 <div className="error-message">
                   {error}
                   {!isAuthenticated && (
-                    <button className="login-button-small" onClick={handleLogin}>
+                    <button
+                      className="login-button-small"
+                      onClick={handleLogin}
+                    >
                       Login
                     </button>
                   )}
@@ -1415,7 +1545,10 @@ const Dashboard = () => {
                 </div>
 
                 {isAuthenticated && hasManagerPermission() && (
-                  <button className="create-user-btn" onClick={() => setShowCreateUserModal(true)}>
+                  <button
+                    className="create-user-btn"
+                    onClick={() => setShowCreateUserModal(true)}
+                  >
                     <Plus size={16} /> Add User
                   </button>
                 )}
@@ -1446,7 +1579,9 @@ const Dashboard = () => {
                       <div className="user-role">Role</div>
                       <div className="user-status">Status</div>
                     </div>
-                    {hasManagerPermission() && <div className="user-actions">Actions</div>}
+                    {hasManagerPermission() && (
+                      <div className="user-actions">Actions</div>
+                    )}
                   </div>
 
                   {filteredUsers.map((user) => (
@@ -1458,24 +1593,35 @@ const Dashboard = () => {
                             <input
                               type="text"
                               value={editingUser.username}
-                              onChange={(e) => handleInputChange("username", e.target.value)}
+                              onChange={(e) =>
+                                handleInputChange("username", e.target.value)
+                              }
                               placeholder="Username"
                             />
                             <input
                               type="email"
                               value={editingUser.email}
-                              onChange={(e) => handleInputChange("email", e.target.value)}
+                              onChange={(e) =>
+                                handleInputChange("email", e.target.value)
+                              }
                               placeholder="Email"
                             />
                             <input
                               type="text"
                               value={editingUser.phone_number || ""}
-                              onChange={(e) => handleInputChange("phone_number", e.target.value)}
+                              onChange={(e) =>
+                                handleInputChange(
+                                  "phone_number",
+                                  e.target.value,
+                                )
+                              }
                               placeholder="Phone"
                             />
                             <select
                               value={editingUser.role}
-                              onChange={(e) => handleInputChange("role", e.target.value)}
+                              onChange={(e) =>
+                                handleInputChange("role", e.target.value)
+                              }
                             >
                               {availableRoles.map((role) => (
                                 <option key={role} value={role}>
@@ -1485,17 +1631,33 @@ const Dashboard = () => {
                             </select>
                             <select
                               value={editingUser.is_active.toString()}
-                              onChange={(e) => handleInputChange("is_active", e.target.value === "true")}
+                              onChange={(e) =>
+                                handleInputChange(
+                                  "is_active",
+                                  e.target.value === "true",
+                                )
+                              }
                             >
                               <option value="true">Active</option>
                               <option value="false">Inactive</option>
                             </select>
                           </div>
                           <div className="user-edit-actions">
-                            <button className="save-btn" onClick={() => updateUser(editingUser)} disabled={isLoading}>
-                              {isLoading ? <Loader size={16} className="spin" /> : <Save size={16} />}
+                            <button
+                              className="save-btn"
+                              onClick={() => updateUser(editingUser)}
+                              disabled={isLoading}
+                            >
+                              {isLoading ? (
+                                <Loader size={16} className="spin" />
+                              ) : (
+                                <Save size={16} />
+                              )}
                             </button>
-                            <button className="cancel-btn" onClick={() => setEditingUser(null)}>
+                            <button
+                              className="cancel-btn"
+                              onClick={() => setEditingUser(null)}
+                            >
                               <X size={16} />
                             </button>
                           </div>
@@ -1506,18 +1668,28 @@ const Dashboard = () => {
                           <div className="user-info">
                             <div className="user-name">{user.username}</div>
                             <div className="user-email">{user.email}</div>
-                            <div className="user-phone">{user.phone_number || "N/A"}</div>
+                            <div className="user-phone">
+                              {user.phone_number || "N/A"}
+                            </div>
                             <div className="user-role">{user.role}</div>
-                            <div className={`user-status ${user.is_active ? "active" : "inactive"}`}>
+                            <div
+                              className={`user-status ${user.is_active ? "active" : "inactive"}`}
+                            >
                               {user.is_active ? "Active" : "Inactive"}
                             </div>
                           </div>
                           {hasManagerPermission() && (
                             <div className="user-actions">
-                              <button className="edit-btn" onClick={() => startEditing(user)}>
+                              <button
+                                className="edit-btn"
+                                onClick={() => startEditing(user)}
+                              >
                                 <Edit size={16} />
                               </button>
-                              <button className="delete-btn" onClick={() => setConfirmDelete(user.id)}>
+                              <button
+                                className="delete-btn"
+                                onClick={() => setConfirmDelete(user.id)}
+                              >
                                 <Trash size={16} />
                               </button>
                             </div>
@@ -1542,8 +1714,8 @@ const Dashboard = () => {
               <button
                 className="close-modal-btn"
                 onClick={() => {
-                  setShowCreateUserModal(false)
-                  setError(null)
+                  setShowCreateUserModal(false);
+                  setError(null);
                 }}
               >
                 <X size={20} />
@@ -1559,7 +1731,9 @@ const Dashboard = () => {
                   id="username"
                   type="text"
                   value={newUser.username}
-                  onChange={(e) => handleNewUserInputChange("username", e.target.value)}
+                  onChange={(e) =>
+                    handleNewUserInputChange("username", e.target.value)
+                  }
                   placeholder="Enter username"
                   required
                 />
@@ -1571,7 +1745,9 @@ const Dashboard = () => {
                   id="email"
                   type="email"
                   value={newUser.email}
-                  onChange={(e) => handleNewUserInputChange("email", e.target.value)}
+                  onChange={(e) =>
+                    handleNewUserInputChange("email", e.target.value)
+                  }
                   placeholder="Enter email"
                   required
                 />
@@ -1583,7 +1759,9 @@ const Dashboard = () => {
                   id="phone_number"
                   type="text"
                   value={newUser.phone_number}
-                  onChange={(e) => handleNewUserInputChange("phone_number", e.target.value)}
+                  onChange={(e) =>
+                    handleNewUserInputChange("phone_number", e.target.value)
+                  }
                   placeholder="Enter phone number (optional)"
                 />
               </div>
@@ -1595,12 +1773,22 @@ const Dashboard = () => {
                     id="password"
                     type={showPassword ? "text" : "password"}
                     value={newUser.password}
-                    onChange={(e) => handleNewUserInputChange("password", e.target.value)}
+                    onChange={(e) =>
+                      handleNewUserInputChange("password", e.target.value)
+                    }
                     placeholder="Enter password"
                     required
                   />
-                  <button type="button" className="toggle-password-btn" onClick={() => setShowPassword(!showPassword)}>
-                    {showPassword ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
+                  <button
+                    type="button"
+                    className="toggle-password-btn"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <FaEyeSlash size={16} />
+                    ) : (
+                      <FaEye size={16} />
+                    )}
                   </button>
                 </div>
               </div>
@@ -1610,7 +1798,9 @@ const Dashboard = () => {
                 <select
                   id="role"
                   value={newUser.role}
-                  onChange={(e) => handleNewUserInputChange("role", e.target.value)}
+                  onChange={(e) =>
+                    handleNewUserInputChange("role", e.target.value)
+                  }
                 >
                   {availableRoles.map((role) => (
                     <option key={role} value={role}>
@@ -1625,7 +1815,12 @@ const Dashboard = () => {
                 <select
                   id="is_active"
                   value={newUser.is_active.toString()}
-                  onChange={(e) => handleNewUserInputChange("is_active", e.target.value === "true")}
+                  onChange={(e) =>
+                    handleNewUserInputChange(
+                      "is_active",
+                      e.target.value === "true",
+                    )
+                  }
                 >
                   <option value="true">Active</option>
                   <option value="false">Inactive</option>
@@ -1634,11 +1829,22 @@ const Dashboard = () => {
             </div>
 
             <div className="modal-footer">
-              <button className="cancel-btn" onClick={() => setShowCreateUserModal(false)}>
+              <button
+                className="cancel-btn"
+                onClick={() => setShowCreateUserModal(false)}
+              >
                 Cancel
               </button>
-              <button className="create-btn" onClick={createUser} disabled={isLoading}>
-                {isLoading ? <Loader size={16} className="spin" /> : "Create User"}
+              <button
+                className="create-btn"
+                onClick={createUser}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <Loader size={16} className="spin" />
+                ) : (
+                  "Create User"
+                )}
               </button>
             </div>
           </div>
@@ -1651,7 +1857,10 @@ const Dashboard = () => {
           <div className="modal-content confirm-modal">
             <div className="modal-header">
               <h3>Confirm Delete</h3>
-              <button className="close-modal-btn" onClick={() => setConfirmDelete(null)}>
+              <button
+                className="close-modal-btn"
+                onClick={() => setConfirmDelete(null)}
+              >
                 <X size={20} />
               </button>
             </div>
@@ -1660,18 +1869,29 @@ const Dashboard = () => {
               <p>This action cannot be undone.</p>
             </div>
             <div className="modal-footer">
-              <button className="cancel-btn" onClick={() => setConfirmDelete(null)}>
+              <button
+                className="cancel-btn"
+                onClick={() => setConfirmDelete(null)}
+              >
                 Cancel
               </button>
-              <button className="delete-btn" onClick={() => deleteUser(confirmDelete)} disabled={isLoading}>
-                {isLoading ? <Loader size={16} className="spin" /> : "Delete User"}
+              <button
+                className="delete-btn"
+                onClick={() => deleteUser(confirmDelete)}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <Loader size={16} className="spin" />
+                ) : (
+                  "Delete User"
+                )}
               </button>
             </div>
           </div>
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default Dashboard
+export default Dashboard;
