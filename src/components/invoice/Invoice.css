@@ -65,7 +65,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background-color: #11da2c;
+  background-color: #6366f1;
   color: #fff;
   border: none;
   border-radius: 0.5rem;
@@ -305,6 +305,7 @@
   border-radius: 0.5rem;
   font-weight: 500;
   font-size: 0.75rem;
+
   transition: all 0.3s ease;
 }
 
@@ -1096,6 +1097,7 @@
   background-color: #252525;
   position: sticky;
   bottom: 0;
+  z-index: 1000;
 }
 
 .cancel-btn,
@@ -1403,7 +1405,7 @@ select option:hover {
   background-color: #252525;
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 100;
 }
 
 .modal-header h3 {

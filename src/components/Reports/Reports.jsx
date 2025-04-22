@@ -54,7 +54,7 @@ const Reports = () => {
   const [reportType, setReportType] = useState("inventory");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [period, setPeriod] = useState("daily");
+  const [period, setPeriod] = useState("");
   const [showReportModal, setShowReportModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -726,7 +726,7 @@ const Reports = () => {
     setReportType("inventory");
     setStartDate("");
     setEndDate("");
-    setPeriod("daily");
+    setPeriod("");
     setError(null);
     setShowReportModal(true);
   };

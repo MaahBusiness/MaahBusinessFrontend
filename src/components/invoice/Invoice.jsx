@@ -908,7 +908,7 @@ const Invoice = () => {
         return "Payment received in full";
       case "CANCELLED":
         return "Invoice has been cancelled";
-      case "CREDIT":
+      case "Credit":
         return "Payment pending";
       default:
         return "";
@@ -1303,8 +1303,7 @@ const Invoice = () => {
 
                   <div className="form-group">
                     <label htmlFor="reason">
-                      Reason/Description{" "}
-                      <span style={optionalFieldStyle}>(Optional)</span>
+                      Reason <span style={requiredFieldStyle}>*</span>
                     </label>
                     <input
                       id="reason"
@@ -1312,6 +1311,23 @@ const Invoice = () => {
                       placeholder="Enter reason for invoice"
                       value={reason}
                       onChange={(e) => setReason(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                {/* Payment Details */}
+                <div className="form-section">
+                  <h4>Payment Details</h4>
+
+                  <div className="form-group">
+                    <label htmlFor="advance-paid">Advance Paid (XFA)</label>
+                    <input
+                      id="advance-paid"
+                      type="number"
+                      step="0.01"
+                      placeholder="Enter advance payment"
+                      value={advancePaid}
+                      onChange={(e) => setAdvancePaid(Number(e.target.value))}
                     />
                   </div>
 
@@ -1342,23 +1358,6 @@ const Invoice = () => {
                         Required when invoice is not fully paid
                       </small>
                     )}
-                  </div>
-                </div>
-
-                {/* Payment Details */}
-                <div className="form-section">
-                  <h4>Payment Details</h4>
-
-                  <div className="form-group">
-                    <label htmlFor="advance-paid">Advance Paid (XFA)</label>
-                    <input
-                      id="advance-paid"
-                      type="number"
-                      step="0.01"
-                      placeholder="Enter advance payment"
-                      value={advancePaid}
-                      onChange={(e) => setAdvancePaid(Number(e.target.value))}
-                    />
                   </div>
                 </div>
               </div>
