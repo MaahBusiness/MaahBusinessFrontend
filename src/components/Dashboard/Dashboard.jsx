@@ -23,6 +23,10 @@ import {
   FaUsers,
   FaEye,
   FaEyeSlash,
+  FaCalendarDay,
+  FaCalendarWeek,
+  FaCalendarAlt,
+  FaCalendarCheck,
 } from "react-icons/fa";
 import {
   Calendar,
@@ -53,38 +57,60 @@ ChartJS.register(
 );
 
 const Dashboard = () => {
-  const [invoices, setInvoices] = useState([]);
-  const [products, setProducts] = useState([]);
   const [timePeriod, setTimePeriod] = useState("monthly");
   const [isLoading, setIsLoading] = useState(false);
-  // Add a separate state for globalPendingPayment to ensure it's accessible
-  const [globalPendingPayment, setGlobalPendingPayment] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // State for API data
   const [inventoryData, setInventoryData] = useState({
     stockStatus: [],
     stockData: [],
-    alerts: { low_stock: 0, out_of_stock: 0, overstocked: 0 },
+    alerts: {
+      lowStock: 0,
+      outOfStock: 0,
+      overstocked: 0,
+      total_products: 0,
+      critical: 0,
+    },
   });
+
   const [productPerformanceData, setProductPerformanceData] = useState({
-    topProducts: [],
-    productPerformance: [],
+    top_products: [],
+    top_categories: [],
   });
-  const [salesDataState, setSalesData] = useState({
-    salesOverTime: [],
-    recentSales: [],
-    salesByCategory: [],
-    monthlyRevenue: [],
-    globalPendingPayment: "0",
-  });
+
+  const [salesData, setSalesData] = useState([]);
+
   const [dashboardStats, setDashboardStats] = useState({
-    revenue: { value: "0", change: "0", change_percent: "0" },
-    orders: { value: "0", change: "0", change_percent: "0" },
-    averageOrderValue: { value: "0", change: "0", change_percent: "0" },
-    customers: { value: "0", change: "0", change_percent: "0" },
+    revenue: {
+      total: 0,
+      completed: 0,
+      credit: { total: 0, advance_paid: 0, to_collect: 0, count: 0 },
+      advance_paid: 0,
+      outstanding: 0,
+      trend: { status: "up", percentage: 0, direction: "up" },
+    },
+    profit: {
+      total: 0,
+      completed: 0,
+      credit: 0,
+      trend: { status: "up", percentage: 0, direction: "up" },
+    },
+    orders: {
+      total: 0,
+      completed: 0,
+      credit: 0,
+      trend: { status: "up", percentage: 0, direction: "up" },
+    },
+    averageOrderValue: {
+      value: 0,
+      change: 0,
+      change_percent: 0,
+    },
   });
-  const [topSellingProducts, setTopSellingProducts] = useState([]);
-  const [profitData, setProfitData] = useState([]);
+
+  const [recentSales, setRecentSales] = useState([]);
+  const [topSales, setTopSales] = useState([]);
 
   // User management state
   const [showUserModal, setShowUserModal] = useState(false);
@@ -470,13 +496,82 @@ const Dashboard = () => {
     }
   };
 
+  // Helper function to format date based on time period
+  const formatDateByPeriod = (dateString, period) => {
+    if (!dateString) return "";
+
+    const date = new Date(dateString);
+
+    switch (period) {
+      case "daily":
+        // Format as hour (e.g., "14:00")
+        return date.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+
+      case "weekly":
+        // Format as day of week (e.g., "Monday")
+        return date.toLocaleDateString([], { weekday: "long" });
+
+      case "monthly":
+        // Format as day of month (e.g., "15")
+        return date.getDate().toString();
+
+      case "yearly":
+        // Format as month (e.g., "January")
+        return date.toLocaleDateString([], { month: "long" });
+
+      default:
+        return date.toLocaleDateString();
+    }
+  };
+
+  // Helper function to get appropriate time period label
+  const getTimePeriodLabel = () => {
+    switch (timePeriod) {
+      case "daily":
+        return "Hours (24h)";
+      case "weekly":
+        return "Days of Week";
+      case "monthly":
+        return "Days of Month";
+      case "yearly":
+        return "Months";
+      default:
+        return "Time Period";
+    }
+  };
+
+  // Helper function to get time period icon
+  const getTimePeriodIcon = (period) => {
+    switch (period) {
+      case "daily":
+        return <FaCalendarDay />;
+      case "weekly":
+        return <FaCalendarWeek />;
+      case "monthly":
+        return <FaCalendarAlt />;
+      case "yearly":
+        return <FaCalendarCheck />;
+      default:
+        return <Calendar />;
+    }
+  };
+
   // Functions to fetch data from the APIs
   const fetchInventoryData = async () => {
     if (!hasManagerPermission()) {
       setInventoryData({
         stockStatus: [],
         stockData: [],
-        alerts: { low_stock: 0, out_of_stock: 0, overstocked: 0 },
+        alerts: {
+          lowStock: 0,
+          outOfStock: 0,
+          overstocked: 0,
+          total_products: 0,
+          critical: 0,
+        },
       });
       return;
     }
@@ -495,7 +590,13 @@ const Dashboard = () => {
       setInventoryData({
         stockStatus: [],
         stockData: [],
-        alerts: { low_stock: 0, out_of_stock: 0, overstocked: 0 },
+        alerts: {
+          lowStock: 0,
+          outOfStock: 0,
+          overstocked: 0,
+          total_products: 0,
+          critical: 0,
+        },
       });
     } finally {
       setIsLoading(false);
@@ -505,8 +606,8 @@ const Dashboard = () => {
   const fetchProductsData = async () => {
     if (!hasManagerPermission()) {
       setProductPerformanceData({
-        topProducts: [],
-        productPerformance: [],
+        top_products: [],
+        top_categories: [],
       });
       return;
     }
@@ -518,30 +619,22 @@ const Dashboard = () => {
         `http://localhost:8000/api/v1/dashboard/products/?period=${timePeriod}`,
       );
       setProductPerformanceData(response.data);
-      console.log("Product performance data:", response.data);
+      console.log(`Product performance data (${timePeriod}):`, response.data);
     } catch (err) {
       console.error("Error fetching product performance data:", err);
       handleAuthError(err);
       setProductPerformanceData({
-        topProducts: [],
-        productPerformance: [],
+        top_products: [],
+        top_categories: [],
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Modify the fetchSalesData function to use globalPendingPayment
   const fetchSalesData = async () => {
     if (!hasManagerPermission()) {
-      setSalesData({
-        salesOverTime: [],
-        recentSales: [],
-        salesByCategory: [],
-        monthlyRevenue: [],
-        globalPendingPayment: "0",
-      });
-      setGlobalPendingPayment(0);
+      setSalesData([]);
       return;
     }
 
@@ -553,52 +646,20 @@ const Dashboard = () => {
       );
 
       // Log the raw response to see what we're getting
-      console.log("Raw sales data response:", response.data);
+      console.log(`Raw sales data response (${timePeriod}):`, response.data);
 
-      // Extract and parse the globalPendingPayment value
-      const pendingPaymentValue = Number.parseFloat(
-        response.data.globalPendingPayment || "0",
-      );
+      // Process the sales data
+      const processedSalesData = response.data.map((item) => ({
+        ...item,
+        formattedPeriod:
+          formatDateByPeriod(item.date, timePeriod) || item.period,
+      }));
 
-      // Store the value in a separate state for easier access
-      setGlobalPendingPayment(pendingPaymentValue);
-
-      // Log the parsed value to verify
-      console.log("Parsed globalPendingPayment:", pendingPaymentValue);
-
-      // Update the sales data state
-      const salesData = {
-        ...response.data,
-        globalPendingPayment: response.data.globalPendingPayment || "0",
-      };
-
-      setSalesData(salesData);
-
-      // Calculate profit data from sales data
-      if (salesData.salesOverTime && salesData.salesOverTime.length > 0) {
-        const profitChartData = salesData.salesOverTime.map((item) => ({
-          name: item.period,
-          profit: Number.parseFloat(item.profit || 0),
-          // Use the parsed pendingPaymentValue for each data point
-          globalPendingPayment: pendingPaymentValue,
-        }));
-
-        // Log the profit chart data to verify
-        console.log("Profit chart data:", profitChartData);
-
-        setProfitData(profitChartData);
-      }
+      setSalesData(processedSalesData);
     } catch (err) {
       console.error("Error fetching sales data:", err);
       handleAuthError(err);
-      setSalesData({
-        salesOverTime: [],
-        recentSales: [],
-        salesByCategory: [],
-        monthlyRevenue: [],
-        globalPendingPayment: "0",
-      });
-      setGlobalPendingPayment(0);
+      setSalesData([]);
     } finally {
       setIsLoading(false);
     }
@@ -608,10 +669,31 @@ const Dashboard = () => {
     if (!hasManagerPermission()) {
       // Return zero values for non-managers
       setDashboardStats({
-        revenue: { value: "0", change: "0", change_percent: "0" },
-        orders: { value: "0", change: "0", change_percent: "0" },
-        averageOrderValue: { value: "0", change: "0", change_percent: "0" },
-        customers: { value: "0", change: "0", change_percent: "0" },
+        revenue: {
+          total: 0,
+          completed: 0,
+          credit: { total: 0, advance_paid: 0, to_collect: 0, count: 0 },
+          advance_paid: 0,
+          outstanding: 0,
+          trend: { status: "up", percentage: 0, direction: "up" },
+        },
+        profit: {
+          total: 0,
+          completed: 0,
+          credit: 0,
+          trend: { status: "up", percentage: 0, direction: "up" },
+        },
+        orders: {
+          total: 0,
+          completed: 0,
+          credit: 0,
+          trend: { status: "up", percentage: 0, direction: "up" },
+        },
+        averageOrderValue: {
+          value: 0,
+          change: 0,
+          change_percent: 0,
+        },
       });
       return;
     }
@@ -623,90 +705,109 @@ const Dashboard = () => {
         `http://localhost:8000/api/v1/dashboard/stats/?period=${timePeriod}`,
       );
       setDashboardStats(response.data);
-      console.log("Dashboard stats:", response.data);
+      console.log(`Dashboard stats (${timePeriod}):`, response.data);
     } catch (err) {
       console.error("Error fetching dashboard stats:", err);
       setDashboardStats({
-        revenue: { value: "0", change: "0", change_percent: "0" },
-        orders: { value: "0", change: "0", change_percent: "0" },
-        averageOrderValue: { value: "0", change: "0", change_percent: "0" },
-        customers: { value: "0", change: "0", change_percent: "0" },
+        revenue: {
+          total: 0,
+          completed: 0,
+          credit: { total: 0, advance_paid: 0, to_collect: 0, count: 0 },
+          advance_paid: 0,
+          outstanding: 0,
+          trend: { status: "up", percentage: 0, direction: "up" },
+        },
+        profit: {
+          total: 0,
+          completed: 0,
+          credit: 0,
+          trend: { status: "up", percentage: 0, direction: "up" },
+        },
+        orders: {
+          total: 0,
+          completed: 0,
+          credit: 0,
+          trend: { status: "up", percentage: 0, direction: "up" },
+        },
+        averageOrderValue: {
+          value: 0,
+          change: 0,
+          change_percent: 0,
+        },
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Fetch top selling products from invoices
-  const fetchTopSellingProducts = async () => {
+  const fetchRecentSales = async () => {
     if (!hasManagerPermission()) {
-      // Return empty data for non-managers
-      setTopSellingProducts([]);
+      setRecentSales([]);
       return;
     }
 
     try {
       setIsLoading(true);
       const authAxios = getAuthAxios();
-
-      // Get invoices with line items
       const response = await authAxios.get(
-        "http://localhost:8000/api/v1/invoice/invoices/",
+        `http://localhost:8000/api/v1/dashboard/recent-sales/?limit=10`,
       );
-
-      // Extract all line items from invoices
-      let allLineItems = [];
-      if (response.data && response.data.results) {
-        response.data.results.forEach((invoice) => {
-          if (invoice.lines && Array.isArray(invoice.lines)) {
-            allLineItems = [...allLineItems, ...invoice.lines];
-          }
-        });
-      }
-
-      // Count product occurrences and total quantities
-      const productCounts = {};
-      const productRevenue = {};
-
-      allLineItems.forEach((line) => {
-        const productId = line.product_id;
-        const productName = line.product_name || "Unknown Product";
-        const quantity = Number.parseInt(line.quantity) || 0;
-        const price = Number.parseFloat(line.unit_price || line.price || 0);
-        const lineTotal =
-          quantity * price * (1 - Number.parseFloat(line.discount || 0) / 100);
-
-        if (!productCounts[productId]) {
-          productCounts[productId] = {
-            id: productId,
-            name: productName,
-            quantity: 0,
-            revenue: 0,
-          };
-        }
-
-        productCounts[productId].quantity += quantity;
-        productCounts[productId].revenue += lineTotal;
-      });
-
-      // Convert to array and sort by quantity
-      const topProducts = Object.values(productCounts)
-        .sort((a, b) => b.quantity - a.quantity)
-        .slice(0, 10) // Limit to 10 products
-        .map((product, index) => ({
-          ...product,
-          color: ["#6366f1", "#ec4899", "#10b981", "#3b82f6", "#f59e0b"][
-            index % 5
-          ],
-        }));
-
-      setTopSellingProducts(topProducts);
-      console.log("Top selling products:", topProducts);
+      setRecentSales(
+        Array.isArray(response.data) ? response.data : [response.data],
+      );
+      console.log(`Recent sales:`, response.data);
     } catch (err) {
-      console.error("Error fetching top selling products:", err);
-      setTopSellingProducts([]);
+      console.error("Error fetching recent sales:", err);
+      handleAuthError(err);
+      setRecentSales([]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchTopSales = async () => {
+    if (!hasManagerPermission()) {
+      setTopSales([]);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const authAxios = getAuthAxios();
+      const response = await authAxios.get(
+        `http://localhost:8000/api/v1/dashboard/top-sales/?period=${timePeriod}`,
+      );
+      setTopSales(
+        Array.isArray(response.data) ? response.data : [response.data],
+      );
+      console.log(`Top sales (${timePeriod}):`, response.data);
+    } catch (err) {
+      console.error("Error fetching top sales:", err);
+      handleAuthError(err);
+      setTopSales([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Function to refresh all dashboard data
+  const refreshDashboardData = async () => {
+    if (!isAuthenticated) return;
+
+    setIsRefreshing(true);
+    try {
+      await Promise.all([
+        fetchInventoryData(),
+        fetchProductsData(),
+        fetchSalesData(),
+        fetchDashboardStats(),
+        fetchRecentSales(),
+        fetchTopSales(),
+      ]);
+    } catch (error) {
+      console.error("Error refreshing dashboard data:", error);
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -717,39 +818,10 @@ const Dashboard = () => {
       fetchProductsData();
       fetchSalesData();
       fetchDashboardStats();
-      fetchTopSellingProducts();
+      fetchRecentSales();
+      fetchTopSales();
     }
   }, [isAuthenticated, timePeriod, currentUserRole]);
-
-  // Update the colors in the dashboard component
-
-  // Update the chart colors for better visibility
-  const stockStatus =
-    inventoryData.stockStatus && inventoryData.stockStatus.length > 0
-      ? inventoryData.stockStatus.map((item) => ({
-          name: item.name,
-          value: Number(item.value),
-          fill: item.name.toLowerCase().includes("in stock")
-            ? "#10b981"
-            : item.name.toLowerCase().includes("low stock")
-              ? "#f59e0b"
-              : "#ef4444",
-        }))
-      : [];
-
-  const productPerformance =
-    productPerformanceData.productPerformance &&
-    productPerformanceData.productPerformance.length > 0
-      ? productPerformanceData.productPerformance
-          .map((item, index) => ({
-            name: item.name,
-            value: Number(item.value),
-            fill: ["#6366f1", "#4f46e5", "#10b981", "#3b82f6", "#f59e0b"][
-              index % 5
-            ],
-          }))
-          .sort((a, b) => b.value - a.value)
-      : [];
 
   // Update the tooltip styles for better visibility
   const tooltipStyle = {
@@ -760,69 +832,25 @@ const Dashboard = () => {
     color: "#ffffff",
   };
 
-  // Log the current state values for debugging
-  console.log("salesDataState:", salesDataState);
-  console.log("globalPendingPayment state:", globalPendingPayment);
+  // Process sales data for charts
+  const salesChartData = salesData.map((period) => ({
+    name: period.period || period.formattedPeriod,
+    completed_revenue: period.completed?.revenue || 0,
+    completed_profit: period.completed?.profit || 0,
+    credit_revenue: period.credit?.revenue || 0,
+    credit_profit: period.credit?.profit || 0,
+    total_revenue: period.total?.revenue || 0,
+    total_profit: period.total?.profit || 0,
+  }));
 
-  // Update the salesChartData calculation to use the separate globalPendingPayment state
-  const salesChartData =
-    salesDataState.salesOverTime && salesDataState.salesOverTime.length > 0
-      ? salesDataState.salesOverTime.map((item) => ({
-          name: item.period,
-          sales: Number.parseFloat(item.sales || 0),
-          profit: Number.parseFloat(item.profit || 0),
-          // Use the separate globalPendingPayment state
-          globalPendingPayment: globalPendingPayment,
-        }))
-      : [];
-
-  // Log the prepared chart data for debugging
-  console.log("Prepared salesChartData:", salesChartData);
-
-  const recentSalesData =
-    salesDataState.recentSales && salesDataState.recentSales.length > 0
-      ? salesDataState.recentSales.map((sale) => ({
-          id: sale.id,
-          name: sale.customerName,
-          amount: sale.amount,
-          date: sale.date,
-        }))
-      : [];
-
-  const salesByCategoryData =
-    salesDataState.salesByCategory && salesDataState.salesByCategory.length > 0
-      ? salesDataState.salesByCategory
-          .map((category, index) => ({
-            name: category.name,
-            value: Number(category.value),
-            fill: ["#6366f1", "#ec4899", "#10b981", "#3b82f6", "#f59e0b"][
-              index % 5
-            ],
-          }))
-          .sort((a, b) => b.value - a.value)
-          .slice(0, 10) // Limit to 10 categories
-      : [];
-
-  const monthlyRevenueData =
-    salesDataState.monthlyRevenue && salesDataState.monthlyRevenue.length > 0
-      ? salesDataState.monthlyRevenue.map((item) => ({
-          month: item.month,
-          revenue: Number(item.revenue),
-        }))
-      : [];
-
-  // Add this function before the return statement in the Dashboard component
-  const calculateGradientOffset = (dataArray, key) => {
-    if (!dataArray || dataArray.length === 0) return 0.5;
-
-    const dataMax = Math.max(...dataArray.map((i) => i[key] || 0));
-    const dataMin = Math.min(...dataArray.map((i) => i[key] || 0));
-
-    if (dataMax <= 0) return 0;
-    if (dataMin >= 0) return 1;
-
-    return dataMax / (dataMax - dataMin);
-  };
+  // Process sales by category data
+  const salesByCategoryData = productPerformanceData.top_categories.map(
+    (category, index) => ({
+      name: category.name,
+      value: category.revenue,
+      fill: ["#6366f1", "#ec4899", "#10b981", "#3b82f6", "#f59e0b"][index % 5],
+    }),
+  );
 
   // Format currency function
   const formatCurrency = (value) => {
@@ -834,63 +862,66 @@ const Dashboard = () => {
     }).format(value);
   };
 
-  // Update the card icons section
+  // Update the card icons array to use the new data structure
   const cardIcons = [
     {
       id: "revenue",
       icon: <FaMoneyBillWave className="card-icon" />,
       label: "Total Revenue",
       value: hasReportViewPermission()
-        ? `XFA ${Number(dashboardStats.revenue.value).toLocaleString()}`
-        : "XFA NaN",
-      change: dashboardStats.revenue.change,
-      changePercentage: dashboardStats.revenue.change_percent,
-      period: "vs last month",
+        ? formatCurrency(Math.round(Number(dashboardStats.revenue?.total || 0)))
+        : formatCurrency(0),
+      change:
+        dashboardStats.revenue?.trend?.status === "up"
+          ? Math.abs(Math.round(dashboardStats.revenue?.trend?.percentage || 0))
+          : -Math.abs(
+              Math.round(dashboardStats.revenue?.trend?.percentage || 0),
+            ),
+      period: `vs last ${timePeriod.slice(0, -2)}`,
     },
     {
       id: "orders",
       icon: <FaShoppingCart className="card-icon" />,
       label: "Total Orders",
       value: hasReportViewPermission()
-        ? Number(dashboardStats.orders.value).toLocaleString()
-        : "NaN",
-      change: dashboardStats.orders.change,
-      changePercentage: dashboardStats.orders.change_percent,
-      period: "vs last month",
+        ? Math.round(Number(dashboardStats.orders?.total || 0)).toLocaleString()
+        : "0",
+      change:
+        dashboardStats.orders?.trend?.status === "up"
+          ? Math.abs(Math.round(dashboardStats.orders?.trend?.percentage || 0))
+          : -Math.abs(
+              Math.round(dashboardStats.orders?.trend?.percentage || 0),
+            ),
+      period: `vs last ${timePeriod.slice(0, -2)}`,
     },
     {
-      id: "average-order-value",
+      id: "profit",
       icon: <FaChartLine className="card-icon" />,
-      label: "Average Order Value",
+      label: "Total Profit",
       value: hasReportViewPermission()
-        ? `XFA ${Number(dashboardStats.averageOrderValue.value).toLocaleString()}`
-        : "XFA NaN",
-      change: dashboardStats.averageOrderValue.change,
-      changePercentage: dashboardStats.averageOrderValue.change_percent,
-      period: "vs last month",
+        ? formatCurrency(Math.round(Number(dashboardStats.profit?.total || 0)))
+        : formatCurrency(0),
+      change:
+        dashboardStats.profit?.trend?.status === "up"
+          ? Math.abs(Math.round(dashboardStats.profit?.trend?.percentage || 0))
+          : -Math.abs(
+              Math.round(dashboardStats.profit?.trend?.percentage || 0),
+            ),
+      period: `vs last ${timePeriod.slice(0, -2)}`,
     },
     {
-      id: "customers",
+      id: "credit",
       icon: <FaUsers className="card-icon" />,
-      label: "Total Customers",
+      label: "Credit Sales",
       value: hasReportViewPermission()
-        ? Number(dashboardStats.customers.value).toLocaleString()
-        : "NaN",
-      change: dashboardStats.customers.change,
-      changePercentage: dashboardStats.customers.change_percent,
-      period: "vs last month",
+        ? formatCurrency(
+            Math.round(Number(dashboardStats.revenue?.credit?.total || 0)),
+          )
+        : formatCurrency(0),
+      change: Math.round(Number(dashboardStats.revenue?.credit?.count || 0)),
+      period: `${dashboardStats.revenue?.credit?.count || 0} transactions`,
     },
   ];
-
-  // Add a new card for globalPendingPayment
-  const globalPendingPaymentCard = {
-    id: "globalPendingPayment",
-    icon: <FaMoneyBillWave className="card-icon" />,
-    label: "Global Pending Payment",
-    value: hasReportViewPermission()
-      ? `XFA ${globalPendingPayment.toLocaleString()}`
-      : "XFA NaN",
-  };
 
   return (
     <div className="dashboard">
@@ -898,13 +929,13 @@ const Dashboard = () => {
         <div className="title-section">
           <h2>Dashboard</h2>
           <div className="period-filter">
-            <Calendar size={16} />
+            {getTimePeriodIcon(timePeriod)}
             <select
               value={timePeriod}
               onChange={(e) => setTimePeriod(e.target.value)}
               className="period-selector"
             >
-              <option value="daily">Daily</option>
+              <option value="daily">Daily (24h)</option>
               <option value="weekly">Weekly</option>
               <option value="monthly">Monthly</option>
               <option value="yearly">Yearly</option>
@@ -950,6 +981,15 @@ const Dashboard = () => {
         </div>
       )}
 
+      <div className="time-period-info">
+        <div className="time-period-label">
+          {getTimePeriodIcon(timePeriod)}
+          <span>
+            Viewing data by: <strong>{getTimePeriodLabel()}</strong>
+          </span>
+        </div>
+      </div>
+
       <div className="dashboard-cards">
         {cardIcons.map((card) => (
           <div key={card.id} className={`card ${card.id}-card`}>
@@ -957,46 +997,85 @@ const Dashboard = () => {
             <div className="card-content">
               <h3>{card.label}</h3>
               <div className="card-value">{card.value}</div>
+              {card.change !== undefined && (
+                <div
+                  className={`card-change ${Number(card.change) >= 0 ? "positive" : "negative"}`}
+                >
+                  <div className="change-indicator">
+                    {Number(card.change) >= 0 ? (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                        className="trend-icon"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M12 20a1 1 0 01-1-1V9.414l-2.293 2.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L13 9.414V19a1 1 0 01-1 1z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    ) : (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                        className="trend-icon"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M12 4a1 1 0 011 1v9.586l2.293-2.293a1 1 0 011.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L11 14.586V5a1 1 0 011-1z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    )}
+                    <span>
+                      {Number(card.change) >= 0 ? "+" : ""}
+                      {card.id === "revenue" ||
+                      card.id === "profit" ||
+                      card.id === "credit"
+                        ? formatCurrency(Math.abs(Number(card.change)))
+                        : Math.abs(Number(card.change)).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="change-period">{card.period}</div>
+                </div>
+              )}
             </div>
           </div>
         ))}
-
-        {/* Add a dedicated card for globalPendingPayment */}
-        <div className="card globalPendingPayment-card">
-          <div className="card-icon-wrapper">
-            {globalPendingPaymentCard.icon}
-          </div>
-          <div className="card-content">
-            <h3>{globalPendingPaymentCard.label}</h3>
-            <div className="card-value">{globalPendingPaymentCard.value}</div>
-          </div>
-        </div>
       </div>
 
-      {/* Update the Profit Analysis Chart - FIXING THE SYNTAX ERROR HERE */}
+      {/* Profit Analysis Chart - Moved above Sales Performance */}
       <div className="chart profit-chart">
-        <h3>Profit Analysis</h3>
-        {profitData.length > 0 && hasReportViewPermission() ? (
+        <h3>Profit Analysis by {getTimePeriodLabel()}</h3>
+        {salesChartData.length > 0 && hasReportViewPermission() ? (
           <div style={{ height: "300px" }}>
             <Line
               data={{
-                labels: profitData.map((item) => item.name),
+                labels: salesChartData.map((item) => item.name),
                 datasets: [
                   {
-                    label: "Profit",
-                    data: profitData.map((item) => item.profit),
-                    borderColor: "#6366f1",
-                    backgroundColor: "rgba(99, 102, 241, 0.1)",
+                    label: "Completed Profit",
+                    data: salesChartData.map((item) => item.completed_profit),
+                    borderColor: "#10b981",
+                    backgroundColor: "rgba(16, 185, 129, 0.1)",
                     fill: true,
                   },
                   {
-                    label: "Global Pending Payment",
-                    data: Array(profitData.length).fill(globalPendingPayment),
-                    borderColor: "#f59e0b",
-                    backgroundColor: "rgba(245, 158, 11, 0.1)",
+                    label: "Credit Profit",
+                    data: salesChartData.map((item) => item.credit_profit),
+                    borderColor: "#ec4899",
+                    backgroundColor: "rgba(236, 72, 153, 0.1)",
+                    fill: true,
+                  },
+                  {
+                    label: "Total Profit",
+                    data: salesChartData.map((item) => item.total_profit),
+                    borderColor: "#6366f1",
+                    backgroundColor: "rgba(99, 102, 241, 0.1)",
                     fill: true,
                     borderWidth: 3,
-                    borderDash: [],
                   },
                 ],
               }}
@@ -1059,53 +1138,135 @@ const Dashboard = () => {
         )}
       </div>
 
-      {/* Update all other chart tooltips for consistency */}
-      {/* For example, in the Sales Performance chart: */}
+      {/* Sales Performance Chart */}
+      <div className="chart sales-chart">
+        <h3>Sales Performance by {getTimePeriodLabel()}</h3>
+        {salesChartData.length > 0 && hasReportViewPermission() ? (
+          <div style={{ height: "300px" }}>
+            <Line
+              data={{
+                labels: salesChartData.map((item) => item.name),
+                datasets: [
+                  {
+                    label: "Completed Revenue",
+                    data: salesChartData.map((item) => item.completed_revenue),
+                    borderColor: "#10b981",
+                    backgroundColor: "rgba(16, 185, 129, 0.1)",
+                    fill: true,
+                  },
+                  {
+                    label: "Credit Revenue",
+                    data: salesChartData.map((item) => item.credit_revenue),
+                    borderColor: "#f59e0b",
+                    backgroundColor: "rgba(245, 158, 11, 0.1)",
+                    fill: true,
+                  },
+                  {
+                    label: "Total Revenue",
+                    data: salesChartData.map((item) => item.total_revenue),
+                    borderColor: "#6366f1",
+                    backgroundColor: "rgba(99, 102, 241, 0.1)",
+                    fill: true,
+                    borderWidth: 3,
+                  },
+                ],
+              }}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: {
+                    position: "top",
+                    labels: {
+                      color: "#ffffff",
+                    },
+                  },
+                  tooltip: {
+                    backgroundColor: tooltipStyle.backgroundColor,
+                    titleColor: tooltipStyle.color,
+                    bodyColor: tooltipStyle.color,
+                    callbacks: {
+                      label: (context) => {
+                        let label = context.dataset.label || "";
+                        if (label) {
+                          label += ": ";
+                        }
+                        if (context.parsed.y !== null) {
+                          label += formatCurrency(context.parsed.y);
+                        }
+                        return label;
+                      },
+                    },
+                  },
+                },
+                scales: {
+                  x: {
+                    grid: {
+                      color: "rgba(255, 255, 255, 0.1)",
+                    },
+                    ticks: {
+                      color: "#ffffff",
+                    },
+                  },
+                  y: {
+                    grid: {
+                      color: "rgba(255, 255, 255, 0.1)",
+                    },
+                    ticks: {
+                      color: "#ffffff",
+                      callback: (value) => formatCurrency(value),
+                    },
+                  },
+                },
+              }}
+            />
+          </div>
+        ) : (
+          <div className="no-data">
+            {!hasReportViewPermission()
+              ? "Manager or cashier access required to view sales data"
+              : "No sales data available for this period"}
+          </div>
+        )}
+      </div>
+
       <div className="charts-container">
+        {/* Top Products Chart */}
         <div className="chart">
-          <h3>Sales Performance</h3>
-          {salesChartData.length > 0 ? (
+          <h3>Top Products by {getTimePeriodLabel()}</h3>
+          {productPerformanceData.top_products.length > 0 ? (
             <div style={{ height: "300px" }}>
-              <Line
+              <Bar
                 data={{
-                  labels: salesChartData.map((item) => item.name),
+                  labels: productPerformanceData.top_products.map(
+                    (item) => item.name,
+                  ),
                   datasets: [
                     {
-                      label: "Sales",
-                      data: salesChartData.map((item) => item.sales),
-                      borderColor: "#10b981",
-                      backgroundColor: "rgba(16, 185, 129, 0.1)",
-                      fill: true,
-                    },
-                    {
-                      label: "Profit",
-                      data: salesChartData.map((item) => item.profit),
-                      borderColor: "#6366f1",
-                      backgroundColor: "rgba(99, 102, 241, 0.1)",
-                      fill: true,
-                    },
-                    {
-                      label: "Global Pending Payment",
-                      data: Array(salesChartData.length).fill(
-                        globalPendingPayment,
+                      label: "Revenue",
+                      data: productPerformanceData.top_products.map(
+                        (item) => item.revenue,
                       ),
-                      borderColor: "#f59e0b",
-                      backgroundColor: "rgba(245, 158, 11, 0.1)",
-                      fill: true,
-                      borderWidth: 3,
-                      borderDash: [],
+                      backgroundColor: productPerformanceData.top_products.map(
+                        (_, index) =>
+                          [
+                            "#6366f1",
+                            "#ec4899",
+                            "#10b981",
+                            "#3b82f6",
+                            "#f59e0b",
+                          ][index % 5],
+                      ),
                     },
                   ],
                 }}
                 options={{
+                  indexAxis: "y",
                   responsive: true,
                   maintainAspectRatio: false,
                   plugins: {
                     legend: {
-                      position: "top",
-                      labels: {
-                        color: "#ffffff",
-                      },
+                      display: false,
                     },
                     tooltip: {
                       backgroundColor: tooltipStyle.backgroundColor,
@@ -1117,8 +1278,8 @@ const Dashboard = () => {
                           if (label) {
                             label += ": ";
                           }
-                          if (context.parsed.y !== null) {
-                            label += formatCurrency(context.parsed.y);
+                          if (context.parsed.x !== null) {
+                            label += formatCurrency(context.parsed.x);
                           }
                           return label;
                         },
@@ -1132,68 +1293,7 @@ const Dashboard = () => {
                       },
                       ticks: {
                         color: "#ffffff",
-                      },
-                    },
-                    y: {
-                      grid: {
-                        color: "rgba(255, 255, 255, 0.1)",
-                      },
-                      ticks: {
-                        color: "#ffffff",
                         callback: (value) => formatCurrency(value),
-                      },
-                    },
-                  },
-                }}
-              />
-            </div>
-          ) : (
-            <div className="no-data">
-              {hasManagerPermission()
-                ? "No sales data available for this period"
-                : "Manager access required to view sales data"}
-            </div>
-          )}
-        </div>
-
-        <div className="chart">
-          <h3>Product Performance</h3>
-          {productPerformance.length > 0 ? (
-            <div style={{ height: "300px" }}>
-              <Bar
-                data={{
-                  labels: productPerformance.map((item) => item.name),
-                  datasets: [
-                    {
-                      label: "Performance",
-                      data: productPerformance.map((item) => item.value),
-                      backgroundColor: productPerformance.map(
-                        (item) => item.fill,
-                      ),
-                    },
-                  ],
-                }}
-                options={{
-                  indexAxis: "y",
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: {
-                      display: false,
-                    },
-                  },
-                  tooltip: {
-                    backgroundColor: tooltipStyle.backgroundColor,
-                    titleColor: tooltipStyle.color,
-                    bodyColor: tooltipStyle.color,
-                  },
-                  scales: {
-                    x: {
-                      grid: {
-                        color: "rgba(255, 255, 255, 0.1)",
-                      },
-                      ticks: {
-                        color: "#ffffff",
                       },
                     },
                     y: {
@@ -1216,20 +1316,110 @@ const Dashboard = () => {
             </div>
           )}
         </div>
+
+        {/* Top Categories Chart */}
+        <div className="chart">
+          <h3>Top Categories by {getTimePeriodLabel()}</h3>
+          {productPerformanceData.top_categories.length > 0 ? (
+            <div style={{ height: "300px" }}>
+              <Bar
+                data={{
+                  labels: productPerformanceData.top_categories.map(
+                    (item) => item.name,
+                  ),
+                  datasets: [
+                    {
+                      label: "Revenue",
+                      data: productPerformanceData.top_categories.map(
+                        (item) => item.revenue,
+                      ),
+                      backgroundColor:
+                        productPerformanceData.top_categories.map(
+                          (_, index) =>
+                            [
+                              "#6366f1",
+                              "#ec4899",
+                              "#10b981",
+                              "#3b82f6",
+                              "#f59e0b",
+                            ][index % 5],
+                        ),
+                    },
+                  ],
+                }}
+                options={{
+                  indexAxis: "y",
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      display: false,
+                    },
+                    tooltip: {
+                      backgroundColor: tooltipStyle.backgroundColor,
+                      titleColor: tooltipStyle.color,
+                      bodyColor: tooltipStyle.color,
+                      callbacks: {
+                        label: (context) => {
+                          let label = context.dataset.label || "";
+                          if (label) {
+                            label += ": ";
+                          }
+                          if (context.parsed.x !== null) {
+                            label += formatCurrency(context.parsed.x);
+                          }
+                          return label;
+                        },
+                      },
+                    },
+                  },
+                  scales: {
+                    x: {
+                      grid: {
+                        color: "rgba(255, 255, 255, 0.1)",
+                      },
+                      ticks: {
+                        color: "#ffffff",
+                        callback: (value) => formatCurrency(value),
+                      },
+                    },
+                    y: {
+                      grid: {
+                        color: "rgba(255, 255, 255, 0.1)",
+                      },
+                      ticks: {
+                        color: "#ffffff",
+                      },
+                    },
+                  },
+                }}
+              />
+            </div>
+          ) : (
+            <div className="no-data">
+              {hasManagerPermission()
+                ? "No category performance data available"
+                : "Manager access required to view category performance"}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="secondary-charts">
+        {/* Stock Status Chart */}
         <div className="chart">
           <h3>Stock Status</h3>
-          {stockStatus.length > 0 ? (
+          {inventoryData.stockStatus.length > 0 ? (
             <div style={{ height: "200px" }}>
               <Doughnut
                 data={{
-                  labels: stockStatus.map((item) => item.name),
+                  labels: inventoryData.stockStatus.map((item) => item.name),
                   datasets: [
                     {
-                      data: stockStatus.map((item) => item.value),
-                      backgroundColor: stockStatus.map((item) => item.fill),
+                      data: inventoryData.stockStatus.map((item) => item.value),
+                      backgroundColor: inventoryData.stockStatus.map(
+                        (item) => item.color,
+                      ),
                     },
                   ],
                 }}
@@ -1261,21 +1451,30 @@ const Dashboard = () => {
           )}
         </div>
 
+        {/* Recent Sales */}
         <div className="chart">
           <h3>Recent Sales</h3>
-          {recentSalesData.length > 0 ? (
+          {recentSales.length > 0 ? (
             <div className="recent-sales">
-              {recentSalesData.slice(0, 10).map((sale, index) => (
-                <div key={sale.id || index} className="sale-item">
+              {recentSales.slice(0, 10).map((sale, index) => (
+                <div key={sale.invoice_id || index} className="sale-item">
                   <div className="sale-info">
-                    <p className="sale-name">{sale.name}</p>
+                    <p className="sale-name">{sale.customer}</p>
                     <p className="sale-date">
-                      {new Date(sale.date).toLocaleString()}
+                      {sale.formatted_date ||
+                        new Date(sale.date).toLocaleString()}
                     </p>
                   </div>
-                  <p className="sale-amount">
-                    XFA {Number(sale.amount).toLocaleString()}
-                  </p>
+                  <div className="sale-details">
+                    <p
+                      className={`sale-status ${sale.margin > 0 ? "completed" : "credit"}`}
+                    >
+                      {sale.items} items
+                    </p>
+                    <p className="sale-amount">
+                      XFA {Math.round(sale.total).toLocaleString()}
+                    </p>
+                  </div>
                 </div>
               ))}
             </div>
@@ -1288,135 +1487,62 @@ const Dashboard = () => {
           )}
         </div>
 
+        {/* Inventory Alerts */}
         <div className="chart">
-          <h3>Top Selling Products</h3>
-          {productPerformanceData.topProducts &&
-          productPerformanceData.topProducts.length > 0 ? (
-            <div className="top-products">
-              {productPerformanceData.topProducts
-                .slice(0, 10)
-                .map((product, index) => (
-                  <div key={index} className="product-item">
-                    <div
-                      className="product-color"
-                      style={{
-                        backgroundColor: [
-                          "#6366f1",
-                          "#ec4899",
-                          "#10b981",
-                          "#3b82f6",
-                          "#f59e0b",
-                        ][index % 5],
-                      }}
-                    ></div>
-                    <div className="product-info">
-                      <div className="product-name">{product.name}</div>
-                      <div className="product-sold">
-                        {product.sold} units sold
-                      </div>
-                    </div>
-                    <div
-                      className="product-revenue"
-                      style={{
-                        color: [
-                          "#6366f1",
-                          "#ec4899",
-                          "#10b981",
-                          "#3b82f6",
-                          "#f59e0b",
-                        ][index % 5],
-                      }}
-                    >
-                      XFA {Number(product.revenue).toLocaleString()}
-                    </div>
-                  </div>
-                ))}
+          <h3>Inventory Alerts</h3>
+          {inventoryData.alerts ? (
+            <div className="inventory-alerts">
+              <div className="alert-item">
+                <div className="alert-icon low-stock">
+                  <span>{inventoryData.alerts.lowStock || 0}</span>
+                </div>
+                <div className="alert-info">
+                  <p className="alert-title">Low Stock</p>
+                  <p className="alert-desc">Products below minimum quantity</p>
+                </div>
+              </div>
+              <div className="alert-item">
+                <div className="alert-icon out-of-stock">
+                  <span>{inventoryData.alerts.outOfStock || 0}</span>
+                </div>
+                <div className="alert-info">
+                  <p className="alert-title">Out of Stock</p>
+                  <p className="alert-desc">Products with zero quantity</p>
+                </div>
+              </div>
+              <div className="alert-item">
+                <div className="alert-icon overstocked">
+                  <span>{inventoryData.alerts.overstocked || 0}</span>
+                </div>
+                <div className="alert-info">
+                  <p className="alert-title">Overstocked</p>
+                  <p className="alert-desc">Products with excess inventory</p>
+                </div>
+              </div>
+              <div className="alert-item">
+                <div className="alert-icon critical">
+                  <span>{inventoryData.alerts.critical || 0}</span>
+                </div>
+                <div className="alert-info">
+                  <p className="alert-title">Critical</p>
+                  <p className="alert-desc">
+                    Products requiring immediate attention
+                  </p>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="no-data">
               {hasManagerPermission()
-                ? "No top selling products data available"
-                : "Manager access required to view top products"}
+                ? "No inventory alerts available"
+                : "Manager access required to view inventory alerts"}
             </div>
           )}
         </div>
       </div>
 
-      {/* Additional Charts */}
+      {/* Sales by Category Chart */}
       <div className="additional-charts">
-        <div className="chart">
-          <h3>Monthly Revenue Trend</h3>
-          {monthlyRevenueData.length > 0 ? (
-            <div style={{ height: "250px" }}>
-              <Line
-                data={{
-                  labels: monthlyRevenueData.map((item) => item.month),
-                  datasets: [
-                    {
-                      label: "Revenue",
-                      data: monthlyRevenueData.map((item) => item.revenue),
-                      borderColor: "#6366f1",
-                      backgroundColor: "rgba(99, 102, 241, 0.1)",
-                      tension: 0.4,
-                    },
-                  ],
-                }}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: {
-                      display: false,
-                    },
-                  },
-                  tooltip: {
-                    backgroundColor: tooltipStyle.backgroundColor,
-                    titleColor: tooltipStyle.color,
-                    bodyColor: tooltipStyle.color,
-                    callbacks: {
-                      label: (context) => {
-                        let label = context.dataset.label || "";
-                        if (label) {
-                          label += ": ";
-                        }
-                        if (context.parsed.y !== null) {
-                          label += formatCurrency(context.parsed.y);
-                        }
-                        return label;
-                      },
-                    },
-                  },
-                  scales: {
-                    x: {
-                      grid: {
-                        color: "rgba(255, 255, 255, 0.1)",
-                      },
-                      ticks: {
-                        color: "#ffffff",
-                      },
-                    },
-                    y: {
-                      grid: {
-                        color: "rgba(255, 255, 255, 0.1)",
-                      },
-                      ticks: {
-                        color: "#ffffff",
-                        callback: (value) => formatCurrency(value),
-                      },
-                    },
-                  },
-                }}
-              />
-            </div>
-          ) : (
-            <div className="no-data">
-              {hasManagerPermission()
-                ? "No monthly revenue data available"
-                : "Manager access required to view revenue trends"}
-            </div>
-          )}
-        </div>
-
         <div className="chart">
           <h3>Sales by Category</h3>
           {salesByCategoryData.length > 0 ? (
@@ -1427,18 +1553,9 @@ const Dashboard = () => {
                   datasets: [
                     {
                       data: salesByCategoryData.map((item) => item.value),
-                      backgroundColor: [
-                        "#6366f1",
-                        "#ec4899",
-                        "#10b981",
-                        "#3b82f6",
-                        "#f59e0b",
-                        "#8b5cf6",
-                        "#ef4444",
-                        "#14b8a6",
-                        "#f97316",
-                        "#06b6d4",
-                      ],
+                      backgroundColor: salesByCategoryData.map(
+                        (item) => item.fill,
+                      ),
                       borderWidth: 1,
                     },
                   ],
@@ -1485,6 +1602,84 @@ const Dashboard = () => {
               {hasManagerPermission()
                 ? "No sales by category data available"
                 : "Manager access required to view category data"}
+            </div>
+          )}
+        </div>
+
+        {/* Product Margin Analysis */}
+        <div className="chart">
+          <h3>Product Margin Analysis</h3>
+          {productPerformanceData.top_products.length > 0 ? (
+            <div style={{ height: "250px" }}>
+              <Bar
+                data={{
+                  labels: productPerformanceData.top_products.map(
+                    (item) => item.name,
+                  ),
+                  datasets: [
+                    {
+                      label: "Margin %",
+                      data: productPerformanceData.top_products.map(
+                        (item) => item.margin,
+                      ),
+                      backgroundColor: productPerformanceData.top_products.map(
+                        (item) => (item.margin >= 0 ? "#10b981" : "#ef4444"),
+                      ),
+                    },
+                  ],
+                }}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      display: false,
+                    },
+                    tooltip: {
+                      backgroundColor: tooltipStyle.backgroundColor,
+                      titleColor: tooltipStyle.color,
+                      bodyColor: tooltipStyle.color,
+                      callbacks: {
+                        label: (context) => {
+                          let label = context.dataset.label || "";
+                          if (label) {
+                            label += ": ";
+                          }
+                          if (context.parsed.y !== null) {
+                            label += `${context.parsed.y.toFixed(1)}%`;
+                          }
+                          return label;
+                        },
+                      },
+                    },
+                  },
+                  scales: {
+                    x: {
+                      grid: {
+                        color: "rgba(255, 255, 255, 0.1)",
+                      },
+                      ticks: {
+                        color: "#ffffff",
+                      },
+                    },
+                    y: {
+                      grid: {
+                        color: "rgba(255, 255, 255, 0.1)",
+                      },
+                      ticks: {
+                        color: "#ffffff",
+                        callback: (value) => `${value}%`,
+                      },
+                    },
+                  },
+                }}
+              />
+            </div>
+          ) : (
+            <div className="no-data">
+              {hasManagerPermission()
+                ? "No product margin data available"
+                : "Manager access required to view margin data"}
             </div>
           )}
         </div>
@@ -1734,8 +1929,7 @@ const Dashboard = () => {
                   onChange={(e) =>
                     handleNewUserInputChange("username", e.target.value)
                   }
-                  placeholder="Enter username"
-                  required
+                  placeholder="Username"
                 />
               </div>
 
@@ -1748,8 +1942,7 @@ const Dashboard = () => {
                   onChange={(e) =>
                     handleNewUserInputChange("email", e.target.value)
                   }
-                  placeholder="Enter email"
-                  required
+                  placeholder="Email"
                 />
               </div>
 
@@ -1762,7 +1955,7 @@ const Dashboard = () => {
                   onChange={(e) =>
                     handleNewUserInputChange("phone_number", e.target.value)
                   }
-                  placeholder="Enter phone number (optional)"
+                  placeholder="Phone Number"
                 />
               </div>
 
@@ -1776,18 +1969,17 @@ const Dashboard = () => {
                     onChange={(e) =>
                       handleNewUserInputChange("password", e.target.value)
                     }
-                    placeholder="Enter password"
-                    required
+                    placeholder="Password"
                   />
                   <button
-                    type="button"
                     className="toggle-password-btn"
+                    type="button"
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? (
-                      <FaEyeSlash size={16} />
+                      <FaEyeSlash size={18} />
                     ) : (
-                      <FaEye size={16} />
+                      <FaEye size={18} />
                     )}
                   </button>
                 </div>
@@ -1814,7 +2006,7 @@ const Dashboard = () => {
                 <label htmlFor="is_active">Status</label>
                 <select
                   id="is_active"
-                  value={newUser.is_active.toString()}
+                  value={newUser.is_active}
                   onChange={(e) =>
                     handleNewUserInputChange(
                       "is_active",
@@ -1822,19 +2014,11 @@ const Dashboard = () => {
                     )
                   }
                 >
-                  <option value="true">Active</option>
-                  <option value="false">Inactive</option>
+                  <option value={true}>Active</option>
+                  <option value={false}>Inactive</option>
                 </select>
               </div>
-            </div>
 
-            <div className="modal-footer">
-              <button
-                className="cancel-btn"
-                onClick={() => setShowCreateUserModal(false)}
-              >
-                Cancel
-              </button>
               <button
                 className="create-btn"
                 onClick={createUser}
@@ -1843,8 +2027,9 @@ const Dashboard = () => {
                 {isLoading ? (
                   <Loader size={16} className="spin" />
                 ) : (
-                  "Create User"
-                )}
+                  <Plus size={16} />
+                )}{" "}
+                Create User
               </button>
             </div>
           </div>
@@ -1866,26 +2051,21 @@ const Dashboard = () => {
             </div>
             <div className="modal-body">
               <p>Are you sure you want to delete this user?</p>
-              <p>This action cannot be undone.</p>
-            </div>
-            <div className="modal-footer">
-              <button
-                className="cancel-btn"
-                onClick={() => setConfirmDelete(null)}
-              >
-                Cancel
-              </button>
-              <button
-                className="delete-btn"
-                onClick={() => deleteUser(confirmDelete)}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <Loader size={16} className="spin" />
-                ) : (
-                  "Delete User"
-                )}
-              </button>
+              <div className="modal-footer">
+                <button
+                  className="cancel-btn"
+                  onClick={() => setConfirmDelete(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="delete-btn"
+                  onClick={() => deleteUser(confirmDelete)}
+                  disabled={isLoading}
+                >
+                  {isLoading ? <Loader size={16} className="spin" /> : "Delete"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
