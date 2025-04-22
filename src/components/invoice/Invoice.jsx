@@ -1348,26 +1348,13 @@ const Invoice = () => {
                 {/* Payment Details */}
                 <div className="form-section">
                   <h4>Payment Details</h4>
-                  <div className="form-group">
-                    <label htmlFor="tax">Tax Percentage (%)</label>
-                    <input
-                      id="tax"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      placeholder="Enter tax percentage"
-                      value={tax}
-                      onChange={(e) => setTax(Number(e.target.value))}
-                    />
-                  </div>
 
                   <div className="form-group">
                     <label htmlFor="advance-paid">Advance Paid (XFA)</label>
                     <input
                       id="advance-paid"
-                      type="number"
+                      type="decimal"
                       min="0"
-                      step="0.01"
                       placeholder="Enter advance payment"
                       value={advancePaid}
                       onChange={(e) => setAdvancePaid(Number(e.target.value))}
@@ -1441,7 +1428,7 @@ const Invoice = () => {
                           data-label="Quantity"
                         >
                           <input
-                            type="number"
+                            type="decimal"
                             min="1"
                             value={line.quantity}
                             onChange={(e) =>
@@ -1480,9 +1467,8 @@ const Invoice = () => {
                           data-label="Discount (XFA)"
                         >
                           <input
-                            type="number"
+                            type="decimal"
                             min="0"
-                            step="0.01"
                             value={line.discount}
                             onChange={(e) =>
                               updateLine(
@@ -1901,9 +1887,8 @@ const Invoice = () => {
                 <label htmlFor="payment-amount">Payment Amount (XFA)</label>
                 <input
                   id="payment-amount"
-                  type="number"
+                  type="decimal"
                   min="0"
-                  step="0.01"
                   max={Number.parseFloat(selectedInvoice.remaining_amount || 0)}
                   value={paymentAmount}
                   onChange={(e) => setPaymentAmount(Number(e.target.value))}
