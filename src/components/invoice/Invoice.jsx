@@ -908,7 +908,7 @@ const Invoice = () => {
         return "Payment received in full";
       case "CANCELLED":
         return "Invoice has been cancelled";
-      case "Credit":
+      case "CREDIT":
         return "Payment pending";
       default:
         return "";
@@ -925,7 +925,7 @@ const Invoice = () => {
       case "CREDIT":
         return <CreditCard size={16} />;
       default:
-        return <Info size={16} />;
+        return null;
     }
   };
 
@@ -1108,7 +1108,7 @@ const Invoice = () => {
                       </div>
                       {invoice.status && (
                         <div
-                          className={`invoice-status ${(invoice.status || "").toLowerCase()}`}
+                          className={`invoice-status ${invoice.status.toLowerCase()}`}
                         >
                           {getStatusIcon(invoice.status)}
                           <div className="status-content">
@@ -1558,7 +1558,7 @@ const Invoice = () => {
                           {status === "COMPLETED"
                             ? "COMPLETED (Fully Paid)"
                             : status === "CREDIT"
-                              ? "PENDING (Payment Required)"
+                              ? "CREDIT (Payment Required)"
                               : status === "REFUND"
                                 ? "REFUND DUE"
                                 : status}
