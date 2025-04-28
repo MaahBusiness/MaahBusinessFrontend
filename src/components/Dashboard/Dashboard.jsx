@@ -20,13 +20,8 @@ import {
   FaMoneyBillWave,
   FaShoppingCart,
   FaChartLine,
-  FaUsers,
   FaEye,
   FaEyeSlash,
-  FaCalendarDay,
-  FaCalendarWeek,
-  FaCalendarAlt,
-  FaCalendarCheck,
 } from "react-icons/fa";
 import {
   Calendar,
@@ -57,9 +52,19 @@ ChartJS.register(
 );
 
 const Dashboard = () => {
-  const [timePeriod, setTimePeriod] = useState("monthly");
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [startDate, setStartDate] = useState(() => {
+    // Default to 30 days ago
+    const date = new Date();
+    date.setDate(date.getDate() - 30);
+    return date.toISOString().split("T")[0];
+  });
+  const [endDate, setEndDate] = useState(() => {
+    // Default to today
+    return new Date().toISOString().split("T")[0];
+  });
+  const [searchDate, setSearchDate] = useState("");
 
   // State for API data
   const [inventoryData, setInventoryData] = useState({
@@ -141,6 +146,8 @@ const Dashboard = () => {
     "wholesale_client",
     "sales_agent",
   ];
+
+  // Time period for top sales
 
   // Check authentication and get current user role on component mount
   useEffect(() => {
@@ -496,69 +503,6 @@ const Dashboard = () => {
     }
   };
 
-  // Helper function to format date based on time period
-  const formatDateByPeriod = (dateString, period) => {
-    if (!dateString) return "";
-
-    const date = new Date(dateString);
-
-    switch (period) {
-      case "daily":
-        // Format as hour (e.g., "14:00")
-        return date.toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        });
-
-      case "weekly":
-        // Format as day of week (e.g., "Monday")
-        return date.toLocaleDateString([], { weekday: "long" });
-
-      case "monthly":
-        // Format as day of month (e.g., "15")
-        return date.getDate().toString();
-
-      case "yearly":
-        // Format as month (e.g., "January")
-        return date.toLocaleDateString([], { month: "long" });
-
-      default:
-        return date.toLocaleDateString();
-    }
-  };
-
-  // Helper function to get appropriate time period label
-  const getTimePeriodLabel = () => {
-    switch (timePeriod) {
-      case "daily":
-        return "Hours (24h)";
-      case "weekly":
-        return "Days of Week";
-      case "monthly":
-        return "Days of Month";
-      case "yearly":
-        return "Months";
-      default:
-        return "Time Period";
-    }
-  };
-
-  // Helper function to get time period icon
-  const getTimePeriodIcon = (period) => {
-    switch (period) {
-      case "daily":
-        return <FaCalendarDay />;
-      case "weekly":
-        return <FaCalendarWeek />;
-      case "monthly":
-        return <FaCalendarAlt />;
-      case "yearly":
-        return <FaCalendarCheck />;
-      default:
-        return <Calendar />;
-    }
-  };
-
   // Functions to fetch data from the APIs
   const fetchInventoryData = async () => {
     if (!hasManagerPermission()) {
@@ -616,10 +560,10 @@ const Dashboard = () => {
       setIsLoading(true);
       const authAxios = getAuthAxios();
       const response = await authAxios.get(
-        `http://localhost:8000/api/v1/dashboard/products/?period=${timePeriod}`,
+        `http://localhost:8000/api/v1/dashboard/top-sales-products/?start_date=${startDate}&end_date=${endDate}`,
       );
       setProductPerformanceData(response.data);
-      console.log(`Product performance data (${timePeriod}):`, response.data);
+      console.log(`Product performance data:`, response.data);
     } catch (err) {
       console.error("Error fetching product performance data:", err);
       handleAuthError(err);
@@ -642,20 +586,14 @@ const Dashboard = () => {
       setIsLoading(true);
       const authAxios = getAuthAxios();
       const response = await authAxios.get(
-        `http://localhost:8000/api/v1/dashboard/sales/?period=${timePeriod}`,
+        `http://localhost:8000/api/v1/dashboard/sales/?start_date=${startDate}&end_date=${endDate}`,
       );
 
       // Log the raw response to see what we're getting
-      console.log(`Raw sales data response (${timePeriod}):`, response.data);
+      console.log(`Raw sales data response:`, response.data);
 
       // Process the sales data
-      const processedSalesData = response.data.map((item) => ({
-        ...item,
-        formattedPeriod:
-          formatDateByPeriod(item.date, timePeriod) || item.period,
-      }));
-
-      setSalesData(processedSalesData);
+      setSalesData(response.data);
     } catch (err) {
       console.error("Error fetching sales data:", err);
       handleAuthError(err);
@@ -702,10 +640,13 @@ const Dashboard = () => {
       setIsLoading(true);
       const authAxios = getAuthAxios();
       const response = await authAxios.get(
-        `http://localhost:8000/api/v1/dashboard/stats/?period=${timePeriod}`,
+        `http://localhost:8000/api/v1/dashboard/stats/?start_date=${startDate}&end_date=${endDate}`,
       );
-      setDashboardStats(response.data);
-      console.log(`Dashboard stats (${timePeriod}):`, response.data);
+
+      // Process the stats data on the frontend
+      const processedStats = processStatsData(response.data);
+      setDashboardStats(processedStats);
+      console.log(`Dashboard stats:`, processedStats);
     } catch (err) {
       console.error("Error fetching dashboard stats:", err);
       setDashboardStats({
@@ -740,6 +681,147 @@ const Dashboard = () => {
     }
   };
 
+  // Process stats data on the frontend
+  const processStatsData = (rawData) => {
+    // This is where we would process the raw stats data
+    // For now, we'll just return a placeholder structure
+    // In a real implementation, you would calculate totals, trends, etc. here
+
+    // Example processing logic (replace with actual logic based on your API response)
+    const processedData = {
+      revenue: {
+        total: calculateTotal(rawData, "revenue"),
+        completed: calculateCompleted(rawData, "revenue"),
+        credit: {
+          total: calculateCreditTotal(rawData, "revenue"),
+          advance_paid: calculateAdvancePaid(rawData),
+          to_collect: calculateToCollect(rawData),
+          count: calculateCreditCount(rawData),
+        },
+        advance_paid: calculateAdvancePaid(rawData),
+        outstanding: calculateOutstanding(rawData),
+        trend: calculateTrend(rawData, "revenue"),
+      },
+      profit: {
+        total: calculateTotal(rawData, "profit"),
+        completed: calculateCompleted(rawData, "profit"),
+        credit: calculateCreditTotal(rawData, "profit"),
+        trend: calculateTrend(rawData, "profit"),
+      },
+      orders: {
+        total: calculateTotal(rawData, "orders"),
+        completed: calculateCompleted(rawData, "orders"),
+        credit: calculateCreditTotal(rawData, "orders"),
+        trend: calculateTrend(rawData, "orders"),
+      },
+      averageOrderValue: {
+        value: calculateAverageOrderValue(rawData),
+        change: calculateAverageOrderValueChange(rawData),
+        change_percent: calculateAverageOrderValueChangePercent(rawData),
+      },
+    };
+
+    return processedData;
+  };
+
+  // Helper functions for data processing
+  const calculateTotal = (data, metric) => {
+    // Example calculation - replace with actual logic
+    return data.reduce((sum, item) => sum + (item[metric] || 0), 0);
+  };
+
+  const calculateCompleted = (data, metric) => {
+    // Example calculation - replace with actual logic
+    return data.reduce(
+      (sum, item) =>
+        sum + (item.status === "completed" ? item[metric] || 0 : 0),
+      0,
+    );
+  };
+
+  const calculateCreditTotal = (data, metric) => {
+    // Example calculation - replace with actual logic
+    return data.reduce(
+      (sum, item) => sum + (item.status === "credit" ? item[metric] || 0 : 0),
+      0,
+    );
+  };
+
+  const calculateAdvancePaid = (data) => {
+    // Example calculation - replace with actual logic
+    return data.reduce((sum, item) => sum + (item.advance_paid || 0), 0);
+  };
+
+  const calculateToCollect = (data) => {
+    // Example calculation - replace with actual logic
+    return data.reduce((sum, item) => {
+      if (item.status === "credit") {
+        return sum + ((item.revenue || 0) - (item.advance_paid || 0));
+      }
+      return sum;
+    }, 0);
+  };
+
+  const calculateOutstanding = (data) => {
+    // Example calculation - replace with actual logic
+    return calculateToCollect(data);
+  };
+
+  const calculateCreditCount = (data) => {
+    // Example calculation - replace with actual logic
+    return data.filter((item) => item.status === "credit").length;
+  };
+
+  const calculateTrend = (data, metric) => {
+    // Use the trend data directly from the API if available
+    const lastDataPoint = data.length > 0 ? data[data.length - 1] : null;
+
+    if (lastDataPoint && lastDataPoint.trends && lastDataPoint.trends[metric]) {
+      return {
+        status: lastDataPoint.trends[metric].status,
+        percentage: lastDataPoint.trends[metric].percentage,
+        direction: lastDataPoint.trends[metric].direction,
+      };
+    }
+
+    // Fallback calculation if trend data is not available
+    const total = calculateTotal(data, metric);
+    const previousTotal = total * 0.9; // Placeholder - replace with actual previous period data
+
+    const percentage =
+      previousTotal > 0 ? ((total - previousTotal) / previousTotal) * 100 : 0;
+    const status = percentage >= 0 ? "up" : "down";
+
+    return {
+      status,
+      percentage: Math.abs(percentage),
+      direction: status,
+    };
+  };
+
+  const calculateAverageOrderValue = (data) => {
+    // Example calculation - replace with actual logic
+    const totalRevenue = calculateTotal(data, "revenue");
+    const totalOrders = calculateTotal(data, "orders");
+    return totalOrders > 0 ? totalRevenue / totalOrders : 0;
+  };
+
+  const calculateAverageOrderValueChange = (data) => {
+    // Example calculation - replace with actual logic
+    const currentAOV = calculateAverageOrderValue(data);
+    const previousAOV = currentAOV * 0.95; // Placeholder - replace with actual previous period data
+    return currentAOV - previousAOV;
+  };
+
+  const calculateAverageOrderValueChangePercent = (data) => {
+    // Example calculation - replace with actual logic
+    const currentAOV = calculateAverageOrderValue(data);
+    const previousAOV = currentAOV * 0.95; // Placeholder - replace with actual previous period data
+    return previousAOV > 0
+      ? ((currentAOV - previousAOV) / previousAOV) * 100
+      : 0;
+  };
+
   const fetchRecentSales = async () => {
     if (!hasManagerPermission()) {
       setRecentSales([]);
@@ -765,30 +847,7 @@ const Dashboard = () => {
     }
   };
 
-  const fetchTopSales = async () => {
-    if (!hasManagerPermission()) {
-      setTopSales([]);
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      const authAxios = getAuthAxios();
-      const response = await authAxios.get(
-        `http://localhost:8000/api/v1/dashboard/top-sales/?period=${timePeriod}`,
-      );
-      setTopSales(
-        Array.isArray(response.data) ? response.data : [response.data],
-      );
-      console.log(`Top sales (${timePeriod}):`, response.data);
-    } catch (err) {
-      console.error("Error fetching top sales:", err);
-      handleAuthError(err);
-      setTopSales([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Remove this function entirely
 
   // Function to refresh all dashboard data
   const refreshDashboardData = async () => {
@@ -802,7 +861,6 @@ const Dashboard = () => {
         fetchSalesData(),
         fetchDashboardStats(),
         fetchRecentSales(),
-        fetchTopSales(),
       ]);
     } catch (error) {
       console.error("Error refreshing dashboard data:", error);
@@ -811,7 +869,18 @@ const Dashboard = () => {
     }
   };
 
-  // Add a useEffect to fetch data when the component mounts or when timePeriod changes
+  // Handle date changes
+  const handleStartDateChange = (e) => {
+    setStartDate(e.target.value);
+  };
+
+  const handleEndDateChange = (e) => {
+    setEndDate(e.target.value);
+  };
+
+  // Handle time period change
+
+  // Add a useEffect to fetch data when the component mounts or when date range changes
   useEffect(() => {
     if (isAuthenticated) {
       fetchInventoryData();
@@ -819,9 +888,8 @@ const Dashboard = () => {
       fetchSalesData();
       fetchDashboardStats();
       fetchRecentSales();
-      fetchTopSales();
     }
-  }, [isAuthenticated, timePeriod, currentUserRole]);
+  }, [isAuthenticated, startDate, endDate, currentUserRole]);
 
   // Update the tooltip styles for better visibility
   const tooltipStyle = {
@@ -834,13 +902,15 @@ const Dashboard = () => {
 
   // Process sales data for charts
   const salesChartData = salesData.map((period) => ({
-    name: period.period || period.formattedPeriod,
+    name: period.date,
     completed_revenue: period.completed?.revenue || 0,
     completed_profit: period.completed?.profit || 0,
     credit_revenue: period.credit?.revenue || 0,
     credit_profit: period.credit?.profit || 0,
-    total_revenue: period.total?.revenue || 0,
-    total_profit: period.total?.profit || 0,
+    total_revenue:
+      (period.completed?.revenue || 0) + (period.credit?.revenue || 0),
+    total_profit:
+      (period.completed?.profit || 0) + (period.credit?.profit || 0),
   }));
 
   // Process sales by category data
@@ -869,77 +939,89 @@ const Dashboard = () => {
       icon: <FaMoneyBillWave className="card-icon" />,
       label: "Total Revenue",
       value: hasReportViewPermission()
-        ? formatCurrency(Math.round(Number(dashboardStats.revenue?.total || 0)))
-        : formatCurrency(0),
+        ? `XFA ${Math.round(Number(dashboardStats.revenue.total)).toLocaleString()}`
+        : "XFA 0",
       change:
-        dashboardStats.revenue?.trend?.status === "up"
-          ? Math.abs(Math.round(dashboardStats.revenue?.trend?.percentage || 0))
-          : -Math.abs(
-              Math.round(dashboardStats.revenue?.trend?.percentage || 0),
-            ),
-      period: `vs last ${timePeriod.slice(0, -2)}`,
+        dashboardStats.revenue.trend?.status === "up"
+          ? Math.abs(Math.round(dashboardStats.revenue.trend.percentage))
+          : dashboardStats.revenue.trend?.status === "down"
+            ? -Math.abs(Math.round(dashboardStats.revenue.trend.percentage))
+            : 0,
+      period: `vs previous period`,
     },
     {
       id: "orders",
       icon: <FaShoppingCart className="card-icon" />,
       label: "Total Orders",
       value: hasReportViewPermission()
-        ? Math.round(Number(dashboardStats.orders?.total || 0)).toLocaleString()
+        ? Math.round(Number(dashboardStats.orders.total)).toLocaleString()
         : "0",
       change:
-        dashboardStats.orders?.trend?.status === "up"
-          ? Math.abs(Math.round(dashboardStats.orders?.trend?.percentage || 0))
-          : -Math.abs(
-              Math.round(dashboardStats.orders?.trend?.percentage || 0),
-            ),
-      period: `vs last ${timePeriod.slice(0, -2)}`,
+        dashboardStats.orders.trend?.status === "up"
+          ? Math.abs(Math.round(dashboardStats.orders.trend.percentage))
+          : dashboardStats.orders.trend?.status === "down"
+            ? -Math.abs(Math.round(dashboardStats.orders.trend.percentage))
+            : 0,
+      period: `vs previous period`,
     },
     {
       id: "profit",
       icon: <FaChartLine className="card-icon" />,
       label: "Total Profit",
       value: hasReportViewPermission()
-        ? formatCurrency(Math.round(Number(dashboardStats.profit?.total || 0)))
-        : formatCurrency(0),
+        ? `XFA ${Math.round(Number(dashboardStats.profit.total)).toLocaleString()}`
+        : "XFA 0",
       change:
-        dashboardStats.profit?.trend?.status === "up"
-          ? Math.abs(Math.round(dashboardStats.profit?.trend?.percentage || 0))
-          : -Math.abs(
-              Math.round(dashboardStats.profit?.trend?.percentage || 0),
-            ),
-      period: `vs last ${timePeriod.slice(0, -2)}`,
-    },
-    {
-      id: "credit",
-      icon: <FaUsers className="card-icon" />,
-      label: "Credit Sales",
-      value: hasReportViewPermission()
-        ? formatCurrency(
-            Math.round(Number(dashboardStats.revenue?.credit?.total || 0)),
-          )
-        : formatCurrency(0),
-      change: Math.round(Number(dashboardStats.revenue?.credit?.count || 0)),
-      period: `${dashboardStats.revenue?.credit?.count || 0} transactions`,
+        dashboardStats.profit.trend?.status === "up"
+          ? Math.abs(Math.round(dashboardStats.profit.trend.percentage))
+          : dashboardStats.profit.trend?.status === "down"
+            ? -Math.abs(Math.round(dashboardStats.profit.trend.percentage))
+            : 0,
+      period: `vs previous period`,
     },
   ];
+
+  // Add a new card for outstanding payments
+  const outstandingPaymentCard = {
+    id: "outstanding",
+    icon: <FaMoneyBillWave className="card-icon" />,
+    label: "Outstanding Payments",
+    value: hasReportViewPermission()
+      ? `XFA ${Math.round(Number(dashboardStats.revenue.outstanding || 0)).toLocaleString()}`
+      : "XFA 0",
+  };
 
   return (
     <div className="dashboard">
       <div className="dashboard-header">
         <div className="title-section">
           <h2>Dashboard</h2>
-          <div className="period-filter">
-            {getTimePeriodIcon(timePeriod)}
-            <select
-              value={timePeriod}
-              onChange={(e) => setTimePeriod(e.target.value)}
-              className="period-selector"
+          <div className="date-range-filter">
+            <div className="date-input-container">
+              <label>Start Date:</label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={handleStartDateChange}
+                className="date-input"
+              />
+            </div>
+            <div className="date-input-container">
+              <label>End Date:</label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={handleEndDateChange}
+                className="date-input"
+              />
+            </div>
+            <button
+              className="refresh-btn"
+              onClick={refreshDashboardData}
+              disabled={isRefreshing}
             >
-              <option value="daily">Daily (24h)</option>
-              <option value="weekly">Weekly</option>
-              <option value="monthly">Monthly</option>
-              <option value="yearly">Yearly</option>
-            </select>
+              {isRefreshing ? <Loader size={16} className="spin" /> : "Refresh"}
+            </button>
           </div>
         </div>
         <div className="dashboard-actions">
@@ -983,9 +1065,11 @@ const Dashboard = () => {
 
       <div className="time-period-info">
         <div className="time-period-label">
-          {getTimePeriodIcon(timePeriod)}
+          <Calendar size={16} />
           <span>
-            Viewing data by: <strong>{getTimePeriodLabel()}</strong>
+            Viewing data from:{" "}
+            <strong>{new Date(startDate).toLocaleDateString()}</strong> to{" "}
+            <strong>{new Date(endDate).toLocaleDateString()}</strong>
           </span>
         </div>
       </div>
@@ -1031,11 +1115,11 @@ const Dashboard = () => {
                     )}
                     <span>
                       {Number(card.change) >= 0 ? "+" : ""}
-                      {card.id === "revenue" ||
-                      card.id === "profit" ||
-                      card.id === "credit"
-                        ? formatCurrency(Math.abs(Number(card.change)))
-                        : Math.abs(Number(card.change)).toLocaleString()}
+                      {card.id === "revenue" || card.id === "profit"
+                        ? `${Math.abs(Number(card.change)).toFixed(1)}%`
+                        : card.id === "credit"
+                          ? Math.abs(Number(card.change)).toLocaleString()
+                          : `${Math.abs(Number(card.change)).toFixed(1)}%`}
                     </span>
                   </div>
                   <div className="change-period">{card.period}</div>
@@ -1044,108 +1128,20 @@ const Dashboard = () => {
             </div>
           </div>
         ))}
-      </div>
 
-      {/* Profit Analysis Chart - Moved above Sales Performance */}
-      <div className="chart profit-chart">
-        <h3>Profit Analysis by {getTimePeriodLabel()}</h3>
-        {salesChartData.length > 0 && hasReportViewPermission() ? (
-          <div style={{ height: "300px" }}>
-            <Line
-              data={{
-                labels: salesChartData.map((item) => item.name),
-                datasets: [
-                  {
-                    label: "Completed Profit",
-                    data: salesChartData.map((item) => item.completed_profit),
-                    borderColor: "#10b981",
-                    backgroundColor: "rgba(16, 185, 129, 0.1)",
-                    fill: true,
-                  },
-                  {
-                    label: "Credit Profit",
-                    data: salesChartData.map((item) => item.credit_profit),
-                    borderColor: "#ec4899",
-                    backgroundColor: "rgba(236, 72, 153, 0.1)",
-                    fill: true,
-                  },
-                  {
-                    label: "Total Profit",
-                    data: salesChartData.map((item) => item.total_profit),
-                    borderColor: "#6366f1",
-                    backgroundColor: "rgba(99, 102, 241, 0.1)",
-                    fill: true,
-                    borderWidth: 3,
-                  },
-                ],
-              }}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                  legend: {
-                    position: "top",
-                    labels: {
-                      color: "#ffffff",
-                    },
-                  },
-                  tooltip: {
-                    backgroundColor: tooltipStyle.backgroundColor,
-                    titleColor: tooltipStyle.color,
-                    bodyColor: tooltipStyle.color,
-                    callbacks: {
-                      label: (context) => {
-                        let label = context.dataset.label || "";
-                        if (label) {
-                          label += ": ";
-                        }
-                        if (context.parsed.y !== null) {
-                          label += formatCurrency(context.parsed.y);
-                        }
-                        return label;
-                      },
-                    },
-                  },
-                },
-                scales: {
-                  x: {
-                    grid: {
-                      color: "rgba(255, 255, 255, 0.1)",
-                    },
-                    ticks: {
-                      color: "#ffffff",
-                    },
-                  },
-                  y: {
-                    grid: {
-                      color: "rgba(255, 255, 255, 0.1)",
-                    },
-                    ticks: {
-                      color: "#ffffff",
-                      callback: (value) => formatCurrency(value),
-                    },
-                  },
-                },
-              }}
-            />
-          </div>
-        ) : (
-          <div className="no-data">
-            {!hasReportViewPermission()
-              ? "Manager or cashier access required to view profit data"
-              : "No profit data available for this period"}
-          </div>
-        )}
+        {/* Add a dedicated card for outstanding payments */}
       </div>
 
       {/* Sales Performance Chart */}
       <div className="chart sales-chart">
-        <h3>Sales Performance by {getTimePeriodLabel()}</h3>
+        <h3>Sales Performance</h3>
         {salesChartData.length > 0 && hasReportViewPermission() ? (
           <div style={{ height: "300px" }}>
             <Line
               data={{
-                labels: salesChartData.map((item) => item.name),
+                labels: salesChartData.map((item) =>
+                  new Date(item.name).toLocaleDateString(),
+                ),
                 datasets: [
                   {
                     label: "Completed Revenue",
@@ -1230,10 +1226,104 @@ const Dashboard = () => {
         )}
       </div>
 
+      {/* Profit Analysis Chart */}
+      <div className="chart profit-chart">
+        <h3>Profit Analysis</h3>
+        {salesChartData.length > 0 && hasReportViewPermission() ? (
+          <div style={{ height: "300px" }}>
+            <Line
+              data={{
+                labels: salesChartData.map((item) =>
+                  new Date(item.name).toLocaleDateString(),
+                ),
+                datasets: [
+                  {
+                    label: "Completed Profit",
+                    data: salesChartData.map((item) => item.completed_profit),
+                    borderColor: "#10b981",
+                    backgroundColor: "rgba(16, 185, 129, 0.1)",
+                    fill: true,
+                  },
+                  {
+                    label: "Credit Profit",
+                    data: salesChartData.map((item) => item.credit_profit),
+                    borderColor: "#ec4899",
+                    backgroundColor: "rgba(236, 72, 153, 0.1)",
+                    fill: true,
+                  },
+                  {
+                    label: "Total Profit",
+                    data: salesChartData.map((item) => item.total_profit),
+                    borderColor: "#6366f1",
+                    backgroundColor: "rgba(99, 102, 241, 0.1)",
+                    fill: true,
+                    borderWidth: 3,
+                  },
+                ],
+              }}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: {
+                    position: "top",
+                    labels: {
+                      color: "#ffffff",
+                    },
+                  },
+                  tooltip: {
+                    backgroundColor: tooltipStyle.backgroundColor,
+                    titleColor: tooltipStyle.color,
+                    bodyColor: tooltipStyle.color,
+                    callbacks: {
+                      label: (context) => {
+                        let label = context.dataset.label || "";
+                        if (label) {
+                          label += ": ";
+                        }
+                        if (context.parsed.y !== null) {
+                          label += formatCurrency(context.parsed.y);
+                        }
+                        return label;
+                      },
+                    },
+                  },
+                },
+                scales: {
+                  x: {
+                    grid: {
+                      color: "rgba(255, 255, 255, 0.1)",
+                    },
+                    ticks: {
+                      color: "#ffffff",
+                    },
+                  },
+                  y: {
+                    grid: {
+                      color: "rgba(255, 255, 255, 0.1)",
+                    },
+                    ticks: {
+                      color: "#ffffff",
+                      callback: (value) => formatCurrency(value),
+                    },
+                  },
+                },
+              }}
+            />
+          </div>
+        ) : (
+          <div className="no-data">
+            {!hasReportViewPermission()
+              ? "Manager or cashier access required to view profit data"
+              : "No profit data available for this period"}
+          </div>
+        )}
+      </div>
+
       <div className="charts-container">
         {/* Top Products Chart */}
         <div className="chart">
-          <h3>Top Products by {getTimePeriodLabel()}</h3>
+          <h3>Top Products</h3>
           {productPerformanceData.top_products.length > 0 ? (
             <div style={{ height: "300px" }}>
               <Bar
@@ -1319,7 +1409,7 @@ const Dashboard = () => {
 
         {/* Top Categories Chart */}
         <div className="chart">
-          <h3>Top Categories by {getTimePeriodLabel()}</h3>
+          <h3>Top Categories</h3>
           {productPerformanceData.top_categories.length > 0 ? (
             <div style={{ height: "300px" }}>
               <Bar
@@ -1648,6 +1738,7 @@ const Dashboard = () => {
                           if (context.parsed.y !== null) {
                             label += `${context.parsed.y.toFixed(1)}%`;
                           }
+                          label += `${context.parsed.y.toFixed(1)}%`;
                           return label;
                         },
                       },
@@ -1929,7 +2020,8 @@ const Dashboard = () => {
                   onChange={(e) =>
                     handleNewUserInputChange("username", e.target.value)
                   }
-                  placeholder="Username"
+                  placeholder="Enter username"
+                  required
                 />
               </div>
 
@@ -1942,7 +2034,8 @@ const Dashboard = () => {
                   onChange={(e) =>
                     handleNewUserInputChange("email", e.target.value)
                   }
-                  placeholder="Email"
+                  placeholder="Enter email"
+                  required
                 />
               </div>
 
@@ -1955,7 +2048,7 @@ const Dashboard = () => {
                   onChange={(e) =>
                     handleNewUserInputChange("phone_number", e.target.value)
                   }
-                  placeholder="Phone Number"
+                  placeholder="Enter phone number (optional)"
                 />
               </div>
 
@@ -1969,17 +2062,18 @@ const Dashboard = () => {
                     onChange={(e) =>
                       handleNewUserInputChange("password", e.target.value)
                     }
-                    placeholder="Password"
+                    placeholder="Enter password"
+                    required
                   />
                   <button
-                    className="toggle-password-btn"
                     type="button"
+                    className="toggle-password-btn"
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? (
-                      <FaEyeSlash size={18} />
+                      <FaEyeSlash size={16} />
                     ) : (
-                      <FaEye size={18} />
+                      <FaEye size={16} />
                     )}
                   </button>
                 </div>
@@ -2006,7 +2100,7 @@ const Dashboard = () => {
                 <label htmlFor="is_active">Status</label>
                 <select
                   id="is_active"
-                  value={newUser.is_active}
+                  value={newUser.is_active.toString()}
                   onChange={(e) =>
                     handleNewUserInputChange(
                       "is_active",
@@ -2014,11 +2108,19 @@ const Dashboard = () => {
                     )
                   }
                 >
-                  <option value={true}>Active</option>
-                  <option value={false}>Inactive</option>
+                  <option value="true">Active</option>
+                  <option value="false">Inactive</option>
                 </select>
               </div>
+            </div>
 
+            <div className="modal-footer">
+              <button
+                className="cancel-btn"
+                onClick={() => setShowCreateUserModal(false)}
+              >
+                Cancel
+              </button>
               <button
                 className="create-btn"
                 onClick={createUser}
@@ -2027,9 +2129,8 @@ const Dashboard = () => {
                 {isLoading ? (
                   <Loader size={16} className="spin" />
                 ) : (
-                  <Plus size={16} />
-                )}{" "}
-                Create User
+                  "Create User"
+                )}
               </button>
             </div>
           </div>
@@ -2051,21 +2152,26 @@ const Dashboard = () => {
             </div>
             <div className="modal-body">
               <p>Are you sure you want to delete this user?</p>
-              <div className="modal-footer">
-                <button
-                  className="cancel-btn"
-                  onClick={() => setConfirmDelete(null)}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="delete-btn"
-                  onClick={() => deleteUser(confirmDelete)}
-                  disabled={isLoading}
-                >
-                  {isLoading ? <Loader size={16} className="spin" /> : "Delete"}
-                </button>
-              </div>
+              <p>This action cannot be undone.</p>
+            </div>
+            <div className="modal-footer">
+              <button
+                className="cancel-btn"
+                onClick={() => setConfirmDelete(null)}
+              >
+                Cancel
+              </button>
+              <button
+                className="delete-btn"
+                onClick={() => deleteUser(confirmDelete)}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <Loader size={16} className="spin" />
+                ) : (
+                  "Delete User"
+                )}
+              </button>
             </div>
           </div>
         </div>

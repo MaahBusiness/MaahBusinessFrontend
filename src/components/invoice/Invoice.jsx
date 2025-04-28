@@ -55,6 +55,7 @@ const Invoice = () => {
   const [products, setProducts] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchDate, setSearchDate] = useState("");
   const [currentView, setCurrentView] = useState("list"); // list, analytics
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [confirmArchive, setConfirmArchive] = useState(null);
@@ -96,7 +97,7 @@ const Invoice = () => {
   ]);
   const [formError, setFormError] = useState("");
 
-  const [invoiceDisplayMode, setInvoiceDisplayMode] = useState("grid"); // grid or list
+  const [invoiceDisplayMode, setInvoiceDisplayMode] = useState("list"); // grid or list
 
   // Check authentication on component mount
   useEffect(() => {
@@ -781,9 +782,10 @@ const Invoice = () => {
     setFormError("");
   };
 
-  // Filter invoices based on search term
-  const filteredInvoices = invoices.filter(
-    (invoice) =>
+  // Filter invoices based on search term and date
+  const filteredInvoices = invoices.filter((invoice) => {
+    // First check if the invoice matches the search term
+    const matchesSearchTerm =
       (invoice.id &&
         invoice.id
           .toString()
@@ -792,8 +794,18 @@ const Invoice = () => {
       (invoice.client_name &&
         invoice.client_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (invoice.reason &&
-        invoice.reason.toLowerCase().includes(searchTerm.toLowerCase())),
-  );
+        invoice.reason.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    // Then check if it matches the date filter (if provided)
+    if (searchDate) {
+      const invoiceDate = invoice.created_at
+        ? new Date(invoice.created_at).toISOString().split("T")[0]
+        : null;
+      return matchesSearchTerm && invoiceDate === searchDate;
+    }
+
+    return matchesSearchTerm;
+  });
 
   // Calculate analytics data
   const getAnalyticsData = () => {
@@ -1026,14 +1038,11 @@ const Invoice = () => {
               <User size={18} /> Login to Create Invoices
             </button>
           )}
-          {isAuthenticated && isManager && (
-            <button
-              className="archive-button"
-              onClick={() => setShowArchiveManager(true)}
-            >
+          {/* {isAuthenticated && isManager && (
+            <button className="archive-button" onClick={() => setShowArchiveManager(true)}>
               <Archive size={18} /> View Archived Invoices
             </button>
-          )}
+          )} */}
         </div>
       </div>
 
@@ -1046,13 +1055,6 @@ const Invoice = () => {
 
       {/* View Toggle */}
       <div className="view-toggle">
-        <button
-          className="view-toggle-btn active"
-          onClick={() => setCurrentView("list")}
-        >
-          <FileText size={16} /> Invoice List
-        </button>
-
         <div style={{ display: "flex", gap: "0.5rem" }}>
           <button
             className={`view-toggle-btn ${invoiceDisplayMode === "grid" ? "active" : ""}`}
@@ -1073,14 +1075,34 @@ const Invoice = () => {
       {currentView === "list" && (
         <div className="invoice-list-view">
           <div className="search-container">
-            <Search className="search-icon" size={18} />
-            <input
-              type="text"
-              placeholder="Search invoices by ID, client name, or reason..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="search-input"
-            />
+            <div className="search-wrapper">
+              <Search className="search-icon" size={18} />
+              <input
+                type="text"
+                placeholder="Search invoices by ID, client name, or reason..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="search-input"
+              />
+            </div>
+            <div className="date-filter">
+              <Calendar className="calendar-icon" size={18} />
+              <input
+                type="date"
+                value={searchDate}
+                onChange={(e) => setSearchDate(e.target.value)}
+                className="date-input"
+                placeholder="Filter by date"
+              />
+              {searchDate && (
+                <button
+                  className="clear-date-btn"
+                  onClick={() => setSearchDate("")}
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
           </div>
 
           {isLoading ? (
@@ -1097,79 +1119,143 @@ const Invoice = () => {
             </div>
           ) : (
             <>
-              <div
-                className={`invoice-list ${invoiceDisplayMode === "list" ? "invoice-list-table" : ""}`}
-              >
-                {filteredInvoices.map((invoice, index) => (
-                  <div key={invoice.id} className="invoice-card">
-                    <div className="invoice-card-header">
-                      <div className="invoice-id">
-                        {invoice.number ? `INV-${invoice.number}` : invoice.id}
-                      </div>
-                      {invoice.status && (
-                        <div
-                          className={`invoice-status ${invoice.status.toLowerCase()}`}
+              {invoiceDisplayMode === "list" ? (
+                <div className="invoice-table-container">
+                  <table className="invoice-table">
+                    <thead>
+                      <tr>
+                        <th>Invoice #</th>
+                        <th>Client</th>
+                        <th>Date</th>
+                        <th>Total</th>
+                        <th>Advance Paid</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredInvoices.map((invoice, index) => (
+                        <tr
+                          key={invoice.id}
+                          onClick={() => handleViewInvoice(index)}
                         >
-                          {getStatusIcon(invoice.status)}
-                          <div className="status-content">
-                            <span className="status-text">
+                          <td>
+                            {invoice.number
+                              ? `INV-${invoice.number}`
+                              : invoice.id}
+                          </td>
+                          <td>{invoice.client_name || "Anonymous"}</td>
+                          <td>{formatDate(invoice.created_at)}</td>
+                          <td>${Number(invoice.total || 0).toFixed(2)}</td>
+                          <td>
+                            ${Number(invoice.advance_paid || 0).toFixed(2)}
+                          </td>
+                          <td>
+                            <span
+                              className={`status-badge ${invoice.status?.toLowerCase()}`}
+                            >
                               {invoice.status}
                             </span>
-                            <span className="status-description">
-                              {getStatusDescription(invoice.status)}
-                            </span>
-                          </div>
+                          </td>
+                          <td>
+                            <div className="table-actions">
+                              <button
+                                className="view-btn"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleViewInvoice(index);
+                                }}
+                              >
+                                <Info size={16} />
+                              </button>
+                              <button
+                                className="delete-btn"
+                                onClick={(e) => handleArchiveInvoice(index, e)}
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="invoice-list">
+                  {filteredInvoices.map((invoice, index) => (
+                    <div key={invoice.id} className="invoice-card">
+                      <div className="invoice-card-header">
+                        <div className="invoice-id">
+                          {invoice.number
+                            ? `INV-${invoice.number}`
+                            : invoice.id}
                         </div>
-                      )}
+                        {invoice.status && (
+                          <div
+                            className={`invoice-status ${invoice.status.toLowerCase()}`}
+                          >
+                            {getStatusIcon(invoice.status)}
+                            <div className="status-content">
+                              <span className="status-text">
+                                {invoice.status}
+                              </span>
+                              <span className="status-description">
+                                {getStatusDescription(invoice.status)}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <div
+                        className="invoice-card-body"
+                        onClick={() => handleViewInvoice(index)}
+                      >
+                        <div className="invoice-client">
+                          <User size={16} className="icon-user" />
+                          <span>{invoice.client_name || "Anonymous"}</span>
+                        </div>
+                        <div className="invoice-reason">
+                          <FileText size={16} className="icon-reason" />
+                          <span>{invoice.reason || "N/A"}</span>
+                        </div>
+                        <div className="invoice-date">
+                          <Calendar size={16} className="icon-calendar" />
+                          <span>Due: {formatDate(invoice.due_date)}</span>
+                        </div>
+                        <div className="invoice-date">
+                          <Clock size={16} className="icon-clock" />
+                          <span>
+                            Created: {formatDateTime(invoice.created_at)}
+                          </span>
+                        </div>
+                        <div className="invoice-amount">
+                          <DollarSign size={16} className="icon-dollar" />
+                          <span>{invoice.total || "0"} XFA</span>
+                        </div>
+                        <div className="invoice-items">
+                          <ShoppingCart size={16} className="icon-cart" />
+                          <span>{invoice.lines?.length || 0} items</span>
+                        </div>
+                        <div className="card-action-hint">
+                          <ArrowRight size={16} />
+                          <span>Click to view details</span>
+                        </div>
+                      </div>
+                      <div className="invoice-card-footer">
+                        <div className="invoice-actions">
+                          <button
+                            className="invoice-action-btn delete"
+                            onClick={(e) => handleArchiveInvoice(index, e)}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                    <div
-                      className="invoice-card-body"
-                      onClick={() => handleViewInvoice(index)}
-                    >
-                      <div className="invoice-client">
-                        <User size={16} className="icon-user" />
-                        <span>{invoice.client_name || "Anonymous"}</span>
-                      </div>
-                      <div className="invoice-reason">
-                        <FileText size={16} className="icon-reason" />
-                        <span>{invoice.reason || "N/A"}</span>
-                      </div>
-                      <div className="invoice-date">
-                        <Calendar size={16} className="icon-calendar" />
-                        <span>Due: {formatDate(invoice.due_date)}</span>
-                      </div>
-                      <div className="invoice-date">
-                        <Clock size={16} className="icon-clock" />
-                        <span>
-                          Created: {formatDateTime(invoice.created_at)}
-                        </span>
-                      </div>
-                      <div className="invoice-amount">
-                        <DollarSign size={16} className="icon-dollar" />
-                        <span>{invoice.total || "0"} XFA</span>
-                      </div>
-                      <div className="invoice-items">
-                        <ShoppingCart size={16} className="icon-cart" />
-                        <span>{invoice.lines?.length || 0} items</span>
-                      </div>
-                      <div className="card-action-hint">
-                        <ArrowRight size={16} />
-                        <span>Click to view details</span>
-                      </div>
-                    </div>
-                    <div className="invoice-card-footer">
-                      <div className="invoice-actions">
-                        <button
-                          className="invoice-action-btn delete"
-                          onClick={(e) => handleArchiveInvoice(index, e)}
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
 
               {/* Pagination */}
               {totalPages > 1 && (
@@ -1196,67 +1282,6 @@ const Invoice = () => {
               )}
             </>
           )}
-        </div>
-      )}
-
-      {/* Analytics View */}
-      {currentView === "analytics" && (
-        <div className="analytics-view">
-          <div className="analytics-summary">
-            <div className="summary-card">
-              <div className="summary-icon revenue">
-                <DollarSign size={24} />
-              </div>
-              <div className="summary-content">
-                <h3>Total Revenue</h3>
-                <div className="summary-value">
-                  {totalRevenue.toFixed(2)} XFA
-                </div>
-                <div className="summary-trend up"></div>
-              </div>
-            </div>
-            <div className="summary-card">
-              <div className="summary-icon pending">
-                <AlertCircle size={24} />
-              </div>
-              <div className="summary-content">
-                <h3>Pending Payments</h3>
-                <div className="summary-value">
-                  {totalPending.toFixed(2)} XFA
-                </div>
-                <div className="summary-trend down"></div>
-              </div>
-            </div>
-            <div className="summary-card">
-              <div className="summary-icon average">
-                <FileText size={24} />
-              </div>
-              <div className="summary-content">
-                <h3>Average Invoice</h3>
-                <div className="summary-value">
-                  {averageInvoiceValue.toFixed(2)} XFA
-                </div>
-                <div className="summary-trend up"></div>
-              </div>
-            </div>
-          </div>
-
-          <div className="analytics-charts">
-            <div className="chart-container">
-              <h3>Monthly Revenue</h3>
-              <div className="chart"></div>
-            </div>
-
-            <div className="chart-container">
-              <h3>Invoice Status</h3>
-              <div className="chart"></div>
-            </div>
-
-            <div className="chart-container">
-              <h3>Revenue by Client</h3>
-              <div className="chart"></div>
-            </div>
-          </div>
         </div>
       )}
 
