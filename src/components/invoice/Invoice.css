@@ -9,13 +9,33 @@
 }
 .archive-button {
   display: flex;
+  text-decoration: none;
   justify-content: space-between;
+  align-items: center;
+  color: #fff;
+  background-color: #dc2626;
+  border-radius: 10px;
+  padding: 1em;
+}
+.archive-button1 {
+  display: flex;
+  justify-content: center;
   align-items: center;
   background-color: #dc2626;
   border-radius: 10px;
-  color: white;
   padding: 1em;
+  border: none;
 }
+
+/* Style the Link inside the button */
+.archive-button1 a {
+  color: #fff;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
 .header-actions {
   display: flex;
   gap: 1rem;
@@ -26,7 +46,7 @@
 /* Header Styles */
 .invoice-manager-header {
   display: flex;
-  width: 80%;
+  width: 70%;
   margin: 1em auto;
   justify-content: space-between;
   align-items: center;
@@ -640,8 +660,8 @@
 .invoice-modal-content {
   background-color: #1e1e1e;
   border-radius: 1rem;
-  width: 80%;
-  max-height: 90vh;
+  width: 70%;
+  height: 90vh;
   overflow-y: auto;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
   border: 1px solid #333;
@@ -654,7 +674,7 @@
 
 .invoice-create-modal-wide {
   max-width: 1400px;
-  width: 80%;
+  width: 63%;
   background-color: #1e1e1e;
   border-radius: 1.2rem;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
@@ -689,9 +709,6 @@
   padding: 1rem 1.5rem;
   border-bottom: 1px solid #333;
   background-color: #252525;
-  position: sticky;
-  top: 0;
-  z-index: 10;
 }
 
 .modal-header h3 {

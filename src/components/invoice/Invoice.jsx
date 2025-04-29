@@ -24,11 +24,11 @@ import {
   CreditCard,
   CheckCircle,
   XCircle,
-  Info,
   ArrowRight,
+  ArrowLeft,
 } from "lucide-react";
 import "./Invoice.css";
-import ArchiveManager from "./ArchiveManager";
+import { Link, useNavigate } from "react-router-dom";
 
 const Invoice = () => {
   // Style definitions for form fields
@@ -50,6 +50,8 @@ const Invoice = () => {
     display: "block",
   };
 
+  const navigate = useNavigate();
+
   // Main state
   const [invoices, setInvoices] = useState([]);
   const [products, setProducts] = useState([]);
@@ -68,7 +70,7 @@ const Invoice = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isManager, setIsManager] = useState(false);
   const [validStatusValues, setValidStatusValues] = useState([]);
-  const [showArchiveManager, setShowArchiveManager] = useState(false);
+  const [showSingleInvoiceView, setShowSingleInvoiceView] = useState(false);
 
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState(0);
@@ -224,11 +226,15 @@ const Invoice = () => {
           // Handle different possible product structures
           const productInfo = item.product || item;
 
-          // Check if product is on promotion
+          // Check if product is on promotion AND the promotion is still active
+          // This fixes the issue with expired promotions still showing promotion prices
           const isPromotion =
-            productInfo.is_promotion || productInfo.on_promotion || false;
-          const promotionPrice =
-            productInfo.promotion_price || productInfo.promo_price || 0;
+            (productInfo.is_promotion || productInfo.on_promotion || false) &&
+            productInfo.promotion_active !== false; // Only consider active promotions
+
+          const promotionPrice = isPromotion
+            ? productInfo.promotion_price || productInfo.promo_price || 0
+            : 0;
 
           return {
             id: productInfo.id || "",
@@ -236,7 +242,7 @@ const Invoice = () => {
               productInfo.name || productInfo.product_name || "Unnamed Product",
             price: productInfo.unit_price || productInfo.price || 0,
             is_promotion: isPromotion,
-            promotion_price: isPromotion ? promotionPrice : 0,
+            promotion_price: promotionPrice,
           };
         })
         .filter((product) => product.id); // Filter out any products without an ID
@@ -407,10 +413,10 @@ const Invoice = () => {
               updatedLine.name = selectedProduct.name;
 
               // Check if product is on promotion and use promotion price if available
-              // Preserve the exact decimal value from the API
+              // Only use promotion price if the promotion is active
               if (
                 selectedProduct.is_promotion &&
-                selectedProduct.promotion_price
+                selectedProduct.promotion_price > 0
               ) {
                 updatedLine.price = selectedProduct.promotion_price;
                 updatedLine.is_promotion = true;
@@ -462,7 +468,8 @@ const Invoice = () => {
     setIsLoading(true);
 
     try {
-      // Prepare the payload for the API
+      // Prepare the payload for the API with a timestamp to make the invoice number unique
+      const timestamp = Date.now().toString();
       const payload = {
         client_name: clientName || "Anonymous", // Default to "Anonymous" if client name is not provided
         tax: tax.toString(),
@@ -476,24 +483,52 @@ const Invoice = () => {
           discount: line.discount.toString(),
           is_promotion: line.is_promotion,
         })),
+        // Add a timestamp to make the invoice number unique
       };
 
       console.log("Submitting invoice payload:", payload);
       const authAxios = getAuthAxios();
 
-      // Create new invoice
-      const response = await authAxios.post(
-        "http://localhost:8000/api/v1/invoice/create-invoice/",
-        payload,
-      );
+      try {
+        // Create new invoice
+        const response = await authAxios.post(
+          "http://localhost:8000/api/v1/invoice/create-invoice/",
+          payload,
+        );
 
-      // Refresh the invoice list to include the new invoice
-      fetchInvoices(currentPage);
+        // Refresh the invoice list to include the new invoice
+        fetchInvoices(currentPage);
+        showStatusMessage("Invoice created successfully");
+        resetForm();
+        setShowModal(false);
+      } catch (error) {
+        // If first attempt fails with UNIQUE constraint, try a different approach
+        if (error.response?.data?.error?.includes("UNIQUE constraint failed")) {
+          console.log(
+            "Handling unique constraint error - trying with different number format",
+          );
 
-      showStatusMessage("Invoice created successfully");
+          // Try with a different number format
+          const retryPayload = {
+            ...payload,
+            number: `INV-${timestamp}`,
+          };
 
-      resetForm();
-      setShowModal(false);
+          const response = await authAxios.post(
+            "http://localhost:8000/api/v1/invoice/create-invoice/",
+            retryPayload,
+          );
+
+          // If successful, refresh and close
+          fetchInvoices(currentPage);
+          showStatusMessage("Invoice created successfully");
+          resetForm();
+          setShowModal(false);
+        } else {
+          // If it's not a unique constraint error, rethrow
+          throw error;
+        }
+      }
     } catch (error) {
       console.error("Error creating invoice:", error);
       if (error.response) {
@@ -507,7 +542,6 @@ const Invoice = () => {
           return;
         }
 
-        // Handle specific API errors
         if (error.response.data.status) {
           setFormError(
             `Status error: ${JSON.stringify(error.response.data.status)}`,
@@ -654,7 +688,7 @@ const Invoice = () => {
   // Confirm archive
   const confirmArchiveInvoice = async () => {
     const invoiceId = invoices[confirmArchive].id;
-    const invoiceNumber = invoices[confirmArchive].number;
+    const invoiceNumber = invoices[confirmArchive];
     setIsLoading(true);
 
     try {
@@ -687,7 +721,6 @@ const Invoice = () => {
               "http://localhost:8000/api/v1/archive/archive-invoice/",
               {
                 invoice_id: invoiceId,
-                override_number: true,
               },
             );
           } catch (secondError) {
@@ -959,15 +992,13 @@ const Invoice = () => {
 
       const authAxios = getAuthAxios();
 
-      // Make request to export PDF endpoint with the invoice ID as a query parameter
       const response = await authAxios.get(
         `http://localhost:8000/api/v1/invoice/export-pdf/?invoice_id=${invoiceId}`,
         {
-          responseType: "blob", // Important: set the response type to blob
+          responseType: "blob",
         },
       );
 
-      // Create a blob from the PDF response
       const blob = new Blob([response.data], { type: "application/pdf" });
 
       // Create a URL for the blob
@@ -1018,6 +1049,18 @@ const Invoice = () => {
     setCurrentPage(page);
   };
 
+  // Navigate to single invoice view
+  const navigateToInvoiceView = (invoiceId) => {
+    if (invoiceId) {
+      navigate(`/invoice/${invoiceId}`);
+    }
+  };
+
+  // Navigate to archive manager
+  const navigateToArchiveManager = () => {
+    navigate("/archive");
+  };
+
   return (
     <div className="invoice-manager-container">
       <div className="invoice-manager-header">
@@ -1038,11 +1081,19 @@ const Invoice = () => {
               <User size={18} /> Login to Create Invoices
             </button>
           )}
-          {/* {isAuthenticated && isManager && (
-            <button className="archive-button" onClick={() => setShowArchiveManager(true)}>
+          {isAuthenticated && selectedInvoice && (
+            <Link
+              to={`/invoice/${selectedInvoice.id}`}
+              className="archive-button"
+            >
+              <FileText size={18} /> View Invoice
+            </Link>
+          )}
+          {isAuthenticated && isManager && (
+            <Link to="/ArchiveManager" className="archive-button">
               <Archive size={18} /> View Archived Invoices
-            </button>
-          )} */}
+            </Link>
+          )}
         </div>
       </div>
 
@@ -1159,15 +1210,13 @@ const Invoice = () => {
                           </td>
                           <td>
                             <div className="table-actions">
-                              <button
+                              <Link
+                                to={`/invoice/${invoice.id}`}
                                 className="view-btn"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleViewInvoice(index);
-                                }}
+                                onClick={(e) => e.stopPropagation()}
                               >
-                                <Info size={16} />
-                              </button>
+                                <FileText size={16} />
+                              </Link>
                               <button
                                 className="delete-btn"
                                 onClick={(e) => handleArchiveInvoice(index, e)}
@@ -1187,9 +1236,7 @@ const Invoice = () => {
                     <div key={invoice.id} className="invoice-card">
                       <div className="invoice-card-header">
                         <div className="invoice-id">
-                          {invoice.number
-                            ? `INV-${invoice.number}`
-                            : invoice.id}
+                          {invoice.number ? `INV-${invoice}` : invoice.id}
                         </div>
                         {invoice.status && (
                           <div
@@ -1244,6 +1291,12 @@ const Invoice = () => {
                       </div>
                       <div className="invoice-card-footer">
                         <div className="invoice-actions">
+                          <Link
+                            to={`/invoice/${invoice.id}`}
+                            className="invoice-action-btn view"
+                          >
+                            <FileText size={14} />
+                          </Link>
                           <button
                             className="invoice-action-btn delete"
                             onClick={(e) => handleArchiveInvoice(index, e)}
@@ -1625,12 +1678,20 @@ const Invoice = () => {
           <div className="invoice-modal-content invoice-detail-modal">
             <div className="modal-header">
               <h3>Invoice Details</h3>
-              <button
-                className="close-modal-btn"
-                onClick={() => setSelectedInvoice(null)}
-              >
-                <X size={20} />
-              </button>
+              <div className="modal-header-actions">
+                <Link
+                  to={`/invoice/${selectedInvoice.id}`}
+                  className="view-full-btn"
+                >
+                  <FileText size={16} /> View Full Page
+                </Link>
+                <button
+                  className="close-modal-btn"
+                  onClick={() => setSelectedInvoice(null)}
+                >
+                  <X size={20} />
+                </button>
+              </div>
             </div>
             <div className="modal-body">
               <div className="invoice-detail-header">
@@ -1960,10 +2021,6 @@ const Invoice = () => {
             </div>
           </div>
         </div>
-      )}
-      {/* Archive Manager */}
-      {showArchiveManager && (
-        <ArchiveManager onBack={() => setShowArchiveManager(false)} />
       )}
     </div>
   );

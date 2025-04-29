@@ -57,7 +57,7 @@ const Dashboard = () => {
   const [startDate, setStartDate] = useState(() => {
     // Default to 30 days ago
     const date = new Date();
-    date.setDate(date.getDate() - 30);
+    date.setDate(date.getDate() - 7);
     return date.toISOString().split("T")[0];
   });
   const [endDate, setEndDate] = useState(() => {

@@ -1,21 +1,19 @@
 "use client";
-
+import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import {
   Search,
   FileText,
-  User,
   Calendar,
-  Clock,
-  DollarSign,
-  ShoppingCart,
-  X,
-  Check,
   Loader,
   ChevronLeft,
   ChevronRight,
   ArrowLeft,
+  Trash2,
+  Eye,
+  Check,
+  X,
 } from "lucide-react";
 import "./Invoice.css";
 
@@ -182,13 +180,38 @@ const ArchiveManager = ({ onBack }) => {
     setCurrentPage(page);
   };
 
+  // Get status badge class
+  const getStatusBadgeClass = (status) => {
+    if (!status) return "";
+    const statusLower = status.toLowerCase();
+    if (statusLower === "completed") return "completed";
+    if (statusLower === "cancelled") return "cancelled";
+    if (statusLower === "credit") return "credit";
+    return "";
+  };
+
+  // Handle back button click
+  const handleBackClick = () => {
+    if (onBack && typeof onBack === "function") {
+      onBack();
+    } else {
+      console.warn("onBack prop is not provided or not a function");
+      // Fallback navigation if needed
+      // window.history.back()
+    }
+  };
+
   return (
-    <div className="archive-manager-container">
-      <div className="archive-manager-header">
-        <button className="back-button" onClick={onBack}>
-          <ArrowLeft size={18} /> Back to Invoices
-        </button>
+    <div className="invoice-manager-container">
+      <div className="invoice-manager-header">
         <h2>Archived Invoices</h2>
+        <div className="header-actions">
+          <button className="archive-button1" onClick={handleBackClick}>
+            <Link to="/Invoice">
+              <ArrowLeft size={18} /> Back to Invoices{" "}
+            </Link>
+          </button>
+        </div>
       </div>
 
       {/* Status Message */}
@@ -198,15 +221,28 @@ const ArchiveManager = ({ onBack }) => {
         </div>
       )}
 
-      <div className="search-container">
-        <Search className="search-icon" size={18} />
-        <input
-          type="text"
-          placeholder="Search archived invoices by number or client name..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="search-input"
-        />
+      {/* Search Container */}
+      <div className="view-toggle">
+        <div className="search-container">
+          <div className="search-wrapper">
+            <Search className="search-icon" size={18} />
+            <input
+              type="text"
+              placeholder="Search invoice"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="search-input"
+            />
+          </div>
+          <div className="date-filter">
+            <Calendar className="calendar-icon" size={18} />
+            <input
+              type="text"
+              placeholder="mm/dd/yyyy"
+              className="date-input"
+            />
+          </div>
+        </div>
       </div>
 
       {isLoading ? (
@@ -220,82 +256,80 @@ const ArchiveManager = ({ onBack }) => {
           <p>No archived invoices found.</p>
         </div>
       ) : (
-        <>
-          <div className="invoice-list">
-            {filteredInvoices.map((invoice, index) => (
-              <div key={invoice.id} className="invoice-card">
-                <div className="invoice-card-header">
-                  <div className="invoice-id">
-                    {invoice.number ? `INV-${invoice.number}` : "N/A"}
-                  </div>
-                  <div
-                    className={`invoice-status ${(invoice.status || "").toLowerCase()}`}
-                  >
-                    {invoice.status}
-                  </div>
-                </div>
-                <div className="invoice-card-body">
-                  <div className="invoice-client">
-                    <User size={16} />
-                    <span>{invoice.client_name || "Anonymous"}</span>
-                  </div>
-                  <div className="invoice-date">
-                    <Calendar size={16} />
-                    <span>Due: {formatDate(invoice.due_date)}</span>
-                  </div>
-                  <div className="invoice-date">
-                    <Clock size={16} />
-                    <span>Created: {formatDateTime(invoice.created_at)}</span>
-                  </div>
-                  <div className="invoice-amount">
-                    <DollarSign size={16} />
-                    <span>
-                      {Number.parseFloat(invoice.total || 0).toFixed(2)} XFA
+        <div className="invoice-table-container">
+          <table className="invoice-table">
+            <thead>
+              <tr>
+                <th>Invoice #</th>
+                <th>Client</th>
+                <th>Date</th>
+                <th>Total</th>
+                <th>Advance Paid</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredInvoices.map((invoice, index) => (
+                <tr key={invoice.id || index}>
+                  <td>{invoice.number ? `INV-${invoice.number}` : "N/A"}</td>
+                  <td>{invoice.client_name || "Anonymous"}</td>
+                  <td>{formatDate(invoice.due_date)}</td>
+                  <td>${Number.parseFloat(invoice.total || 0).toFixed(2)}</td>
+                  <td>
+                    ${Number.parseFloat(invoice.advance_paid || 0).toFixed(2)}
+                  </td>
+                  <td>
+                    <span
+                      className={`status-badge ${getStatusBadgeClass(invoice.status)}`}
+                    >
+                      {invoice.status?.toUpperCase() || "N/A"}
                     </span>
-                  </div>
-                  <div className="invoice-items">
-                    <ShoppingCart size={16} />
-                    <span>{invoice.lines?.length || 0} items</span>
-                  </div>
-                </div>
-                <div className="invoice-card-footer">
-                  <button
-                    className="invoice-action-btn view"
-                    onClick={() => handleViewInvoice(index)}
-                  >
-                    View Details
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="pagination">
-              <button
-                className="pagination-btn"
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-              >
-                <ChevronLeft size={16} />
-              </button>
-              <span className="pagination-info">
-                Page {currentPage} of {totalPages} ({totalInvoices} invoices)
-              </span>
-              <button
-                className="pagination-btn"
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-              >
-                <ChevronRight size={16} />
-              </button>
-            </div>
-          )}
-        </>
+                  </td>
+                  <td>
+                    <div className="table-actions">
+                      <button
+                        className="view-btn"
+                        onClick={() => handleViewInvoice(index)}
+                      >
+                        <Eye size={16} />
+                      </button>
+                      <button className="delete-btn">
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
-      {/* View Invoice Modal */}
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="pagination">
+          <button
+            className="pagination-btn"
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
+            <ChevronLeft size={16} />
+          </button>
+          <span className="pagination-info">
+            Page {currentPage} of {totalPages} ({totalInvoices} invoices)
+          </span>
+          <button
+            className="pagination-btn"
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          >
+            <ChevronRight size={16} />
+          </button>
+        </div>
+      )}
+
+      {/* View Invoice Modal - keeping the existing modal implementation */}
       {selectedInvoice && (
         <div className="invoice-modal-overlay">
           <div className="invoice-modal-content invoice-detail-modal">

@@ -43,7 +43,7 @@ const Login = () => {
       // Store the token in localStorage
       localStorage.setItem("token", data.access);
       console.log("Login successful, token stored");
-
+      <Route path="/ArchiveManager" element={<ArchiveManager />} />;
       // If the login response includes user data, store it
       if (data.user) {
         localStorage.setItem("user", JSON.stringify(data.user));

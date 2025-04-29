@@ -32,7 +32,7 @@ const Sidebar = () => {
       {/* Sidebar */}
       <div className={`sidebar ${isOpen ? "open" : ""}`}>
         <div className="sidebar-header">
-          <h2>Stock Managment System</h2>
+          <h2>Vict Management </h2>
         </div>
         <div className="sidebar-content">
           <ul>

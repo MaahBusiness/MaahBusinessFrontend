@@ -11,19 +11,12 @@ import {
   Edit,
   Trash2,
   Search,
-  Grid,
   List,
   Check,
   Loader,
   Calendar,
   Lock,
-  ChevronDown,
-  ChevronUp,
-  Filter,
-  RefreshCw,
-  Tag,
-  DollarSign,
-  Box,
+  Eye,
 } from "lucide-react";
 import "./products.css";
 
@@ -35,7 +28,7 @@ const Product = () => {
   const [showForm, setShowForm] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
-  const [viewMode, setViewMode] = useState("grid");
+  const [viewMode, setViewMode] = useState("list"); // Changed default to list view
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingSubcategories, setIsLoadingSubcategories] = useState(false);
@@ -1092,13 +1085,6 @@ const Product = () => {
 
         <div className="view-controls">
           <button
-            className={`view-btn ${viewMode === "grid" ? "active" : ""}`}
-            onClick={() => setViewMode("grid")}
-            aria-label="Grid view"
-          >
-            <Grid size={18} /> Grid
-          </button>
-          <button
             className={`view-btn ${viewMode === "list" ? "active" : ""}`}
             onClick={() => setViewMode("list")}
             aria-label="List view"
@@ -1109,97 +1095,150 @@ const Product = () => {
       </div>
 
       {/* Products Display */}
-      <div className={`products-display ${viewMode}`}>
-        {isLoading ? (
-          // Loading skeleton
-          Array(4)
-            .fill()
-            .map((_, index) => (
-              <div key={index} className="product-card skeleton">
-                <div className="product-image skeleton-image"></div>
-                <div className="product-details">
-                  <div className="skeleton-line"></div>
-                  <div className="skeleton-line short"></div>
-                  <div className="skeleton-line medium"></div>
-                </div>
-              </div>
-            ))
-        ) : filteredProducts.length > 0 ? (
-          currentProducts.map((item) => {
-            // Extract product and category from the item
-            const product = item.product;
-            const category = item.category;
-            const subcategory = item.subcategory;
+      {isLoading ? (
+        <div className="loading-state">
+          <Loader size={48} className="spin" />
+          <p>Loading products...</p>
+        </div>
+      ) : filteredProducts.length > 0 ? (
+        <div className="product-table-container">
+          <table className="product-table">
+            <thead>
+              <tr>
+                <th>Image</th>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Price</th>
+                <th>Stock</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {currentProducts.map((item, index) => {
+                const product = item.product;
+                const category = item.category;
+                const subcategory = item.subcategory;
+                const stockStatus = getStockStatus(product);
 
-            return (
-              <div
-                key={item.id}
-                className="product-card"
-                onClick={() => handleViewProductDetails(item)}
-              >
-                <div className="product-image-container">
-                  <img
-                    src={product.image || No_image}
-                    alt={product.name || "Product"}
-                    className="product-image"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = No_image;
-                    }}
-                  />
-                  {product.on_promotion && (
-                    <div className="promotion-badge">On Sale</div>
-                  )}
-                </div>
-                <div className="product-details">
-                  <h3 className="product-name">
-                    {product.name || "Unnamed Product"}
-                  </h3>
-                  <p className="product-description">
-                    {product.description || "No description available"}
-                  </p>
-                  <div className="product-meta">
-                    <div className="product-category">
-                      {getCategoryName(category) || "Uncategorized"}
-                      {subcategory && (
-                        <span className="product-subcategory">
-                          {" "}
-                          / {getSubcategoryName(subcategory)}
-                        </span>
-                      )}
-                    </div>
-                    <div className={`stock-status ${getStockStatus(product)}`}>
-                      {product.quantity > 0
-                        ? `${product.quantity} in stock`
-                        : "Out of stock"}
-                    </div>
-                  </div>
-                  <div className="product-price-container">
-                    {product.on_promotion && product.promo_price ? (
-                      <span className="product-price">
-                        {product.promo_price || 0} XFA
-                      </span>
-                    ) : (
-                      <span className="product-price">
-                        {product.unit_price || 0} XFA
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })
-        ) : (
-          <div className="no-products">
-            <p>
-              No products found. Try adjusting your search or add a new product.
-            </p>
-            <button onClick={handleClearExpiryFilter}>
-              <X size={14} /> Clear Filter
-            </button>
-          </div>
-        )}
-      </div>
+                return (
+                  <tr
+                    key={item.id || index}
+                    onClick={() => handleViewProductDetails(item)}
+                    className="product-row"
+                  >
+                    <td className="product-image-cell">
+                      <div className="product-image-container-small">
+                        <img
+                          src={product.image || No_image}
+                          alt={product.name || "Product"}
+                          className="product-image-small"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = No_image;
+                          }}
+                        />
+                        {product.on_promotion && (
+                          <div className="promotion-badge-small">Sale</div>
+                        )}
+                      </div>
+                    </td>
+                    <td>
+                      <div className="product-name-cell">
+                        <div className="product-name">
+                          {product.name || "Unnamed Product"}
+                        </div>
+                        <div className="product-description-small">
+                          {product.description
+                            ? product.description.length > 50
+                              ? `${product.description.substring(0, 50)}...`
+                              : product.description
+                            : "No description"}
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="product-category-cell">
+                        {getCategoryName(category)}
+                        {subcategory && (
+                          <span className="product-subcategory">
+                            <br />
+                            {getSubcategoryName(subcategory)}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td>
+                      <div className="product-price-cell">
+                        {product.on_promotion && product.promo_price ? (
+                          <>
+                            <div className="product-price promo">
+                              {product.promo_price || 0} XFA
+                            </div>
+                            <div className="product-price original">
+                              {product.unit_price || 0} XFA
+                            </div>
+                          </>
+                        ) : (
+                          <div className="product-price">
+                            {product.unit_price || 0} XFA
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td>
+                      <div className="product-stock-cell">
+                        {product.quantity || 0}
+                      </div>
+                    </td>
+                    <td>
+                      <div className={`stock-status ${stockStatus}`}>
+                        {stockStatus === "in-stock" && "In Stock"}
+                        {stockStatus === "low-stock" && "Low Stock"}
+                        {stockStatus === "out-of-stock" && "Out of Stock"}
+                      </div>
+                    </td>
+                    <td>
+                      <div className="table-actions">
+                        <button
+                          className="view-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewProductDetails(item);
+                          }}
+                        >
+                          <Eye size={16} />
+                        </button>
+                        <button
+                          className="edit-btn"
+                          onClick={(e) => handleEditProduct(item, e)}
+                        >
+                          <Edit size={16} />
+                        </button>
+                        <button
+                          className="delete-btn"
+                          onClick={(e) => handleDelete(product.id, e)}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="no-products">
+          <p>
+            No products found. Try adjusting your search or add a new product.
+          </p>
+          <button onClick={handleClearExpiryFilter}>
+            <X size={14} /> Clear Filter
+          </button>
+        </div>
+      )}
 
       {/* Pagination Controls */}
       {!isLoading && filteredProducts.length > 0 && (
