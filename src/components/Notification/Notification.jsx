@@ -69,7 +69,7 @@ const Notification = ({ isDropdown = false }) => {
 
     try {
       // Use the new API endpoint
-      let apiUrl = `http://localhost:8000/api/v1/notification/notifications/`;
+      let apiUrl = `https://victbackendmanagement.onrender.com/api/v1/notification/notifications/`;
 
       // Add query parameters
       const params = new URLSearchParams();
@@ -146,7 +146,7 @@ const Notification = ({ isDropdown = false }) => {
 
     try {
       const response = await fetch(
-        `http://localhost:8000/api/v1/notification/notification/?notif_id=${id}`,
+        `https://victbackendmanagement.onrender.com/api/v1/notification/notification/?notif_id=${id}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -237,7 +237,7 @@ const Notification = ({ isDropdown = false }) => {
       window.dispatchEvent(new Event("storage"));
 
       const response = await fetch(
-        `http://localhost:8000/api/v1/notification/mark-read/`,
+        `https://victbackendmanagement.onrender.com/api/v1/notification/mark-read/`,
         {
           method: "POST",
           headers: {
@@ -294,7 +294,7 @@ const Notification = ({ isDropdown = false }) => {
       window.dispatchEvent(new Event("storage"));
 
       const response = await fetch(
-        `http://localhost:8000/api/v1/notification/mark-all-read/`,
+        `https://victbackendmanagement.onrender.com/api/v1/notification/mark-all-read/`,
         {
           method: "POST",
           headers: {
@@ -323,7 +323,7 @@ const Notification = ({ isDropdown = false }) => {
     try {
       // Always fetch fresh data from API for unread notifications
       const response = await fetch(
-        "http://localhost:8000/api/v1/notification/my-notifications/?status=UNREAD",
+        "https://victbackendmanagement.onrender.com/api/v1/my-notifications/?status=UNREAD",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -358,7 +358,7 @@ const Notification = ({ isDropdown = false }) => {
 
     try {
       const response = await fetch(
-        `http://localhost:8000/api/v1/notification/archive/`,
+        `https://victbackendmanagement.onrender.com/api/v1/notification/archive/`,
         {
           method: "POST",
           headers: {
@@ -409,7 +409,7 @@ const Notification = ({ isDropdown = false }) => {
     setArchiveLoading(true);
     try {
       const response = await fetch(
-        `http://localhost:8000/api/v1/notification/archive-old/`,
+        `https://victbackendmanagement.onrender.com/api/v1/notification/archive-old/`,
         {
           method: "POST",
           headers: {

@@ -126,7 +126,7 @@ const Invoice = () => {
       }
 
       // Fetch latest user information from API
-      fetch("http://localhost:8000/api/v1/user-info/", {
+      fetch("https://victbackendmanagement.onrender.com/api/v1/user-info/", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -199,7 +199,7 @@ const Invoice = () => {
       console.log("Fetching products...");
       const authAxios = getAuthAxios();
       const response = await authAxios.get(
-        "http://localhost:8000/api/v1/product/products/",
+        "https://victbackendmanagement.onrender.com/api/v1/products/",
       );
       console.log("Products API response:", response.data);
 
@@ -278,7 +278,7 @@ const Invoice = () => {
       setIsLoading(true);
       const authAxios = getAuthAxios();
       const response = await authAxios.get(
-        `http://localhost:8000/api/v1/invoice/invoices/?page=${page}`,
+        `https://victbackendmanagement.onrender.com/api/v1/invoice/invoices/?page=${page}`,
       );
       console.log("Invoices fetched:", response.data);
 
@@ -492,7 +492,7 @@ const Invoice = () => {
       try {
         // Create new invoice
         const response = await authAxios.post(
-          "http://localhost:8000/api/v1/invoice/create-invoice/",
+          "https://victbackendmanagement.onrender.com/api/v1/invoice/create-invoice/",
           payload,
         );
 
@@ -515,7 +515,7 @@ const Invoice = () => {
           };
 
           const response = await authAxios.post(
-            "http://localhost:8000/api/v1/invoice/create-invoice/",
+            "https://victbackendmanagement.onrender.com/api/v1/invoice/create-invoice/",
             retryPayload,
           );
 
@@ -596,7 +596,7 @@ const Invoice = () => {
       const authAxios = getAuthAxios();
 
       const response = await authAxios.post(
-        "http://localhost:8000/api/v1/invoice/pay-debt/",
+        "https://victbackendmanagement.onrender.com/api/v1/invoice/pay-debt/",
         {
           invoice_id: invoiceId,
           amount: amount.toString(),
@@ -642,7 +642,7 @@ const Invoice = () => {
         // Otherwise fetch detailed invoice data
         const authAxios = getAuthAxios();
         const response = await authAxios.get(
-          `http://localhost:8000/api/v1/invoice/${invoice.id}/detail/`,
+          `https://victbackendmanagement.onrender.com/api/v1/invoice/${invoice.id}/detail/`,
         );
         setSelectedInvoice(response.data);
       }
@@ -700,7 +700,7 @@ const Invoice = () => {
 
         // First attempt - standard archive request
         await authAxios.post(
-          "http://localhost:8000/api/v1/archive/archive-invoice/",
+          "https://victbackendmanagement.onrender.com/api/v1/archive/archive-invoice/",
           {
             invoice_id: invoiceId,
           },
@@ -718,7 +718,7 @@ const Invoice = () => {
           // Second attempt - try with override_number in different formats
           try {
             await authAxios.post(
-              "http://localhost:8000/api/v1/archive/archive-invoice/",
+              "https://victbackendmanagement.onrender.com/api/v1/archive/archive-invoice/",
               {
                 invoice_id: invoiceId,
               },
@@ -729,7 +729,7 @@ const Invoice = () => {
             // Third attempt - try with different parameter name
             try {
               await authAxios.post(
-                "http://localhost:8000/api/v1/archive/archive-invoice/",
+                "https://victbackendmanagement.onrender.com/api/v1//archive-invoice/",
                 {
                   invoice_id: invoiceId,
                   force: true,
@@ -741,7 +741,7 @@ const Invoice = () => {
               // Fourth attempt - try with a modified invoice number
               try {
                 await authAxios.post(
-                  "http://localhost:8000/api/v1/archive/archive-invoice/",
+                  "https://victbackendmanagement.onrender.com/api/v1/archive-invoice/",
                   {
                     invoice_id: invoiceId,
                     new_number: `${invoiceNumber}-${Date.now()}`,

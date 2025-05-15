@@ -33,7 +33,7 @@ const ForgotPassword = () => {
 
     try {
       const response = await fetch(
-        "http://localhost:8000/api/v1/password-reset/",
+        "https://victbackendmanagement.onrender.com/api/v1/password-reset/",
         {
           method: "POST",
           headers: {

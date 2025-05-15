@@ -8,6 +8,7 @@ const Signup = () => {
     email: "",
     phone_number: "",
     password: "",
+    confirm_password:"",
     role: "manager",
     is_active: true,
   });
@@ -24,7 +25,7 @@ const Signup = () => {
     setModalErrorMessages([]);
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/v1/register/", {
+      const response = await fetch("https://victbackendmanagement.onrender.com/api/v1/register/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -91,7 +92,7 @@ const Signup = () => {
       if (authToken) {
         try {
           const profileResponse = await fetch(
-            "http://localhost:8000/api/v1/user-info/",
+            "https://victbackendmanagement.onrender.com/api/v1/user-info/",
             {
               method: "GET",
               headers: {
@@ -123,6 +124,13 @@ const Signup = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+  const handlePasswordChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
   return (
@@ -170,6 +178,18 @@ const Signup = () => {
           value={formData.password}
           onChange={(e) =>
             setFormData({ ...formData, password: e.target.value })
+          }
+          required
+          className="auth-input"
+        />
+        <p className="auth-label">Confirm Password</p>
+        <input
+          type="password"
+          name="confirm_password"
+          placeholder="Confirm Password"
+          value={formData.confirm_password || ""}
+          onChange={(e) =>
+            setFormData({ ...formData, confirm_password: e.target.value })
           }
           required
           className="auth-input"

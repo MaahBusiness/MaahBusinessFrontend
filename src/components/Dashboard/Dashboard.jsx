@@ -200,7 +200,7 @@ const Dashboard = () => {
       // Try the user-info endpoint as a fallback
       try {
         const userInfoResponse = await authAxios.get(
-          "http://localhost:8000/api/v1/user-info/",
+          "https://victbackendmanagement.onrender.com/api/v1/user-info/",
         );
         console.log("User info data:", userInfoResponse.data);
 
@@ -259,7 +259,7 @@ const Dashboard = () => {
       setError(null);
       const authAxios = getAuthAxios();
       const response = await authAxios.get(
-        "http://localhost:8000/api/v1/users/",
+        "https://victbackendmanagement.onrender.com/api/v1/users/",
       );
 
       console.log("Users data:", response.data);
@@ -307,7 +307,7 @@ const Dashboard = () => {
       const authAxios = getAuthAxios();
 
       const response = await authAxios.post(
-        "http://localhost:8000/api/v1/users/",
+        "https://victbackendmanagement.onrender.com/api/v1/users/",
         newUser,
       );
       console.log("User created:", response.data);
@@ -365,7 +365,7 @@ const Dashboard = () => {
           user.role,
         );
         const roleResponse = await authAxios.post(
-          "http://localhost:8000/api/v1/users/assign-role/",
+          "https://victbackendmanagement.onrender.com/api/v1/users/assign-role/",
           {
             user_id: user.id,
             role: user.role,
@@ -383,7 +383,7 @@ const Dashboard = () => {
       };
 
       const updateResponse = await authAxios.put(
-        `http://localhost:8000/api/v1/users/${user.id}/`,
+        `https://victbackendmanagement.onrender.com/api/v1/users/${user.id}/`,
         userToUpdate,
       );
       console.log("User update response:", updateResponse.data);
@@ -423,7 +423,7 @@ const Dashboard = () => {
       setError(null);
       const authAxios = getAuthAxios();
       const response = await authAxios.delete(
-        `http://localhost:8000/api/v1/users/${userId}/`,
+        `https://victbackendmanagement.onrender.com/api/v1/users/${userId}/`,
       );
       console.log("User delete response:", response.data);
 
@@ -524,7 +524,7 @@ const Dashboard = () => {
       setIsLoading(true);
       const authAxios = getAuthAxios();
       const response = await authAxios.get(
-        "http://localhost:8000/api/v1/dashboard/inventory/",
+        "https://victbackendmanagement.onrender.com/api/v1/dashboard/inventory/",
       );
       setInventoryData(response.data);
       console.log("Inventory data:", response.data);
@@ -560,7 +560,7 @@ const Dashboard = () => {
       setIsLoading(true);
       const authAxios = getAuthAxios();
       const response = await authAxios.get(
-        `http://localhost:8000/api/v1/dashboard/top-sales-products/?start_date=${startDate}&end_date=${endDate}`,
+        `https://victbackendmanagement.onrender.com/api/v1/dashboard/top-sales-products/?start_date=${startDate}&end_date=${endDate}`,
       );
       setProductPerformanceData(response.data);
       console.log(`Product performance data:`, response.data);
@@ -586,7 +586,7 @@ const Dashboard = () => {
       setIsLoading(true);
       const authAxios = getAuthAxios();
       const response = await authAxios.get(
-        `http://localhost:8000/api/v1/dashboard/sales/?start_date=${startDate}&end_date=${endDate}`,
+        `https://victbackendmanagement.onrender.com/api/v1/dashboard/sales/?start_date=${startDate}&end_date=${endDate}`,
       );
 
       // Log the raw response to see what we're getting
@@ -640,7 +640,7 @@ const Dashboard = () => {
       setIsLoading(true);
       const authAxios = getAuthAxios();
       const response = await authAxios.get(
-        `http://localhost:8000/api/v1/dashboard/stats/?start_date=${startDate}&end_date=${endDate}`,
+        `https://victbackendmanagement.onrender.com/api/v1/dashboard/stats/?start_date=${startDate}&end_date=${endDate}`,
       );
 
       // Process the stats data on the frontend
@@ -832,7 +832,7 @@ const Dashboard = () => {
       setIsLoading(true);
       const authAxios = getAuthAxios();
       const response = await authAxios.get(
-        `http://localhost:8000/api/v1/dashboard/recent-sales/?limit=10`,
+        `https://victbackendmanagement.onrender.com/api/v1/dashboard/recent-sales/?limit=10`,
       );
       setRecentSales(
         Array.isArray(response.data) ? response.data : [response.data],

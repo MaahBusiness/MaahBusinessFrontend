@@ -55,7 +55,7 @@ const ArchiveManager = ({ onBack }) => {
       setIsLoading(true);
       const authAxios = getAuthAxios();
       const response = await authAxios.get(
-        "http://localhost:8000/api/v1/archive/all-archive-invoice/",
+        "https://victbackendmanagement.onrender.com/api/v1/archive/all-archive-invoice/",
       );
       console.log("Archived invoices fetched:", response.data);
 
@@ -104,7 +104,7 @@ const ArchiveManager = ({ onBack }) => {
         console.log("Fetching archived invoice details for ID:", invoiceId);
 
         const response = await authAxios.get(
-          `http://localhost:8000/api/v1/archive/archive-invoice-by-id/?invoice_id=${invoiceId}`,
+          `https://victbackendmanagement.onrender.com/api/v1/archive/archive-invoice-by-id/?invoice_id=${invoiceId}`,
         );
         console.log("Archived invoice details response:", response.data);
         setSelectedInvoice(response.data);

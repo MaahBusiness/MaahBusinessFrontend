@@ -28,7 +28,7 @@ const Navbar = () => {
         if (!token) return;
 
         const response = await fetch(
-          "http://localhost:8000/api/v1/notification/my-notifications/?status=UNREAD",
+          "https://victbackendmanagement.onrender.com/api/v1/notification/my-notifications/?status=UNREAD",
           {
             headers: {
               Authorization: `Bearer ${token}`,
