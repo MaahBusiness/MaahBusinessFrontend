@@ -121,7 +121,7 @@ const Reports = () => {
       try {
         const authAxios = getAuthAxios();
         const userInfoResponse = await authAxios.get(
-          "http://localhost:8000/api/v1/user-info/",
+          "https://victbackendmanagement.onrender.com/api/v1/user-info/",
         );
         console.log("User info data:", userInfoResponse.data);
 
@@ -342,7 +342,7 @@ const Reports = () => {
       // Use the correct download endpoint from the API with POST method
       const response = await axios({
         method: "post",
-        url: "http://localhost:8000/api/v1/report/download-report/",
+        url: "https://victbackendmanagement.onrender.com/api/v1/report/download-report/",
         data: { report_id: reportId },
         headers: { Authorization: `Bearer ${token}` },
         responseType: "blob", // Important for handling file downloads
@@ -439,7 +439,7 @@ const Reports = () => {
       setIsLoading(true);
 
       const response = await axios.get(
-        "http://localhost:8000/api/v1/report/all-report/",
+        "https://victbackendmanagement.onrender.com/api/v1/report/all-report/",
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -531,7 +531,7 @@ const Reports = () => {
 
       // Generate the report using the API
       const response = await axios.get(
-        `http://localhost:8000/api/v1/report/generate/?${params.toString()}`,
+        `https://victbackendmanagement.onrender.com/api/v1/report/generate/?${params.toString()}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -647,7 +647,7 @@ const Reports = () => {
       // Try to get the report data first
       try {
         const reportResponse = await axios.get(
-          `http://localhost:8000/api/v1/report/generate/?${reportParams.toString()}`,
+          `https://victbackendmanagement.onrender.com/api/v1/report/generate/?${reportParams.toString()}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           },
@@ -683,7 +683,7 @@ const Reports = () => {
 
       // If report generation didn't return useful data, try the dashboard API
       // Build URL with query parameters for the dashboard API
-      let url = "http://localhost:8000/api/v1/dashboard/inventory/";
+      let url = "https://victbackendmanagement.onrender.com/api/v1/dashboard/inventory/";
       const params = new URLSearchParams();
 
       // Only add date parameters if they are not empty strings
@@ -1089,7 +1089,7 @@ const Reports = () => {
 
       // Generate the report using the API
       const response = await axios.get(
-        `http://localhost:8000/api/v1/report/generate/?${params.toString()}`,
+        `https://victbackendmanagement.onrender.com/api/v1/report/generate/?${params.toString()}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },

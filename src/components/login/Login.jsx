@@ -15,7 +15,12 @@ const Login = () => {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
-      navigate("/");
+      const user = JSON.parse(localStorage.getItem("user"));
+      if (user?.role === "manager") {
+        navigate("/ArchiveManager");
+      } else {
+        navigate("/");
+      }
     }
   }, [navigate]);
 
@@ -24,7 +29,7 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://localhost:8000/api/v1/login/", {
+      const response = await fetch("https://victbackendmanagement.onrender.com/api/v1/login/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -43,16 +48,23 @@ const Login = () => {
       // Store the token in localStorage
       localStorage.setItem("token", data.access);
       console.log("Login successful, token stored");
-      <Route path="/ArchiveManager" element={<ArchiveManager />} />;
+
       // If the login response includes user data, store it
       if (data.user) {
         localStorage.setItem("user", JSON.stringify(data.user));
         console.log("User data stored from login response");
+        
+        // Redirect based on role
+        if (data.user.role === "manager") {
+          navigate("/ArchiveManager");
+        } else {
+          navigate("/");
+        }
       } else {
         // If no user data in response, fetch it separately
         try {
           const userResponse = await fetch(
-            "http://localhost:8000/api/v1/user-info/",
+            "https://victbackendmanagement.onrender.com/api/v1/user-info/",
             {
               method: "GET",
               headers: {
@@ -66,14 +78,20 @@ const Login = () => {
             const userData = await userResponse.json();
             localStorage.setItem("user", JSON.stringify(userData));
             console.log("User data fetched and stored after login");
+            
+            // Redirect based on role
+            if (userData.role === "manager") {
+              navigate("/ArchiveManager");
+            } else {
+              navigate("/");
+            }
           }
         } catch (userError) {
           console.error("Error fetching user data after login:", userError);
+          navigate("/"); // Default redirect if user data fetch fails
         }
       }
 
-      // Redirect to home
-      navigate("/");
       setErrorMessage("");
     } catch (error) {
       console.error("Login error:", error);

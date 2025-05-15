@@ -96,8 +96,8 @@ const Category = () => {
   const [isLoadingCategoryDetails, setIsLoadingCategoryDetails] =
     useState(false);
 
-  const apiBaseUrl = "http://localhost:8000/api/v1/categories";
-  const productApiBaseUrl = "http://localhost:8000/api/v1/product";
+  const apiBaseUrl = "https://victbackendmanagement.onrender.com/api/v1/categories";
+  const productApiBaseUrl = "https://victbackendmanagement.onrender.com/api/v1/product";
 
   // Check authentication on component mount
   useEffect(() => {
@@ -121,7 +121,7 @@ const Category = () => {
 
         // Fetch latest user information from API
         const response = await fetch(
-          "http://localhost:8000/api/v1/user-info/",
+          "https://victbackendmanagement.onrender.com/api/v1/user-info/",
           {
             method: "GET",
             headers: {

@@ -43,7 +43,7 @@ const ProfileInfo = () => {
 
         // Fetch latest user information from API using the token from signup/login
         const response = await fetch(
-          "http://localhost:8000/api/v1/user-info/",
+          "https://victbackendmanagement.onrender.com/api/v1/user-info/",
           {
             method: "GET",
             headers: {
@@ -131,7 +131,7 @@ const ProfileInfo = () => {
 
     try {
       const response = await fetch(
-        "http://localhost:8000/api/v1/update-user/",
+        "https://victbackendmanagement.onrender.com/api/v1/update-user/",
         {
           method: "PATCH",
           headers: {
@@ -208,7 +208,7 @@ const ProfileInfo = () => {
     const token = localStorage.getItem("token");
 
     try {
-      const response = await fetch("http://localhost:8000/api/v1/logout/", {
+      const response = await fetch("https://victbackendmanagement.onrender.com/api/v1/logout/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

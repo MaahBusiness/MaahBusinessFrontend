@@ -65,8 +65,8 @@ const Product = () => {
     subcategory_id: "",
   });
 
-  const apiBaseUrl = "http://localhost:8000/api/v1/product";
-  const categoryApiBaseUrl = "http://localhost:8000/api/v1/categories";
+  const apiBaseUrl = "https://victbackendmanagement.onrender.com/api/v1/product";
+  const categoryApiBaseUrl = "https://victbackendmanagement.onrender.com/api/v1/categories";
 
   // Check authentication on component mount
   useEffect(() => {
@@ -105,7 +105,7 @@ const Product = () => {
 
         // Fetch latest user information from API
         const response = await fetch(
-          "http://localhost:8000/api/v1/user-info/",
+          "https://victbackendmanagement.onrender.com/api/v1/user-info/",
           {
             method: "GET",
             headers: {

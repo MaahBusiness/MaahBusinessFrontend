@@ -86,7 +86,7 @@ const ChangePassword = () => {
       }
 
       const response = await fetch(
-        "http://localhost:8000/api/v1/update-user/",
+        "https://victbackendmanagement.onrender.com/api/v1/update-user/",
         {
           method: "PATCH",
           headers: {
