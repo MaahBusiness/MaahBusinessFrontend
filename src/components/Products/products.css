@@ -1089,7 +1089,7 @@
     width: 100%;
     margin: 0 auto;
   }
-}
+
   
   .product-header,
   .product-toolbar,
@@ -1126,3 +1126,4 @@
   .promotion-section {
     grid-column: span 1;
   }
+}
