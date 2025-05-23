@@ -199,7 +199,7 @@ const Invoice = () => {
       console.log("Fetching products...");
       const authAxios = getAuthAxios();
       const response = await authAxios.get(
-        "https://victbackendmanagement.onrender.com/api/v1/products/",
+        "https://victbackendmanagement.onrender.com/api/v1/product/products/",
       );
       console.log("Products API response:", response.data);
 
