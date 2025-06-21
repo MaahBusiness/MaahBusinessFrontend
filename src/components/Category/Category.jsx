@@ -96,8 +96,10 @@ const Category = () => {
   const [isLoadingCategoryDetails, setIsLoadingCategoryDetails] =
     useState(false);
 
-  const apiBaseUrl = "https://victbackendmanagement.onrender.com/api/v1/categories";
-  const productApiBaseUrl = "https://victbackendmanagement.onrender.com/api/v1/product";
+  const apiBaseUrl =
+    "https://victbackendmanagement.onrender.com/api/v1/categories";
+  const productApiBaseUrl =
+    "https://victbackendmanagement.onrender.com/api/v1/product";
 
   // Check authentication on component mount
   useEffect(() => {
@@ -169,15 +171,21 @@ const Category = () => {
       try {
         const authAxios = getAuthAxios();
 
+        // The API send just 10 items by default, so we set a high page size to fetch all categories and subcategories
+        // Alternatively, you can just remove the page size parameter in the backend to get all items
+        const pageSize = 1000000;
+
         // Fetch categories
-        const response = await authAxios.get(`${apiBaseUrl}/categories/`);
+        const response = await authAxios.get(
+          `${apiBaseUrl}/categories/?page_size=${pageSize}`,
+        );
         console.log("Categories fetched successfully:", response.data.results);
         setCategories(response.data.results || []);
 
         // Fetch subcategories
         try {
           const subResponse = await authAxios.get(
-            `${apiBaseUrl}/subcategories/`,
+            `${apiBaseUrl}/subcategories/?page_size=${pageSize}`,
           );
           console.log("Subcategories fetched successfully:", subResponse.data);
           setSubcategories(subResponse.data.results || []);
