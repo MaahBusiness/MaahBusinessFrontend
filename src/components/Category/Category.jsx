@@ -1100,8 +1100,6 @@ const Category = () => {
 
               <div className="subcategories-section">
                 <div className="subcategories-header">
-                  <h3>Subcategories</h3>
-
                   {/* Search for subcategories */}
                   <div className="search-container subcategory-search">
                     <Search size={16} className="search-icon" />

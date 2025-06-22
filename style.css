@@ -19,8 +19,8 @@ body {
 
 /* ===== SCROLLBAR */
 * {
-  /* scrollbar-width: thin; */
-  scrollbar-color: #939393 transparent;
+  scrollbar-width: thin;
+  scrollbar-color: #434343 transparent;
 }
 
 .mainContent {
