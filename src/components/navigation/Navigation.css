@@ -2,7 +2,7 @@
   background-color: #1e1e1e;
   color: #e0e0e0;
   padding: 0 2em;
-  height: 63px;
+  height: var(--navbar-height);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -105,12 +105,6 @@
 .nav-content ul li a:hover svg {
   color: #6366f1;
   transform: scale(1.1);
-}
-
-body {
-  padding-top: 70px;
-  margin: 0;
-  background-color: #1a1a2e;
 }
 
 @media (max-width: 768px) {

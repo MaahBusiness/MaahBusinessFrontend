@@ -1,6 +1,6 @@
 .hero {
-  margin-left: 230px;
-  height: calc(100vh - 63px);
+  margin-left: var(--sidebar-width);
+  height: calc(100vh - var(--navbar-height));
   background-color: #121212;
   overflow: auto;
   padding: 1rem;

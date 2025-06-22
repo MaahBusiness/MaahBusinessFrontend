@@ -1,5 +1,5 @@
 .sidebar {
-  width: 230px;
+  width: var(--sidebar-width);
   background-color: #1e1e1e;
   color: #e0e0e0;
   position: fixed;
@@ -21,7 +21,7 @@
 
 /* Sidebar header */
 .sidebar-header {
-  height: 63px;
+  height: var(--navbar-height);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   padding: 1.2rem 1rem;
 }
@@ -36,7 +36,7 @@
 
 /* Sidebar content */
 .sidebar-content {
-  height: calc(100vh - 63px);
+  height: calc(100vh - var(--navbar-height));
   overflow: auto;
 }
 
@@ -94,13 +94,5 @@
 @media (max-width: 768px) {
   .sidebar-toggle {
     display: flex;
-  }
-  .sidebar {
-    width: 250px;
-    height: 100%;
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: 900;
   }
 }

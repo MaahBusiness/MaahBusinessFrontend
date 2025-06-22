@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import "./category.css";
+import MainContent from "../MainContend";
 
 const Category = () => {
   // Categories state
@@ -917,795 +918,808 @@ const Category = () => {
   }
 
   return (
-    <div className="category-dashboard">
-      {/* Status Message */}
-      {statusMessage.show && (
-        <div className={`status-message ${statusMessage.type}`}>
-          {statusMessage.text}
-        </div>
-      )}
-
-      <div className="category-sidebar">
-        <div className="sidebar-headerr">
-          <h2>Categories</h2>
-          <button
-            className="add-category-btn"
-            onClick={() => openCategoryModal()}
-          >
-            <Package size={16} /> Add New Category
-          </button>
-        </div>
-
-        <div className="category-list">
-          {isLoading ? (
-            <div className="loading-indicator">Loading categories...</div>
-          ) : filteredCategories.length > 0 ? (
-            filteredCategories.map((category) => (
-              <div
-                key={category.id}
-                className={`category-item ${selectedCategory?.id === category.id ? "active" : ""}`}
-              >
-                <div
-                  className="category-item-content"
-                  onClick={() => handleCategorySelect(category)}
-                >
-                  <span className="category-name">{category.name}</span>
-                  <span className="category-count">
-                    {
-                      subcategories.filter(
-                        (sub) => sub.category_id === category.id,
-                      ).length
-                    }{" "}
-                    subcategories
-                  </span>
-                </div>
-                <button
-                  className="category-delete-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    deleteCategory(category.id);
-                  }}
-                  title="Delete category"
-                >
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            ))
-          ) : (
-            <div className="no-categories">No categories found</div>
-          )}
-        </div>
-      </div>
-
-      <div className="category-content">
-        {!selectedCategory ? (
-          <div className="welcome-section">
-            <h1>Category Management</h1>
-            <p>Select a category to view details or manage subcategories</p>
-
-            {/* Search for categories - moved to welcome section */}
-            <div className="search-container welcome-search">
-              <Search size={16} className="search-icon" />
-              <input
-                type="text"
-                placeholder="Search categories..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="search-input"
-              />
-            </div>
+    <MainContent>
+      <div className="category-dashboard">
+        {/* Status Message */}
+        {statusMessage.show && (
+          <div className={`status-message ${statusMessage.type}`}>
+            {statusMessage.text}
           </div>
-        ) : (
-          <div className="selected-category-details">
-            <div className="category-details-header">
-              <button className="back-btn" onClick={handleBackToCategories}>
-                <ArrowLeft size={16} /> Back to Categories
-              </button>
-              <div className="category-actions">
-                <button
-                  className="view-products-btn"
-                  onClick={handleViewCategoryProducts}
+        )}
+
+        <div className="category-sidebar">
+          <div className="sidebar-headerr">
+            <h2>Categories</h2>
+            <button
+              className="add-category-btn"
+              onClick={() => openCategoryModal()}
+            >
+              <Package size={16} /> Add New Category
+            </button>
+          </div>
+
+          <div className="category-list">
+            {isLoading ? (
+              <div className="loading-indicator">Loading categories...</div>
+            ) : filteredCategories.length > 0 ? (
+              filteredCategories.map((category) => (
+                <div
+                  key={category.id}
+                  className={`category-item ${selectedCategory?.id === category.id ? "active" : ""}`}
                 >
-                  <ShoppingBag size={16} /> View Products
-                </button>
-                <button
-                  className="edit-btn"
-                  onClick={() => openCategoryModal(selectedCategory)}
-                >
-                  <Edit size={16} /> Edit
-                </button>
-                <button
-                  className="add-subcategory-btn"
-                  onClick={() => openSubcategoryModal(selectedCategory.id)}
-                >
-                  <Plus size={16} /> Add Subcategory
-                </button>
+                  <div
+                    className="category-item-content"
+                    onClick={() => handleCategorySelect(category)}
+                  >
+                    <span className="category-name">{category.name}</span>
+                    <span className="category-count">
+                      {
+                        subcategories.filter(
+                          (sub) => sub.category_id === category.id,
+                        ).length
+                      }{" "}
+                      subcategories
+                    </span>
+                  </div>
+                  <button
+                    className="category-delete-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteCategory(category.id);
+                    }}
+                    title="Delete category"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              ))
+            ) : (
+              <div className="no-categories">No categories found</div>
+            )}
+          </div>
+        </div>
+
+        <div className="category-content">
+          {!selectedCategory ? (
+            <div className="welcome-section">
+              <h1>Category Management</h1>
+              <p>Select a category to view details or manage subcategories</p>
+
+              {/* Search for categories - moved to welcome section */}
+              <div className="search-container welcome-search">
+                <Search size={16} className="search-icon" />
+                <input
+                  type="text"
+                  placeholder="Search categories..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="search-input"
+                />
               </div>
             </div>
-
-            <div className="category-info">
-              {isLoadingCategoryDetails ? (
-                <div className="loading-indicator">
-                  Loading category details...
+          ) : (
+            <div className="selected-category-details">
+              <div className="category-details-header">
+                <button className="back-btn" onClick={handleBackToCategories}>
+                  <ArrowLeft size={16} /> Back to Categories
+                </button>
+                <div className="category-actions">
+                  <button
+                    className="view-products-btn"
+                    onClick={handleViewCategoryProducts}
+                  >
+                    <ShoppingBag size={16} /> View Products
+                  </button>
+                  <button
+                    className="edit-btn"
+                    onClick={() => openCategoryModal(selectedCategory)}
+                  >
+                    <Edit size={16} /> Edit
+                  </button>
+                  <button
+                    className="add-subcategory-btn"
+                    onClick={() => openSubcategoryModal(selectedCategory.id)}
+                  >
+                    <Plus size={16} /> Add Subcategory
+                  </button>
                 </div>
-              ) : categoryDetails ? (
-                <div className="category-details-container">
-                  <h2>{categoryDetails.name}</h2>
-                  <p className="category-description">
-                    {categoryDetails.description}
-                  </p>
+              </div>
 
-                  <div className="category-meta-info">
-                    <div className="category-meta-item">
-                      <span className="meta-label">Created:</span>
-                      <span className="meta-value">
-                        <div className="date-time-display">
-                          <Calendar size={14} />
-                          <span>{formatDate(categoryDetails.created_at)}</span>
-                        </div>
-                        <div className="date-time-display">
-                          <Clock size={14} />
-                          <span>
-                            {new Date(
-                              categoryDetails.created_at,
-                            ).toLocaleTimeString()}
-                          </span>
-                        </div>
-                      </span>
-                    </div>
-                    {categoryDetails.updated_at && (
+              <div className="category-info">
+                {isLoadingCategoryDetails ? (
+                  <div className="loading-indicator">
+                    Loading category details...
+                  </div>
+                ) : categoryDetails ? (
+                  <div className="category-details-container">
+                    <h2>{categoryDetails.name}</h2>
+                    <p className="category-description">
+                      {categoryDetails.description}
+                    </p>
+
+                    <div className="category-meta-info">
                       <div className="category-meta-item">
-                        <span className="meta-label">Last Updated:</span>
+                        <span className="meta-label">Created:</span>
                         <span className="meta-value">
                           <div className="date-time-display">
                             <Calendar size={14} />
                             <span>
-                              {formatDate(categoryDetails.updated_at)}
+                              {formatDate(categoryDetails.created_at)}
                             </span>
                           </div>
                           <div className="date-time-display">
                             <Clock size={14} />
                             <span>
                               {new Date(
-                                categoryDetails.updated_at,
+                                categoryDetails.created_at,
                               ).toLocaleTimeString()}
                             </span>
                           </div>
                         </span>
                       </div>
-                    )}
-                    <div className="category-meta-item">
-                      <span className="meta-label">Subcategories:</span>
-                      <span className="meta-value">
-                        {
-                          subcategories.filter(
-                            (sub) => sub.category_id === selectedCategory.id,
-                          ).length
-                        }
-                      </span>
+                      {categoryDetails.updated_at && (
+                        <div className="category-meta-item">
+                          <span className="meta-label">Last Updated:</span>
+                          <span className="meta-value">
+                            <div className="date-time-display">
+                              <Calendar size={14} />
+                              <span>
+                                {formatDate(categoryDetails.updated_at)}
+                              </span>
+                            </div>
+                            <div className="date-time-display">
+                              <Clock size={14} />
+                              <span>
+                                {new Date(
+                                  categoryDetails.updated_at,
+                                ).toLocaleTimeString()}
+                              </span>
+                            </div>
+                          </span>
+                        </div>
+                      )}
+                      <div className="category-meta-item">
+                        <span className="meta-label">Subcategories:</span>
+                        <span className="meta-value">
+                          {
+                            subcategories.filter(
+                              (sub) => sub.category_id === selectedCategory.id,
+                            ).length
+                          }
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ) : (
-                <div>
-                  <h2>{selectedCategory.name}</h2>
-                  <p>{selectedCategory.description}</p>
-                </div>
-              )}
-            </div>
-
-            <div className="subcategories-section">
-              <div className="subcategories-header">
-                <h3>Subcategories</h3>
-
-                {/* Search for subcategories */}
-                <div className="search-container subcategory-search">
-                  <Search size={16} className="search-icon" />
-                  <input
-                    type="text"
-                    placeholder="Search subcategories..."
-                    value={searchSubcategory}
-                    onChange={(e) => setSearchSubcategory(e.target.value)}
-                    className="search-input"
-                  />
-                </div>
+                ) : (
+                  <div>
+                    <h2>{selectedCategory.name}</h2>
+                    <p>{selectedCategory.description}</p>
+                  </div>
+                )}
               </div>
 
-              <div className="subcategories-list">
-                {filteredSubcategories.length > 0 ? (
-                  filteredSubcategories.map((subcategory) => (
-                    <div key={subcategory.id} className="subcategory-item">
-                      <div
-                        className="subcategory-info"
-                        onClick={() => handleSubcategorySelect(subcategory)}
-                      >
-                        <h4>{subcategory.name}</h4>
-                        <p>{subcategory.description}</p>
-                        <button className="view-details-btnn">
-                          <Info size={16} />
-                          <span>View Details</span>
-                        </button>
+              <div className="subcategories-section">
+                <div className="subcategories-header">
+                  <h3>Subcategories</h3>
+
+                  {/* Search for subcategories */}
+                  <div className="search-container subcategory-search">
+                    <Search size={16} className="search-icon" />
+                    <input
+                      type="text"
+                      placeholder="Search subcategories..."
+                      value={searchSubcategory}
+                      onChange={(e) => setSearchSubcategory(e.target.value)}
+                      className="search-input"
+                    />
+                  </div>
+                </div>
+
+                <div className="subcategories-list">
+                  {filteredSubcategories.length > 0 ? (
+                    filteredSubcategories.map((subcategory) => (
+                      <div key={subcategory.id} className="subcategory-item">
+                        <div
+                          className="subcategory-info"
+                          onClick={() => handleSubcategorySelect(subcategory)}
+                        >
+                          <h4>{subcategory.name}</h4>
+                          <p>{subcategory.description}</p>
+                          <button className="view-details-btnn">
+                            <Info size={16} />
+                            <span>View Details</span>
+                          </button>
+                        </div>
+                        <div className="subcategory-actions">
+                          <button
+                            className="edit-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openSubcategoryModal(
+                                selectedCategory.id,
+                                subcategory,
+                              );
+                            }}
+                          >
+                            <Edit size={14} />
+                          </button>
+                          <button
+                            className="delete-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteSubcategory(subcategory.id);
+                            }}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
                       </div>
-                      <div className="subcategory-actions">
-                        <button
-                          className="edit-btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openSubcategoryModal(
-                              selectedCategory.id,
-                              subcategory,
-                            );
-                          }}
-                        >
-                          <Edit size={14} />
-                        </button>
-                        <button
-                          className="delete-btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteSubcategory(subcategory.id);
-                          }}
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                    ))
+                  ) : (
+                    <p className="no-subcategories">
+                      {searchSubcategory
+                        ? "No subcategories match your search"
+                        : "No subcategories found"}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Category Modal */}
+        {isCategoryModalOpen && (
+          <div className="modal-overlay">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h3>
+                  {editingCategory ? "Edit Category" : "Add New Category"}
+                </h3>
+                <button
+                  className="close-modal-btn"
+                  onClick={closeCategoryModal}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="modal-body">
+                {formError && (
+                  <div className="form-error">
+                    <AlertCircle size={16} />
+                    {formError}
+                  </div>
+                )}
+
+                <div className="form-group">
+                  <label htmlFor="category-name">Category Name</label>
+                  <input
+                    id="category-name"
+                    type="text"
+                    placeholder="Enter category name"
+                    value={categoryName}
+                    onChange={(e) => setCategoryName(e.target.value)}
+                    className={
+                      formError && !categoryName.trim() ? "input-error" : ""
+                    }
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="category-description">Description</label>
+                  <textarea
+                    id="category-description"
+                    placeholder="Enter category description"
+                    value={categoryDescription}
+                    onChange={(e) => setCategoryDescription(e.target.value)}
+                    className={
+                      formError && !categoryDescription.trim()
+                        ? "input-error"
+                        : ""
+                    }
+                    rows="3"
+                  ></textarea>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button className="cancel-btn" onClick={closeCategoryModal}>
+                  Cancel
+                </button>
+                <button className="save-btn" onClick={addOrUpdateCategory}>
+                  {editingCategory ? (
+                    <>
+                      <Check size={16} /> Update
+                    </>
+                  ) : (
+                    <>
+                      <Plus size={16} /> Create
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Subcategory Modal */}
+        {isSubcategoryModalOpen && (
+          <div className="modal-overlay">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h3>
+                  {editingSubcategory
+                    ? "Edit Subcategory"
+                    : "Add New Subcategory"}
+                </h3>
+                <button
+                  className="close-modal-btn"
+                  onClick={closeSubcategoryModal}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="modal-body">
+                {formError && (
+                  <div className="form-error">
+                    <AlertCircle size={16} />
+                    {formError}
+                  </div>
+                )}
+
+                <div className="form-group">
+                  <label>Parent Category</label>
+                  <input
+                    type="text"
+                    value={selectedCategory.name}
+                    disabled
+                    className="disabled-input"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="subcategory-name">Subcategory Name</label>
+                  <input
+                    id="subcategory-name"
+                    type="text"
+                    placeholder="Enter subcategory name"
+                    value={subcategoryName}
+                    onChange={(e) => setSubcategoryName(e.target.value)}
+                    className={
+                      formError && !subcategoryName.trim() ? "input-error" : ""
+                    }
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="subcategory-description">Description</label>
+                  <textarea
+                    id="subcategory-description"
+                    placeholder="Enter subcategory description"
+                    value={subcategoryDescription}
+                    onChange={(e) => setSubcategoryDescription(e.target.value)}
+                    className={
+                      formError && !subcategoryDescription.trim()
+                        ? "input-error"
+                        : ""
+                    }
+                    rows="3"
+                  ></textarea>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button className="cancel-btn" onClick={closeSubcategoryModal}>
+                  Cancel
+                </button>
+                <button className="save-btn" onClick={addOrUpdateSubcategory}>
+                  {editingSubcategory ? (
+                    <>
+                      <Check size={16} /> Update
+                    </>
+                  ) : (
+                    <>
+                      <Plus size={16} /> Create
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Subcategory Details Modal */}
+        {isDetailsModalOpen && selectedSubcategory && (
+          <div className="modal-overlay">
+            <div className="modal-content details-modal">
+              <div className="modal-header">
+                <h3>Subcategory Details: {selectedSubcategory.name}</h3>
+                <button className="close-modal-btn" onClick={closeDetailsModal}>
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="modal-body">
+                {isLoadingDetails ? (
+                  <div className="loading-indicator">
+                    Loading subcategory details...
+                  </div>
+                ) : subcategoryDetails ? (
+                  <div className="subcategory-details-container">
+                    <div className="details-section">
+                      <h4>Basic Information</h4>
+                      <div className="details-grid">
+                        <div className="detail-item">
+                          <span className="detail-label">Name:</span>
+                          <span className="detail-value">
+                            {subcategoryDetails.name}
+                          </span>
+                        </div>
+                        <div className="detail-item">
+                          <span className="detail-label">Description:</span>
+                          <span className="detail-value">
+                            {subcategoryDetails.description}
+                          </span>
+                        </div>
+                        <div className="detail-item">
+                          <span className="detail-label">Created:</span>
+                          <span className="detail-value">
+                            {formatDateTime(subcategoryDetails.created_at)}
+                          </span>
+                        </div>
+                        <div className="detail-item">
+                          <span className="detail-label">Parent Category:</span>
+                          <span className="detail-value">
+                            {categories.find(
+                              (cat) =>
+                                cat.id === subcategoryDetails.category_id,
+                            )?.name || "Unknown"}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  ))
+
+                    <div className="details-section">
+                      <h4>Products in this Subcategory</h4>
+                      {isLoadingProducts ? (
+                        <div className="loading-indicator">
+                          Loading products...
+                        </div>
+                      ) : subcategoryProducts.length > 0 ? (
+                        <>
+                          <div className="subcategory-products">
+                            {getCurrentProducts(subcategoryProducts).map(
+                              (product) => (
+                                <div
+                                  key={product.id}
+                                  className="product-item"
+                                  onClick={() => handleProductSelect(product)}
+                                >
+                                  <div className="product-image">
+                                    <img
+                                      src={product.image || No_image}
+                                      alt={product.name}
+                                    />
+                                  </div>
+                                  <div className="product-info">
+                                    <h5>{product.name}</h5>
+                                    <p className="product-description">
+                                      {product.description}
+                                    </p>
+                                    <div className="product-meta">
+                                      <span className="product-price">
+                                        {formatPrice(product.unit_price)}
+                                      </span>
+                                      <span className="product-stock">
+                                        Stock: {product.quantity}
+                                      </span>
+                                    </div>
+                                    <button className="view-product-btn">
+                                      <Eye size={14} /> View Details
+                                    </button>
+                                  </div>
+                                </div>
+                              ),
+                            )}
+                          </div>
+
+                          {/* Pagination controls */}
+                          {subcategoryProducts.length > productsPerPage && (
+                            <div className="pagination">
+                              <button
+                                onClick={prevPage}
+                                disabled={currentPage === 1}
+                                className="pagination-btn"
+                              >
+                                <ChevronLeft size={16} />
+                              </button>
+                              {Array.from({ length: totalPages }, (_, i) => (
+                                <button
+                                  key={i + 1}
+                                  onClick={() => paginate(i + 1)}
+                                  className={`pagination-btn ${currentPage === i + 1 ? "active" : ""}`}
+                                >
+                                  {i + 1}
+                                </button>
+                              ))}
+                              <button
+                                onClick={nextPage}
+                                disabled={currentPage === totalPages}
+                                className="pagination-btn"
+                              >
+                                <ChevronRight size={16} />
+                              </button>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <p className="no-products">
+                          No products found in this subcategory
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 ) : (
-                  <p className="no-subcategories">
-                    {searchSubcategory
-                      ? "No subcategories match your search"
-                      : "No subcategories found"}
-                  </p>
+                  <div className="error-message">
+                    Failed to load subcategory details
+                  </div>
                 )}
               </div>
             </div>
           </div>
         )}
-      </div>
 
-      {/* Category Modal */}
-      {isCategoryModalOpen && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h3>{editingCategory ? "Edit Category" : "Add New Category"}</h3>
-              <button className="close-modal-btn" onClick={closeCategoryModal}>
-                <X size={20} />
-              </button>
-            </div>
-            <div className="modal-body">
-              {formError && (
-                <div className="form-error">
-                  <AlertCircle size={16} />
-                  {formError}
+        {/* Category Products Modal */}
+        {isCategoryProductsModalOpen && selectedCategory && (
+          <div className="modal-overlay">
+            <div className="modal-content details-modal">
+              <div className="modal-header">
+                <h3>Products in {selectedCategory.name}</h3>
+                <button
+                  className="close-modal-btn"
+                  onClick={closeCategoryProductsModal}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="modal-body">
+                {/* Search for products */}
+                <div className="search-container product-search">
+                  <Search size={16} className="search-icon" />
+                  <input
+                    type="text"
+                    placeholder="Search products..."
+                    value={searchCategory}
+                    onChange={(e) => setSearchCategory(e.target.value)}
+                    className="search-input"
+                  />
                 </div>
-              )}
 
-              <div className="form-group">
-                <label htmlFor="category-name">Category Name</label>
-                <input
-                  id="category-name"
-                  type="text"
-                  placeholder="Enter category name"
-                  value={categoryName}
-                  onChange={(e) => setCategoryName(e.target.value)}
-                  className={
-                    formError && !categoryName.trim() ? "input-error" : ""
-                  }
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="category-description">Description</label>
-                <textarea
-                  id="category-description"
-                  placeholder="Enter category description"
-                  value={categoryDescription}
-                  onChange={(e) => setCategoryDescription(e.target.value)}
-                  className={
-                    formError && !categoryDescription.trim()
-                      ? "input-error"
-                      : ""
-                  }
-                  rows="3"
-                ></textarea>
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button className="cancel-btn" onClick={closeCategoryModal}>
-                Cancel
-              </button>
-              <button className="save-btn" onClick={addOrUpdateCategory}>
-                {editingCategory ? (
-                  <>
-                    <Check size={16} /> Update
-                  </>
-                ) : (
-                  <>
-                    <Plus size={16} /> Create
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Subcategory Modal */}
-      {isSubcategoryModalOpen && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h3>
-                {editingSubcategory
-                  ? "Edit Subcategory"
-                  : "Add New Subcategory"}
-              </h3>
-              <button
-                className="close-modal-btn"
-                onClick={closeSubcategoryModal}
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <div className="modal-body">
-              {formError && (
-                <div className="form-error">
-                  <AlertCircle size={16} />
-                  {formError}
-                </div>
-              )}
-
-              <div className="form-group">
-                <label>Parent Category</label>
-                <input
-                  type="text"
-                  value={selectedCategory.name}
-                  disabled
-                  className="disabled-input"
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="subcategory-name">Subcategory Name</label>
-                <input
-                  id="subcategory-name"
-                  type="text"
-                  placeholder="Enter subcategory name"
-                  value={subcategoryName}
-                  onChange={(e) => setSubcategoryName(e.target.value)}
-                  className={
-                    formError && !subcategoryName.trim() ? "input-error" : ""
-                  }
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="subcategory-description">Description</label>
-                <textarea
-                  id="subcategory-description"
-                  placeholder="Enter subcategory description"
-                  value={subcategoryDescription}
-                  onChange={(e) => setSubcategoryDescription(e.target.value)}
-                  className={
-                    formError && !subcategoryDescription.trim()
-                      ? "input-error"
-                      : ""
-                  }
-                  rows="3"
-                ></textarea>
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button className="cancel-btn" onClick={closeSubcategoryModal}>
-                Cancel
-              </button>
-              <button className="save-btn" onClick={addOrUpdateSubcategory}>
-                {editingSubcategory ? (
-                  <>
-                    <Check size={16} /> Update
-                  </>
-                ) : (
-                  <>
-                    <Plus size={16} /> Create
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Subcategory Details Modal */}
-      {isDetailsModalOpen && selectedSubcategory && (
-        <div className="modal-overlay">
-          <div className="modal-content details-modal">
-            <div className="modal-header">
-              <h3>Subcategory Details: {selectedSubcategory.name}</h3>
-              <button className="close-modal-btn" onClick={closeDetailsModal}>
-                <X size={20} />
-              </button>
-            </div>
-            <div className="modal-body">
-              {isLoadingDetails ? (
-                <div className="loading-indicator">
-                  Loading subcategory details...
-                </div>
-              ) : subcategoryDetails ? (
-                <div className="subcategory-details-container">
-                  <div className="details-section">
-                    <h4>Basic Information</h4>
-                    <div className="details-grid">
-                      <div className="detail-item">
-                        <span className="detail-label">Name:</span>
-                        <span className="detail-value">
-                          {subcategoryDetails.name}
-                        </span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="detail-label">Description:</span>
-                        <span className="detail-value">
-                          {subcategoryDetails.description}
-                        </span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="detail-label">Created:</span>
-                        <span className="detail-value">
-                          {formatDateTime(subcategoryDetails.created_at)}
-                        </span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="detail-label">Parent Category:</span>
-                        <span className="detail-value">
-                          {categories.find(
-                            (cat) => cat.id === subcategoryDetails.category_id,
-                          )?.name || "Unknown"}
-                        </span>
-                      </div>
-                    </div>
+                {isLoadingCategoryProducts ? (
+                  <div className="loading-indicator">
+                    Loading category products...
                   </div>
-
-                  <div className="details-section">
-                    <h4>Products in this Subcategory</h4>
-                    {isLoadingProducts ? (
-                      <div className="loading-indicator">
-                        Loading products...
-                      </div>
-                    ) : subcategoryProducts.length > 0 ? (
-                      <>
-                        <div className="subcategory-products">
-                          {getCurrentProducts(subcategoryProducts).map(
-                            (product) => (
-                              <div
-                                key={product.id}
-                                className="product-item"
-                                onClick={() => handleProductSelect(product)}
-                              >
-                                <div className="product-image">
-                                  <img
-                                    src={product.image || No_image}
-                                    alt={product.name}
-                                  />
-                                </div>
-                                <div className="product-info">
-                                  <h5>{product.name}</h5>
-                                  <p className="product-description">
-                                    {product.description}
-                                  </p>
-                                  <div className="product-meta">
-                                    <span className="product-price">
-                                      {formatPrice(product.unit_price)}
-                                    </span>
-                                    <span className="product-stock">
-                                      Stock: {product.quantity}
-                                    </span>
-                                  </div>
-                                  <button className="view-product-btn">
-                                    <Eye size={14} /> View Details
-                                  </button>
-                                </div>
-                              </div>
-                            ),
-                          )}
-                        </div>
-
-                        {/* Pagination controls */}
-                        {subcategoryProducts.length > productsPerPage && (
-                          <div className="pagination">
-                            <button
-                              onClick={prevPage}
-                              disabled={currentPage === 1}
-                              className="pagination-btn"
-                            >
-                              <ChevronLeft size={16} />
-                            </button>
-                            {Array.from({ length: totalPages }, (_, i) => (
-                              <button
-                                key={i + 1}
-                                onClick={() => paginate(i + 1)}
-                                className={`pagination-btn ${currentPage === i + 1 ? "active" : ""}`}
-                              >
-                                {i + 1}
-                              </button>
-                            ))}
-                            <button
-                              onClick={nextPage}
-                              disabled={currentPage === totalPages}
-                              className="pagination-btn"
-                            >
-                              <ChevronRight size={16} />
-                            </button>
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <p className="no-products">
-                        No products found in this subcategory
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div className="error-message">
-                  Failed to load subcategory details
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Category Products Modal */}
-      {isCategoryProductsModalOpen && selectedCategory && (
-        <div className="modal-overlay">
-          <div className="modal-content details-modal">
-            <div className="modal-header">
-              <h3>Products in {selectedCategory.name}</h3>
-              <button
-                className="close-modal-btn"
-                onClick={closeCategoryProductsModal}
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <div className="modal-body">
-              {/* Search for products */}
-              <div className="search-container product-search">
-                <Search size={16} className="search-icon" />
-                <input
-                  type="text"
-                  placeholder="Search products..."
-                  value={searchCategory}
-                  onChange={(e) => setSearchCategory(e.target.value)}
-                  className="search-input"
-                />
-              </div>
-
-              {isLoadingCategoryProducts ? (
-                <div className="loading-indicator">
-                  Loading category products...
-                </div>
-              ) : filteredCategoryProducts.length > 0 ? (
-                <div className="category-products-container">
-                  <div className="category-products-grid">
-                    {paginatedCategoryProducts.map((product) => (
-                      <div
-                        key={product.id}
-                        className="product-card"
-                        onClick={() => handleProductSelect(product)}
-                      >
-                        <div className="product-card-image">
-                          <img
-                            src={product.image || No_image}
-                            alt={product.name}
-                          />
-                          {product.on_promotion && (
-                            <span className="promotion-tag">On Sale</span>
-                          )}
-                        </div>
-                        <div className="product-card-content">
-                          <h4 className="product-card-title">{product.name}</h4>
-                          <p className="product-card-description">
-                            {product.description}
-                          </p>
-                          <div className="product-card-details">
-                            <div className="product-card-price">
-                              {product.on_promotion ? (
-                                <>
-                                  <span className="original-price">
-                                    {formatPrice(product.unit_price)}
-                                  </span>
-                                  <span className="sale-price">
-                                    {formatPrice(product.promo_price)}
-                                  </span>
-                                </>
-                              ) : (
-                                <span>{formatPrice(product.unit_price)}</span>
-                              )}
-                            </div>
-                            <div className="product-card-stock">
-                              <span
-                                className={`stock-indicator ${product.quantity > 0 ? "in-stock" : "out-of-stock"}`}
-                              >
-                                {product.quantity > 0
-                                  ? `${product.quantity} in stock`
-                                  : "Out of stock"}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="product-card-subcategory">
-                            {product.subcategory_id ? (
-                              <span>
-                                {subcategories.find(
-                                  (sub) => sub.id === product.subcategory_id,
-                                )?.name || "Unknown subcategory"}
-                              </span>
-                            ) : (
-                              <span>No subcategory</span>
+                ) : filteredCategoryProducts.length > 0 ? (
+                  <div className="category-products-container">
+                    <div className="category-products-grid">
+                      {paginatedCategoryProducts.map((product) => (
+                        <div
+                          key={product.id}
+                          className="product-card"
+                          onClick={() => handleProductSelect(product)}
+                        >
+                          <div className="product-card-image">
+                            <img
+                              src={product.image || No_image}
+                              alt={product.name}
+                            />
+                            {product.on_promotion && (
+                              <span className="promotion-tag">On Sale</span>
                             )}
                           </div>
-                          <button className="view-product-btn">
-                            <Eye size={14} /> View Details
-                          </button>
+                          <div className="product-card-content">
+                            <h4 className="product-card-title">
+                              {product.name}
+                            </h4>
+                            <p className="product-card-description">
+                              {product.description}
+                            </p>
+                            <div className="product-card-details">
+                              <div className="product-card-price">
+                                {product.on_promotion ? (
+                                  <>
+                                    <span className="original-price">
+                                      {formatPrice(product.unit_price)}
+                                    </span>
+                                    <span className="sale-price">
+                                      {formatPrice(product.promo_price)}
+                                    </span>
+                                  </>
+                                ) : (
+                                  <span>{formatPrice(product.unit_price)}</span>
+                                )}
+                              </div>
+                              <div className="product-card-stock">
+                                <span
+                                  className={`stock-indicator ${product.quantity > 0 ? "in-stock" : "out-of-stock"}`}
+                                >
+                                  {product.quantity > 0
+                                    ? `${product.quantity} in stock`
+                                    : "Out of stock"}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="product-card-subcategory">
+                              {product.subcategory_id ? (
+                                <span>
+                                  {subcategories.find(
+                                    (sub) => sub.id === product.subcategory_id,
+                                  )?.name || "Unknown subcategory"}
+                                </span>
+                              ) : (
+                                <span>No subcategory</span>
+                              )}
+                            </div>
+                            <button className="view-product-btn">
+                              <Eye size={14} /> View Details
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Pagination controls */}
-                  {filteredCategoryProducts.length > productsPerPage && (
-                    <div className="pagination">
-                      <button
-                        onClick={prevPage}
-                        disabled={currentPage === 1}
-                        className="pagination-btn"
-                      >
-                        <ChevronLeft size={16} />
-                      </button>
-                      {Array.from({ length: totalPages }, (_, i) => (
-                        <button
-                          key={i + 1}
-                          onClick={() => paginate(i + 1)}
-                          className={`pagination-btn ${currentPage === i + 1 ? "active" : ""}`}
-                        >
-                          {i + 1}
-                        </button>
                       ))}
-                      <button
-                        onClick={nextPage}
-                        disabled={currentPage === totalPages}
-                        className="pagination-btn"
-                      >
-                        <ChevronRight size={16} />
-                      </button>
                     </div>
-                  )}
-                </div>
-              ) : (
-                <div className="no-products-message">
-                  <Package size={48} />
-                  <p>
-                    {searchCategory
-                      ? "No products match your search"
-                      : "No products found in this category"}
-                  </p>
-                </div>
-              )}
+
+                    {/* Pagination controls */}
+                    {filteredCategoryProducts.length > productsPerPage && (
+                      <div className="pagination">
+                        <button
+                          onClick={prevPage}
+                          disabled={currentPage === 1}
+                          className="pagination-btn"
+                        >
+                          <ChevronLeft size={16} />
+                        </button>
+                        {Array.from({ length: totalPages }, (_, i) => (
+                          <button
+                            key={i + 1}
+                            onClick={() => paginate(i + 1)}
+                            className={`pagination-btn ${currentPage === i + 1 ? "active" : ""}`}
+                          >
+                            {i + 1}
+                          </button>
+                        ))}
+                        <button
+                          onClick={nextPage}
+                          disabled={currentPage === totalPages}
+                          className="pagination-btn"
+                        >
+                          <ChevronRight size={16} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="no-products-message">
+                    <Package size={48} />
+                    <p>
+                      {searchCategory
+                        ? "No products match your search"
+                        : "No products found in this category"}
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Product Detail Modal */}
-      {isProductDetailModalOpen && selectedProduct && (
-        <div className="modal-overlay">
-          <div className="modal-content product-detail-modal">
-            <div className="modal-header">
-              <h3>Product Details</h3>
-              <button
-                className="close-modal-btn"
-                onClick={closeProductDetailModal}
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <div className="modal-body">
-              <div className="product-detail-container">
-                <div className="product-detail-image">
-                  <img
-                    src={selectedProduct.image || No_image}
-                    alt={selectedProduct.name}
-                  />
-                  {selectedProduct.on_promotion && (
-                    <span className="promotion-tag large">On Sale</span>
-                  )}
-                </div>
-                <div className="product-detail-info">
-                  <h2 className="product-detail-title">
-                    {selectedProduct.name}
-                  </h2>
-                  <p className="product-detail-description">
-                    {selectedProduct.description}
-                  </p>
+        {/* Product Detail Modal */}
+        {isProductDetailModalOpen && selectedProduct && (
+          <div className="modal-overlay">
+            <div className="modal-content product-detail-modal">
+              <div className="modal-header">
+                <h3>Product Details</h3>
+                <button
+                  className="close-modal-btn"
+                  onClick={closeProductDetailModal}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="modal-body">
+                <div className="product-detail-container">
+                  <div className="product-detail-image">
+                    <img
+                      src={selectedProduct.image || No_image}
+                      alt={selectedProduct.name}
+                    />
+                    {selectedProduct.on_promotion && (
+                      <span className="promotion-tag large">On Sale</span>
+                    )}
+                  </div>
+                  <div className="product-detail-info">
+                    <h2 className="product-detail-title">
+                      {selectedProduct.name}
+                    </h2>
+                    <p className="product-detail-description">
+                      {selectedProduct.description}
+                    </p>
 
-                  <div className="product-detail-meta">
-                    <div className="product-detail-price">
-                      <span className="detail-label">Price:</span>
-                      {selectedProduct.on_promotion ? (
-                        <div className="price-container">
-                          <span className="original-price large">
+                    <div className="product-detail-meta">
+                      <div className="product-detail-price">
+                        <span className="detail-label">Price:</span>
+                        {selectedProduct.on_promotion ? (
+                          <div className="price-container">
+                            <span className="original-price large">
+                              {formatPrice(selectedProduct.unit_price)}
+                            </span>
+                            <span className="sale-price large">
+                              {formatPrice(selectedProduct.promo_price)}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="price-value">
                             {formatPrice(selectedProduct.unit_price)}
                           </span>
-                          <span className="sale-price large">
-                            {formatPrice(selectedProduct.promo_price)}
+                        )}
+                      </div>
+
+                      <div className="product-detail-stock">
+                        <span className="detail-label">Stock Status:</span>
+                        <span
+                          className={`stock-indicator large ${selectedProduct.quantity > 0 ? "in-stock" : "out-of-stock"}`}
+                        >
+                          {selectedProduct.quantity > 0
+                            ? `${selectedProduct.quantity} in stock`
+                            : "Out of stock"}
+                        </span>
+                      </div>
+
+                      {selectedProduct.category_id && (
+                        <div className="product-detail-category">
+                          <span className="detail-label">Category:</span>
+                          <span className="category-value">
+                            {categories.find(
+                              (cat) => cat.id === selectedProduct.category_id,
+                            )?.name || "Unknown"}
                           </span>
                         </div>
-                      ) : (
-                        <span className="price-value">
-                          {formatPrice(selectedProduct.unit_price)}
-                        </span>
+                      )}
+
+                      {selectedProduct.subcategory_id && (
+                        <div className="product-detail-subcategory">
+                          <span className="detail-label">Subcategory:</span>
+                          <span className="subcategory-value">
+                            {subcategories.find(
+                              (sub) =>
+                                sub.id === selectedProduct.subcategory_id,
+                            )?.name || "Unknown"}
+                          </span>
+                        </div>
+                      )}
+
+                      {selectedProduct.created_at && (
+                        <div className="product-detail-date">
+                          <span className="detail-label">Added on:</span>
+                          <span className="date-value">
+                            {formatDateTime(selectedProduct.created_at)}
+                          </span>
+                        </div>
+                      )}
+
+                      {selectedProduct.expiry_date && (
+                        <div className="product-detail-expiry">
+                          <span className="detail-label">Expiry Date:</span>
+                          <span className="expiry-value">
+                            {formatDate(selectedProduct.expiry_date)}
+                          </span>
+                        </div>
                       )}
                     </div>
-
-                    <div className="product-detail-stock">
-                      <span className="detail-label">Stock Status:</span>
-                      <span
-                        className={`stock-indicator large ${selectedProduct.quantity > 0 ? "in-stock" : "out-of-stock"}`}
-                      >
-                        {selectedProduct.quantity > 0
-                          ? `${selectedProduct.quantity} in stock`
-                          : "Out of stock"}
-                      </span>
-                    </div>
-
-                    {selectedProduct.category_id && (
-                      <div className="product-detail-category">
-                        <span className="detail-label">Category:</span>
-                        <span className="category-value">
-                          {categories.find(
-                            (cat) => cat.id === selectedProduct.category_id,
-                          )?.name || "Unknown"}
-                        </span>
-                      </div>
-                    )}
-
-                    {selectedProduct.subcategory_id && (
-                      <div className="product-detail-subcategory">
-                        <span className="detail-label">Subcategory:</span>
-                        <span className="subcategory-value">
-                          {subcategories.find(
-                            (sub) => sub.id === selectedProduct.subcategory_id,
-                          )?.name || "Unknown"}
-                        </span>
-                      </div>
-                    )}
-
-                    {selectedProduct.created_at && (
-                      <div className="product-detail-date">
-                        <span className="detail-label">Added on:</span>
-                        <span className="date-value">
-                          {formatDateTime(selectedProduct.created_at)}
-                        </span>
-                      </div>
-                    )}
-
-                    {selectedProduct.expiry_date && (
-                      <div className="product-detail-expiry">
-                        <span className="detail-label">Expiry Date:</span>
-                        <span className="expiry-value">
-                          {formatDate(selectedProduct.expiry_date)}
-                        </span>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </MainContent>
   );
 };
 
