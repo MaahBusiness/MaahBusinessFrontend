@@ -1,15 +1,13 @@
 .hero {
-  width: 75%;
-  margin-left: 15em;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 80vh;
+  margin-left: 230px;
+  height: calc(100vh - 63px);
   background-color: #121212;
+  overflow: auto;
+  padding: 1rem;
 }
 
 .hero_context {
-  width: 70%;
+  padding: 1rem 0 0 0;
   display: flex;
   flex-direction: column;
 }
@@ -42,16 +40,16 @@
 }
 
 .hero_image {
-  width: 70%;
+  display: flex;
   height: auto;
+  margin-top: 1.5rem;
 }
 .hero_image img {
-  width: 100%;
+  width: 90%;
   border-radius: 1em;
 }
 @media screen and (max-width: 768px) {
   .hero {
-    width: 90%;
     margin-left: auto;
     margin-right: auto;
     flex-direction: column;
@@ -62,7 +60,7 @@
   }
 
   .hero_context {
-    width: 100%;
+    padding: 0 1rem;
   }
 
   .hero_context h1 {
@@ -80,7 +78,6 @@
   }
 
   .hero_image {
-    width: 90%;
-    margin-top: 1.5em;
+    justify-content: center;
   }
 }

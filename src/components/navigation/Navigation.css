@@ -1,7 +1,8 @@
 .navbar {
   background-color: #1e1e1e;
   color: #e0e0e0;
-  padding: 1.3em 2em;
+  padding: 0 2em;
+  height: 63px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -9,6 +10,7 @@
   top: 0;
   width: 100%;
   z-index: 100;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .nav-brand {

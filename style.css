@@ -1,0 +1,8 @@
+body {
+  overflow: hidden;
+}
+/* ===== SCROLLBAR */
+* {
+  /* scrollbar-width: thin; */
+  scrollbar-color: #939393 transparent;
+}
