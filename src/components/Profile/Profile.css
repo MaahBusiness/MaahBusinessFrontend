@@ -1,13 +1,10 @@
 /* Profile Layout and Shared Styles */
 .profile-layout {
   padding: 2rem;
-  width: 75%;
   max-width: 1200px;
   margin: 0 auto;
   color: #e0e0e0;
   position: relative;
-  left: 5%;
-
   border-radius: 12px;
 }
 
@@ -337,9 +334,7 @@
 /* Responsive Styles */
 @media (max-width: 1024px) {
   .profile-layout {
-    width: 90%;
     padding: 1.5rem;
-    left: 5%;
   }
 
   .profile-content {
@@ -350,8 +345,6 @@
 @media (max-width: 768px) {
   .profile-layout {
     padding: 1rem;
-    width: 95%;
-    left: 0;
   }
 
   .profile-header h2 {
@@ -416,10 +409,8 @@
 
 @media (max-width: 480px) {
   .profile-layout {
-    width: 100%;
     padding: 0.75rem;
     border-radius: 0;
-    left: 0;
   }
 
   .profile-header h2 {
