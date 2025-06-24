@@ -19,6 +19,7 @@ import {
   Eye,
 } from "lucide-react";
 import "./products.css";
+import MainContent from "../MainContend";
 
 const Product = () => {
   const [products, setProducts] = useState([]);
@@ -65,8 +66,10 @@ const Product = () => {
     subcategory_id: "",
   });
 
-  const apiBaseUrl = "https://victbackendmanagement.onrender.com/api/v1/product";
-  const categoryApiBaseUrl = "https://victbackendmanagement.onrender.com/api/v1/categories";
+  const apiBaseUrl =
+    "https://victbackendmanagement.onrender.com/api/v1/product";
+  const categoryApiBaseUrl =
+    "https://victbackendmanagement.onrender.com/api/v1/categories";
 
   // Check authentication on component mount
   useEffect(() => {
@@ -1021,69 +1024,71 @@ const Product = () => {
   // If authenticated but doesn't have access, show access denied message
   if (isAuthenticated && !hasAccess) {
     return (
-      <div className="access-denied-container">
-        <Lock size={48} className="access-denied-icon" />
-        <h2>Access Denied</h2>
-        <p>You don't have permission to view this page.</p>
-        <p>
-          This page is only accessible to managers, cashiers, stock keepers,
-          wholesale clients, and sales agents.
-        </p>
-        <button
-          onClick={() => (window.location.href = "/")}
-          className="back-home-btn"
-        >
-          Back to Home
-        </button>
-      </div>
+      <MainContent>
+        <div className="access-denied-container">
+          <Lock size={48} className="access-denied-icon" />
+          <h2>Access Denied</h2>
+          <p>You don't have permission to view this page.</p>
+          <p>
+            This page is only accessible to managers, cashiers, stock keepers,
+            wholesale clients, and sales agents.
+          </p>
+          <button
+            onClick={() => (window.location.href = "/")}
+            className="back-home-btn"
+          >
+            Back to Home
+          </button>
+        </div>
+      </MainContent>
     );
   }
 
   return (
-    <div className="product-container">
-      <div className="product-header">
-        <h2>Products Management</h2>
-        <button
-          onClick={() => {
-            resetForm();
-            setShowForm(true);
-          }}
-          className="add-product-btn"
-        >
-          <Plus size={18} /> Add Product
-        </button>
-      </div>
-
-      {/* Search and Filter Bar */}
-      <div className="product-toolbar">
-        <div className="search-container">
-          <Search size={18} className="search-icon" />
-          <input
-            type="text"
-            placeholder="Search products..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
-          />
-        </div>
-
-        {/* Expiry Date Filter Button */}
-        <div className="expiry-filter-container">
+    <MainContent>
+      <div className="product-container">
+        <div className="product-header">
+          <h2>Products Management</h2>
           <button
-            className="expiry-filter-btn"
-            onClick={fetchProductsByExpiryDate}
+            onClick={() => {
+              resetForm();
+              setShowForm(true);
+            }}
+            className="add-product-btn"
           >
-            <Calendar size={18} /> Expired Products
-          </button>
-          <button
-            className="clear-filter-btn"
-            onClick={handleClearExpiryFilter}
-          >
-            <X size={14} /> Clear Filter
+            <Plus size={18} /> Add Product
           </button>
         </div>
 
-        <div className="view-controls">
+        {/* Search and Filter Bar */}
+        <div className="product-toolbar">
+          <div className="search-container">
+            <Search size={18} className="search-icon" />
+            <input
+              type="text"
+              placeholder="Search products..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="search-input"
+            />
+          </div>
+
+          {/* Expiry Date Filter Button */}
+          <div className="expiry-filter-container">
+            <button
+              className="expiry-filter-btn"
+              onClick={fetchProductsByExpiryDate}
+            >
+              <Calendar size={18} /> Expired Products
+            </button>
+            <button
+              className="clear-filter-btn"
+              onClick={handleClearExpiryFilter}
+            >
+              <X size={14} /> Clear Filter
+            </button>
+          </div>
+
           <button
             className={`view-btn ${viewMode === "list" ? "active" : ""}`}
             onClick={() => setViewMode("list")}
@@ -1092,254 +1097,349 @@ const Product = () => {
             <List size={18} /> List
           </button>
         </div>
-      </div>
 
-      {/* Products Display */}
-      {isLoading ? (
-        <div className="loading-state">
-          <Loader size={48} className="spin" />
-          <p>Loading products...</p>
-        </div>
-      ) : filteredProducts.length > 0 ? (
-        <div className="product-table-container">
-          <table className="product-table">
-            <thead>
-              <tr>
-                <th>Image</th>
-                <th>Name</th>
-                <th>Category</th>
-                <th>Price</th>
-                <th>Stock</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentProducts.map((item, index) => {
-                const product = item.product;
-                const category = item.category;
-                const subcategory = item.subcategory;
-                const stockStatus = getStockStatus(product);
+        {/* Products Display */}
+        {isLoading ? (
+          <div className="loading-state">
+            <Loader size={48} className="spin" />
+            <p>Loading products...</p>
+          </div>
+        ) : filteredProducts.length > 0 ? (
+          <div className="product-table-container">
+            <table className="product-table">
+              <thead>
+                <tr>
+                  <th>Image</th>
+                  <th>Name</th>
+                  <th>Category</th>
+                  <th>Price</th>
+                  <th>Stock</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentProducts.map((item, index) => {
+                  const product = item.product;
+                  const category = item.category;
+                  const subcategory = item.subcategory;
+                  const stockStatus = getStockStatus(product);
 
-                return (
-                  <tr
-                    key={item.id || index}
-                    onClick={() => handleViewProductDetails(item)}
-                    className="product-row"
-                  >
-                    <td className="product-image-cell">
-                      <div className="product-image-container-small">
-                        <img
-                          src={product.image || No_image}
-                          alt={product.name || "Product"}
-                          className="product-image-small"
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = No_image;
-                          }}
-                        />
-                        {product.on_promotion && (
-                          <div className="promotion-badge-small">Sale</div>
-                        )}
-                      </div>
-                    </td>
-                    <td>
-                      <div className="product-name-cell">
-                        <div className="product-name">
-                          {product.name || "Unnamed Product"}
+                  return (
+                    <tr
+                      key={item.id || index}
+                      onClick={() => handleViewProductDetails(item)}
+                      className="product-row"
+                    >
+                      <td className="product-image-cell">
+                        <div className="product-image-container-small">
+                          <img
+                            src={product.image || No_image}
+                            alt={product.name || "Product"}
+                            className="product-image-small"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = No_image;
+                            }}
+                          />
+                          {product.on_promotion && (
+                            <div className="promotion-badge-small">Sale</div>
+                          )}
                         </div>
-                        <div className="product-description-small">
-                          {product.description
-                            ? product.description.length > 50
-                              ? `${product.description.substring(0, 50)}...`
-                              : product.description
-                            : "No description"}
+                      </td>
+                      <td>
+                        <div className="product-name-cell">
+                          <div className="product-name">
+                            {product.name || "Unnamed Product"}
+                          </div>
+                          <div className="product-description-small">
+                            {product.description
+                              ? product.description.length > 50
+                                ? `${product.description.substring(0, 50)}...`
+                                : product.description
+                              : "No description"}
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="product-category-cell">
-                        {getCategoryName(category)}
-                        {subcategory && (
-                          <span className="product-subcategory">
-                            <br />
-                            {getSubcategoryName(subcategory)}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td>
-                      <div className="product-price-cell">
-                        {product.on_promotion && product.promo_price ? (
-                          <>
-                            <div className="product-price promo">
-                              {product.promo_price || 0} XFA
-                            </div>
-                            <div className="product-price original">
+                      </td>
+                      <td>
+                        <div className="product-category-cell">
+                          {getCategoryName(category)}
+                          {subcategory && (
+                            <span className="product-subcategory">
+                              <br />
+                              {getSubcategoryName(subcategory)}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td>
+                        <div className="product-price-cell">
+                          {product.on_promotion && product.promo_price ? (
+                            <>
+                              <div className="product-price promo">
+                                {product.promo_price || 0} XFA
+                              </div>
+                              <div className="product-price original">
+                                {product.unit_price || 0} XFA
+                              </div>
+                            </>
+                          ) : (
+                            <div className="product-price">
                               {product.unit_price || 0} XFA
                             </div>
-                          </>
-                        ) : (
-                          <div className="product-price">
-                            {product.unit_price || 0} XFA
-                          </div>
-                        )}
+                          )}
+                        </div>
+                      </td>
+                      <td>
+                        <div className="product-stock-cell">
+                          {product.quantity || 0}
+                        </div>
+                      </td>
+                      <td>
+                        <div className={`stock-status ${stockStatus}`}>
+                          {stockStatus === "in-stock" && "In Stock"}
+                          {stockStatus === "low-stock" && "Low Stock"}
+                          {stockStatus === "out-of-stock" && "Out of Stock"}
+                        </div>
+                      </td>
+                      <td>
+                        <div className="table-actions">
+                          <button
+                            className="view-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleViewProductDetails(item);
+                            }}
+                          >
+                            <Eye size={16} />
+                          </button>
+                          <button
+                            className="edit-btn"
+                            onClick={(e) => handleEditProduct(item, e)}
+                          >
+                            <Edit size={16} />
+                          </button>
+                          <button
+                            className="delete-btn"
+                            onClick={(e) => handleDelete(product.id, e)}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="no-products">
+            <p>
+              No products found. Try adjusting your search or add a new product.
+            </p>
+            <button onClick={handleClearExpiryFilter}>
+              <X size={14} /> Clear Filter
+            </button>
+          </div>
+        )}
+
+        {/* Pagination Controls */}
+        {!isLoading && filteredProducts.length > 0 && (
+          <div className="pagination-controls">
+            <button
+              className="pagination-btn"
+              onClick={() => paginate(currentPage - 1)}
+              disabled={currentPage === 1}
+              aria-label="Previous page"
+            >
+              &lt;
+            </button>
+            <span className="pagination-info">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              className="pagination-btn"
+              onClick={() => paginate(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              aria-label="Next page"
+            >
+              &gt;
+            </button>
+          </div>
+        )}
+
+        {/* Add/Edit Product Modal */}
+        {showForm && (
+          <div className="product-modal-overlay">
+            <div className="product-modal-content">
+              <div className="product-modal-header">
+                <h3>{isEditing ? "Edit Product" : "Add New Product"}</h3>
+                <button
+                  className="close-modal-btn"
+                  onClick={resetForm}
+                  aria-label="Close modal"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <form onSubmit={handleSubmit} className="product-form">
+                <div className="form-grid">
+                  {/* Basic Information */}
+                  <div className="form-section">
+                    <h4>Basic Information</h4>
+
+                    <div className="form-group">
+                      <label htmlFor="product-name">Name *</label>
+                      <input
+                        id="product-name"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleChange}
+                        className={errorMessage ? "input-error" : ""}
+                        required
+                      />
+                      {errorMessage && (
+                        <div className="error-container">
+                          <AlertCircle size={16} />
+                          <span className="error-message">{errorMessage}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="purchase-price">Purchase Price *</label>
+                      <input
+                        id="purchase-price"
+                        name="purchase_price"
+                        type="decimal"
+                        min="0"
+                        value={formData.purchase_price}
+                        onChange={handleChange}
+                        className={errorMessage ? "input-error" : ""}
+                        required
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="product-description">Description</label>
+                      <textarea
+                        id="product-description"
+                        name="description"
+                        value={formData.description}
+                        onChange={handleChange}
+                        rows="3"
+                      />
+                    </div>
+
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label htmlFor="product-price">Price *</label>
+                        <div className="input-with-prefix">
+                          <span className="input-prefix">$</span>
+                          <input
+                            id="product-price"
+                            name="unit_price"
+                            type="decimal"
+                            min="0"
+                            value={formData.unit_price}
+                            onChange={handleChange}
+                            required
+                          />
+                        </div>
                       </div>
-                    </td>
-                    <td>
-                      <div className="product-stock-cell">
-                        {product.quantity || 0}
-                      </div>
-                    </td>
-                    <td>
-                      <div className={`stock-status ${stockStatus}`}>
-                        {stockStatus === "in-stock" && "In Stock"}
-                        {stockStatus === "low-stock" && "Low Stock"}
-                        {stockStatus === "out-of-stock" && "Out of Stock"}
-                      </div>
-                    </td>
-                    <td>
-                      <div className="table-actions">
-                        <button
-                          className="view-btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleViewProductDetails(item);
-                          }}
+
+                      <div className="form-group">
+                        <label htmlFor="product-category">Category *</label>
+                        <select
+                          id="product-category"
+                          name="category_id"
+                          value={formData.category_id}
+                          onChange={handleChange}
+                          required
+                          className="form-select"
                         >
-                          <Eye size={16} />
-                        </button>
-                        <button
-                          className="edit-btn"
-                          onClick={(e) => handleEditProduct(item, e)}
-                        >
-                          <Edit size={16} />
-                        </button>
-                        <button
-                          className="delete-btn"
-                          onClick={(e) => handleDelete(product.id, e)}
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                          <option value="">Select a category</option>
+                          {categories.map((category) => (
+                            <option key={category.id} value={category.id}>
+                              {category.name}
+                            </option>
+                          ))}
+                        </select>
                       </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <div className="no-products">
-          <p>
-            No products found. Try adjusting your search or add a new product.
-          </p>
-          <button onClick={handleClearExpiryFilter}>
-            <X size={14} /> Clear Filter
-          </button>
-        </div>
-      )}
+                    </div>
 
-      {/* Pagination Controls */}
-      {!isLoading && filteredProducts.length > 0 && (
-        <div className="pagination-controls">
-          <button
-            className="pagination-btn"
-            onClick={() => paginate(currentPage - 1)}
-            disabled={currentPage === 1}
-            aria-label="Previous page"
-          >
-            &lt;
-          </button>
-          <span className="pagination-info">
-            Page {currentPage} of {totalPages}
-          </span>
-          <button
-            className="pagination-btn"
-            onClick={() => paginate(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            aria-label="Next page"
-          >
-            &gt;
-          </button>
-        </div>
-      )}
-
-      {/* Add/Edit Product Modal */}
-      {showForm && (
-        <div className="product-modal-overlay">
-          <div className="product-modal-content">
-            <div className="product-modal-header">
-              <h3>{isEditing ? "Edit Product" : "Add New Product"}</h3>
-              <button
-                className="close-modal-btn"
-                onClick={resetForm}
-                aria-label="Close modal"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="product-form">
-              <div className="form-grid">
-                {/* Basic Information */}
-                <div className="form-section">
-                  <h4>Basic Information</h4>
-
-                  <div className="form-group">
-                    <label htmlFor="product-name">Name *</label>
-                    <input
-                      id="product-name"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      className={errorMessage ? "input-error" : ""}
-                      required
-                    />
-                    {errorMessage && (
-                      <div className="error-container">
-                        <AlertCircle size={16} />
-                        <span className="error-message">{errorMessage}</span>
+                    {/* Only show subcategory field when a category is selected */}
+                    {formData.category_id && (
+                      <div className="form-group subcategory-field">
+                        <label htmlFor="product-subcategory">
+                          Subcategory
+                          {isLoadingSubcategories && (
+                            <span className="loading-indicator-inline">
+                              <Loader size={14} className="spinner" />
+                            </span>
+                          )}
+                        </label>
+                        <select
+                          id="product-subcategory"
+                          name="subcategory_id"
+                          value={formData.subcategory_id}
+                          onChange={handleChange}
+                          className="form-select"
+                          disabled={
+                            isLoadingSubcategories ||
+                            filteredSubcategories.length === 0
+                          }
+                        >
+                          <option value="">Select a subcategory</option>
+                          {filteredSubcategories.map((subcategory) => (
+                            <option key={subcategory.id} value={subcategory.id}>
+                              {subcategory.name}
+                            </option>
+                          ))}
+                        </select>
+                        {!isLoadingSubcategories &&
+                          filteredSubcategories.length === 0 && (
+                            <div className="subcategory-message">
+                              <AlertCircle size={14} />
+                              <small>
+                                No subcategories available for this category
+                              </small>
+                            </div>
+                          )}
                       </div>
                     )}
                   </div>
 
-                  <div className="form-group">
-                    <label htmlFor="purchase-price">Purchase Price *</label>
-                    <input
-                      id="purchase-price"
-                      name="purchase_price"
-                      type="decimal"
-                      min="0"
-                      value={formData.purchase_price}
-                      onChange={handleChange}
-                      className={errorMessage ? "input-error" : ""}
-                      required
-                    />
-                  </div>
+                  {/* Inventory Information */}
+                  <div className="form-section">
+                    <h4>Inventory</h4>
 
-                  <div className="form-group">
-                    <label htmlFor="product-description">Description</label>
-                    <textarea
-                      id="product-description"
-                      name="description"
-                      value={formData.description}
-                      onChange={handleChange}
-                      rows="3"
-                    />
-                  </div>
-
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label htmlFor="product-price">Price *</label>
-                      <div className="input-with-prefix">
-                        <span className="input-prefix">$</span>
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label htmlFor="product-quantity">Quantity *</label>
                         <input
-                          id="product-price"
-                          name="unit_price"
+                          id="product-quantity"
                           type="decimal"
                           min="0"
-                          value={formData.unit_price}
+                          name="quantity"
+                          value={formData.quantity}
+                          onChange={handleChange}
+                          required
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label htmlFor="product-min-quantity">
+                          Min Quantity *
+                        </label>
+                        <input
+                          id="product-min-quantity"
+                          type="decimal"
+                          min="0"
+                          name="min_quantity"
+                          value={formData.min_quantity}
                           onChange={handleChange}
                           required
                         />
@@ -1347,398 +1447,307 @@ const Product = () => {
                     </div>
 
                     <div className="form-group">
-                      <label htmlFor="product-category">Category *</label>
-                      <select
-                        id="product-category"
-                        name="category_id"
-                        value={formData.category_id}
+                      <label htmlFor="product-expiry">Expiry Date</label>
+                      <input
+                        id="product-expiry"
+                        type="date"
+                        name="expiry_date"
+                        value={formData.expiry_date}
                         onChange={handleChange}
-                        required
-                        className="form-select"
-                      >
-                        <option value="">Select a category</option>
-                        {categories.map((category) => (
-                          <option key={category.id} value={category.id}>
-                            {category.name}
-                          </option>
-                        ))}
-                      </select>
+                      />
                     </div>
-                  </div>
 
-                  {/* Only show subcategory field when a category is selected */}
-                  {formData.category_id && (
-                    <div className="form-group subcategory-field">
-                      <label htmlFor="product-subcategory">
-                        Subcategory
-                        {isLoadingSubcategories && (
-                          <span className="loading-indicator-inline">
-                            <Loader size={14} className="spinner" />
-                          </span>
-                        )}
+                    <div className="form-group checkbox-group">
+                      <label className="checkbox-label">
+                        <input
+                          type="checkbox"
+                          name="is_expired"
+                          checked={formData.is_expired}
+                          onChange={handleChange}
+                        />
+                        <span>Product is expired</span>
                       </label>
-                      <select
-                        id="product-subcategory"
-                        name="subcategory_id"
-                        value={formData.subcategory_id}
-                        onChange={handleChange}
-                        className="form-select"
-                        disabled={
-                          isLoadingSubcategories ||
-                          filteredSubcategories.length === 0
-                        }
-                      >
-                        <option value="">Select a subcategory</option>
-                        {filteredSubcategories.map((subcategory) => (
-                          <option key={subcategory.id} value={subcategory.id}>
-                            {subcategory.name}
-                          </option>
-                        ))}
-                      </select>
-                      {!isLoadingSubcategories &&
-                        filteredSubcategories.length === 0 && (
-                          <div className="subcategory-message">
-                            <AlertCircle size={14} />
-                            <small>
-                              No subcategories available for this category
-                            </small>
+                    </div>
+
+                    <div className="form-group image-upload">
+                      <label>Product Image</label>
+                      <div className="image-upload-container">
+                        {imagePreview ? (
+                          <div className="image-preview">
+                            <img
+                              src={imagePreview || No_image}
+                              alt="Product preview"
+                            />
+                            <button
+                              type="button"
+                              className="remove-image"
+                              onClick={() => {
+                                setImagePreview(null);
+                                setFormData({ ...formData, image: "" });
+                              }}
+                            >
+                              <X size={16} />
+                            </button>
                           </div>
+                        ) : (
+                          <label className="upload-label">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleImageChange}
+                              className="hidden-input"
+                            />
+                            <div className="upload-placeholder">
+                              <ImageIcon size={24} />
+                              <span>Click to upload image</span>
+                            </div>
+                          </label>
                         )}
+                      </div>
                     </div>
-                  )}
-                </div>
+                  </div>
 
-                {/* Inventory Information */}
-                <div className="form-section">
-                  <h4>Inventory</h4>
+                  {/* Promotion Information */}
+                  <div className="form-section promotion-section">
+                    <h4>Promotion Details</h4>
 
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label htmlFor="product-quantity">Quantity *</label>
-                      <input
-                        id="product-quantity"
-                        type="decimal"
-                        min="0"
-                        name="quantity"
-                        value={formData.quantity}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="product-min-quantity">
-                        Min Quantity *
+                    <div className="form-group checkbox-group">
+                      <label className="checkbox-label">
+                        <input
+                          type="checkbox"
+                          name="on_promotion"
+                          checked={formData.on_promotion}
+                          onChange={handleChange}
+                        />
+                        <span>Product is on promotion</span>
                       </label>
-                      <input
-                        id="product-min-quantity"
-                        type="decimal"
-                        min="0"
-                        name="min_quantity"
-                        value={formData.min_quantity}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="product-expiry">Expiry Date</label>
-                    <input
-                      id="product-expiry"
-                      type="date"
-                      name="expiry_date"
-                      value={formData.expiry_date}
-                      onChange={handleChange}
-                    />
-                  </div>
-
-                  <div className="form-group checkbox-group">
-                    <label className="checkbox-label">
-                      <input
-                        type="checkbox"
-                        name="is_expired"
-                        checked={formData.is_expired}
-                        onChange={handleChange}
-                      />
-                      <span>Product is expired</span>
-                    </label>
-                  </div>
-
-                  <div className="form-group image-upload">
-                    <label>Product Image</label>
-                    <div className="image-upload-container">
-                      {imagePreview ? (
-                        <div className="image-preview">
-                          <img
-                            src={imagePreview || No_image}
-                            alt="Product preview"
-                          />
-                          <button
-                            type="button"
-                            className="remove-image"
-                            onClick={() => {
-                              setImagePreview(null);
-                              setFormData({ ...formData, image: "" });
-                            }}
-                          >
-                            <X size={16} />
-                          </button>
-                        </div>
-                      ) : (
-                        <label className="upload-label">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleImageChange}
-                            className="hidden-input"
-                          />
-                          <div className="upload-placeholder">
-                            <ImageIcon size={24} />
-                            <span>Click to upload image</span>
-                          </div>
-                        </label>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Promotion Information */}
-                <div className="form-section promotion-section">
-                  <h4>Promotion Details</h4>
-
-                  <div className="form-group checkbox-group">
-                    <label className="checkbox-label">
-                      <input
-                        type="checkbox"
-                        name="on_promotion"
-                        checked={formData.on_promotion}
-                        onChange={handleChange}
-                      />
-                      <span>Product is on promotion</span>
-                    </label>
-                  </div>
-
-                  {formData.on_promotion && (
-                    <>
-                      <div className="form-row">
-                        <div className="form-group">
-                          <label htmlFor="promo-start">Start Date *</label>
-                          <input
-                            id="promo-start"
-                            type="date"
-                            name="promotion_start_date"
-                            value={formData.promotion_start_date}
-                            onChange={handleChange}
-                            required={formData.on_promotion}
-                          />
-                        </div>
-
-                        <div className="form-group">
-                          <label htmlFor="promo-end">End Date *</label>
-                          <input
-                            id="promo-end"
-                            type="date"
-                            name="promotion_end_date"
-                            value={formData.promotion_end_date}
-                            onChange={handleChange}
-                            required={formData.on_promotion}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="form-group">
-                        <label htmlFor="promo-price">Promotional Price *</label>
-                        <div className="input-with-prefix">
-                          <span className="input-prefix">$</span>
-                          <input
-                            id="promo-price"
-                            name="promo_price"
-                            type="decimal"
-                            min="0"
-                            value={formData.promo_price}
-                            onChange={handleChange}
-                            required={formData.on_promotion}
-                          />
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              <div className="form-actions">
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="cancel-btn"
-                >
-                  Cancel
-                </button>
-                <button type="submit" className="create-btn">
-                  {isEditing ? (
-                    <>
-                      <Check size={16} /> Update Product
-                    </>
-                  ) : (
-                    <>
-                      <Plus size={16} /> Create Product
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Product Details Modal */}
-      {showDetailsModal && selectedProduct && (
-        <div className="product-modal-overlay">
-          <div className="product-modal-content">
-            <div className="product-modal-header">
-              <h3>Product Details</h3>
-              <button
-                className="close-modal-btn"
-                onClick={() => setShowDetailsModal(false)}
-                aria-label="Close modal"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="product-details-content">
-              <div className="product-details-grid">
-                <div className="product-details-image">
-                  <img
-                    src={selectedProduct.image || No_image}
-                    alt={selectedProduct.name || "Product"}
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = No_image;
-                    }}
-                  />
-                  {selectedProduct.on_promotion && (
-                    <div className="promotion-badge details-badge">On Sale</div>
-                  )}
-                </div>
-
-                <div className="product-details-info">
-                  <h2 className="product-details-name">
-                    {selectedProduct.name}
-                  </h2>
-
-                  <div className="product-details-meta">
-                    <div className="product-details-category">
-                      <strong>Category:</strong>{" "}
-                      {getCategoryName(selectedProduct.category) ||
-                        "Uncategorized"}
-                      {selectedProduct.subcategory && (
-                        <span>
-                          {" "}
-                          / {getSubcategoryName(selectedProduct.subcategory)}
-                        </span>
-                      )}
                     </div>
 
-                    <div
-                      className={`stock-status ${getStockStatus(selectedProduct)}`}
-                    >
-                      {selectedProduct.quantity > 0
-                        ? `${selectedProduct.quantity} in stock`
-                        : "Out of stock"}
-                    </div>
-                  </div>
-
-                  <div className="product-details-price">
-                    {selectedProduct.on_promotion &&
-                    selectedProduct.promo_price ? (
-                      <span className="product-price">
-                        {selectedProduct.promo_price || 0} XFA
-                      </span>
-                    ) : (
-                      <span className="product-price">
-                        {selectedProduct.unit_price || 0} XFA
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="product-details-description">
-                    <h4>Description</h4>
-                    <p>
-                      {selectedProduct.description ||
-                        "No description available"}
-                    </p>
-                  </div>
-
-                  <div className="product-details-specs">
-                    <div className="details-spec-item">
-                      <strong>Min Quantity:</strong>{" "}
-                      {selectedProduct.min_quantity || 0}
-                    </div>
-                    <div className="details-spec-item">
-                      <strong>Expiry Date:</strong>{" "}
-                      {selectedProduct.expiry_date
-                        ? new Date(
-                            selectedProduct.expiry_date,
-                          ).toLocaleDateString()
-                        : "N/A"}
-                    </div>
-                    {selectedProduct.on_promotion && (
+                    {formData.on_promotion && (
                       <>
-                        <div className="details-spec-item">
-                          <strong>Promotion Start:</strong>{" "}
-                          {selectedProduct.promotion_start_date
-                            ? new Date(
-                                selectedProduct.promotion_start_date,
-                              ).toLocaleDateString()
-                            : "N/A"}
+                        <div className="form-row">
+                          <div className="form-group">
+                            <label htmlFor="promo-start">Start Date *</label>
+                            <input
+                              id="promo-start"
+                              type="date"
+                              name="promotion_start_date"
+                              value={formData.promotion_start_date}
+                              onChange={handleChange}
+                              required={formData.on_promotion}
+                            />
+                          </div>
+
+                          <div className="form-group">
+                            <label htmlFor="promo-end">End Date *</label>
+                            <input
+                              id="promo-end"
+                              type="date"
+                              name="promotion_end_date"
+                              value={formData.promotion_end_date}
+                              onChange={handleChange}
+                              required={formData.on_promotion}
+                            />
+                          </div>
                         </div>
-                        <div className="details-spec-item">
-                          <strong>Promotion End:</strong>{" "}
-                          {selectedProduct.promotion_end_date
-                            ? new Date(
-                                selectedProduct.promotion_end_date,
-                              ).toLocaleDateString()
-                            : "N/A"}
+
+                        <div className="form-group">
+                          <label htmlFor="promo-price">
+                            Promotional Price *
+                          </label>
+                          <div className="input-with-prefix">
+                            <span className="input-prefix">$</span>
+                            <input
+                              id="promo-price"
+                              name="promo_price"
+                              type="decimal"
+                              min="0"
+                              value={formData.promo_price}
+                              onChange={handleChange}
+                              required={formData.on_promotion}
+                            />
+                          </div>
                         </div>
                       </>
                     )}
                   </div>
+                </div>
 
-                  <div className="product-details-actions">
-                    <button
-                      className="action-btn edit"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEditProduct({
-                          product: selectedProduct,
-                          category: selectedProduct.category,
-                          subcategory: selectedProduct.subcategory,
-                        });
-                        setShowDetailsModal(false);
+                <div className="form-actions">
+                  <button
+                    type="button"
+                    onClick={resetForm}
+                    className="cancel-btn"
+                  >
+                    Cancel
+                  </button>
+                  <button type="submit" className="create-btn">
+                    {isEditing ? (
+                      <>
+                        <Check size={16} /> Update Product
+                      </>
+                    ) : (
+                      <>
+                        <Plus size={16} /> Create Product
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Product Details Modal */}
+        {showDetailsModal && selectedProduct && (
+          <div className="product-modal-overlay">
+            <div className="product-modal-content">
+              <div className="product-modal-header">
+                <h3>Product Details</h3>
+                <button
+                  className="close-modal-btn"
+                  onClick={() => setShowDetailsModal(false)}
+                  aria-label="Close modal"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="product-details-content">
+                <div className="product-details-grid">
+                  <div className="product-details-image">
+                    <img
+                      src={selectedProduct.image || No_image}
+                      alt={selectedProduct.name || "Product"}
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = No_image;
                       }}
-                    >
-                      <Edit size={16} /> Edit
-                    </button>
-                    <button
-                      className="action-btn delete"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(selectedProduct.id);
-                        setShowDetailsModal(false);
-                      }}
-                    >
-                      <Trash2 size={16} /> Delete
-                    </button>
+                    />
+                    {selectedProduct.on_promotion && (
+                      <div className="promotion-badge details-badge">
+                        On Sale
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="product-details-info">
+                    <h2 className="product-details-name">
+                      {selectedProduct.name}
+                    </h2>
+
+                    <div className="product-details-meta">
+                      <div className="product-details-category">
+                        <strong>Category:</strong>{" "}
+                        {getCategoryName(selectedProduct.category) ||
+                          "Uncategorized"}
+                        {selectedProduct.subcategory && (
+                          <span>
+                            {" "}
+                            / {getSubcategoryName(selectedProduct.subcategory)}
+                          </span>
+                        )}
+                      </div>
+
+                      <div
+                        className={`stock-status ${getStockStatus(selectedProduct)}`}
+                      >
+                        {selectedProduct.quantity > 0
+                          ? `${selectedProduct.quantity} in stock`
+                          : "Out of stock"}
+                      </div>
+                    </div>
+
+                    <div className="product-details-price">
+                      {selectedProduct.on_promotion &&
+                      selectedProduct.promo_price ? (
+                        <span className="product-price">
+                          {selectedProduct.promo_price || 0} XFA
+                        </span>
+                      ) : (
+                        <span className="product-price">
+                          {selectedProduct.unit_price || 0} XFA
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="product-details-description">
+                      <h4>Description</h4>
+                      <p>
+                        {selectedProduct.description ||
+                          "No description available"}
+                      </p>
+                    </div>
+
+                    <div className="product-details-specs">
+                      <div className="details-spec-item">
+                        <strong>Min Quantity:</strong>{" "}
+                        {selectedProduct.min_quantity || 0}
+                      </div>
+                      <div className="details-spec-item">
+                        <strong>Expiry Date:</strong>{" "}
+                        {selectedProduct.expiry_date
+                          ? new Date(
+                              selectedProduct.expiry_date,
+                            ).toLocaleDateString()
+                          : "N/A"}
+                      </div>
+                      {selectedProduct.on_promotion && (
+                        <>
+                          <div className="details-spec-item">
+                            <strong>Promotion Start:</strong>{" "}
+                            {selectedProduct.promotion_start_date
+                              ? new Date(
+                                  selectedProduct.promotion_start_date,
+                                ).toLocaleDateString()
+                              : "N/A"}
+                          </div>
+                          <div className="details-spec-item">
+                            <strong>Promotion End:</strong>{" "}
+                            {selectedProduct.promotion_end_date
+                              ? new Date(
+                                  selectedProduct.promotion_end_date,
+                                ).toLocaleDateString()
+                              : "N/A"}
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    <div className="product-details-actions">
+                      <button
+                        className="action-btn edit"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditProduct({
+                            product: selectedProduct,
+                            category: selectedProduct.category,
+                            subcategory: selectedProduct.subcategory,
+                          });
+                          setShowDetailsModal(false);
+                        }}
+                      >
+                        <Edit size={16} /> Edit
+                      </button>
+                      <button
+                        className="action-btn delete"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(selectedProduct.id);
+                          setShowDetailsModal(false);
+                        }}
+                      >
+                        <Trash2 size={16} /> Delete
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </MainContent>
   );
 };
 

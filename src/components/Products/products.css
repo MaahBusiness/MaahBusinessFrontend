@@ -1,11 +1,5 @@
 .product-container {
-  padding: 1em;
-  width: 98%;
-  position: absolute;
-  top: 10%;
-  left: 2%;
-  right: 0;
-  color: #f8f9fa;
+  width: 100%;
 }
 
 .product-header {
@@ -155,11 +149,6 @@
 .clear-filter-btn:hover {
   background-color: #444;
   color: #f8f9fa;
-}
-
-.view-controls {
-  display: flex;
-  gap: 0.5rem;
 }
 
 .view-btn {
@@ -372,8 +361,8 @@
 .delete-btn {
   background: none;
   border: none;
-  width: 28px;
-  height: 28px;
+  min-width: 28px;
+  /* height: 28px; */
   border-radius: 0.25rem;
   display: flex;
   align-items: center;
@@ -1090,7 +1079,6 @@
     margin: 0 auto;
   }
 
-  
   .product-header,
   .product-toolbar,
   .product-table-container,
@@ -1099,30 +1087,26 @@
     width: 95%;
     left: 0;
   }
-  
+
   .product-toolbar {
     flex-wrap: wrap;
   }
-  
+
   .search-container {
     max-width: 100%;
     width: 100%;
     margin-bottom: 0.5rem;
   }
-  
+
   .expiry-filter-container {
     flex: 1;
     justify-content: flex-start;
   }
-  
-  .view-controls {
-    justify-content: flex-end;
-  }
-  
+
   .form-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .promotion-section {
     grid-column: span 1;
   }
