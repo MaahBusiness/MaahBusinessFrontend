@@ -36,6 +36,7 @@ import {
   Trash,
 } from "lucide-react";
 import "./dashboard.css";
+import MainContent from "../MainContend";
 
 // Register ChartJS components
 ChartJS.register(
@@ -992,524 +993,180 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="dashboard">
-      <div className="dashboard-header">
-        <div className="title-section">
+    <MainContent>
+      <div className="dashboard">
+        <div className="dashboard-header">
           <h2>Dashboard</h2>
-          <div className="date-range-filter">
-            <div className="date-input-container">
-              <label>Start Date:</label>
-              <input
-                type="date"
-                value={startDate}
-                onChange={handleStartDateChange}
-                className="date-input"
-              />
+          <div className="dashHeader">
+            <div className="date-range-filter">
+              <div className="date-input-container">
+                <label>Start Date:</label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={handleStartDateChange}
+                  className="date-input"
+                />
+              </div>
+              <div className="date-input-container">
+                <label>End Date:</label>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={handleEndDateChange}
+                  className="date-input"
+                />
+              </div>
+              <button
+                className="refresh-btn"
+                onClick={refreshDashboardData}
+                disabled={isRefreshing}
+              >
+                {isRefreshing ? (
+                  <Loader size={16} className="spin" />
+                ) : (
+                  "Refresh"
+                )}
+              </button>
             </div>
-            <div className="date-input-container">
-              <label>End Date:</label>
-              <input
-                type="date"
-                value={endDate}
-                onChange={handleEndDateChange}
-                className="date-input"
-              />
-            </div>
-            <button
-              className="refresh-btn"
-              onClick={refreshDashboardData}
-              disabled={isRefreshing}
-            >
-              {isRefreshing ? <Loader size={16} className="spin" /> : "Refresh"}
-            </button>
-          </div>
-        </div>
-        <div className="dashboard-actions">
-          {currentUserRole && (
-            <div className="role-indicator">
-              <User size={16} />
-              <span>Role: {currentUserRole}</span>
-            </div>
-          )}
-          {isAuthenticated && hasManagerPermission() && (
-            <button
-              className="manage-users-btn"
-              onClick={() => setShowUserModal(true)}
-            >
-              <Users size={18} /> Manage Users
-            </button>
-          )}
-          {!isAuthenticated && (
-            <button className="login-button" onClick={handleLogin}>
-              <User size={18} /> Login
-            </button>
-          )}
-        </div>
-      </div>
-
-      {isLoading && (
-        <div className="loading-overlay">
-          <Loader size={40} className="spin" />
-          <p>Loading dashboard data...</p>
-        </div>
-      )}
-
-      {!hasManagerPermission() && (
-        <div className="non-manager-notice">
-          <p>
-            Limited dashboard view. Manager access required to view complete
-            data.
-          </p>
-        </div>
-      )}
-
-      <div className="time-period-info">
-        <div className="time-period-label">
-          <Calendar size={16} />
-          <span>
-            Viewing data from:{" "}
-            <strong>{new Date(startDate).toLocaleDateString()}</strong> to{" "}
-            <strong>{new Date(endDate).toLocaleDateString()}</strong>
-          </span>
-        </div>
-      </div>
-
-      <div className="dashboard-cards">
-        {cardIcons.map((card) => (
-          <div key={card.id} className={`card ${card.id}-card`}>
-            <div className="card-icon-wrapper">{card.icon}</div>
-            <div className="card-content">
-              <h3>{card.label}</h3>
-              <div className="card-value">{card.value}</div>
-              {card.change !== undefined && (
-                <div
-                  className={`card-change ${Number(card.change) >= 0 ? "positive" : "negative"}`}
-                >
-                  <div className="change-indicator">
-                    {Number(card.change) >= 0 ? (
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                        className="trend-icon"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M12 20a1 1 0 01-1-1V9.414l-2.293 2.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L13 9.414V19a1 1 0 01-1 1z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    ) : (
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                        className="trend-icon"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M12 4a1 1 0 011 1v9.586l2.293-2.293a1 1 0 011.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L11 14.586V5a1 1 0 011-1z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    )}
-                    <span>
-                      {Number(card.change) >= 0 ? "+" : ""}
-                      {card.id === "revenue" || card.id === "profit"
-                        ? `${Math.abs(Number(card.change)).toFixed(1)}%`
-                        : card.id === "credit"
-                          ? Math.abs(Number(card.change)).toLocaleString()
-                          : `${Math.abs(Number(card.change)).toFixed(1)}%`}
-                    </span>
-                  </div>
-                  <div className="change-period">{card.period}</div>
+            <div className="dashboard-actions">
+              {currentUserRole && (
+                <div className="role-indicator">
+                  <User size={16} />
+                  <span>Role: {currentUserRole}</span>
                 </div>
+              )}
+              {isAuthenticated && hasManagerPermission() && (
+                <button
+                  className="manage-users-btn"
+                  onClick={() => setShowUserModal(true)}
+                >
+                  <Users size={18} /> Manage Users
+                </button>
               )}
             </div>
           </div>
-        ))}
+        </div>
 
-        {/* Add a dedicated card for outstanding payments */}
-      </div>
-
-      {/* Sales Performance Chart */}
-      <div className="chart sales-chart">
-        <h3>Sales Performance</h3>
-        {salesChartData.length > 0 && hasReportViewPermission() ? (
-          <div style={{ height: "300px" }}>
-            <Line
-              data={{
-                labels: salesChartData.map((item) =>
-                  new Date(item.name).toLocaleDateString(),
-                ),
-                datasets: [
-                  {
-                    label: "Completed Revenue",
-                    data: salesChartData.map((item) => item.completed_revenue),
-                    borderColor: "#10b981",
-                    backgroundColor: "rgba(16, 185, 129, 0.1)",
-                    fill: true,
-                  },
-                  {
-                    label: "Credit Revenue",
-                    data: salesChartData.map((item) => item.credit_revenue),
-                    borderColor: "#f59e0b",
-                    backgroundColor: "rgba(245, 158, 11, 0.1)",
-                    fill: true,
-                  },
-                  {
-                    label: "Total Revenue",
-                    data: salesChartData.map((item) => item.total_revenue),
-                    borderColor: "#6366f1",
-                    backgroundColor: "rgba(99, 102, 241, 0.1)",
-                    fill: true,
-                    borderWidth: 3,
-                  },
-                ],
-              }}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                  legend: {
-                    position: "top",
-                    labels: {
-                      color: "#ffffff",
-                    },
-                  },
-                  tooltip: {
-                    backgroundColor: tooltipStyle.backgroundColor,
-                    titleColor: tooltipStyle.color,
-                    bodyColor: tooltipStyle.color,
-                    callbacks: {
-                      label: (context) => {
-                        let label = context.dataset.label || "";
-                        if (label) {
-                          label += ": ";
-                        }
-                        if (context.parsed.y !== null) {
-                          label += formatCurrency(context.parsed.y);
-                        }
-                        return label;
-                      },
-                    },
-                  },
-                },
-                scales: {
-                  x: {
-                    grid: {
-                      color: "rgba(255, 255, 255, 0.1)",
-                    },
-                    ticks: {
-                      color: "#ffffff",
-                    },
-                  },
-                  y: {
-                    grid: {
-                      color: "rgba(255, 255, 255, 0.1)",
-                    },
-                    ticks: {
-                      color: "#ffffff",
-                      callback: (value) => formatCurrency(value),
-                    },
-                  },
-                },
-              }}
-            />
-          </div>
-        ) : (
-          <div className="no-data">
-            {!hasReportViewPermission()
-              ? "Manager or cashier access required to view sales data"
-              : "No sales data available for this period"}
+        {isLoading && (
+          <div className="loading-overlay">
+            <Loader size={40} className="spin" />
+            <p>Loading dashboard data...</p>
           </div>
         )}
-      </div>
 
-      {/* Profit Analysis Chart */}
-      <div className="chart profit-chart">
-        <h3>Profit Analysis</h3>
-        {salesChartData.length > 0 && hasReportViewPermission() ? (
-          <div style={{ height: "300px" }}>
-            <Line
-              data={{
-                labels: salesChartData.map((item) =>
-                  new Date(item.name).toLocaleDateString(),
-                ),
-                datasets: [
-                  {
-                    label: "Completed Profit",
-                    data: salesChartData.map((item) => item.completed_profit),
-                    borderColor: "#10b981",
-                    backgroundColor: "rgba(16, 185, 129, 0.1)",
-                    fill: true,
-                  },
-                  {
-                    label: "Credit Profit",
-                    data: salesChartData.map((item) => item.credit_profit),
-                    borderColor: "#ec4899",
-                    backgroundColor: "rgba(236, 72, 153, 0.1)",
-                    fill: true,
-                  },
-                  {
-                    label: "Total Profit",
-                    data: salesChartData.map((item) => item.total_profit),
-                    borderColor: "#6366f1",
-                    backgroundColor: "rgba(99, 102, 241, 0.1)",
-                    fill: true,
-                    borderWidth: 3,
-                  },
-                ],
-              }}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                  legend: {
-                    position: "top",
-                    labels: {
-                      color: "#ffffff",
-                    },
-                  },
-                  tooltip: {
-                    backgroundColor: tooltipStyle.backgroundColor,
-                    titleColor: tooltipStyle.color,
-                    bodyColor: tooltipStyle.color,
-                    callbacks: {
-                      label: (context) => {
-                        let label = context.dataset.label || "";
-                        if (label) {
-                          label += ": ";
-                        }
-                        if (context.parsed.y !== null) {
-                          label += formatCurrency(context.parsed.y);
-                        }
-                        return label;
-                      },
-                    },
-                  },
-                },
-                scales: {
-                  x: {
-                    grid: {
-                      color: "rgba(255, 255, 255, 0.1)",
-                    },
-                    ticks: {
-                      color: "#ffffff",
-                    },
-                  },
-                  y: {
-                    grid: {
-                      color: "rgba(255, 255, 255, 0.1)",
-                    },
-                    ticks: {
-                      color: "#ffffff",
-                      callback: (value) => formatCurrency(value),
-                    },
-                  },
-                },
-              }}
-            />
-          </div>
-        ) : (
-          <div className="no-data">
-            {!hasReportViewPermission()
-              ? "Manager or cashier access required to view profit data"
-              : "No profit data available for this period"}
+        {!hasManagerPermission() && (
+          <div className="non-manager-notice">
+            <p>
+              Limited dashboard view. Manager access required to view complete
+              data.
+            </p>
           </div>
         )}
-      </div>
 
-      <div className="charts-container">
-        {/* Top Products Chart */}
-        <div className="chart">
-          <h3>Top Products</h3>
-          {productPerformanceData.top_products.length > 0 ? (
+        <div className="time-period-info">
+          <div className="time-period-label">
+            <Calendar size={16} />
+            <span>
+              Viewing data from:{" "}
+              <strong>{new Date(startDate).toLocaleDateString()}</strong> to{" "}
+              <strong>{new Date(endDate).toLocaleDateString()}</strong>
+            </span>
+          </div>
+        </div>
+
+        <div className="dashboard-cards">
+          {cardIcons.map((card) => (
+            <div key={card.id} className={`card ${card.id}-card`}>
+              <div className="card-icon-wrapper">{card.icon}</div>
+              <div className="card-content">
+                <h3>{card.label}</h3>
+                <div className="card-value">{card.value}</div>
+                {card.change !== undefined && (
+                  <div
+                    className={`card-change ${Number(card.change) >= 0 ? "positive" : "negative"}`}
+                  >
+                    <div className="change-indicator">
+                      {Number(card.change) >= 0 ? (
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          className="trend-icon"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M12 20a1 1 0 01-1-1V9.414l-2.293 2.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L13 9.414V19a1 1 0 01-1 1z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      ) : (
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          className="trend-icon"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M12 4a1 1 0 011 1v9.586l2.293-2.293a1 1 0 011.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L11 14.586V5a1 1 0 011-1z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      )}
+                      <span>
+                        {Number(card.change) >= 0 ? "+" : ""}
+                        {card.id === "revenue" || card.id === "profit"
+                          ? `${Math.abs(Number(card.change)).toFixed(1)}%`
+                          : card.id === "credit"
+                            ? Math.abs(Number(card.change)).toLocaleString()
+                            : `${Math.abs(Number(card.change)).toFixed(1)}%`}
+                      </span>
+                    </div>
+                    <div className="change-period">{card.period}</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+
+          {/* Add a dedicated card for outstanding payments */}
+        </div>
+
+        {/* Sales Performance Chart */}
+        <div className="chart sales-chart">
+          <h3>Sales Performance</h3>
+          {salesChartData.length > 0 && hasReportViewPermission() ? (
             <div style={{ height: "300px" }}>
-              <Bar
+              <Line
                 data={{
-                  labels: productPerformanceData.top_products.map(
-                    (item) => item.name,
+                  labels: salesChartData.map((item) =>
+                    new Date(item.name).toLocaleDateString(),
                   ),
                   datasets: [
                     {
-                      label: "Revenue",
-                      data: productPerformanceData.top_products.map(
-                        (item) => item.revenue,
+                      label: "Completed Revenue",
+                      data: salesChartData.map(
+                        (item) => item.completed_revenue,
                       ),
-                      backgroundColor: productPerformanceData.top_products.map(
-                        (_, index) =>
-                          [
-                            "#6366f1",
-                            "#ec4899",
-                            "#10b981",
-                            "#3b82f6",
-                            "#f59e0b",
-                          ][index % 5],
-                      ),
+                      borderColor: "#10b981",
+                      backgroundColor: "rgba(16, 185, 129, 0.1)",
+                      fill: true,
                     },
-                  ],
-                }}
-                options={{
-                  indexAxis: "y",
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: {
-                      display: false,
-                    },
-                    tooltip: {
-                      backgroundColor: tooltipStyle.backgroundColor,
-                      titleColor: tooltipStyle.color,
-                      bodyColor: tooltipStyle.color,
-                      callbacks: {
-                        label: (context) => {
-                          let label = context.dataset.label || "";
-                          if (label) {
-                            label += ": ";
-                          }
-                          if (context.parsed.x !== null) {
-                            label += formatCurrency(context.parsed.x);
-                          }
-                          return label;
-                        },
-                      },
-                    },
-                  },
-                  scales: {
-                    x: {
-                      grid: {
-                        color: "rgba(255, 255, 255, 0.1)",
-                      },
-                      ticks: {
-                        color: "#ffffff",
-                        callback: (value) => formatCurrency(value),
-                      },
-                    },
-                    y: {
-                      grid: {
-                        color: "rgba(255, 255, 255, 0.1)",
-                      },
-                      ticks: {
-                        color: "#ffffff",
-                      },
-                    },
-                  },
-                }}
-              />
-            </div>
-          ) : (
-            <div className="no-data">
-              {hasManagerPermission()
-                ? "No product performance data available"
-                : "Manager access required to view product performance"}
-            </div>
-          )}
-        </div>
-
-        {/* Top Categories Chart */}
-        <div className="chart">
-          <h3>Top Categories</h3>
-          {productPerformanceData.top_categories.length > 0 ? (
-            <div style={{ height: "300px" }}>
-              <Bar
-                data={{
-                  labels: productPerformanceData.top_categories.map(
-                    (item) => item.name,
-                  ),
-                  datasets: [
                     {
-                      label: "Revenue",
-                      data: productPerformanceData.top_categories.map(
-                        (item) => item.revenue,
-                      ),
-                      backgroundColor:
-                        productPerformanceData.top_categories.map(
-                          (_, index) =>
-                            [
-                              "#6366f1",
-                              "#ec4899",
-                              "#10b981",
-                              "#3b82f6",
-                              "#f59e0b",
-                            ][index % 5],
-                        ),
+                      label: "Credit Revenue",
+                      data: salesChartData.map((item) => item.credit_revenue),
+                      borderColor: "#f59e0b",
+                      backgroundColor: "rgba(245, 158, 11, 0.1)",
+                      fill: true,
                     },
-                  ],
-                }}
-                options={{
-                  indexAxis: "y",
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: {
-                      display: false,
-                    },
-                    tooltip: {
-                      backgroundColor: tooltipStyle.backgroundColor,
-                      titleColor: tooltipStyle.color,
-                      bodyColor: tooltipStyle.color,
-                      callbacks: {
-                        label: (context) => {
-                          let label = context.dataset.label || "";
-                          if (label) {
-                            label += ": ";
-                          }
-                          if (context.parsed.x !== null) {
-                            label += formatCurrency(context.parsed.x);
-                          }
-                          return label;
-                        },
-                      },
-                    },
-                  },
-                  scales: {
-                    x: {
-                      grid: {
-                        color: "rgba(255, 255, 255, 0.1)",
-                      },
-                      ticks: {
-                        color: "#ffffff",
-                        callback: (value) => formatCurrency(value),
-                      },
-                    },
-                    y: {
-                      grid: {
-                        color: "rgba(255, 255, 255, 0.1)",
-                      },
-                      ticks: {
-                        color: "#ffffff",
-                      },
-                    },
-                  },
-                }}
-              />
-            </div>
-          ) : (
-            <div className="no-data">
-              {hasManagerPermission()
-                ? "No category performance data available"
-                : "Manager access required to view category performance"}
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="secondary-charts">
-        {/* Stock Status Chart */}
-        <div className="chart">
-          <h3>Stock Status</h3>
-          {inventoryData.stockStatus.length > 0 ? (
-            <div style={{ height: "200px" }}>
-              <Doughnut
-                data={{
-                  labels: inventoryData.stockStatus.map((item) => item.name),
-                  datasets: [
                     {
-                      data: inventoryData.stockStatus.map((item) => item.value),
-                      backgroundColor: inventoryData.stockStatus.map(
-                        (item) => item.color,
-                      ),
+                      label: "Total Revenue",
+                      data: salesChartData.map((item) => item.total_revenue),
+                      borderColor: "#6366f1",
+                      backgroundColor: "rgba(99, 102, 241, 0.1)",
+                      fill: true,
+                      borderWidth: 3,
                     },
                   ],
                 }}
@@ -1518,212 +1175,10 @@ const Dashboard = () => {
                   maintainAspectRatio: false,
                   plugins: {
                     legend: {
-                      position: "right",
+                      position: "top",
                       labels: {
                         color: "#ffffff",
                       },
-                    },
-                    tooltip: {
-                      backgroundColor: tooltipStyle.backgroundColor,
-                      titleColor: tooltipStyle.color,
-                      bodyColor: tooltipStyle.color,
-                    },
-                  },
-                }}
-              />
-            </div>
-          ) : (
-            <div className="no-data">
-              {hasManagerPermission()
-                ? "No stock status data available"
-                : "Manager access required to view stock status"}
-            </div>
-          )}
-        </div>
-
-        {/* Recent Sales */}
-        <div className="chart">
-          <h3>Recent Sales</h3>
-          {recentSales.length > 0 ? (
-            <div className="recent-sales">
-              {recentSales.slice(0, 10).map((sale, index) => (
-                <div key={sale.invoice_id || index} className="sale-item">
-                  <div className="sale-info">
-                    <p className="sale-name">{sale.customer}</p>
-                    <p className="sale-date">
-                      {sale.formatted_date ||
-                        new Date(sale.date).toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="sale-details">
-                    <p
-                      className={`sale-status ${sale.margin > 0 ? "completed" : "credit"}`}
-                    >
-                      {sale.items} items
-                    </p>
-                    <p className="sale-amount">
-                      XFA {Math.round(sale.total).toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="no-data">
-              {hasManagerPermission()
-                ? "No recent sales data available"
-                : "Manager access required to view recent sales"}
-            </div>
-          )}
-        </div>
-
-        {/* Inventory Alerts */}
-        <div className="chart">
-          <h3>Inventory Alerts</h3>
-          {inventoryData.alerts ? (
-            <div className="inventory-alerts">
-              <div className="alert-item">
-                <div className="alert-icon low-stock">
-                  <span>{inventoryData.alerts.lowStock || 0}</span>
-                </div>
-                <div className="alert-info">
-                  <p className="alert-title">Low Stock</p>
-                  <p className="alert-desc">Products below minimum quantity</p>
-                </div>
-              </div>
-              <div className="alert-item">
-                <div className="alert-icon out-of-stock">
-                  <span>{inventoryData.alerts.outOfStock || 0}</span>
-                </div>
-                <div className="alert-info">
-                  <p className="alert-title">Out of Stock</p>
-                  <p className="alert-desc">Products with zero quantity</p>
-                </div>
-              </div>
-              <div className="alert-item">
-                <div className="alert-icon overstocked">
-                  <span>{inventoryData.alerts.overstocked || 0}</span>
-                </div>
-                <div className="alert-info">
-                  <p className="alert-title">Overstocked</p>
-                  <p className="alert-desc">Products with excess inventory</p>
-                </div>
-              </div>
-              <div className="alert-item">
-                <div className="alert-icon critical">
-                  <span>{inventoryData.alerts.critical || 0}</span>
-                </div>
-                <div className="alert-info">
-                  <p className="alert-title">Critical</p>
-                  <p className="alert-desc">
-                    Products requiring immediate attention
-                  </p>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="no-data">
-              {hasManagerPermission()
-                ? "No inventory alerts available"
-                : "Manager access required to view inventory alerts"}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Sales by Category Chart */}
-      <div className="additional-charts">
-        <div className="chart">
-          <h3>Sales by Category</h3>
-          {salesByCategoryData.length > 0 ? (
-            <div style={{ height: "250px" }}>
-              <Doughnut
-                data={{
-                  labels: salesByCategoryData.map((item) => item.name),
-                  datasets: [
-                    {
-                      data: salesByCategoryData.map((item) => item.value),
-                      backgroundColor: salesByCategoryData.map(
-                        (item) => item.fill,
-                      ),
-                      borderWidth: 1,
-                    },
-                  ],
-                }}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: {
-                      position: "right",
-                      labels: {
-                        color: "#ffffff",
-                        padding: 15,
-                        font: {
-                          size: 12,
-                        },
-                      },
-                    },
-                    tooltip: {
-                      callbacks: {
-                        title: (context) => context[0].label,
-                        label: (context) => {
-                          const label = context.label || "";
-                          const value = context.raw || 0;
-                          const total = context.dataset.data.reduce(
-                            (a, b) => a + b,
-                            0,
-                          );
-                          const percentage = ((value / total) * 100).toFixed(1);
-                          return `${label}: ${formatCurrency(value)} (${percentage}%)`;
-                        },
-                      },
-                      backgroundColor: tooltipStyle.backgroundColor,
-                      titleColor: tooltipStyle.color,
-                      bodyColor: tooltipStyle.color,
-                    },
-                  },
-                  cutout: "60%",
-                }}
-              />
-            </div>
-          ) : (
-            <div className="no-data">
-              {hasManagerPermission()
-                ? "No sales by category data available"
-                : "Manager access required to view category data"}
-            </div>
-          )}
-        </div>
-
-        {/* Product Margin Analysis */}
-        <div className="chart">
-          <h3>Product Margin Analysis</h3>
-          {productPerformanceData.top_products.length > 0 ? (
-            <div style={{ height: "250px" }}>
-              <Bar
-                data={{
-                  labels: productPerformanceData.top_products.map(
-                    (item) => item.name,
-                  ),
-                  datasets: [
-                    {
-                      label: "Margin %",
-                      data: productPerformanceData.top_products.map(
-                        (item) => item.margin,
-                      ),
-                      backgroundColor: productPerformanceData.top_products.map(
-                        (item) => (item.margin >= 0 ? "#10b981" : "#ef4444"),
-                      ),
-                    },
-                  ],
-                }}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: {
-                      display: false,
                     },
                     tooltip: {
                       backgroundColor: tooltipStyle.backgroundColor,
@@ -1736,9 +1191,8 @@ const Dashboard = () => {
                             label += ": ";
                           }
                           if (context.parsed.y !== null) {
-                            label += `${context.parsed.y.toFixed(1)}%`;
+                            label += formatCurrency(context.parsed.y);
                           }
-                          label += `${context.parsed.y.toFixed(1)}%`;
                           return label;
                         },
                       },
@@ -1759,7 +1213,7 @@ const Dashboard = () => {
                       },
                       ticks: {
                         color: "#ffffff",
-                        callback: (value) => `${value}%`,
+                        callback: (value) => formatCurrency(value),
                       },
                     },
                   },
@@ -1768,415 +1222,976 @@ const Dashboard = () => {
             </div>
           ) : (
             <div className="no-data">
-              {hasManagerPermission()
-                ? "No product margin data available"
-                : "Manager access required to view margin data"}
+              {!hasReportViewPermission()
+                ? "Manager or cashier access required to view sales data"
+                : "No sales data available for this period"}
             </div>
           )}
         </div>
-      </div>
 
-      {/* User Management Modal */}
-      {showUserModal && (
-        <div className="modal-overlay">
-          <div className="modal-content user-modal">
-            <div className="modal-header">
-              <h3>Customer Management</h3>
-              <button
-                className="close-modal-btn"
-                onClick={() => {
-                  setShowUserModal(false);
-                  setEditingUser(null);
-                  setConfirmDelete(null);
-                  setError(null);
+        {/* Profit Analysis Chart */}
+        <div className="chart profit-chart">
+          <h3>Profit Analysis</h3>
+          {salesChartData.length > 0 && hasReportViewPermission() ? (
+            <div style={{ height: "300px" }}>
+              <Line
+                data={{
+                  labels: salesChartData.map((item) =>
+                    new Date(item.name).toLocaleDateString(),
+                  ),
+                  datasets: [
+                    {
+                      label: "Completed Profit",
+                      data: salesChartData.map((item) => item.completed_profit),
+                      borderColor: "#10b981",
+                      backgroundColor: "rgba(16, 185, 129, 0.1)",
+                      fill: true,
+                    },
+                    {
+                      label: "Credit Profit",
+                      data: salesChartData.map((item) => item.credit_profit),
+                      borderColor: "#ec4899",
+                      backgroundColor: "rgba(236, 72, 153, 0.1)",
+                      fill: true,
+                    },
+                    {
+                      label: "Total Profit",
+                      data: salesChartData.map((item) => item.total_profit),
+                      borderColor: "#6366f1",
+                      backgroundColor: "rgba(99, 102, 241, 0.1)",
+                      fill: true,
+                      borderWidth: 3,
+                    },
+                  ],
                 }}
-              >
-                <X size={20} />
-              </button>
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      position: "top",
+                      labels: {
+                        color: "#ffffff",
+                      },
+                    },
+                    tooltip: {
+                      backgroundColor: tooltipStyle.backgroundColor,
+                      titleColor: tooltipStyle.color,
+                      bodyColor: tooltipStyle.color,
+                      callbacks: {
+                        label: (context) => {
+                          let label = context.dataset.label || "";
+                          if (label) {
+                            label += ": ";
+                          }
+                          if (context.parsed.y !== null) {
+                            label += formatCurrency(context.parsed.y);
+                          }
+                          return label;
+                        },
+                      },
+                    },
+                  },
+                  scales: {
+                    x: {
+                      grid: {
+                        color: "rgba(255, 255, 255, 0.1)",
+                      },
+                      ticks: {
+                        color: "#ffffff",
+                      },
+                    },
+                    y: {
+                      grid: {
+                        color: "rgba(255, 255, 255, 0.1)",
+                      },
+                      ticks: {
+                        color: "#ffffff",
+                        callback: (value) => formatCurrency(value),
+                      },
+                    },
+                  },
+                }}
+              />
             </div>
+          ) : (
+            <div className="no-data">
+              {!hasReportViewPermission()
+                ? "Manager or cashier access required to view profit data"
+                : "No profit data available for this period"}
+            </div>
+          )}
+        </div>
 
-            <div className="modal-body">
-              {error && (
-                <div className="error-message">
-                  {error}
-                  {!isAuthenticated && (
+        <div className="charts-container">
+          {/* Top Products Chart */}
+          <div className="chart">
+            <h3>Top Products</h3>
+            {productPerformanceData.top_products.length > 0 ? (
+              <div style={{ height: "300px" }}>
+                <Bar
+                  data={{
+                    labels: productPerformanceData.top_products.map(
+                      (item) => item.name,
+                    ),
+                    datasets: [
+                      {
+                        label: "Revenue",
+                        data: productPerformanceData.top_products.map(
+                          (item) => item.revenue,
+                        ),
+                        backgroundColor:
+                          productPerformanceData.top_products.map(
+                            (_, index) =>
+                              [
+                                "#6366f1",
+                                "#ec4899",
+                                "#10b981",
+                                "#3b82f6",
+                                "#f59e0b",
+                              ][index % 5],
+                          ),
+                      },
+                    ],
+                  }}
+                  options={{
+                    indexAxis: "y",
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        display: false,
+                      },
+                      tooltip: {
+                        backgroundColor: tooltipStyle.backgroundColor,
+                        titleColor: tooltipStyle.color,
+                        bodyColor: tooltipStyle.color,
+                        callbacks: {
+                          label: (context) => {
+                            let label = context.dataset.label || "";
+                            if (label) {
+                              label += ": ";
+                            }
+                            if (context.parsed.x !== null) {
+                              label += formatCurrency(context.parsed.x);
+                            }
+                            return label;
+                          },
+                        },
+                      },
+                    },
+                    scales: {
+                      x: {
+                        grid: {
+                          color: "rgba(255, 255, 255, 0.1)",
+                        },
+                        ticks: {
+                          color: "#ffffff",
+                          callback: (value) => formatCurrency(value),
+                        },
+                      },
+                      y: {
+                        grid: {
+                          color: "rgba(255, 255, 255, 0.1)",
+                        },
+                        ticks: {
+                          color: "#ffffff",
+                        },
+                      },
+                    },
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="no-data">
+                {hasManagerPermission()
+                  ? "No product performance data available"
+                  : "Manager access required to view product performance"}
+              </div>
+            )}
+          </div>
+
+          {/* Top Categories Chart */}
+          <div className="chart">
+            <h3>Top Categories</h3>
+            {productPerformanceData.top_categories.length > 0 ? (
+              <div style={{ height: "300px" }}>
+                <Bar
+                  data={{
+                    labels: productPerformanceData.top_categories.map(
+                      (item) => item.name,
+                    ),
+                    datasets: [
+                      {
+                        label: "Revenue",
+                        data: productPerformanceData.top_categories.map(
+                          (item) => item.revenue,
+                        ),
+                        backgroundColor:
+                          productPerformanceData.top_categories.map(
+                            (_, index) =>
+                              [
+                                "#6366f1",
+                                "#ec4899",
+                                "#10b981",
+                                "#3b82f6",
+                                "#f59e0b",
+                              ][index % 5],
+                          ),
+                      },
+                    ],
+                  }}
+                  options={{
+                    indexAxis: "y",
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        display: false,
+                      },
+                      tooltip: {
+                        backgroundColor: tooltipStyle.backgroundColor,
+                        titleColor: tooltipStyle.color,
+                        bodyColor: tooltipStyle.color,
+                        callbacks: {
+                          label: (context) => {
+                            let label = context.dataset.label || "";
+                            if (label) {
+                              label += ": ";
+                            }
+                            if (context.parsed.x !== null) {
+                              label += formatCurrency(context.parsed.x);
+                            }
+                            return label;
+                          },
+                        },
+                      },
+                    },
+                    scales: {
+                      x: {
+                        grid: {
+                          color: "rgba(255, 255, 255, 0.1)",
+                        },
+                        ticks: {
+                          color: "#ffffff",
+                          callback: (value) => formatCurrency(value),
+                        },
+                      },
+                      y: {
+                        grid: {
+                          color: "rgba(255, 255, 255, 0.1)",
+                        },
+                        ticks: {
+                          color: "#ffffff",
+                        },
+                      },
+                    },
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="no-data">
+                {hasManagerPermission()
+                  ? "No category performance data available"
+                  : "Manager access required to view category performance"}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="secondary-charts">
+          {/* Stock Status Chart */}
+          <div className="chart">
+            <h3>Stock Status</h3>
+            {inventoryData.stockStatus.length > 0 ? (
+              <div style={{ height: "200px" }}>
+                <Doughnut
+                  data={{
+                    labels: inventoryData.stockStatus.map((item) => item.name),
+                    datasets: [
+                      {
+                        data: inventoryData.stockStatus.map(
+                          (item) => item.value,
+                        ),
+                        backgroundColor: inventoryData.stockStatus.map(
+                          (item) => item.color,
+                        ),
+                      },
+                    ],
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        position: "right",
+                        labels: {
+                          color: "#ffffff",
+                        },
+                      },
+                      tooltip: {
+                        backgroundColor: tooltipStyle.backgroundColor,
+                        titleColor: tooltipStyle.color,
+                        bodyColor: tooltipStyle.color,
+                      },
+                    },
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="no-data">
+                {hasManagerPermission()
+                  ? "No stock status data available"
+                  : "Manager access required to view stock status"}
+              </div>
+            )}
+          </div>
+
+          {/* Recent Sales */}
+          <div className="chart">
+            <h3>Recent Sales</h3>
+            {recentSales.length > 0 ? (
+              <div className="recent-sales">
+                {recentSales.slice(0, 10).map((sale, index) => (
+                  <div key={sale.invoice_id || index} className="sale-item">
+                    <div className="sale-info">
+                      <p className="sale-name">{sale.customer}</p>
+                      <p className="sale-date">
+                        {sale.formatted_date ||
+                          new Date(sale.date).toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="sale-details">
+                      <p
+                        className={`sale-status ${sale.margin > 0 ? "completed" : "credit"}`}
+                      >
+                        {sale.items} items
+                      </p>
+                      <p className="sale-amount">
+                        XFA {Math.round(sale.total).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="no-data">
+                {hasManagerPermission()
+                  ? "No recent sales data available"
+                  : "Manager access required to view recent sales"}
+              </div>
+            )}
+          </div>
+
+          {/* Inventory Alerts */}
+          <div className="chart">
+            <h3>Inventory Alerts</h3>
+            {inventoryData.alerts ? (
+              <div className="inventory-alerts">
+                <div className="alert-item">
+                  <div className="alert-icon low-stock">
+                    <span>{inventoryData.alerts.lowStock || 0}</span>
+                  </div>
+                  <div className="alert-info">
+                    <p className="alert-title">Low Stock</p>
+                    <p className="alert-desc">
+                      Products below minimum quantity
+                    </p>
+                  </div>
+                </div>
+                <div className="alert-item">
+                  <div className="alert-icon out-of-stock">
+                    <span>{inventoryData.alerts.outOfStock || 0}</span>
+                  </div>
+                  <div className="alert-info">
+                    <p className="alert-title">Out of Stock</p>
+                    <p className="alert-desc">Products with zero quantity</p>
+                  </div>
+                </div>
+                <div className="alert-item">
+                  <div className="alert-icon overstocked">
+                    <span>{inventoryData.alerts.overstocked || 0}</span>
+                  </div>
+                  <div className="alert-info">
+                    <p className="alert-title">Overstocked</p>
+                    <p className="alert-desc">Products with excess inventory</p>
+                  </div>
+                </div>
+                <div className="alert-item">
+                  <div className="alert-icon critical">
+                    <span>{inventoryData.alerts.critical || 0}</span>
+                  </div>
+                  <div className="alert-info">
+                    <p className="alert-title">Critical</p>
+                    <p className="alert-desc">
+                      Products requiring immediate attention
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="no-data">
+                {hasManagerPermission()
+                  ? "No inventory alerts available"
+                  : "Manager access required to view inventory alerts"}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Sales by Category Chart */}
+        <div className="additional-charts">
+          <div className="chart">
+            <h3>Sales by Category</h3>
+            {salesByCategoryData.length > 0 ? (
+              <div style={{ height: "250px" }}>
+                <Doughnut
+                  data={{
+                    labels: salesByCategoryData.map((item) => item.name),
+                    datasets: [
+                      {
+                        data: salesByCategoryData.map((item) => item.value),
+                        backgroundColor: salesByCategoryData.map(
+                          (item) => item.fill,
+                        ),
+                        borderWidth: 1,
+                      },
+                    ],
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        position: "right",
+                        labels: {
+                          color: "#ffffff",
+                          padding: 15,
+                          font: {
+                            size: 12,
+                          },
+                        },
+                      },
+                      tooltip: {
+                        callbacks: {
+                          title: (context) => context[0].label,
+                          label: (context) => {
+                            const label = context.label || "";
+                            const value = context.raw || 0;
+                            const total = context.dataset.data.reduce(
+                              (a, b) => a + b,
+                              0,
+                            );
+                            const percentage = ((value / total) * 100).toFixed(
+                              1,
+                            );
+                            return `${label}: ${formatCurrency(value)} (${percentage}%)`;
+                          },
+                        },
+                        backgroundColor: tooltipStyle.backgroundColor,
+                        titleColor: tooltipStyle.color,
+                        bodyColor: tooltipStyle.color,
+                      },
+                    },
+                    cutout: "60%",
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="no-data">
+                {hasManagerPermission()
+                  ? "No sales by category data available"
+                  : "Manager access required to view category data"}
+              </div>
+            )}
+          </div>
+
+          {/* Product Margin Analysis */}
+          <div className="chart">
+            <h3>Product Margin Analysis</h3>
+            {productPerformanceData.top_products.length > 0 ? (
+              <div style={{ height: "250px" }}>
+                <Bar
+                  data={{
+                    labels: productPerformanceData.top_products.map(
+                      (item) => item.name,
+                    ),
+                    datasets: [
+                      {
+                        label: "Margin %",
+                        data: productPerformanceData.top_products.map(
+                          (item) => item.margin,
+                        ),
+                        backgroundColor:
+                          productPerformanceData.top_products.map((item) =>
+                            item.margin >= 0 ? "#10b981" : "#ef4444",
+                          ),
+                      },
+                    ],
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        display: false,
+                      },
+                      tooltip: {
+                        backgroundColor: tooltipStyle.backgroundColor,
+                        titleColor: tooltipStyle.color,
+                        bodyColor: tooltipStyle.color,
+                        callbacks: {
+                          label: (context) => {
+                            let label = context.dataset.label || "";
+                            if (label) {
+                              label += ": ";
+                            }
+                            if (context.parsed.y !== null) {
+                              label += `${context.parsed.y.toFixed(1)}%`;
+                            }
+                            label += `${context.parsed.y.toFixed(1)}%`;
+                            return label;
+                          },
+                        },
+                      },
+                    },
+                    scales: {
+                      x: {
+                        grid: {
+                          color: "rgba(255, 255, 255, 0.1)",
+                        },
+                        ticks: {
+                          color: "#ffffff",
+                        },
+                      },
+                      y: {
+                        grid: {
+                          color: "rgba(255, 255, 255, 0.1)",
+                        },
+                        ticks: {
+                          color: "#ffffff",
+                          callback: (value) => `${value}%`,
+                        },
+                      },
+                    },
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="no-data">
+                {hasManagerPermission()
+                  ? "No product margin data available"
+                  : "Manager access required to view margin data"}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* User Management Modal */}
+        {showUserModal && (
+          <div className="modal-overlay">
+            <div className="modal-content user-modal">
+              <div className="modal-header">
+                <h3>Customer Management</h3>
+                <button
+                  className="close-modal-btn"
+                  onClick={() => {
+                    setShowUserModal(false);
+                    setEditingUser(null);
+                    setConfirmDelete(null);
+                    setError(null);
+                  }}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="modal-body">
+                {error && (
+                  <div className="error-message">
+                    {error}
+                    {!isAuthenticated && (
+                      <button
+                        className="login-button-small"
+                        onClick={handleLogin}
+                      >
+                        Login
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* Debug info panel */}
+                {debugInfo && (
+                  <div className="debug-panel">
+                    <h4>Debug Information</h4>
+                    <p>Current Role: {currentUserRole || "Not set"}</p>
+                  </div>
+                )}
+
+                <div className="user-management-header">
+                  <div className="search-container">
+                    <Search className="search-icon" size={18} />
+                    <input
+                      type="text"
+                      placeholder="Search users by name, email or phone..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="search-input"
+                    />
+                  </div>
+
+                  {isAuthenticated && hasManagerPermission() && (
                     <button
-                      className="login-button-small"
+                      className="create-user-btn"
+                      onClick={() => setShowCreateUserModal(true)}
+                    >
+                      <Plus size={16} /> Add User
+                    </button>
+                  )}
+                </div>
+
+                {isLoading && !users.length ? (
+                  <div className="loading-state">
+                    <Loader size={40} className="spin" />
+                    <p>Loading users...</p>
+                  </div>
+                ) : !isAuthenticated ? (
+                  <div className="auth-required">
+                    <User size={48} />
+                    <p>Please log in to view and manage users</p>
+                    <button
+                      className="login-button-modal"
                       onClick={handleLogin}
                     >
                       Login
                     </button>
-                  )}
-                </div>
-              )}
-
-              {/* Debug info panel */}
-              {debugInfo && (
-                <div className="debug-panel">
-                  <h4>Debug Information</h4>
-                  <p>Current Role: {currentUserRole || "Not set"}</p>
-                </div>
-              )}
-
-              <div className="user-management-header">
-                <div className="search-container">
-                  <Search className="search-icon" size={18} />
-                  <input
-                    type="text"
-                    placeholder="Search users by name, email or phone..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="search-input"
-                  />
-                </div>
-
-                {isAuthenticated && hasManagerPermission() && (
-                  <button
-                    className="create-user-btn"
-                    onClick={() => setShowCreateUserModal(true)}
-                  >
-                    <Plus size={16} /> Add User
-                  </button>
-                )}
-              </div>
-
-              {isLoading && !users.length ? (
-                <div className="loading-state">
-                  <Loader size={40} className="spin" />
-                  <p>Loading users...</p>
-                </div>
-              ) : !isAuthenticated ? (
-                <div className="auth-required">
-                  <User size={48} />
-                  <p>Please log in to view and manage users</p>
-                  <button className="login-button-modal" onClick={handleLogin}>
-                    Login
-                  </button>
-                </div>
-              ) : users.length === 0 && !isLoading ? (
-                <div className="no-users">No users found</div>
-              ) : (
-                <div className="users-list">
-                  <div className="user-item header">
-                    <div className="user-info">
-                      <div className="user-name">Username</div>
-                      <div className="user-email">Email</div>
-                      <div className="user-phone">Phone</div>
-                      <div className="user-role">Role</div>
-                      <div className="user-status">Status</div>
-                    </div>
-                    {hasManagerPermission() && (
-                      <div className="user-actions">Actions</div>
-                    )}
                   </div>
-
-                  {filteredUsers.map((user) => (
-                    <div key={user.id} className="user-item">
-                      {editingUser && editingUser.id === user.id ? (
-                        // Edit mode - only shown for managers
-                        <div className="user-edit">
-                          <div className="user-edit-fields">
-                            <input
-                              type="text"
-                              value={editingUser.username}
-                              onChange={(e) =>
-                                handleInputChange("username", e.target.value)
-                              }
-                              placeholder="Username"
-                            />
-                            <input
-                              type="email"
-                              value={editingUser.email}
-                              onChange={(e) =>
-                                handleInputChange("email", e.target.value)
-                              }
-                              placeholder="Email"
-                            />
-                            <input
-                              type="text"
-                              value={editingUser.phone_number || ""}
-                              onChange={(e) =>
-                                handleInputChange(
-                                  "phone_number",
-                                  e.target.value,
-                                )
-                              }
-                              placeholder="Phone"
-                            />
-                            <select
-                              value={editingUser.role}
-                              onChange={(e) =>
-                                handleInputChange("role", e.target.value)
-                              }
-                            >
-                              {availableRoles.map((role) => (
-                                <option key={role} value={role}>
-                                  {role}
-                                </option>
-                              ))}
-                            </select>
-                            <select
-                              value={editingUser.is_active.toString()}
-                              onChange={(e) =>
-                                handleInputChange(
-                                  "is_active",
-                                  e.target.value === "true",
-                                )
-                              }
-                            >
-                              <option value="true">Active</option>
-                              <option value="false">Inactive</option>
-                            </select>
-                          </div>
-                          <div className="user-edit-actions">
-                            <button
-                              className="save-btn"
-                              onClick={() => updateUser(editingUser)}
-                              disabled={isLoading}
-                            >
-                              {isLoading ? (
-                                <Loader size={16} className="spin" />
-                              ) : (
-                                <Save size={16} />
-                              )}
-                            </button>
-                            <button
-                              className="cancel-btn"
-                              onClick={() => setEditingUser(null)}
-                            >
-                              <X size={16} />
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        // View mode - shown for all users, but actions only for managers
-                        <>
-                          <div className="user-info">
-                            <div className="user-name">{user.username}</div>
-                            <div className="user-email">{user.email}</div>
-                            <div className="user-phone">
-                              {user.phone_number || "N/A"}
-                            </div>
-                            <div className="user-role">{user.role}</div>
-                            <div
-                              className={`user-status ${user.is_active ? "active" : "inactive"}`}
-                            >
-                              {user.is_active ? "Active" : "Inactive"}
-                            </div>
-                          </div>
-                          {hasManagerPermission() && (
-                            <div className="user-actions">
-                              <button
-                                className="edit-btn"
-                                onClick={() => startEditing(user)}
-                              >
-                                <Edit size={16} />
-                              </button>
-                              <button
-                                className="delete-btn"
-                                onClick={() => setConfirmDelete(user.id)}
-                              >
-                                <Trash size={16} />
-                              </button>
-                            </div>
-                          )}
-                        </>
+                ) : users.length === 0 && !isLoading ? (
+                  <div className="no-users">No users found</div>
+                ) : (
+                  <div className="users-list">
+                    <div className="user-item header">
+                      <div className="user-info">
+                        <div className="user-name">Username</div>
+                        <div className="user-email">Email</div>
+                        <div className="user-phone">Phone</div>
+                        <div className="user-role">Role</div>
+                        <div className="user-status">Status</div>
+                      </div>
+                      {hasManagerPermission() && (
+                        <div className="user-actions">Actions</div>
                       )}
                     </div>
-                  ))}
-                </div>
-              )}
+
+                    {filteredUsers.map((user) => (
+                      <div key={user.id} className="user-item">
+                        {editingUser && editingUser.id === user.id ? (
+                          // Edit mode - only shown for managers
+                          <div className="user-edit">
+                            <div className="user-edit-fields">
+                              <input
+                                type="text"
+                                value={editingUser.username}
+                                onChange={(e) =>
+                                  handleInputChange("username", e.target.value)
+                                }
+                                placeholder="Username"
+                              />
+                              <input
+                                type="email"
+                                value={editingUser.email}
+                                onChange={(e) =>
+                                  handleInputChange("email", e.target.value)
+                                }
+                                placeholder="Email"
+                              />
+                              <input
+                                type="text"
+                                value={editingUser.phone_number || ""}
+                                onChange={(e) =>
+                                  handleInputChange(
+                                    "phone_number",
+                                    e.target.value,
+                                  )
+                                }
+                                placeholder="Phone"
+                              />
+                              <select
+                                value={editingUser.role}
+                                onChange={(e) =>
+                                  handleInputChange("role", e.target.value)
+                                }
+                              >
+                                {availableRoles.map((role) => (
+                                  <option key={role} value={role}>
+                                    {role}
+                                  </option>
+                                ))}
+                              </select>
+                              <select
+                                value={editingUser.is_active.toString()}
+                                onChange={(e) =>
+                                  handleInputChange(
+                                    "is_active",
+                                    e.target.value === "true",
+                                  )
+                                }
+                              >
+                                <option value="true">Active</option>
+                                <option value="false">Inactive</option>
+                              </select>
+                            </div>
+                            <div className="user-edit-actions">
+                              <button
+                                className="save-btn"
+                                onClick={() => updateUser(editingUser)}
+                                disabled={isLoading}
+                              >
+                                {isLoading ? (
+                                  <Loader size={16} className="spin" />
+                                ) : (
+                                  <Save size={16} />
+                                )}
+                              </button>
+                              <button
+                                className="cancel-btn"
+                                onClick={() => setEditingUser(null)}
+                              >
+                                <X size={16} />
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          // View mode - shown for all users, but actions only for managers
+                          <>
+                            <div className="user-info">
+                              <div className="user-name">{user.username}</div>
+                              <div className="user-email">{user.email}</div>
+                              <div className="user-phone">
+                                {user.phone_number || "N/A"}
+                              </div>
+                              <div className="user-role">{user.role}</div>
+                              <div
+                                className={`user-status ${user.is_active ? "active" : "inactive"}`}
+                              >
+                                {user.is_active ? "Active" : "Inactive"}
+                              </div>
+                            </div>
+                            {hasManagerPermission() && (
+                              <div className="user-actions">
+                                <button
+                                  className="edit-btn"
+                                  onClick={() => startEditing(user)}
+                                >
+                                  <Edit size={16} />
+                                </button>
+                                <button
+                                  className="delete-btn"
+                                  onClick={() => setConfirmDelete(user.id)}
+                                >
+                                  <Trash size={16} />
+                                </button>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Create User Modal */}
-      {showCreateUserModal && (
-        <div className="modal-overlay">
-          <div className="modal-content create-user-modal">
-            <div className="modal-header">
-              <h3>Create New User</h3>
-              <button
-                className="close-modal-btn"
-                onClick={() => {
-                  setShowCreateUserModal(false);
-                  setError(null);
-                }}
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="modal-body">
-              {error && <div className="error-message">{error}</div>}
-
-              <div className="form-group">
-                <label htmlFor="username">Username *</label>
-                <input
-                  id="username"
-                  type="text"
-                  value={newUser.username}
-                  onChange={(e) =>
-                    handleNewUserInputChange("username", e.target.value)
-                  }
-                  placeholder="Enter username"
-                  required
-                />
+        {/* Create User Modal */}
+        {showCreateUserModal && (
+          <div className="modal-overlay">
+            <div className="modal-content create-user-modal">
+              <div className="modal-header">
+                <h3>Create New User</h3>
+                <button
+                  className="close-modal-btn"
+                  onClick={() => {
+                    setShowCreateUserModal(false);
+                    setError(null);
+                  }}
+                >
+                  <X size={20} />
+                </button>
               </div>
 
-              <div className="form-group">
-                <label htmlFor="email">Email *</label>
-                <input
-                  id="email"
-                  type="email"
-                  value={newUser.email}
-                  onChange={(e) =>
-                    handleNewUserInputChange("email", e.target.value)
-                  }
-                  placeholder="Enter email"
-                  required
-                />
-              </div>
+              <div className="modal-body">
+                {error && <div className="error-message">{error}</div>}
 
-              <div className="form-group">
-                <label htmlFor="phone_number">Phone Number</label>
-                <input
-                  id="phone_number"
-                  type="text"
-                  value={newUser.phone_number}
-                  onChange={(e) =>
-                    handleNewUserInputChange("phone_number", e.target.value)
-                  }
-                  placeholder="Enter phone number (optional)"
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="password">Password *</label>
-                <div className="password-input-container">
+                <div className="form-group">
+                  <label htmlFor="username">Username *</label>
                   <input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    value={newUser.password}
+                    id="username"
+                    type="text"
+                    value={newUser.username}
                     onChange={(e) =>
-                      handleNewUserInputChange("password", e.target.value)
+                      handleNewUserInputChange("username", e.target.value)
                     }
-                    placeholder="Enter password"
+                    placeholder="Enter username"
                     required
                   />
-                  <button
-                    type="button"
-                    className="toggle-password-btn"
-                    onClick={() => setShowPassword(!showPassword)}
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="email">Email *</label>
+                  <input
+                    id="email"
+                    type="email"
+                    value={newUser.email}
+                    onChange={(e) =>
+                      handleNewUserInputChange("email", e.target.value)
+                    }
+                    placeholder="Enter email"
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="phone_number">Phone Number</label>
+                  <input
+                    id="phone_number"
+                    type="text"
+                    value={newUser.phone_number}
+                    onChange={(e) =>
+                      handleNewUserInputChange("phone_number", e.target.value)
+                    }
+                    placeholder="Enter phone number (optional)"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="password">Password *</label>
+                  <div className="password-input-container">
+                    <input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      value={newUser.password}
+                      onChange={(e) =>
+                        handleNewUserInputChange("password", e.target.value)
+                      }
+                      placeholder="Enter password"
+                      required
+                    />
+                    <button
+                      type="button"
+                      className="toggle-password-btn"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <FaEyeSlash size={16} />
+                      ) : (
+                        <FaEye size={16} />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="role">Role</label>
+                  <select
+                    id="role"
+                    value={newUser.role}
+                    onChange={(e) =>
+                      handleNewUserInputChange("role", e.target.value)
+                    }
                   >
-                    {showPassword ? (
-                      <FaEyeSlash size={16} />
-                    ) : (
-                      <FaEye size={16} />
-                    )}
-                  </button>
+                    {availableRoles.map((role) => (
+                      <option key={role} value={role}>
+                        {role}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="is_active">Status</label>
+                  <select
+                    id="is_active"
+                    value={newUser.is_active.toString()}
+                    onChange={(e) =>
+                      handleNewUserInputChange(
+                        "is_active",
+                        e.target.value === "true",
+                      )
+                    }
+                  >
+                    <option value="true">Active</option>
+                    <option value="false">Inactive</option>
+                  </select>
                 </div>
               </div>
 
-              <div className="form-group">
-                <label htmlFor="role">Role</label>
-                <select
-                  id="role"
-                  value={newUser.role}
-                  onChange={(e) =>
-                    handleNewUserInputChange("role", e.target.value)
-                  }
+              <div className="modal-footer">
+                <button
+                  className="cancel-btn"
+                  onClick={() => setShowCreateUserModal(false)}
                 >
-                  {availableRoles.map((role) => (
-                    <option key={role} value={role}>
-                      {role}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="is_active">Status</label>
-                <select
-                  id="is_active"
-                  value={newUser.is_active.toString()}
-                  onChange={(e) =>
-                    handleNewUserInputChange(
-                      "is_active",
-                      e.target.value === "true",
-                    )
-                  }
+                  Cancel
+                </button>
+                <button
+                  className="create-btn"
+                  onClick={createUser}
+                  disabled={isLoading}
                 >
-                  <option value="true">Active</option>
-                  <option value="false">Inactive</option>
-                </select>
+                  {isLoading ? (
+                    <Loader size={16} className="spin" />
+                  ) : (
+                    "Create User"
+                  )}
+                </button>
               </div>
             </div>
+          </div>
+        )}
 
-            <div className="modal-footer">
-              <button
-                className="cancel-btn"
-                onClick={() => setShowCreateUserModal(false)}
-              >
-                Cancel
-              </button>
-              <button
-                className="create-btn"
-                onClick={createUser}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <Loader size={16} className="spin" />
-                ) : (
-                  "Create User"
-                )}
-              </button>
+        {/* Confirm Delete Modal */}
+        {confirmDelete && (
+          <div className="modal-overlay">
+            <div className="modal-content confirm-modal">
+              <div className="modal-header">
+                <h3>Confirm Delete</h3>
+                <button
+                  className="close-modal-btn"
+                  onClick={() => setConfirmDelete(null)}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="modal-body">
+                <p>Are you sure you want to delete this user?</p>
+                <p>This action cannot be undone.</p>
+              </div>
+              <div className="modal-footer">
+                <button
+                  className="cancel-btn"
+                  onClick={() => setConfirmDelete(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="delete-btn"
+                  onClick={() => deleteUser(confirmDelete)}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <Loader size={16} className="spin" />
+                  ) : (
+                    "Delete User"
+                  )}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Confirm Delete Modal */}
-      {confirmDelete && (
-        <div className="modal-overlay">
-          <div className="modal-content confirm-modal">
-            <div className="modal-header">
-              <h3>Confirm Delete</h3>
-              <button
-                className="close-modal-btn"
-                onClick={() => setConfirmDelete(null)}
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <div className="modal-body">
-              <p>Are you sure you want to delete this user?</p>
-              <p>This action cannot be undone.</p>
-            </div>
-            <div className="modal-footer">
-              <button
-                className="cancel-btn"
-                onClick={() => setConfirmDelete(null)}
-              >
-                Cancel
-              </button>
-              <button
-                className="delete-btn"
-                onClick={() => deleteUser(confirmDelete)}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <Loader size={16} className="spin" />
-                ) : (
-                  "Delete User"
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </MainContent>
   );
 };
 

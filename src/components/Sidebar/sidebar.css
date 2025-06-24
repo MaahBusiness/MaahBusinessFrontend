@@ -21,14 +21,15 @@
 
 /* Sidebar header */
 .sidebar-header {
+  display: flex;
+  align-items: center;
   height: var(--navbar-height);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 1.2rem 1rem;
+  padding: 1rem 0 1rem 2rem;
 }
 
 .sidebar-header h2 {
-  text-align: center;
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   font-weight: 600;
   color: #6366f1;
   white-space: nowrap;

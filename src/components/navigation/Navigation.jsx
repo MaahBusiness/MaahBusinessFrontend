@@ -134,22 +134,15 @@ const Navbar = () => {
                   </div>
                 </Link>
               </li>
+              <li
+                className={`profile-icon ${location.pathname.startsWith("/profile") ? "active" : ""}`}
+              >
+                <Link to="/profile/info" title={`Profile: ${username}`}>
+                  <FaUserCircle size={28} />
+                </Link>
+              </li>
             </>
           )}
-          {/* Profile icon - changes behavior based on login status */}
-          <li
-            className={`profile-icon ${location.pathname.startsWith("/profile") ? "active" : ""}`}
-          >
-            {isLoggedIn ? (
-              <Link to="/profile/info" title={`Profile: ${username}`}>
-                <FaUserCircle size={28} />
-              </Link>
-            ) : (
-              <Link to="/login" title="Sign in to view profile">
-                <FaUserCircle size={28} />
-              </Link>
-            )}
-          </li>
         </ul>
       </div>
     </nav>

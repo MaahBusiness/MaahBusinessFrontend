@@ -1,9 +1,6 @@
 /* Dashboard - Modern Color UI */
 .dashboard {
   padding: 2rem;
-  width: 80%;
-  position: absolute;
-  left: 18%;
   margin: 0 auto;
   color: #f8f9fa;
 }
@@ -24,19 +21,23 @@
   font-size: 2rem;
   font-weight: 700;
   color: #6366f1;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   letter-spacing: -0.5px;
 }
 
 /* Dashboard Header */
 .dashboard-header {
   display: flex;
-  justify-content: space-between;
-
-  align-items: flex-end;
+  flex-direction: column;
   margin-bottom: 2rem;
+}
+
+.dashHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
   width: 100%;
-  border-radius: 0.5em;
 }
 
 .dashboard-actions {
@@ -184,6 +185,7 @@
 }
 .date-range-filter {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 12px;
   background: rgba(0, 0, 0, 0.2);
@@ -224,6 +226,7 @@
   align-items: center;
   gap: 6px;
   transition: background-color 0.2s;
+  margin-left: 1rem;
 }
 
 .refresh-btn:hover {
@@ -381,7 +384,6 @@
 @media (max-width: 768px) {
   .date-range-filter {
     flex-direction: column;
-    align-items: flex-start;
     gap: 8px;
     width: 100%;
   }
@@ -939,7 +941,6 @@
   display: flex;
   gap: 0.5rem;
   justify-content: flex-end;
-  min-width: 80px;
 }
 
 /* Fix for the edit and delete buttons not showing on desktop */
@@ -1423,13 +1424,6 @@
     padding: 1.25rem;
     height: auto;
   }
-}
-
-.title-section {
-  display: flex;
-  align-items: center;
-  flex-direction: column;
-  gap: 1rem;
 }
 
 /* Update the period filter background color */
