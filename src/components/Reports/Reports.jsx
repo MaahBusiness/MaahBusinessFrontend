@@ -25,6 +25,7 @@ import {
   Download,
 } from "lucide-react";
 import "./reports.css";
+import MainContent from "../MainContend";
 
 const Reports = () => {
   const navigate = useNavigate();
@@ -683,7 +684,8 @@ const Reports = () => {
 
       // If report generation didn't return useful data, try the dashboard API
       // Build URL with query parameters for the dashboard API
-      let url = "https://victbackendmanagement.onrender.com/api/v1/dashboard/inventory/";
+      let url =
+        "https://victbackendmanagement.onrender.com/api/v1/dashboard/inventory/";
       const params = new URLSearchParams();
 
       // Only add date parameters if they are not empty strings
@@ -1208,533 +1210,700 @@ const Reports = () => {
   };
 
   return (
-    <div className="report-container">
-      <div className="report-wrapper">
-        <div className="report-header-bar">
-          <h1 className="report-title">
-            <FileText className="title-icon" />
-            Report Generator
-          </h1>
-        </div>
-
-        <div className="report-grid">
-          {/* Report Generator Section */}
-          <div className="report-form-card">
-            <div className="report-form-header">
-              <h2 className="form-title">
-                <BarChart className="form-title-icon" />
-                Generate Report
-              </h2>
-              <p className="form-description">
-                Create and view detailed reports
-              </p>
-            </div>
-            <div className="form-content">
-              {/* Generate Report Button */}
-              <button onClick={openReportModal} className="generate-report-btn">
-                <Plus size={18} />
-                <span>Generate New Report</span>
-              </button>
-
-              {/* Saved Reports Section */}
-              {savedReports.length > 0 && (
-                <div className="saved-reports-section">
-                  <h3 className="saved-reports-title">
-                    <Database size={16} className="section-icon" />
-                    Saved Reports
-                  </h3>
-                  <div className="saved-reports-list">
-                    {(() => {
-                      // Calculate pagination
-                      const indexOfLastReport =
-                        reportsCurrentPage * reportsPerPage;
-                      const indexOfFirstReport =
-                        indexOfLastReport - reportsPerPage;
-                      const currentReports = savedReports.slice(
-                        indexOfFirstReport,
-                        indexOfLastReport,
-                      );
-                      const totalPages = Math.ceil(
-                        savedReports.length / reportsPerPage,
-                      );
-
-                      return (
-                        <>
-                          {currentReports.map((savedReport) => {
-                            const reportId =
-                              savedReport.id || savedReport.report_id;
-                            const reportType =
-                              savedReport.report_type ||
-                              (savedReport.report_data &&
-                                savedReport.report_data.report_type) ||
-                              determineReportType(savedReport);
-                            const createdAt =
-                              savedReport.created_at ||
-                              (savedReport.report_data &&
-                                savedReport.report_data.created_at) ||
-                              savedReport.generated_at;
-
-                            return (
-                              <div
-                                key={reportId}
-                                className="saved-report-item"
-                                onClick={() => loadReport(reportId)}
-                              >
-                                <div className="saved-report-info">
-                                  <div className="saved-report-type">
-                                    {reportType === "inventory" ? (
-                                      <Package
-                                        size={14}
-                                        className="report-type-icon"
-                                      />
-                                    ) : (
-                                      <BarChart
-                                        size={14}
-                                        className="report-type-icon"
-                                      />
-                                    )}
-                                    {reportType.toUpperCase()}
-                                  </div>
-                                  <div className="saved-report-date">
-                                    <Calendar size={12} className="date-icon" />
-                                    {formatDate(createdAt)}
-                                  </div>
-                                </div>
-                                <div className="saved-report-actions">
-                                  <button
-                                    className="download-report-btn"
-                                    onClick={(e) => downloadReport(reportId, e)}
-                                    title="Download report"
-                                  >
-                                    <Download size={16} />
-                                  </button>
-                                  <button
-                                    className="delete-report-btn"
-                                    onClick={(e) => deleteReport(reportId, e)}
-                                    title="Delete report"
-                                  >
-                                    <X size={16} />
-                                  </button>
-                                </div>
-                              </div>
-                            );
-                          })}
-                          {renderReportsPaginationControls(
-                            savedReports.length,
-                            totalPages,
-                          )}
-                        </>
-                      );
-                    })()}
-                  </div>
-                </div>
-              )}
-            </div>
+    <MainContent>
+      <div className="report-container">
+        <div className="report-wrapper">
+          <div className="report-header-bar">
+            <h1 className="report-title">
+              <FileText className="title-icon" />
+              Report Generator
+            </h1>
           </div>
 
-          {/* Report Display */}
-          <div className="report-results-card">
-            <div className="report-results-header">
-              <h2 className="results-title">
-                <FileText className="results-title-icon" />
-                Report Results
-              </h2>
-              <p className="results-description">
-                {report
-                  ? `Generated on ${formatDate(report.created_at || (report.report_data && report.report_data.created_at))}`
-                  : "No report generated yet"}
-              </p>
-            </div>
-            <div className="results-content">
-              {error && (
-                <div className="error-message">
-                  <AlertCircle size={18} className="error-icon" />
-                  <span>{error}</span>
-                </div>
-              )}
-              {inventoryError && (
-                <div className="error-message">
-                  <AlertCircle size={18} className="error-icon" />
-                  <span>{inventoryError}</span>
-                </div>
-              )}
+          <div className="report-grid">
+            {/* Report Generator Section */}
+            <div className="report-form-card">
+              <div className="report-form-header">
+                <h2 className="form-title">
+                  <BarChart className="form-title-icon" />
+                  Generate Report
+                </h2>
+                <p className="form-description">
+                  Create and view detailed reports
+                </p>
+              </div>
+              <div className="form-content">
+                {/* Generate Report Button */}
+                <button
+                  onClick={openReportModal}
+                  className="generate-report-btn"
+                >
+                  <Plus size={18} />
+                  <span>Generate New Report</span>
+                </button>
 
-              {!report && !error && !isGenerating && !isLoadingInventory && (
-                <div className="empty-state">
-                  <FileText className="empty-icon" />
-                  <p className="empty-text">
-                    Click "Generate New Report" to create a report
-                  </p>
-                </div>
-              )}
+                {/* Saved Reports Section */}
+                {savedReports.length > 0 && (
+                  <div className="saved-reports-section">
+                    <h3 className="saved-reports-title">
+                      <Database size={16} className="section-icon" />
+                      Saved Reports
+                    </h3>
+                    <div className="saved-reports-list">
+                      {(() => {
+                        // Calculate pagination
+                        const indexOfLastReport =
+                          reportsCurrentPage * reportsPerPage;
+                        const indexOfFirstReport =
+                          indexOfLastReport - reportsPerPage;
+                        const currentReports = savedReports.slice(
+                          indexOfFirstReport,
+                          indexOfLastReport,
+                        );
+                        const totalPages = Math.ceil(
+                          savedReports.length / reportsPerPage,
+                        );
 
-              {(isGenerating || isLoadingInventory) && (
-                <div className="loading-state">
-                  <Loader2 className="loading-icon spin" />
-                  <p className="loading-text">Generating your report...</p>
-                </div>
-              )}
+                        return (
+                          <>
+                            {currentReports.map((savedReport) => {
+                              const reportId =
+                                savedReport.id || savedReport.report_id;
+                              const reportType =
+                                savedReport.report_type ||
+                                (savedReport.report_data &&
+                                  savedReport.report_data.report_type) ||
+                                determineReportType(savedReport);
+                              const createdAt =
+                                savedReport.created_at ||
+                                (savedReport.report_data &&
+                                  savedReport.report_data.created_at) ||
+                                savedReport.generated_at;
 
-              {report && (
-                <div className="report-data">
-                  {/* Report Header with Date Range */}
-                  <div className="report-header-section">
-                    <div className="report-type-badge">
-                      {report.report_type === "inventory" ||
-                      (report.report_data &&
-                        report.report_data.report_type === "inventory") ? (
-                        <Package size={14} className="badge-icon" />
-                      ) : (
-                        <BarChart size={14} className="badge-icon" />
-                      )}
-                      {(
-                        report.report_type ||
-                        (report.report_data &&
-                          report.report_data.report_type) ||
-                        determineReportType(report)
-                      ).toUpperCase()}
+                              return (
+                                <div
+                                  key={reportId}
+                                  className="saved-report-item"
+                                  onClick={() => loadReport(reportId)}
+                                >
+                                  <div className="saved-report-info">
+                                    <div className="saved-report-type">
+                                      {reportType === "inventory" ? (
+                                        <Package
+                                          size={14}
+                                          className="report-type-icon"
+                                        />
+                                      ) : (
+                                        <BarChart
+                                          size={14}
+                                          className="report-type-icon"
+                                        />
+                                      )}
+                                      {reportType.toUpperCase()}
+                                    </div>
+                                    <div className="saved-report-date">
+                                      <Calendar
+                                        size={12}
+                                        className="date-icon"
+                                      />
+                                      {formatDate(createdAt)}
+                                    </div>
+                                  </div>
+                                  <div className="saved-report-actions">
+                                    <button
+                                      className="download-report-btn"
+                                      onClick={(e) =>
+                                        downloadReport(reportId, e)
+                                      }
+                                      title="Download report"
+                                    >
+                                      <Download size={16} />
+                                    </button>
+                                    <button
+                                      className="delete-report-btn"
+                                      onClick={(e) => deleteReport(reportId, e)}
+                                      title="Delete report"
+                                    >
+                                      <X size={16} />
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                            {renderReportsPaginationControls(
+                              savedReports.length,
+                              totalPages,
+                            )}
+                          </>
+                        );
+                      })()}
                     </div>
-                    {(startDate || endDate) && (
-                      <div className="date-filter-info">
-                        <Calendar size={14} className="filter-icon" />
-                        <span className="date-filter-label">Date Range:</span>
-                        <span className="date-filter-value">
-                          {startDate ? formatDate(startDate) : "All time"} -
-                          {endDate ? formatDate(endDate) : "Present"}
-                        </span>
-                      </div>
-                    )}
-                    <button
-                      className="refresh-report-btn"
-                      onClick={refreshReport}
-                      title="Refresh report data from API"
-                    >
-                      <RefreshCw size={16} />
-                      <span>Refresh</span>
-                    </button>
                   </div>
+                )}
+              </div>
+            </div>
 
-                  <div className="report-content-section">
-                    {(report.report_type === "sales" ||
-                      (report.report_data &&
-                        report.report_data.report_type === "sales")) && (
-                      <>
-                        <div className="report-stats">
-                          <div className="stat-card">
-                            <div className="stat-card-icon sales">
-                              <ShoppingCart
-                                size={20}
-                                className="icon-shopping-cart"
-                              />
-                            </div>
-                            <div className="stat-content">
-                              <p className="stat-label">Completed Sales</p>
-                              <p className="stat-value">
-                                {getReportData("total_completed_sales") || 0}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="stat-card">
-                            <div className="stat-card-icon revenue">
-                              <DollarSign size={20} className="icon-dollar" />
-                            </div>
-                            <div className="stat-content">
-                              <p className="stat-label">Completed Revenue</p>
-                              <p
-                                className={`stat-value ${(getReportData("total_completed_revenue") || 0) < 0 ? "negative-value" : "primary"}`}
-                              >
-                                {formatCurrency(
-                                  getReportData("total_completed_revenue") || 0,
-                                ).replace(/<\/?span.*?>/g, "")}
-                              </p>
-                            </div>
-                          </div>
+            {/* Report Display */}
+            <div className="report-results-card">
+              <div className="report-results-header">
+                <h2 className="results-title">
+                  <FileText className="results-title-icon" />
+                  Report Results
+                </h2>
+                <p className="results-description">
+                  {report
+                    ? `Generated on ${formatDate(report.created_at || (report.report_data && report.report_data.created_at))}`
+                    : "No report generated yet"}
+                </p>
+              </div>
+              <div className="results-content">
+                {error && (
+                  <div className="error-message">
+                    <AlertCircle size={18} className="error-icon" />
+                    <span>{error}</span>
+                  </div>
+                )}
+                {inventoryError && (
+                  <div className="error-message">
+                    <AlertCircle size={18} className="error-icon" />
+                    <span>{inventoryError}</span>
+                  </div>
+                )}
+
+                {!report && !error && !isGenerating && !isLoadingInventory && (
+                  <div className="empty-state">
+                    <FileText className="empty-icon" />
+                    <p className="empty-text">
+                      Click "Generate New Report" to create a report
+                    </p>
+                  </div>
+                )}
+
+                {(isGenerating || isLoadingInventory) && (
+                  <div className="loading-state">
+                    <Loader2 className="loading-icon spin" />
+                    <p className="loading-text">Generating your report...</p>
+                  </div>
+                )}
+
+                {report && (
+                  <div className="report-data">
+                    {/* Report Header with Date Range */}
+                    <div className="report-header-section">
+                      <div className="report-type-badge">
+                        {report.report_type === "inventory" ||
+                        (report.report_data &&
+                          report.report_data.report_type === "inventory") ? (
+                          <Package size={14} className="badge-icon" />
+                        ) : (
+                          <BarChart size={14} className="badge-icon" />
+                        )}
+                        {(
+                          report.report_type ||
+                          (report.report_data &&
+                            report.report_data.report_type) ||
+                          determineReportType(report)
+                        ).toUpperCase()}
+                      </div>
+                      {(startDate || endDate) && (
+                        <div className="date-filter-info">
+                          <Calendar size={14} className="filter-icon" />
+                          <span className="date-filter-label">Date Range:</span>
+                          <span className="date-filter-value">
+                            {startDate ? formatDate(startDate) : "All time"} -
+                            {endDate ? formatDate(endDate) : "Present"}
+                          </span>
                         </div>
+                      )}
+                      <button
+                        className="refresh-report-btn"
+                        onClick={refreshReport}
+                        title="Refresh report data from API"
+                      >
+                        <RefreshCw size={16} />
+                        <span>Refresh</span>
+                      </button>
+                    </div>
 
-                        <div className="report-stats">
-                          <div className="stat-card">
-                            <div className="stat-card-icon credit">
-                              <ShoppingCart size={20} className="icon-credit" />
-                            </div>
-                            <div className="stat-content">
-                              <p className="stat-label">Credit Sales</p>
-                              <p className="stat-value">
-                                {getReportData("total_credit_sales") || 0}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="stat-card">
-                            <div className="stat-card-icon credit-revenue">
-                              <DollarSign
-                                size={20}
-                                className="icon-credit-revenue"
-                              />
-                            </div>
-                            <div className="stat-content">
-                              <p className="stat-label">Credit Revenue</p>
-                              <p
-                                className={`stat-value ${(getReportData("total_credit_revenue") || 0) < 0 ? "negative-value" : "primary"}`}
-                              >
-                                {formatCurrency(
-                                  getReportData("total_credit_revenue") || 0,
-                                ).replace(/<\/?span.*?>/g, "")}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="report-stats">
-                          <div className="stat-card">
-                            <div className="stat-card-icon total">
-                              <DollarSign size={20} className="icon-total" />
-                            </div>
-                            <div className="stat-content">
-                              <p className="stat-label">Total General</p>
-                              <p
-                                className={`stat-value ${(getReportData("total_general") || 0) < 0 ? "negative-value" : "primary"}`}
-                              >
-                                {formatCurrency(
-                                  getReportData("total_general") || 0,
-                                ).replace(/<\/?span.*?>/g, "")}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="stat-card">
-                            <div className="stat-card-icon discount">
-                              <DollarSign size={20} className="icon-discount" />
-                            </div>
-                            <div className="stat-content">
-                              <p className="stat-label">Total Discount</p>
-                              <p
-                                className={`stat-value ${(getReportData("total_discount") || 0) < 0 ? "negative-value" : "primary"}`}
-                              >
-                                {formatCurrency(
-                                  getReportData("total_discount") || 0,
-                                ).replace(/<\/?span.*?>/g, "")}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="report-stats">
-                          <div className="stat-card">
-                            <div className="stat-card-icon advance">
-                              <DollarSign size={20} className="icon-advance" />
-                            </div>
-                            <div className="stat-content">
-                              <p className="stat-label">Advance Paid</p>
-                              <p
-                                className={`stat-value ${(getReportData("total_advance_paid") || 0) < 0 ? "negative-value" : "primary"}`}
-                              >
-                                {formatCurrency(
-                                  getReportData("total_advance_paid") || 0,
-                                ).replace(/<\/?span.*?>/g, "")}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="stat-card">
-                            <div className="stat-card-icon outstanding">
-                              <DollarSign
-                                size={20}
-                                className="icon-outstanding"
-                              />
-                            </div>
-                            <div className="stat-content">
-                              <p className="stat-label">Money Outstanding</p>
-                              <p
-                                className={`stat-value ${(getReportData("money_outstanding") || 0) < 0 ? "negative-value" : "primary"}`}
-                              >
-                                {formatCurrency(
-                                  getReportData("money_outstanding") || 0,
-                                ).replace(/<\/?span.*?>/g, "")}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="report-stats">
-                          <div className="stat-card">
-                            <div className="stat-card-icon credit-profit">
-                              <DollarSign
-                                size={20}
-                                className="icon-credit-profit"
-                              />
-                            </div>
-                            <div className="stat-content">
-                              <p className="stat-label">Credit Profit</p>
-                              <p
-                                className={`stat-value ${(getReportData("credit_profit") || 0) < 0 ? "negative-value" : "primary"}`}
-                              >
-                                {formatCurrency(
-                                  getReportData("credit_profit") || 0,
-                                ).replace(/<\/?span.*?>/g, "")}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="stat-card">
-                            <div className="stat-card-icon marge-brute">
-                              <DollarSign
-                                size={20}
-                                className="icon-marge-brute"
-                              />
-                            </div>
-                            <div className="stat-content">
-                              <p className="stat-label">Marge Brute</p>
-                              <p
-                                className={`stat-value ${(getReportData("marge_brute") || 0) < 0 ? "negative-value" : "primary"}`}
-                              >
-                                {formatCurrency(
-                                  getReportData("marge_brute") || 0,
-                                ).replace(/<\/?span.*?>/g, "")}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="report-stats">
-                          <div className="stat-card">
-                            <div className="stat-card-icon marge-nette">
-                              <DollarSign
-                                size={20}
-                                className="icon-marge-nette"
-                              />
-                            </div>
-                            <div className="stat-content">
-                              <p className="stat-label">Marge Nette</p>
-                              <p
-                                className={`stat-value ${(getReportData("marge_nette") || 0) < 0 ? "negative-value" : "primary"}`}
-                              >
-                                {formatCurrency(
-                                  getReportData("marge_nette") || 0,
-                                ).replace(/<\/?span.*?>/g, "")}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="stat-card">
-                            <div className="stat-card-icon profit-brute">
-                              <DollarSign
-                                size={20}
-                                className="icon-profit-brute"
-                              />
-                            </div>
-                            <div className="stat-content">
-                              <p className="stat-label">Total Profit Brute</p>
-                              <p
-                                className={`stat-value ${(getReportData("total_profit_brute") || 0) < 0 ? "negative-value" : "primary"}`}
-                              >
-                                {formatCurrency(
-                                  getReportData("total_profit_brute") || 0,
-                                ).replace(/<\/?span.*?>/g, "")}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="report-stats">
-                          <div className="stat-card">
-                            <div className="stat-card-icon profit-nette">
-                              <DollarSign
-                                size={20}
-                                className="icon-profit-nette"
-                              />
-                            </div>
-                            <div className="stat-content">
-                              <p className="stat-label">Total Profit Nette</p>
-                              <p
-                                className={`stat-value ${(getReportData("total_profit_nette") || 0) < 0 ? "negative-value" : "primary"}`}
-                              >
-                                {formatCurrency(
-                                  getReportData("total_profit_nette") || 0,
-                                ).replace(/<\/?span.*?>/g, "")}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="report-table-section">
-                          <h4 className="table-title">
-                            <ShoppingCart size={16} className="table-icon" />
-                            Products Sold
-                          </h4>
-                          {renderSalesDataTable()}
-                        </div>
-                      </>
-                    )}
-
-                    {(report.report_type === "inventory" ||
-                      (report.report_data &&
-                        report.report_data.report_type === "inventory")) && (
-                      <>
-                        {/* Display inventory data from report_data if available */}
-                        {report.report_data &&
-                          report.report_data.product_list && (
-                            <>
-                              <div className="report-stats">
-                                <div className="stat-card">
-                                  <div className="stat-card-icon inventory">
-                                    <Package size={20} className="stat-icon" />
-                                  </div>
-                                  <div className="stat-content">
-                                    <p className="stat-label">Total Products</p>
-                                    <p className="stat-value">
-                                      {getReportData("total_products") || 0}
-                                    </p>
-                                  </div>
-                                </div>
-                                <div className="stat-card">
-                                  <div className="stat-card-icon warning">
-                                    <AlertCircle
-                                      size={20}
-                                      className="stat-icon"
-                                    />
-                                  </div>
-                                  <div className="stat-content">
-                                    <p className="stat-label">
-                                      Low Stock Products
-                                    </p>
-                                    <p className="stat-value warning">
-                                      {getReportData("low_stock_products") || 0}
-                                    </p>
-                                  </div>
-                                </div>
+                    <div className="report-content-section">
+                      {(report.report_type === "sales" ||
+                        (report.report_data &&
+                          report.report_data.report_type === "sales")) && (
+                        <>
+                          <div className="report-stats">
+                            <div className="stat-card">
+                              <div className="stat-card-icon sales">
+                                <ShoppingCart
+                                  size={20}
+                                  className="icon-shopping-cart"
+                                />
                               </div>
-
-                              <div className="report-stats">
-                                <div className="stat-card">
-                                  <div className="stat-card-icon danger">
-                                    <AlertCircle
-                                      size={20}
-                                      className="stat-icon"
-                                    />
-                                  </div>
-                                  <div className="stat-content">
-                                    <p className="stat-label">
-                                      Expired Products
-                                    </p>
-                                    <p className="stat-value danger">
-                                      {getReportData("expired_products") || 0}
-                                    </p>
-                                  </div>
-                                </div>
-                                <div className="stat-card">
-                                  <div className="stat-card-icon warning">
-                                    <AlertCircle
-                                      size={20}
-                                      className="stat-icon"
-                                    />
-                                  </div>
-                                  <div className="stat-content">
-                                    <p className="stat-label">Near Expiry</p>
-                                    <p className="stat-value warning">
-                                      {getReportData("near_expiry_count") || 0}
-                                    </p>
-                                  </div>
-                                </div>
+                              <div className="stat-content">
+                                <p className="stat-label">Completed Sales</p>
+                                <p className="stat-value">
+                                  {getReportData("total_completed_sales") || 0}
+                                </p>
                               </div>
+                            </div>
+                            <div className="stat-card">
+                              <div className="stat-card-icon revenue">
+                                <DollarSign size={20} className="icon-dollar" />
+                              </div>
+                              <div className="stat-content">
+                                <p className="stat-label">Completed Revenue</p>
+                                <p
+                                  className={`stat-value ${(getReportData("total_completed_revenue") || 0) < 0 ? "negative-value" : "primary"}`}
+                                >
+                                  {formatCurrency(
+                                    getReportData("total_completed_revenue") ||
+                                      0,
+                                  ).replace(/<\/?span.*?>/g, "")}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
 
-                              {/* Display product list from report_data if available */}
-                              {report.report_data.product_list &&
-                              report.report_data.product_list.length > 0 ? (
+                          {/* <div className="report-stats">
+                            <div className="stat-card">
+                              <div className="stat-card-icon credit">
+                                <ShoppingCart
+                                  size={20}
+                                  className="icon-credit"
+                                />
+                              </div>
+                              <div className="stat-content">
+                                <p className="stat-label">Credit Sales</p>
+                                <p className="stat-value">
+                                  {getReportData("total_credit_sales") || 0}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="stat-card">
+                              <div className="stat-card-icon credit-revenue">
+                                <DollarSign
+                                  size={20}
+                                  className="icon-credit-revenue"
+                                />
+                              </div>
+                              <div className="stat-content">
+                                <p className="stat-label">Credit Revenue</p>
+                                <p
+                                  className={`stat-value ${(getReportData("total_credit_revenue") || 0) < 0 ? "negative-value" : "primary"}`}
+                                >
+                                  {formatCurrency(
+                                    getReportData("total_credit_revenue") || 0,
+                                  ).replace(/<\/?span.*?>/g, "")}
+                                </p>
+                              </div>
+                            </div>
+                          </div> */}
+
+                          {/* <div className="report-stats">
+                            <div className="stat-card">
+                              <div className="stat-card-icon total">
+                                <DollarSign size={20} className="icon-total" />
+                              </div>
+                              <div className="stat-content">
+                                <p className="stat-label">Total General</p>
+                                <p
+                                  className={`stat-value ${(getReportData("total_general") || 0) < 0 ? "negative-value" : "primary"}`}
+                                >
+                                  {formatCurrency(
+                                    getReportData("total_general") || 0,
+                                  ).replace(/<\/?span.*?>/g, "")}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="stat-card">
+                              <div className="stat-card-icon discount">
+                                <DollarSign
+                                  size={20}
+                                  className="icon-discount"
+                                />
+                              </div>
+                              <div className="stat-content">
+                                <p className="stat-label">Total Discount</p>
+                                <p
+                                  className={`stat-value ${(getReportData("total_discount") || 0) < 0 ? "negative-value" : "primary"}`}
+                                >
+                                  {formatCurrency(
+                                    getReportData("total_discount") || 0,
+                                  ).replace(/<\/?span.*?>/g, "")}
+                                </p>
+                              </div>
+                            </div>
+                          </div> */}
+
+                          {/* <div className="report-stats">
+                            <div className="stat-card">
+                              <div className="stat-card-icon advance">
+                                <DollarSign
+                                  size={20}
+                                  className="icon-advance"
+                                />
+                              </div>
+                              <div className="stat-content">
+                                <p className="stat-label">Advance Paid</p>
+                                <p
+                                  className={`stat-value ${(getReportData("total_advance_paid") || 0) < 0 ? "negative-value" : "primary"}`}
+                                >
+                                  {formatCurrency(
+                                    getReportData("total_advance_paid") || 0,
+                                  ).replace(/<\/?span.*?>/g, "")}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="stat-card">
+                              <div className="stat-card-icon outstanding">
+                                <DollarSign
+                                  size={20}
+                                  className="icon-outstanding"
+                                />
+                              </div>
+                              <div className="stat-content">
+                                <p className="stat-label">Money Outstanding</p>
+                                <p
+                                  className={`stat-value ${(getReportData("money_outstanding") || 0) < 0 ? "negative-value" : "primary"}`}
+                                >
+                                  {formatCurrency(
+                                    getReportData("money_outstanding") || 0,
+                                  ).replace(/<\/?span.*?>/g, "")}
+                                </p>
+                              </div>
+                            </div>
+                          </div> */}
+
+                          {/* <div className="report-stats">
+                            <div className="stat-card">
+                              <div className="stat-card-icon credit-profit">
+                                <DollarSign
+                                  size={20}
+                                  className="icon-credit-profit"
+                                />
+                              </div>
+                              <div className="stat-content">
+                                <p className="stat-label">Credit Profit</p>
+                                <p
+                                  className={`stat-value ${(getReportData("credit_profit") || 0) < 0 ? "negative-value" : "primary"}`}
+                                >
+                                  {formatCurrency(
+                                    getReportData("credit_profit") || 0,
+                                  ).replace(/<\/?span.*?>/g, "")}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="stat-card">
+                              <div className="stat-card-icon marge-brute">
+                                <DollarSign
+                                  size={20}
+                                  className="icon-marge-brute"
+                                />
+                              </div>
+                              <div className="stat-content">
+                                <p className="stat-label">Marge Brute</p>
+                                <p
+                                  className={`stat-value ${(getReportData("marge_brute") || 0) < 0 ? "negative-value" : "primary"}`}
+                                >
+                                  {formatCurrency(
+                                    getReportData("marge_brute") || 0,
+                                  ).replace(/<\/?span.*?>/g, "")}
+                                </p>
+                              </div>
+                            </div>
+                          </div> */}
+
+                          {/* <div className="report-stats">
+                            <div className="stat-card">
+                              <div className="stat-card-icon marge-nette">
+                                <DollarSign
+                                  size={20}
+                                  className="icon-marge-nette"
+                                />
+                              </div>
+                              <div className="stat-content">
+                                <p className="stat-label">Marge Nette</p>
+                                <p
+                                  className={`stat-value ${(getReportData("marge_nette") || 0) < 0 ? "negative-value" : "primary"}`}
+                                >
+                                  {formatCurrency(
+                                    getReportData("marge_nette") || 0,
+                                  ).replace(/<\/?span.*?>/g, "")}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="stat-card">
+                              <div className="stat-card-icon profit-brute">
+                                <DollarSign
+                                  size={20}
+                                  className="icon-profit-brute"
+                                />
+                              </div>
+                              <div className="stat-content">
+                                <p className="stat-label">Total Profit Brute</p>
+                                <p
+                                  className={`stat-value ${(getReportData("total_profit_brute") || 0) < 0 ? "negative-value" : "primary"}`}
+                                >
+                                  {formatCurrency(
+                                    getReportData("total_profit_brute") || 0,
+                                  ).replace(/<\/?span.*?>/g, "")}
+                                </p>
+                              </div>
+                            </div>
+                          </div> */}
+
+                          {/* <div className="report-stats">
+                            <div className="stat-card">
+                              <div className="stat-card-icon profit-nette">
+                                <DollarSign
+                                  size={20}
+                                  className="icon-profit-nette"
+                                />
+                              </div>
+                              <div className="stat-content">
+                                <p className="stat-label">Total Profit Nette</p>
+                                <p
+                                  className={`stat-value ${(getReportData("total_profit_nette") || 0) < 0 ? "negative-value" : "primary"}`}
+                                >
+                                  {formatCurrency(
+                                    getReportData("total_profit_nette") || 0,
+                                  ).replace(/<\/?span.*?>/g, "")}
+                                </p>
+                              </div>
+                            </div>
+                          </div> */}
+
+                          {/* <div className="report-table-section">
+                            <h4 className="table-title">
+                              <ShoppingCart size={16} className="table-icon" />
+                              Products Sold
+                            </h4>
+                            {renderSalesDataTable()}
+                          </div> */}
+                        </>
+                      )}
+
+                      {(report.report_type === "inventory" ||
+                        (report.report_data &&
+                          report.report_data.report_type === "inventory")) && (
+                        <>
+                          {/* Display inventory data from report_data if available */}
+                          {report.report_data &&
+                            report.report_data.product_list && (
+                              <>
+                                <div className="report-stats">
+                                  <div className="stat-card">
+                                    <div className="stat-card-icon inventory">
+                                      <Package
+                                        size={20}
+                                        className="stat-icon"
+                                      />
+                                    </div>
+                                    <div className="stat-content">
+                                      <p className="stat-label">
+                                        Total Products
+                                      </p>
+                                      <p className="stat-value">
+                                        {getReportData("total_products") || 0}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="stat-card">
+                                    <div className="stat-card-icon warning">
+                                      <AlertCircle
+                                        size={20}
+                                        className="stat-icon"
+                                      />
+                                    </div>
+                                    <div className="stat-content">
+                                      <p className="stat-label">
+                                        Low Stock Products
+                                      </p>
+                                      <p className="stat-value warning">
+                                        {getReportData("low_stock_products") ||
+                                          0}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="report-stats">
+                                  <div className="stat-card">
+                                    <div className="stat-card-icon danger">
+                                      <AlertCircle
+                                        size={20}
+                                        className="stat-icon"
+                                      />
+                                    </div>
+                                    <div className="stat-content">
+                                      <p className="stat-label">
+                                        Expired Products
+                                      </p>
+                                      <p className="stat-value danger">
+                                        {getReportData("expired_products") || 0}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="stat-card">
+                                    <div className="stat-card-icon warning">
+                                      <AlertCircle
+                                        size={20}
+                                        className="stat-icon"
+                                      />
+                                    </div>
+                                    <div className="stat-content">
+                                      <p className="stat-label">Near Expiry</p>
+                                      <p className="stat-value warning">
+                                        {getReportData("near_expiry_count") ||
+                                          0}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Display product list from report_data if available */}
+                                {report.report_data.product_list &&
+                                report.report_data.product_list.length > 0 ? (
+                                  <div className="report-table-section">
+                                    <h4 className="table-title">
+                                      <Database
+                                        size={16}
+                                        className="table-icon"
+                                      />
+                                      Detailed Inventory
+                                    </h4>
+                                    <div className="table-container">
+                                      <table className="report-table">
+                                        <thead>
+                                          <tr>
+                                            <th>Product</th>
+                                            <th className="text-right">
+                                              Quantity
+                                            </th>
+                                            <th className="text-right">
+                                              Status
+                                            </th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          {report.report_data.product_list.map(
+                                            (item, index) => (
+                                              <tr key={index}>
+                                                <td>{item.name}</td>
+                                                <td className="text-right">
+                                                  {item.quantity}
+                                                </td>
+                                                <td
+                                                  className={
+                                                    item.status ===
+                                                      "Low Stock" ||
+                                                    item.status ===
+                                                      "Out of Stock"
+                                                      ? "status-warning"
+                                                      : ""
+                                                  }
+                                                >
+                                                  {item.status}
+                                                </td>
+                                              </tr>
+                                            ),
+                                          )}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="empty-inventory-message">
+                                    <Package
+                                      size={48}
+                                      className="icon-package"
+                                    />
+                                    <p>
+                                      No inventory data found for the selected
+                                      date range
+                                    </p>
+                                    <button
+                                      className="refresh-inventory-btn"
+                                      onClick={() =>
+                                        fetchInventoryData(startDate, endDate)
+                                      }
+                                    >
+                                      <RefreshCw size={16} />
+                                      Refresh Inventory Data
+                                    </button>
+                                  </div>
+                                )}
+                              </>
+                            )}
+
+                          {/* Display inventory data from inventoryData if available */}
+                          {inventoryData &&
+                            inventoryData.stockData &&
+                            inventoryData.stockData.length > 0 && (
+                              <>
+                                <div className="report-stats">
+                                  <div className="stat-card">
+                                    <div className="stat-card-icon inventory">
+                                      <Package
+                                        size={20}
+                                        className="stat-icon"
+                                      />
+                                    </div>
+                                    <div className="stat-content">
+                                      <p className="stat-label">
+                                        Total Products
+                                      </p>
+                                      <p className="stat-value">
+                                        {getInventoryStats().totalProducts}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="stat-card">
+                                    <div className="stat-card-icon">
+                                      <Package
+                                        size={20}
+                                        className="stat-icon"
+                                      />
+                                    </div>
+                                    <div className="stat-content">
+                                      <p className="stat-label">In Stock</p>
+                                      <p className="stat-value">
+                                        {getInventoryStats().inStock}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="report-stats">
+                                  <div className="stat-card">
+                                    <div className="stat-card-icon warning">
+                                      <AlertCircle
+                                        size={20}
+                                        className="stat-icon"
+                                      />
+                                    </div>
+                                    <div className="stat-content">
+                                      <p className="stat-label">Low Stock</p>
+                                      <p className="stat-value warning">
+                                        {getInventoryStats().lowStock}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="stat-card">
+                                    <div className="stat-card-icon">
+                                      <Package
+                                        size={20}
+                                        className="stat-icon"
+                                      />
+                                    </div>
+                                    <div className="stat-content">
+                                      <p className="stat-label">Overstocked</p>
+                                      <p className="stat-value">
+                                        {getInventoryStats().overstocked}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+
                                 <div className="report-table-section">
                                   <h4 className="table-title">
                                     <Database
@@ -1743,346 +1912,226 @@ const Reports = () => {
                                     />
                                     Detailed Inventory
                                   </h4>
-                                  <div className="table-container">
-                                    <table className="report-table">
-                                      <thead>
-                                        <tr>
-                                          <th>Product</th>
-                                          <th className="text-right">
-                                            Quantity
-                                          </th>
-                                          <th className="text-right">Status</th>
-                                        </tr>
-                                      </thead>
-                                      <tbody>
-                                        {report.report_data.product_list.map(
-                                          (item, index) => (
-                                            <tr key={index}>
-                                              <td>{item.name}</td>
-                                              <td className="text-right">
-                                                {item.quantity}
-                                              </td>
-                                              <td
-                                                className={
-                                                  item.status === "Low Stock" ||
-                                                  item.status === "Out of Stock"
-                                                    ? "status-warning"
-                                                    : ""
-                                                }
-                                              >
-                                                {item.status}
-                                              </td>
-                                            </tr>
-                                          ),
-                                        )}
-                                      </tbody>
-                                    </table>
-                                  </div>
+                                  {renderInventoryDataTable()}
                                 </div>
-                              ) : (
-                                <div className="empty-inventory-message">
-                                  <Package size={48} className="icon-package" />
-                                  <p>
-                                    No inventory data found for the selected
-                                    date range
-                                  </p>
-                                  <button
-                                    className="refresh-inventory-btn"
-                                    onClick={() =>
-                                      fetchInventoryData(startDate, endDate)
-                                    }
-                                  >
-                                    <RefreshCw size={16} />
-                                    Refresh Inventory Data
-                                  </button>
-                                </div>
-                              )}
-                            </>
-                          )}
+                              </>
+                            )}
 
-                        {/* Display inventory data from inventoryData if available */}
-                        {inventoryData &&
-                          inventoryData.stockData &&
-                          inventoryData.stockData.length > 0 && (
-                            <>
-                              <div className="report-stats">
-                                <div className="stat-card">
-                                  <div className="stat-card-icon inventory">
-                                    <Package size={20} className="stat-icon" />
-                                  </div>
-                                  <div className="stat-content">
-                                    <p className="stat-label">Total Products</p>
-                                    <p className="stat-value">
-                                      {getInventoryStats().totalProducts}
-                                    </p>
-                                  </div>
-                                </div>
-                                <div className="stat-card">
-                                  <div className="stat-card-icon">
-                                    <Package size={20} className="stat-icon" />
-                                  </div>
-                                  <div className="stat-content">
-                                    <p className="stat-label">In Stock</p>
-                                    <p className="stat-value">
-                                      {getInventoryStats().inStock}
-                                    </p>
-                                  </div>
-                                </div>
+                          {/* Show message if no inventory data is available */}
+                          {(!report.report_data ||
+                            !report.report_data.product_list ||
+                            report.report_data.product_list.length === 0) &&
+                            (!inventoryData ||
+                              !inventoryData.stockData ||
+                              inventoryData.stockData.length === 0) && (
+                              <div className="empty-inventory-message">
+                                <Package size={48} className="icon-package" />
+                                <p>
+                                  No inventory data found for the selected date
+                                  range
+                                </p>
+                                <button
+                                  className="refresh-inventory-btn"
+                                  onClick={() =>
+                                    fetchInventoryData(startDate, endDate)
+                                  }
+                                >
+                                  <RefreshCw size={16} />
+                                  Refresh Inventory Data
+                                </button>
                               </div>
+                            )}
+                        </>
+                      )}
+                    </div>
 
-                              <div className="report-stats">
-                                <div className="stat-card">
-                                  <div className="stat-card-icon warning">
-                                    <AlertCircle
-                                      size={20}
-                                      className="stat-icon"
-                                    />
-                                  </div>
-                                  <div className="stat-content">
-                                    <p className="stat-label">Low Stock</p>
-                                    <p className="stat-value warning">
-                                      {getInventoryStats().lowStock}
-                                    </p>
-                                  </div>
-                                </div>
-                                <div className="stat-card">
-                                  <div className="stat-card-icon">
-                                    <Package size={20} className="stat-icon" />
-                                  </div>
-                                  <div className="stat-content">
-                                    <p className="stat-label">Overstocked</p>
-                                    <p className="stat-value">
-                                      {getInventoryStats().overstocked}
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Detailed Inventory Data Table */}
-                              <div className="report-table-section">
-                                <h4 className="table-title">
-                                  <Database size={16} className="table-icon" />
-                                  Detailed Inventory
-                                </h4>
-                                {renderInventoryDataTable()}
-                              </div>
-                            </>
+                    <div className="report-footer">
+                      <p className="generated-by">
+                        <Users size={14} className="user-icon" />
+                        Generated by:{" "}
+                        <span className="user-name">
+                          {report.generated_by.username ||
+                            (report.inventory_report.data &&
+                              report.inventory_report.data.generated_by) ||
+                            "System"}
+                        </span>
+                      </p>
+                      <div className="report-timestamp">
+                        <Clock size={14} className="timestamp-icon" />
+                        <span>
+                          {formatDate(
+                            report.created_at ||
+                              (report.inventory_report &&
+                                report.inventory_report.created_at),
                           )}
-
-                        {/* Show message if no inventory data is available */}
-                        {(!report.report_data ||
-                          !report.report_data.product_list ||
-                          report.report_data.product_list.length === 0) &&
-                          (!inventoryData ||
-                            !inventoryData.stockData ||
-                            inventoryData.stockData.length === 0) && (
-                            <div className="empty-inventory-message">
-                              <Package size={48} className="icon-package" />
-                              <p>
-                                No inventory data found for the selected date
-                                range
-                              </p>
-                              <button
-                                className="refresh-inventory-btn"
-                                onClick={() =>
-                                  fetchInventoryData(startDate, endDate)
-                                }
-                              >
-                                <RefreshCw size={16} />
-                                Refresh Inventory Data
-                              </button>
-                            </div>
-                          )}
-                      </>
-                    )}
+                        </span>
+                      </div>
+                    </div>
                   </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
 
-                  <div className="report-footer">
-                    <p className="generated-by">
-                      <Users size={14} className="user-icon" />
-                      Generated by:{" "}
-                      <span className="user-name">
-                        {report.generated_by ||
-                          (report.report_data &&
-                            report.report_data.generated_by) ||
-                          "System"}
-                      </span>
-                    </p>
-                    <div className="report-timestamp">
-                      <Clock size={14} className="timestamp-icon" />
-                      <span>
-                        {formatDate(
-                          report.created_at ||
-                            (report.report_data &&
-                              report.report_data.created_at),
-                        )}
-                      </span>
+        {/* Report Generation Modal */}
+        {showReportModal && (
+          <div className="modal-overlay">
+            <div className="report-modal">
+              <div className="report-modal-header">
+                <h3>
+                  <FileText size={18} className="modal-icon" />
+                  Generate Report
+                </h3>
+                <button className="close-modal-btn" onClick={closeReportModal}>
+                  <X size={20} />
+                </button>
+              </div>
+              <form
+                onSubmit={handleGenerateReport}
+                className="report-modal-content"
+              >
+                <div className="report-type-section">
+                  <h4>
+                    <Filter size={16} className="section-icon" />
+                    Report Type
+                  </h4>
+                  <div className="report-type-buttons">
+                    <button
+                      type="button"
+                      className={`report-type-btn ${reportType === "inventory" ? "active" : ""}`}
+                      onClick={() => handleReportTypeSelect("inventory")}
+                    >
+                      <Package size={18} />
+                      <span>Inventory</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`report-type-btn ${reportType === "sales" ? "active" : ""}`}
+                      onClick={() => handleReportTypeSelect("sales")}
+                    >
+                      <BarChart size={18} />
+                      <span>Sales</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Period Selection */}
+                <div className="report-type-section">
+                  <h4>
+                    <Clock size={16} className="section-icon" />
+                    Period
+                  </h4>
+                  <div className="report-type-buttons">
+                    <button
+                      type="button"
+                      className={`report-type-btn ${period === "daily" ? "active" : ""}`}
+                      onClick={() => handlePeriodSelect("daily")}
+                    >
+                      <Calendar size={18} />
+                      <span>Daily</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`report-type-btn ${period === "weekly" ? "active" : ""}`}
+                      onClick={() => handlePeriodSelect("weekly")}
+                    >
+                      <Calendar size={18} />
+                      <span>Weekly</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`report-type-btn ${period === "monthly" ? "active" : ""}`}
+                      onClick={() => handlePeriodSelect("monthly")}
+                    >
+                      <Calendar size={18} />
+                      <span>Monthly</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`report-type-btn ${period === "yearly" ? "active" : ""}`}
+                      onClick={() => handlePeriodSelect("yearly")}
+                    >
+                      <Calendar size={18} />
+                      <span>Yearly</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="date-range-section">
+                  <h4>
+                    <Calendar size={16} className="section-icon" />
+                    Date Range (Optional)
+                  </h4>
+                  <div className="date-inputs">
+                    <div className="form-group">
+                      <label htmlFor="start-date" className="form-label">
+                        <Calendar size={14} className="input-icon" />
+                        Start Date
+                      </label>
+                      <input
+                        id="start-date"
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => {
+                          setStartDate(e.target.value);
+                          console.log("Start date set to:", e.target.value);
+                        }}
+                        className="form-input"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="end-date" className="form-label">
+                        <Calendar size={14} className="input-icon" />
+                        End Date
+                      </label>
+                      <input
+                        id="end-date"
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => {
+                          setEndDate(e.target.value);
+                          console.log("End date set to:", e.target.value);
+                        }}
+                        className="form-input"
+                      />
                     </div>
                   </div>
                 </div>
-              )}
+
+                <div className="report-modal-footer">
+                  <button
+                    type="button"
+                    className="cancel-btn"
+                    onClick={closeReportModal}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="generate-btn"
+                    disabled={isGenerating}
+                  >
+                    {isGenerating ? (
+                      <span className="btn-content">
+                        <Loader2 className="btn-icon spin" />
+                        Generating...
+                      </span>
+                    ) : (
+                      <span className="btn-content">
+                        <FileText className="btn-icon" />
+                        Generate Report
+                      </span>
+                    )}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
-        </div>
+        )}
       </div>
-
-      {/* Report Generation Modal */}
-      {showReportModal && (
-        <div className="modal-overlay">
-          <div className="report-modal">
-            <div className="report-modal-header">
-              <h3>
-                <FileText size={18} className="modal-icon" />
-                Generate Report
-              </h3>
-              <button className="close-modal-btn" onClick={closeReportModal}>
-                <X size={20} />
-              </button>
-            </div>
-            <form
-              onSubmit={handleGenerateReport}
-              className="report-modal-content"
-            >
-              <div className="report-type-section">
-                <h4>
-                  <Filter size={16} className="section-icon" />
-                  Report Type
-                </h4>
-                <div className="report-type-buttons">
-                  <button
-                    type="button"
-                    className={`report-type-btn ${reportType === "inventory" ? "active" : ""}`}
-                    onClick={() => handleReportTypeSelect("inventory")}
-                  >
-                    <Package size={18} />
-                    <span>Inventory</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`report-type-btn ${reportType === "sales" ? "active" : ""}`}
-                    onClick={() => handleReportTypeSelect("sales")}
-                  >
-                    <BarChart size={18} />
-                    <span>Sales</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Period Selection */}
-              <div className="report-type-section">
-                <h4>
-                  <Clock size={16} className="section-icon" />
-                  Period
-                </h4>
-                <div className="report-type-buttons">
-                  <button
-                    type="button"
-                    className={`report-type-btn ${period === "daily" ? "active" : ""}`}
-                    onClick={() => handlePeriodSelect("daily")}
-                  >
-                    <Calendar size={18} />
-                    <span>Daily</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`report-type-btn ${period === "weekly" ? "active" : ""}`}
-                    onClick={() => handlePeriodSelect("weekly")}
-                  >
-                    <Calendar size={18} />
-                    <span>Weekly</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`report-type-btn ${period === "monthly" ? "active" : ""}`}
-                    onClick={() => handlePeriodSelect("monthly")}
-                  >
-                    <Calendar size={18} />
-                    <span>Monthly</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`report-type-btn ${period === "yearly" ? "active" : ""}`}
-                    onClick={() => handlePeriodSelect("yearly")}
-                  >
-                    <Calendar size={18} />
-                    <span>Yearly</span>
-                  </button>
-                </div>
-              </div>
-
-              <div className="date-range-section">
-                <h4>
-                  <Calendar size={16} className="section-icon" />
-                  Date Range (Optional)
-                </h4>
-                <div className="date-inputs">
-                  <div className="form-group">
-                    <label htmlFor="start-date" className="form-label">
-                      <Calendar size={14} className="input-icon" />
-                      Start Date
-                    </label>
-                    <input
-                      id="start-date"
-                      type="date"
-                      value={startDate}
-                      onChange={(e) => {
-                        setStartDate(e.target.value);
-                        console.log("Start date set to:", e.target.value);
-                      }}
-                      className="form-input"
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="end-date" className="form-label">
-                      <Calendar size={14} className="input-icon" />
-                      End Date
-                    </label>
-                    <input
-                      id="end-date"
-                      type="date"
-                      value={endDate}
-                      onChange={(e) => {
-                        setEndDate(e.target.value);
-                        console.log("End date set to:", e.target.value);
-                      }}
-                      className="form-input"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="report-modal-footer">
-                <button
-                  type="button"
-                  className="cancel-btn"
-                  onClick={closeReportModal}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="generate-btn"
-                  disabled={isGenerating}
-                >
-                  {isGenerating ? (
-                    <span className="btn-content">
-                      <Loader2 className="btn-icon spin" />
-                      Generating...
-                    </span>
-                  ) : (
-                    <span className="btn-content">
-                      <FileText className="btn-icon" />
-                      Generate Report
-                    </span>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-    </div>
+    </MainContent>
   );
 };
 

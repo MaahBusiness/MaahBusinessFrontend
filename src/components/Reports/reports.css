@@ -1,22 +1,17 @@
 .report-container {
   display: flex;
   flex-direction: column;
-  width: 90%;
-  position: absolute;
-  left: 10%;
   margin: 0 auto;
-  min-height: 70vh;
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   overflow: hidden;
   color: #f8f9fa;
-  padding: 2rem;
+  padding: 1rem 0;
   background-color: #121212;
 }
 
 .report-wrapper {
-  max-width: 100%;
-  margin: 0 auto;
+  margin: 0 0.5rem;
 }
 
 .report-title {
@@ -28,7 +23,7 @@
   text-align: center;
   display: flex;
   align-items: center;
-  justify-content: center;
+  /* justify-content: center; */
   gap: 0.5rem;
 }
 
@@ -40,8 +35,8 @@
   content: "";
   position: absolute;
   bottom: -8px;
-  left: 50%;
-  transform: translateX(-50%);
+  /* left: 15%;
+  transform: translateX(-50%); */
   width: 60px;
   height: 3px;
   background: #6366f1;
@@ -50,12 +45,14 @@
 
 /* Grid layout */
 .report-grid {
-  width: 90%;
   display: grid;
   grid-template-columns: 1fr 2fr;
-  gap: 24px;
-  margin-bottom: 24px;
-  margin: 0 auto 24px;
+  gap: 0.75rem;
+}
+@media (max-width: 920px) {
+  .report-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Form card */
@@ -254,7 +251,7 @@
 
 /* Saved Reports Section */
 .saved-reports-section {
-  padding: 1.5rem;
+  padding-top: 1rem;
   border-top: 1px solid #3f3f5a;
   background-color: #1e1e1e;
   border-radius: 0 0 0.75rem 0.75rem;
