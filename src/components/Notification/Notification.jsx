@@ -22,6 +22,7 @@ import {
   FaChevronDown, // Added FaChevronDown import
 } from "react-icons/fa";
 import "./notification.css";
+import MainContent from "../MainContend";
 
 const Notification = ({ isDropdown = false }) => {
   // State
@@ -705,170 +706,174 @@ const Notification = ({ isDropdown = false }) => {
 
   // Render full notification page
   return (
-    <div className="notification-page">
-      {statusMessage.show && (
-        <div className={`status-message ${statusMessage.type}`}>
-          {statusMessage.type === "success" && <FaCheckCircle />}
-          {statusMessage.type === "error" && <FaExclamationTriangle />}
-          {statusMessage.type === "warning" && <FaExclamation />}
-          {statusMessage.type === "info" && <FaInfoCircle />}
-          {statusMessage.message}
-        </div>
-      )}
+    <MainContent>
+      <div className="notification-page">
+        {statusMessage.show && (
+          <div className={`status-message ${statusMessage.type}`}>
+            {statusMessage.type === "success" && <FaCheckCircle />}
+            {statusMessage.type === "error" && <FaExclamationTriangle />}
+            {statusMessage.type === "warning" && <FaExclamation />}
+            {statusMessage.type === "info" && <FaInfoCircle />}
+            {statusMessage.message}
+          </div>
+        )}
 
-      <div className="notification-container">
-        <div className="notification-header">
-          <h1>
-            <FaBell className="title-icon" /> Notifications
-          </h1>
-          <div className="notification-actions">
+        <div className="notification-container">
+          <div className="notification-header">
+            <h1>
+              <FaBell className="title-icon" /> Notifications
+            </h1>
+            <div className="notification-actions">
+              <button
+                className="mark-all-read-btn"
+                onClick={markAllAsRead}
+                disabled={!notifications.some((n) => n.status === "UNREAD")}
+              >
+                <FaCheckCircle /> Mark all as read
+              </button>
+              <button
+                className="archive-old-btn"
+                onClick={() => setShowArchiveModal(true)}
+              >
+                <FaArchive /> Archive Old
+              </button>
+              <button
+                className="refresh-btn"
+                onClick={() => {
+                  setCurrentPage(1);
+                  fetchNotifications(true);
+                }}
+              >
+                <FaSyncAlt /> Refresh
+              </button>
+            </div>
+          </div>
+
+          <div className="notification-filters">
             <button
-              className="mark-all-read-btn"
-              onClick={markAllAsRead}
-              disabled={!notifications.some((n) => n.status === "UNREAD")}
-            >
-              <FaCheckCircle /> Mark all as read
-            </button>
-            <button
-              className="archive-old-btn"
-              onClick={() => setShowArchiveModal(true)}
-            >
-              <FaArchive /> Archive Old
-            </button>
-            <button
-              className="refresh-btn"
+              className={`filter-btn ${filter === "all" ? "active" : ""}`}
               onClick={() => {
+                setFilter("all");
                 setCurrentPage(1);
-                fetchNotifications(true);
               }}
             >
-              <FaSyncAlt /> Refresh
+              <FaFilter className="filter-icon" /> All
             </button>
+            <button
+              className={`filter-btn ${filter === "UNREAD" ? "active" : ""}`}
+              onClick={() => {
+                setFilter("UNREAD");
+                setCurrentPage(1);
+              }}
+            >
+              <FaBell className="filter-icon" /> Unread
+            </button>
+            <button
+              className={`filter-btn ${filter === "READ" ? "active" : ""}`}
+              onClick={() => {
+                setFilter("READ");
+                setCurrentPage(1);
+              }}
+            >
+              <FaCheckCircle className="filter-icon" /> Read
+            </button>
+            <button
+              className={`filter-btn ${filter === "ARCHIVED" ? "active" : ""}`}
+              onClick={() => {
+                setFilter("ARCHIVED");
+                setCurrentPage(1);
+              }}
+            >
+              <FaArchive className="filter-icon" /> Archived
+            </button>
+          </div>
+
+          <div className="notification-list">
+            {isLoading && currentPage === 1 ? (
+              <div className="notification-loading">
+                <FaSpinner className="spin" size={24} />
+                <p>Loading notifications...</p>
+              </div>
+            ) : error ? (
+              <div className="notification-error">
+                <FaExclamationTriangle size={24} />
+                <p>{error}</p>
+              </div>
+            ) : getFilteredNotifications().length === 0 ? (
+              <div className="notification-empty">
+                <FaBell size={24} />
+                <p>No notifications to display</p>
+              </div>
+            ) : (
+              <>
+                {getFilteredNotifications().map((notification) => (
+                  <div
+                    key={notification.id}
+                    className={`notification-item ${notification.status.toLowerCase()}`}
+                    onClick={(e) => viewNotificationDetails(notification, e)}
+                  >
+                    <div className="notification-icon-container">
+                      {getNotificationIcon(notification.notification_type)}
+                    </div>
+                    <div className="notification-content">
+                      <div className="notification-message">
+                        {notification.message}
+                      </div>
+                      <div className="notification-meta">
+                        <span className="notification-product">
+                          <FaTag className="meta-icon" />
+                          {notification.product_name || "System Notification"}
+                        </span>
+                        <span className="notification-time">
+                          <FaClock className="meta-icon" />
+                          {formatDate(notification.created_at)}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="notification-actions">
+                      {notification.status !== "ARCHIVED" && (
+                        <button
+                          className="archive-btn"
+                          onClick={(e) =>
+                            archiveNotification(notification.id, e)
+                          }
+                          title="Archive"
+                        >
+                          <FaArchive size={16} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                {hasMore && (
+                  <div className="load-more-container">
+                    <button
+                      onClick={loadMore}
+                      className="load-more-btn"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? (
+                        <>
+                          <FaSpinner className="spin" /> Loading...
+                        </>
+                      ) : (
+                        <>
+                          <FaChevronDown /> Load More
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
 
-        <div className="notification-filters">
-          <button
-            className={`filter-btn ${filter === "all" ? "active" : ""}`}
-            onClick={() => {
-              setFilter("all");
-              setCurrentPage(1);
-            }}
-          >
-            <FaFilter className="filter-icon" /> All
-          </button>
-          <button
-            className={`filter-btn ${filter === "UNREAD" ? "active" : ""}`}
-            onClick={() => {
-              setFilter("UNREAD");
-              setCurrentPage(1);
-            }}
-          >
-            <FaBell className="filter-icon" /> Unread
-          </button>
-          <button
-            className={`filter-btn ${filter === "READ" ? "active" : ""}`}
-            onClick={() => {
-              setFilter("READ");
-              setCurrentPage(1);
-            }}
-          >
-            <FaCheckCircle className="filter-icon" /> Read
-          </button>
-          <button
-            className={`filter-btn ${filter === "ARCHIVED" ? "active" : ""}`}
-            onClick={() => {
-              setFilter("ARCHIVED");
-              setCurrentPage(1);
-            }}
-          >
-            <FaArchive className="filter-icon" /> Archived
-          </button>
-        </div>
-
-        <div className="notification-list">
-          {isLoading && currentPage === 1 ? (
-            <div className="notification-loading">
-              <FaSpinner className="spin" size={24} />
-              <p>Loading notifications...</p>
-            </div>
-          ) : error ? (
-            <div className="notification-error">
-              <FaExclamationTriangle size={24} />
-              <p>{error}</p>
-            </div>
-          ) : getFilteredNotifications().length === 0 ? (
-            <div className="notification-empty">
-              <FaBell size={24} />
-              <p>No notifications to display</p>
-            </div>
-          ) : (
-            <>
-              {getFilteredNotifications().map((notification) => (
-                <div
-                  key={notification.id}
-                  className={`notification-item ${notification.status.toLowerCase()}`}
-                  onClick={(e) => viewNotificationDetails(notification, e)}
-                >
-                  <div className="notification-icon-container">
-                    {getNotificationIcon(notification.notification_type)}
-                  </div>
-                  <div className="notification-content">
-                    <div className="notification-message">
-                      {notification.message}
-                    </div>
-                    <div className="notification-meta">
-                      <span className="notification-product">
-                        <FaTag className="meta-icon" />
-                        {notification.product_name || "System Notification"}
-                      </span>
-                      <span className="notification-time">
-                        <FaClock className="meta-icon" />
-                        {formatDate(notification.created_at)}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="notification-actions">
-                    {notification.status !== "ARCHIVED" && (
-                      <button
-                        className="archive-btn"
-                        onClick={(e) => archiveNotification(notification.id, e)}
-                        title="Archive"
-                      >
-                        <FaArchive size={16} />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-
-              {hasMore && (
-                <div className="load-more-container">
-                  <button
-                    onClick={loadMore}
-                    className="load-more-btn"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <>
-                        <FaSpinner className="spin" /> Loading...
-                      </>
-                    ) : (
-                      <>
-                        <FaChevronDown /> Load More
-                      </>
-                    )}
-                  </button>
-                </div>
-              )}
-            </>
-          )}
-        </div>
+        {/* Modals */}
+        {renderModals()}
       </div>
-
-      {/* Modals */}
-      {renderModals()}
-    </div>
+    </MainContent>
   );
 
   // Helper function to render modals
