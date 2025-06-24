@@ -157,9 +157,3 @@ The application uses multiple API endpoints for different functionalities:
 - Reporting APIs
 
 All API calls are made through Axios.
-
-## Contact
-
-- Developer: Banter Gipson
-- Email: bantargipson@gmail.com
-- Username: GipsZ1
