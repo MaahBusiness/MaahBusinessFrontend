@@ -1,14 +1,103 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import axios from "axios";
 import "./signup.css";
 
 const Signup = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        navigate("/login");
+        return;
+      } else {
+        if (!hasManagerPermission()) {
+          navigate("/login");
+          return;
+        }
+      }
+    };
+    fetchUserData();
+  }, [navigate]);
+
+  // Create axios instance with authentication headers
+  const getAuthAxios = () => {
+    const token = localStorage.getItem("token");
+    return axios.create({
+      headers: {
+        Authorization: token ? `Bearer ${token}` : "",
+      },
+    });
+  };
+
+  // Get current user role
+  const hasManagerPermission = async () => {
+    try {
+      const authAxios = getAuthAxios();
+      var currentUserRole = "";
+
+      // Try to get the user info from localStorage first
+      try {
+        const userData = localStorage.getItem("user");
+        if (userData) {
+          const parsedUser = JSON.parse(userData);
+          if (parsedUser && parsedUser.role) {
+            currentUserRole = parsedUser.role;
+            console.log(
+              "Current user role set from localStorage:",
+              parsedUser.role,
+            );
+            return currentUserRole === "manager";
+          }
+        }
+      } catch (localStorageError) {
+        console.error(
+          "Error getting user from localStorage:",
+          localStorageError,
+        );
+      }
+
+      // Try the user-info endpoint as a fallback
+      try {
+        const userInfoResponse = await authAxios.get(
+          "https://victbackendmanagement.onrender.com/api/v1/user-info/",
+        );
+        console.log("User info data:", userInfoResponse.data);
+
+        if (userInfoResponse.data && userInfoResponse.data.role) {
+          currentUserRole = userInfoResponse.data.role;
+          console.log("Current user role set to:", userInfoResponse.data.role);
+          return currentUserRole === "manager";
+        }
+      } catch (userInfoError) {
+        console.error(
+          "Error fetching from /user-info/ endpoint:",
+          userInfoError,
+        );
+      }
+
+      // If we couldn't determine the role, set a default
+      console.warn(
+        "Could not determine user role from any source, defaulting to non-manager",
+      );
+      currentUserRole = "cashier"; // Default to non-manager role
+      return currentUserRole === "manager";
+    } catch (err) {
+      console.error("Error fetching current user:", err);
+      if (err.response && err.response.status === 401) {
+        localStorage.removeItem("token");
+      }
+    }
+  };
+
   const [formData, setFormData] = useState({
     username: "",
     email: "",
     phone_number: "",
     password: "",
-    confirm_password:"",
+    confirm_password: "",
     role: "manager",
     is_active: true,
   });
@@ -16,7 +105,6 @@ const Signup = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [modalErrorMessages, setModalErrorMessages] = useState([]);
-  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -25,13 +113,16 @@ const Signup = () => {
     setModalErrorMessages([]);
 
     try {
-      const response = await fetch("https://victbackendmanagement.onrender.com/api/v1/register/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        "https://victbackendmanagement.onrender.com/api/v1/register/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
         },
-        body: JSON.stringify(formData),
-      });
+      );
 
       const data = await response.json();
 
@@ -127,9 +218,9 @@ const Signup = () => {
   };
   const handlePasswordChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 

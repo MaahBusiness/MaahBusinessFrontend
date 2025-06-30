@@ -19,6 +19,25 @@
   white-space: nowrap;
 }
 
+.archive-button1 {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #dc2626;
+  border-radius: 10px;
+  padding: 1em;
+  border: none;
+}
+
+/* Style the Link inside the button */
+.archive-button1 a {
+  color: #fff;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
 .header-actions {
   display: flex;
   gap: 1rem;
