@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import "./Invoice.css";
 import { Link, useNavigate } from "react-router-dom";
+import MainContent from "../MainContend";
 
 const Invoice = () => {
   // Style definitions for form fields
@@ -1062,51 +1063,51 @@ const Invoice = () => {
   };
 
   return (
-    <div className="invoice-manager-container">
-      <div className="invoice-manager-header">
-        <h2>Invoice Management</h2>
-        <div className="header-actions">
-          {isAuthenticated ? (
-            <button
-              className="add-button"
-              onClick={() => {
-                resetForm();
-                setShowModal(true);
-              }}
-            >
-              <Plus size={18} /> Create Invoice
-            </button>
-          ) : (
-            <button className="login-button" onClick={handleLogin}>
-              <User size={18} /> Login to Create Invoices
-            </button>
-          )}
-          {isAuthenticated && selectedInvoice && (
-            <Link
-              to={`/invoice/${selectedInvoice.id}`}
-              className="archive-button"
-            >
-              <FileText size={18} /> View Invoice
-            </Link>
-          )}
-          {isAuthenticated && isManager && (
-            <Link to="/ArchiveManager" className="archive-button">
-              <Archive size={18} /> View Archived Invoices
-            </Link>
-          )}
+    <MainContent>
+      <div className="invoice-manager-container">
+        <div className="invoice-manager-header">
+          <h2>Invoice Management</h2>
+          <div className="header-actions">
+            {isAuthenticated ? (
+              <button
+                className="add-button"
+                onClick={() => {
+                  resetForm();
+                  setShowModal(true);
+                }}
+              >
+                <Plus size={18} /> Create Invoice
+              </button>
+            ) : (
+              <button className="login-button" onClick={handleLogin}>
+                <User size={18} /> Login to Create Invoices
+              </button>
+            )}
+            {isAuthenticated && selectedInvoice && (
+              <Link
+                to={`/invoice/${selectedInvoice.id}`}
+                className="archive-button"
+              >
+                <FileText size={18} /> View Invoice
+              </Link>
+            )}
+            {isAuthenticated && isManager && (
+              <Link to="/ArchiveManager" className="archive-button">
+                <Archive size={18} /> View Archived Invoices
+              </Link>
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* Status Message */}
-      {statusMessage.show && (
-        <div className={`status-message ${statusMessage.type}`}>
-          {statusMessage.text}
-        </div>
-      )}
+        {/* Status Message */}
+        {statusMessage.show && (
+          <div className={`status-message ${statusMessage.type}`}>
+            {statusMessage.text}
+          </div>
+        )}
 
-      {/* View Toggle */}
-      <div className="view-toggle">
-        <div style={{ display: "flex", gap: "0.5rem" }}>
+        {/* View Toggle */}
+        <div className="view-toggle">
           <button
             className={`view-toggle-btn ${invoiceDisplayMode === "grid" ? "active" : ""}`}
             onClick={() => setInvoiceDisplayMode("grid")}
@@ -1120,909 +1121,922 @@ const Invoice = () => {
             <List size={16} /> List View
           </button>
         </div>
-      </div>
 
-      {/* List View */}
-      {currentView === "list" && (
-        <div className="invoice-list-view">
-          <div className="search-container">
-            <div className="search-wrapper">
-              <Search className="search-icon" size={18} />
-              <input
-                type="text"
-                placeholder="Search invoices by ID, client name, or reason..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="search-input"
-              />
+        {/* List View */}
+        {currentView === "list" && (
+          <div className="invoice-list-view">
+            <div className="search-container">
+              <div className="search-wrapper">
+                <Search className="search-icon" size={18} />
+                <input
+                  type="text"
+                  placeholder="Search invoices by ID, client name, or reason..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="search-input"
+                />
+              </div>
+              <div className="date-filter">
+                <Calendar className="calendar-icon" size={18} />
+                <input
+                  type="date"
+                  value={searchDate}
+                  onChange={(e) => setSearchDate(e.target.value)}
+                  className="date-input"
+                  placeholder="Filter by date"
+                />
+                {searchDate && (
+                  <button
+                    className="clear-date-btn"
+                    onClick={() => setSearchDate("")}
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
             </div>
-            <div className="date-filter">
-              <Calendar className="calendar-icon" size={18} />
-              <input
-                type="date"
-                value={searchDate}
-                onChange={(e) => setSearchDate(e.target.value)}
-                className="date-input"
-                placeholder="Filter by date"
-              />
-              {searchDate && (
-                <button
-                  className="clear-date-btn"
-                  onClick={() => setSearchDate("")}
-                >
-                  <X size={14} />
-                </button>
-              )}
-            </div>
-          </div>
 
-          {isLoading ? (
-            <div className="loading-state">
-              <Loader size={48} className="spin" />
-              <p>Loading invoices...</p>
-            </div>
-          ) : filteredInvoices.length === 0 ? (
-            <div className="empty-state">
-              <FileText size={48} />
-              <p>
-                No invoices found. Create your first invoice to get started.
-              </p>
-            </div>
-          ) : (
-            <>
-              {invoiceDisplayMode === "list" ? (
-                <div className="invoice-table-container">
-                  <table className="invoice-table">
-                    <thead>
-                      <tr>
-                        <th>Invoice #</th>
-                        <th>Client</th>
-                        <th>Date</th>
-                        <th>Total</th>
-                        <th>Advance Paid</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredInvoices.map((invoice, index) => (
-                        <tr
-                          key={invoice.id}
-                          onClick={() => handleViewInvoice(index)}
-                        >
-                          <td>
-                            {invoice.number
-                              ? `INV-${invoice.number}`
-                              : invoice.id}
-                          </td>
-                          <td>{invoice.client_name || "Anonymous"}</td>
-                          <td>{formatDate(invoice.created_at)}</td>
-                          <td>${Number(invoice.total || 0).toFixed(2)}</td>
-                          <td>
-                            ${Number(invoice.advance_paid || 0).toFixed(2)}
-                          </td>
-                          <td>
-                            <span
-                              className={`status-badge ${invoice.status?.toLowerCase()}`}
-                            >
-                              {invoice.status}
-                            </span>
-                          </td>
-                          <td>
-                            <div className="table-actions">
-                              <Link
-                                to={`/invoice/${invoice.id}`}
-                                className="view-btn"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <FileText size={16} />
-                              </Link>
-                              <button
-                                className="delete-btn"
-                                onClick={(e) => handleArchiveInvoice(index, e)}
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </div>
-                          </td>
+            {isLoading ? (
+              <div className="loading-state">
+                <Loader size={48} className="spin" />
+                <p>Loading invoices...</p>
+              </div>
+            ) : filteredInvoices.length === 0 ? (
+              <div className="empty-state">
+                <FileText size={48} />
+                <p>
+                  No invoices found. Create your first invoice to get started.
+                </p>
+              </div>
+            ) : (
+              <>
+                {invoiceDisplayMode === "list" ? (
+                  <div className="invoice-table-container">
+                    <table className="invoice-table">
+                      <thead>
+                        <tr>
+                          <th>Invoice #</th>
+                          <th>Client</th>
+                          <th>Date</th>
+                          <th>Total</th>
+                          <th>Advance Paid</th>
+                          <th>Status</th>
+                          <th>Actions</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="invoice-list">
-                  {filteredInvoices.map((invoice, index) => (
-                    <div key={invoice.id} className="invoice-card">
-                      <div className="invoice-card-header">
-                        <div className="invoice-id">
-                          {invoice.number ? `INV-${invoice}` : invoice.id}
-                        </div>
-                        {invoice.status && (
-                          <div
-                            className={`invoice-status ${invoice.status.toLowerCase()}`}
+                      </thead>
+                      <tbody>
+                        {filteredInvoices.map((invoice, index) => (
+                          <tr
+                            key={invoice.id}
+                            onClick={() => handleViewInvoice(index)}
                           >
-                            {getStatusIcon(invoice.status)}
-                            <div className="status-content">
-                              <span className="status-text">
+                            <td>
+                              {invoice.number
+                                ? `INV-${invoice.number}`
+                                : invoice.id}
+                            </td>
+                            <td>{invoice.client_name || "Anonymous"}</td>
+                            <td>{formatDate(invoice.created_at)}</td>
+                            <td>${Number(invoice.total || 0).toFixed(2)}</td>
+                            <td>
+                              ${Number(invoice.advance_paid || 0).toFixed(2)}
+                            </td>
+                            <td>
+                              <span
+                                className={`status-badge ${invoice.status?.toLowerCase()}`}
+                              >
                                 {invoice.status}
                               </span>
-                              <span className="status-description">
-                                {getStatusDescription(invoice.status)}
-                              </span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      <div
-                        className="invoice-card-body"
-                        onClick={() => handleViewInvoice(index)}
-                      >
-                        <div className="invoice-client">
-                          <User size={16} className="icon-user" />
-                          <span>{invoice.client_name || "Anonymous"}</span>
-                        </div>
-                        <div className="invoice-reason">
-                          <FileText size={16} className="icon-reason" />
-                          <span>{invoice.reason || "N/A"}</span>
-                        </div>
-                        <div className="invoice-date">
-                          <Calendar size={16} className="icon-calendar" />
-                          <span>Due: {formatDate(invoice.due_date)}</span>
-                        </div>
-                        <div className="invoice-date">
-                          <Clock size={16} className="icon-clock" />
-                          <span>
-                            Created: {formatDateTime(invoice.created_at)}
-                          </span>
-                        </div>
-                        <div className="invoice-amount">
-                          <DollarSign size={16} className="icon-dollar" />
-                          <span>{invoice.total || "0"} XFA</span>
-                        </div>
-                        <div className="invoice-items">
-                          <ShoppingCart size={16} className="icon-cart" />
-                          <span>{invoice.lines?.length || 0} items</span>
-                        </div>
-                        <div className="card-action-hint">
-                          <ArrowRight size={16} />
-                          <span>Click to view details</span>
-                        </div>
-                      </div>
-                      <div className="invoice-card-footer">
-                        <div className="invoice-actions">
-                          <Link
-                            to={`/invoice/${invoice.id}`}
-                            className="invoice-action-btn view"
-                          >
-                            <FileText size={14} />
-                          </Link>
-                          <button
-                            className="invoice-action-btn delete"
-                            onClick={(e) => handleArchiveInvoice(index, e)}
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="pagination">
-                  <button
-                    className="pagination-btn"
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                  >
-                    <ChevronLeft size={16} />
-                  </button>
-                  <span className="pagination-info">
-                    Page {currentPage} of {totalPages} ({totalInvoices}{" "}
-                    invoices)
-                  </span>
-                  <button
-                    className="pagination-btn"
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                  >
-                    <ChevronRight size={16} />
-                  </button>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      )}
-
-      {/* Create Invoice Modal */}
-      {showModal && (
-        <div className="invoice-modal-overlay">
-          <div className="invoice-modal-content invoice-create-modal-wide">
-            <div className="modal-header">
-              <h3>Create New Invoice</h3>
-              <button
-                className="close-modal-btn"
-                onClick={() => setShowModal(false)}
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <div className="modal-body">
-              {formError && <div className="form-error">{formError}</div>}
-
-              {!isAuthenticated && (
-                <div className="auth-warning">
-                  <AlertCircle size={18} />
-                  <span>You must be logged in to create invoices</span>
-                </div>
-              )}
-
-              <div className="form-grid">
-                {/* Client Information */}
-                <div className="form-section">
-                  <h4>Client Information</h4>
-                  <div className="form-group">
-                    <label htmlFor="client-name">
-                      Client Name{" "}
-                      <span style={optionalFieldStyle}>(Optional)</span>
-                    </label>
-                    <input
-                      id="client-name"
-                      type="text"
-                      placeholder="Enter client name or leave blank for anonymous"
-                      value={clientName}
-                      onChange={(e) => setClientName(e.target.value)}
-                    />
+                            </td>
+                            <td>
+                              <div className="table-actions">
+                                <Link
+                                  to={`/invoice/${invoice.id}`}
+                                  className="view-btn"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <FileText size={16} />
+                                </Link>
+                                <button
+                                  className="delete-btn"
+                                  onClick={(e) =>
+                                    handleArchiveInvoice(index, e)
+                                  }
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
-
-                  <div className="form-group">
-                    <label htmlFor="reason">
-                      Reason <span style={requiredFieldStyle}>*</span>
-                    </label>
-                    <input
-                      id="reason"
-                      type="text"
-                      placeholder="Enter reason for invoice"
-                      value={reason}
-                      onChange={(e) => setReason(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                {/* Payment Details */}
-                <div className="form-section">
-                  <h4>Payment Details</h4>
-
-                  <div className="form-group">
-                    <label htmlFor="advance-paid">Advance Paid (XFA)</label>
-                    <input
-                      id="advance-paid"
-                      type="number"
-                      step="0.01"
-                      placeholder="Enter advance payment"
-                      value={advancePaid}
-                      onChange={(e) => setAdvancePaid(Number(e.target.value))}
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="due-date">
-                      Due Date{" "}
-                      {advancePaid < calculateTotals().total ? (
-                        <span style={requiredFieldStyle}>*</span>
-                      ) : (
-                        <span style={optionalFieldStyle}>(Optional)</span>
-                      )}
-                    </label>
-                    <input
-                      id="due-date"
-                      type="date"
-                      value={dueDate}
-                      onChange={(e) => setDueDate(e.target.value)}
-                      className={
-                        formError &&
-                        advancePaid < calculateTotals().total &&
-                        !dueDate
-                          ? "input-error"
-                          : ""
-                      }
-                    />
-                    {advancePaid < calculateTotals().total && (
-                      <small style={fieldHintStyle}>
-                        Required when invoice is not fully paid
-                      </small>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Line Items */}
-              <div className="form-section">
-                <div className="section-header">
-                  <h4>Products</h4>
-                  <button
-                    type="button"
-                    className="add-line-btn"
-                    onClick={handleAddLine}
-                  >
-                    <Plus size={14} /> Add Product
-                  </button>
-                </div>
-
-                <div className="line-items">
-                  <div className="line-item-header">
-                    <div className="line-item-col product">Product</div>
-                    <div className="line-item-col quantity">Quantity</div>
-                    <div className="line-item-col price">Price (XFA)</div>
-                    <div className="line-item-col discount">Discount (XFA)</div>
-                    <div className="line-item-col subtotal">Subtotal</div>
-                    <div className="line-item-col actions">Actions</div>
-                  </div>
-
-                  {lines.map((line, index) => {
-                    const lineSubtotal = String(
-                      Number.parseFloat(line.quantity || 0) *
-                        Number.parseFloat(line.price || 0) -
-                        Number.parseFloat(line.discount || 0),
-                    );
-
-                    return (
-                      <div key={index} className="line-item">
-                        <div
-                          className="line-item-col product"
-                          data-label="Product"
-                        >
-                          <select
-                            value={line.product_id}
-                            onChange={(e) =>
-                              updateLine(index, "product_id", e.target.value)
-                            }
-                            className={
-                              formError && !line.product_id ? "input-error" : ""
-                            }
-                          >
-                            <option value="">Select Product</option>
-                            {products.map((product) => (
-                              <option
-                                key={product.id}
-                                value={product.id.toString()}
-                              >
-                                {product.name} -{" "}
-                                {product.is_promotion &&
-                                product.promotion_price > 0
-                                  ? `${product.promotion_price} XFA (PROMO)`
-                                  : `${product.price} XFA`}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <div
-                          className="line-item-col quantity"
-                          data-label="Quantity"
-                        >
-                          <input
-                            type="decimal"
-                            min="1"
-                            value={line.quantity}
-                            onChange={(e) =>
-                              updateLine(
-                                index,
-                                "quantity",
-                                Number(e.target.value),
-                              )
-                            }
-                            className={
-                              formError && line.quantity <= 0
-                                ? "input-error"
-                                : ""
-                            }
-                          />
-                        </div>
-                        <div
-                          className="line-item-col price"
-                          data-label="Price (XFA)"
-                        >
-                          <input
-                            type="text"
-                            pattern="[0-9]*\.?[0-9]*"
-                            value={line.price}
-                            onChange={(e) =>
-                              updateLine(index, "price", e.target.value)
-                            }
-                            disabled={!!line.product_id}
-                            className={
-                              line.is_promotion ? "promotion-price" : ""
-                            }
-                          />
-                        </div>
-                        <div
-                          className="line-item-col discount"
-                          data-label="Discount (XFA)"
-                        >
-                          <input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            value={line.discount}
-                            onChange={(e) =>
-                              updateLine(
-                                index,
-                                "discount",
-                                Number(e.target.value),
-                              )
-                            }
-                          />
-                        </div>
-                        <div
-                          className="line-item-col subtotal"
-                          data-label="Subtotal"
-                        >
-                          {lineSubtotal}
-                        </div>
-                        <div
-                          className="line-item-col actions"
-                          data-label="Actions"
-                        >
-                          <button
-                            type="button"
-                            className="remove-line-btn"
-                            onClick={() => handleRemoveLine(index)}
-                            disabled={lines.length === 1}
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Totals */}
-              <div className="invoice-totals">
-                {(() => {
-                  const {
-                    subtotal,
-                    taxAmount,
-                    total,
-                    remaining,
-                    refund,
-                    status,
-                  } = calculateTotals();
-                  return (
-                    <>
-                      <div className="totals-row">
-                        <span>Subtotal:</span>
-                        <span>{subtotal} XFA</span>
-                      </div>
-                      <div className="totals-row">
-                        <span>Tax ({tax}%):</span>
-                        <span>{taxAmount} XFA</span>
-                      </div>
-                      <div className="totals-row total">
-                        <span>Total:</span>
-                        <span>{total} XFA</span>
-                      </div>
-                      <div className="totals-row">
-                        <span>Advance Paid:</span>
-                        <span>{advancePaid.toFixed(2)} XFA</span>
-                      </div>
-                      {remaining > 0 ? (
-                        <div className="totals-row remaining">
-                          <span>Remaining:</span>
-                          <span>{remaining} XFA</span>
-                        </div>
-                      ) : refund > 0 ? (
-                        <div className="totals-row refund">
-                          <span>Refund:</span>
-                          <span>{refund} XFA</span>
-                        </div>
-                      ) : (
-                        <div className="totals-row paid">
-                          <span>Fully Paid</span>
-                          <span>
-                            <Check size={16} />
-                          </span>
-                        </div>
-                      )}
-
-                      <div className="totals-row status">
-                        <span>Status:</span>
-                        <span className={status.toLowerCase()}>
-                          {status === "COMPLETED"
-                            ? "COMPLETED (Fully Paid)"
-                            : status === "CREDIT"
-                              ? "CREDIT (Payment Required)"
-                              : status === "REFUND"
-                                ? "REFUND DUE"
-                                : status}
-                        </span>
-                      </div>
-                    </>
-                  );
-                })()}
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button
-                className="cancel-btn"
-                onClick={() => setShowModal(false)}
-              >
-                Cancel
-              </button>
-              <button
-                className="save-btn"
-                onClick={handleCreateInvoice}
-                disabled={isLoading || !isAuthenticated}
-              >
-                {isLoading ? (
-                  <Loader size={16} className="spin" />
                 ) : (
-                  <>
-                    <Plus size={16} /> Create Invoice
-                  </>
+                  <div className="invoice-list">
+                    {filteredInvoices.map((invoice, index) => (
+                      <div key={invoice.id} className="invoice-card">
+                        <div className="invoice-card-header">
+                          <div className="invoice-id">
+                            {invoice.number ? `INV-${invoice}` : invoice.id}
+                          </div>
+                          {invoice.status && (
+                            <div
+                              className={`invoice-status ${invoice.status.toLowerCase()}`}
+                            >
+                              {getStatusIcon(invoice.status)}
+                              <div className="status-content">
+                                <span className="status-text">
+                                  {invoice.status}
+                                </span>
+                                <span className="status-description">
+                                  {getStatusDescription(invoice.status)}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <div
+                          className="invoice-card-body"
+                          onClick={() => handleViewInvoice(index)}
+                        >
+                          <div className="invoice-client">
+                            <User size={16} className="icon-user" />
+                            <span>{invoice.client_name || "Anonymous"}</span>
+                          </div>
+                          <div className="invoice-reason">
+                            <FileText size={16} className="icon-reason" />
+                            <span>{invoice.reason || "N/A"}</span>
+                          </div>
+                          <div className="invoice-date">
+                            <Calendar size={16} className="icon-calendar" />
+                            <span>Due: {formatDate(invoice.due_date)}</span>
+                          </div>
+                          <div className="invoice-date">
+                            <Clock size={16} className="icon-clock" />
+                            <span>
+                              Created: {formatDateTime(invoice.created_at)}
+                            </span>
+                          </div>
+                          <div className="invoice-amount">
+                            <DollarSign size={16} className="icon-dollar" />
+                            <span>{invoice.total || "0"} XFA</span>
+                          </div>
+                          <div className="invoice-items">
+                            <ShoppingCart size={16} className="icon-cart" />
+                            <span>{invoice.lines?.length || 0} items</span>
+                          </div>
+                          <div className="card-action-hint">
+                            <ArrowRight size={16} />
+                            <span>Click to view details</span>
+                          </div>
+                        </div>
+                        <div className="invoice-card-footer">
+                          <div className="invoice-actions">
+                            <Link
+                              to={`/invoice/${invoice.id}`}
+                              className="invoice-action-btn view"
+                            >
+                              <FileText size={14} />
+                            </Link>
+                            <button
+                              className="invoice-action-btn delete"
+                              onClick={(e) => handleArchiveInvoice(index, e)}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* View Invoice Modal */}
-      {selectedInvoice && (
-        <div className="invoice-modal-overlay">
-          <div className="invoice-modal-content invoice-detail-modal">
-            <div className="modal-header">
-              <h3>Invoice Details</h3>
-              <div className="modal-header-actions">
-                <Link
-                  to={`/invoice/${selectedInvoice.id}`}
-                  className="view-full-btn"
-                >
-                  <FileText size={16} /> View Full Page
-                </Link>
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="pagination">
+                    <button
+                      className="pagination-btn"
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft size={16} />
+                    </button>
+                    <span className="pagination-info">
+                      Page {currentPage} of {totalPages} ({totalInvoices}{" "}
+                      invoices)
+                    </span>
+                    <button
+                      className="pagination-btn"
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                    >
+                      <ChevronRight size={16} />
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Create Invoice Modal */}
+        {showModal && (
+          <div className="invoice-modal-overlay">
+            <div className="invoice-modal-content invoice-create-modal-wide">
+              <div className="modal-header">
+                <h3>Create New Invoice</h3>
                 <button
                   className="close-modal-btn"
-                  onClick={() => setSelectedInvoice(null)}
+                  onClick={() => setShowModal(false)}
                 >
                   <X size={20} />
                 </button>
               </div>
-            </div>
-            <div className="modal-body">
-              <div className="invoice-detail-header">
-                <div className="invoice-detail-id">
-                  <h4>
-                    Invoice #
-                    {selectedInvoice.number
-                      ? selectedInvoice.number
-                      : selectedInvoice.id}
-                  </h4>
-                </div>
-                <div className="invoice-detail-dates">
-                  <div className="date-item">
-                    <span>Created:</span>
-                    <span>{formatDateTime(selectedInvoice.created_at)}</span>
-                  </div>
-                  <div className="date-item">
-                    <span>Due:</span>
-                    <span>{formatDate(selectedInvoice.due_date)}</span>
-                  </div>
-                </div>
-              </div>
+              <div className="modal-body">
+                {formError && <div className="form-error">{formError}</div>}
 
-              <div className="invoice-detail-client">
-                <h4>Client Information</h4>
-                <p>
-                  <strong>Name:</strong>{" "}
-                  {selectedInvoice.client_name || "Anonymous"}
-                </p>
-                <p>
-                  <strong>Reason:</strong> {selectedInvoice.reason || "N/A"}
-                </p>
-                {selectedInvoice.cashier_name && (
-                  <p>
-                    <strong>Cashier:</strong> {selectedInvoice.cashier_name}
-                  </p>
+                {!isAuthenticated && (
+                  <div className="auth-warning">
+                    <AlertCircle size={18} />
+                    <span>You must be logged in to create invoices</span>
+                  </div>
                 )}
-              </div>
 
-              <div className="invoice-detail-items">
-                <h4>Products</h4>
-                <table className="invoice-items-table">
-                  <thead>
-                    <tr>
-                      <th>Product</th>
-                      <th>Quantity</th>
-                      <th>Price</th>
-                      <th>Discount</th>
-                      <th>Subtotal</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedInvoice.lines &&
-                      selectedInvoice.lines.map((line, index) => {
-                        const linePrice =
-                          Number.parseFloat(line.unit_price || line.price) || 0;
-                        const lineDiscount =
-                          Number.parseFloat(line.discount) || 0;
-                        const lineQuantity = line.quantity || 0;
-                        const lineSubtotal =
-                          Number.parseFloat(line.line_total) ||
-                          lineQuantity * linePrice * (1 - lineDiscount / 100);
-                        const isPromotion = line.is_promotion || false;
+                <div className="form-grid">
+                  {/* Client Information */}
+                  <div className="form-section">
+                    <h4>Client Information</h4>
+                    <div className="form-group">
+                      <label htmlFor="client-name">
+                        Client Name{" "}
+                        <span style={optionalFieldStyle}>(Optional)</span>
+                      </label>
+                      <input
+                        id="client-name"
+                        type="text"
+                        placeholder="Enter client name or leave blank for anonymous"
+                        value={clientName}
+                        onChange={(e) => setClientName(e.target.value)}
+                      />
+                    </div>
 
-                        return (
-                          <tr key={index}>
-                            <td>{line.product_name || "Unknown Product"}</td>
-                            <td>{lineQuantity}</td>
-                            <td
+                    <div className="form-group">
+                      <label htmlFor="reason">
+                        Reason <span style={requiredFieldStyle}>*</span>
+                      </label>
+                      <input
+                        id="reason"
+                        type="text"
+                        placeholder="Enter reason for invoice"
+                        value={reason}
+                        onChange={(e) => setReason(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Payment Details */}
+                  <div className="form-section">
+                    <h4>Payment Details</h4>
+
+                    <div className="form-group">
+                      <label htmlFor="advance-paid">Advance Paid (XFA)</label>
+                      <input
+                        id="advance-paid"
+                        type="number"
+                        step="0.01"
+                        placeholder="Enter advance payment"
+                        value={advancePaid}
+                        onChange={(e) => setAdvancePaid(Number(e.target.value))}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="due-date">
+                        Due Date{" "}
+                        {advancePaid < calculateTotals().total ? (
+                          <span style={requiredFieldStyle}>*</span>
+                        ) : (
+                          <span style={optionalFieldStyle}>(Optional)</span>
+                        )}
+                      </label>
+                      <input
+                        id="due-date"
+                        type="date"
+                        value={dueDate}
+                        onChange={(e) => setDueDate(e.target.value)}
+                        className={
+                          formError &&
+                          advancePaid < calculateTotals().total &&
+                          !dueDate
+                            ? "input-error"
+                            : ""
+                        }
+                      />
+                      {advancePaid < calculateTotals().total && (
+                        <small style={fieldHintStyle}>
+                          Required when invoice is not fully paid
+                        </small>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Line Items */}
+                <div className="form-section">
+                  <div className="section-header">
+                    <h4>Products</h4>
+                    <button
+                      type="button"
+                      className="add-line-btn"
+                      onClick={handleAddLine}
+                    >
+                      <Plus size={14} /> Add Product
+                    </button>
+                  </div>
+
+                  <div className="line-items">
+                    <div className="line-item-header">
+                      <div className="line-item-col product">Product</div>
+                      <div className="line-item-col quantity">Quantity</div>
+                      <div className="line-item-col price">Price (XFA)</div>
+                      <div className="line-item-col discount">
+                        Discount (XFA)
+                      </div>
+                      <div className="line-item-col subtotal">Subtotal</div>
+                      <div className="line-item-col actions">Actions</div>
+                    </div>
+
+                    {lines.map((line, index) => {
+                      const lineSubtotal = String(
+                        Number.parseFloat(line.quantity || 0) *
+                          Number.parseFloat(line.price || 0) -
+                          Number.parseFloat(line.discount || 0),
+                      );
+
+                      return (
+                        <div key={index} className="line-item">
+                          <div
+                            className="line-item-col product"
+                            data-label="Product"
+                          >
+                            <select
+                              value={line.product_id}
+                              onChange={(e) =>
+                                updateLine(index, "product_id", e.target.value)
+                              }
                               className={
-                                isPromotion
-                                  ? "promotion-price"
-                                  : "product-price"
+                                formError && !line.product_id
+                                  ? "input-error"
+                                  : ""
                               }
                             >
-                              {linePrice.toFixed(2)} XFA
-                            </td>
-                            <td>{lineDiscount.toFixed(2)} XFA</td>
-                            <td className="product-subtotal">
-                              {lineSubtotal.toFixed(2)} XFA
-                            </td>
-                          </tr>
-                        );
-                      })}
-                  </tbody>
-                </table>
-              </div>
+                              <option value="">Select Product</option>
+                              {products.map((product) => (
+                                <option
+                                  key={product.id}
+                                  value={product.id.toString()}
+                                >
+                                  {product.name} -{" "}
+                                  {product.is_promotion &&
+                                  product.promotion_price > 0
+                                    ? `${product.promotion_price} XFA (PROMO)`
+                                    : `${product.price} XFA`}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div
+                            className="line-item-col quantity"
+                            data-label="Quantity"
+                          >
+                            <input
+                              type="decimal"
+                              min="1"
+                              value={line.quantity}
+                              onChange={(e) =>
+                                updateLine(
+                                  index,
+                                  "quantity",
+                                  Number(e.target.value),
+                                )
+                              }
+                              className={
+                                formError && line.quantity <= 0
+                                  ? "input-error"
+                                  : ""
+                              }
+                            />
+                          </div>
+                          <div
+                            className="line-item-col price"
+                            data-label="Price (XFA)"
+                          >
+                            <input
+                              type="text"
+                              pattern="[0-9]*\.?[0-9]*"
+                              value={line.price}
+                              onChange={(e) =>
+                                updateLine(index, "price", e.target.value)
+                              }
+                              disabled={!!line.product_id}
+                              className={
+                                line.is_promotion ? "promotion-price" : ""
+                              }
+                            />
+                          </div>
+                          <div
+                            className="line-item-col discount"
+                            data-label="Discount (XFA)"
+                          >
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={line.discount}
+                              onChange={(e) =>
+                                updateLine(
+                                  index,
+                                  "discount",
+                                  Number(e.target.value),
+                                )
+                              }
+                            />
+                          </div>
+                          <div
+                            className="line-item-col subtotal"
+                            data-label="Subtotal"
+                          >
+                            {lineSubtotal}
+                          </div>
+                          <div
+                            className="line-item-col actions"
+                            data-label="Actions"
+                          >
+                            <button
+                              type="button"
+                              className="remove-line-btn"
+                              onClick={() => handleRemoveLine(index)}
+                              disabled={lines.length === 1}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
 
-              <div className="invoice-detail-totals">
-                <div className="totals-row">
-                  <span>Subtotal:</span>
-                  <span>
-                    {Number.parseFloat(selectedInvoice.total || 0).toFixed(2)}{" "}
-                    XFA
-                  </span>
+                {/* Totals */}
+                <div className="invoice-totals">
+                  {(() => {
+                    const {
+                      subtotal,
+                      taxAmount,
+                      total,
+                      remaining,
+                      refund,
+                      status,
+                    } = calculateTotals();
+                    return (
+                      <>
+                        <div className="totals-row">
+                          <span>Subtotal:</span>
+                          <span>{subtotal} XFA</span>
+                        </div>
+                        <div className="totals-row">
+                          <span>Tax ({tax}%):</span>
+                          <span>{taxAmount} XFA</span>
+                        </div>
+                        <div className="totals-row total">
+                          <span>Total:</span>
+                          <span>{total} XFA</span>
+                        </div>
+                        <div className="totals-row">
+                          <span>Advance Paid:</span>
+                          <span>{advancePaid.toFixed(2)} XFA</span>
+                        </div>
+                        {remaining > 0 ? (
+                          <div className="totals-row remaining">
+                            <span>Remaining:</span>
+                            <span>{remaining} XFA</span>
+                          </div>
+                        ) : refund > 0 ? (
+                          <div className="totals-row refund">
+                            <span>Refund:</span>
+                            <span>{refund} XFA</span>
+                          </div>
+                        ) : (
+                          <div className="totals-row paid">
+                            <span>Fully Paid</span>
+                            <span>
+                              <Check size={16} />
+                            </span>
+                          </div>
+                        )}
+
+                        <div className="totals-row status">
+                          <span>Status:</span>
+                          <span className={status.toLowerCase()}>
+                            {status === "COMPLETED"
+                              ? "COMPLETED (Fully Paid)"
+                              : status === "CREDIT"
+                                ? "CREDIT (Payment Required)"
+                                : status === "REFUND"
+                                  ? "REFUND DUE"
+                                  : status}
+                          </span>
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
-                <div className="totals-row">
-                  <span>
-                    Tax ({Number.parseFloat(selectedInvoice.tax || 0)}%):
-                  </span>
-                  <span>
-                    {Number.parseFloat(selectedInvoice.tax_amount || 0).toFixed(
-                      2,
-                    )}{" "}
-                    XFA
-                  </span>
-                </div>
-                <div className="totals-row total">
-                  <span>Total:</span>
-                  <span>{selectedInvoice.total || "0"} XFA</span>
-                </div>
-                <div className="totals-row">
-                  <span>Advance Paid:</span>
-                  <span>
-                    {Number.parseFloat(
-                      selectedInvoice.advance_paid || 0,
-                    ).toFixed(2)}{" "}
-                    XFA
-                  </span>
-                </div>
-                {Number.parseFloat(selectedInvoice.remaining_amount || 0) >
-                0 ? (
-                  <div className="totals-row remaining">
-                    <span>Remaining:</span>
-                    <span>
-                      {Number.parseFloat(
-                        selectedInvoice.remaining_amount || 0,
-                      ).toFixed(2)}{" "}
-                      XFA
-                    </span>
-                  </div>
-                ) : Number.parseFloat(selectedInvoice.refund_amount || 0) >
-                  0 ? (
-                  <div className="totals-row refund">
-                    <span>Refund:</span>
-                    <span>
-                      {Number.parseFloat(
-                        selectedInvoice.refund_amount || 0,
-                      ).toFixed(2)}{" "}
-                      XFA
-                    </span>
-                  </div>
-                ) : (
-                  <div className="totals-row paid">
-                    <span>Fully Paid</span>
-                    <span>
-                      <Check size={16} />
-                    </span>
-                  </div>
-                )}
-                {selectedInvoice.is_credit_settled !== undefined && (
-                  <div className="totals-row">
-                    <span>Credit Settled:</span>
-                    <span>
-                      {selectedInvoice.is_credit_settled ? "Yes" : "No"}
-                    </span>
-                  </div>
-                )}
+              </div>
+              <div className="modal-footer">
+                <button
+                  className="cancel-btn"
+                  onClick={() => setShowModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="save-btn"
+                  onClick={handleCreateInvoice}
+                  disabled={isLoading || !isAuthenticated}
+                >
+                  {isLoading ? (
+                    <Loader size={16} className="spin" />
+                  ) : (
+                    <>
+                      <Plus size={16} /> Create Invoice
+                    </>
+                  )}
+                </button>
               </div>
             </div>
-            <div className="modal-footer">
-              {Number.parseFloat(selectedInvoice.remaining_amount || 0) > 0 && (
+          </div>
+        )}
+
+        {/* View Invoice Modal */}
+        {selectedInvoice && (
+          <div className="invoice-modal-overlay">
+            <div className="invoice-modal-content invoice-detail-modal">
+              <div className="modal-header">
+                <h3>Invoice Details</h3>
+                <div className="modal-header-actions">
+                  <Link
+                    to={`/invoice/${selectedInvoice.id}`}
+                    className="view-full-btn"
+                  >
+                    <FileText size={16} /> View Full Page
+                  </Link>
+                  <button
+                    className="close-modal-btn"
+                    onClick={() => setSelectedInvoice(null)}
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+              </div>
+              <div className="modal-body">
+                <div className="invoice-detail-header">
+                  <div className="invoice-detail-id">
+                    <h4>
+                      Invoice #
+                      {selectedInvoice.number
+                        ? selectedInvoice.number
+                        : selectedInvoice.id}
+                    </h4>
+                  </div>
+                  <div className="invoice-detail-dates">
+                    <div className="date-item">
+                      <span>Created:</span>
+                      <span>{formatDateTime(selectedInvoice.created_at)}</span>
+                    </div>
+                    <div className="date-item">
+                      <span>Due:</span>
+                      <span>{formatDate(selectedInvoice.due_date)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="invoice-detail-client">
+                  <h4>Client Information</h4>
+                  <p>
+                    <strong>Name:</strong>{" "}
+                    {selectedInvoice.client_name || "Anonymous"}
+                  </p>
+                  <p>
+                    <strong>Reason:</strong> {selectedInvoice.reason || "N/A"}
+                  </p>
+                  {selectedInvoice.cashier_name && (
+                    <p>
+                      <strong>Cashier:</strong> {selectedInvoice.cashier_name}
+                    </p>
+                  )}
+                </div>
+
+                <div className="invoice-detail-items">
+                  <h4>Products</h4>
+                  <table className="invoice-items-table">
+                    <thead>
+                      <tr>
+                        <th>Product</th>
+                        <th>Quantity</th>
+                        <th>Price</th>
+                        <th>Discount</th>
+                        <th>Subtotal</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedInvoice.lines &&
+                        selectedInvoice.lines.map((line, index) => {
+                          const linePrice =
+                            Number.parseFloat(line.unit_price || line.price) ||
+                            0;
+                          const lineDiscount =
+                            Number.parseFloat(line.discount) || 0;
+                          const lineQuantity = line.quantity || 0;
+                          const lineSubtotal =
+                            Number.parseFloat(line.line_total) ||
+                            lineQuantity * linePrice * (1 - lineDiscount / 100);
+                          const isPromotion = line.is_promotion || false;
+
+                          return (
+                            <tr key={index}>
+                              <td>{line.product_name || "Unknown Product"}</td>
+                              <td>{lineQuantity}</td>
+                              <td
+                                className={
+                                  isPromotion
+                                    ? "promotion-price"
+                                    : "product-price"
+                                }
+                              >
+                                {linePrice.toFixed(2)} XFA
+                              </td>
+                              <td>{lineDiscount.toFixed(2)} XFA</td>
+                              <td className="product-subtotal">
+                                {lineSubtotal.toFixed(2)} XFA
+                              </td>
+                            </tr>
+                          );
+                        })}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="invoice-detail-totals">
+                  <div className="totals-row">
+                    <span>Subtotal:</span>
+                    <span>
+                      {Number.parseFloat(selectedInvoice.total || 0).toFixed(2)}{" "}
+                      XFA
+                    </span>
+                  </div>
+                  <div className="totals-row">
+                    <span>
+                      Tax ({Number.parseFloat(selectedInvoice.tax || 0)}%):
+                    </span>
+                    <span>
+                      {Number.parseFloat(
+                        selectedInvoice.tax_amount || 0,
+                      ).toFixed(2)}{" "}
+                      XFA
+                    </span>
+                  </div>
+                  <div className="totals-row total">
+                    <span>Total:</span>
+                    <span>{selectedInvoice.total || "0"} XFA</span>
+                  </div>
+                  <div className="totals-row">
+                    <span>Advance Paid:</span>
+                    <span>
+                      {Number.parseFloat(
+                        selectedInvoice.advance_paid || 0,
+                      ).toFixed(2)}{" "}
+                      XFA
+                    </span>
+                  </div>
+                  {Number.parseFloat(selectedInvoice.remaining_amount || 0) >
+                  0 ? (
+                    <div className="totals-row remaining">
+                      <span>Remaining:</span>
+                      <span>
+                        {Number.parseFloat(
+                          selectedInvoice.remaining_amount || 0,
+                        ).toFixed(2)}{" "}
+                        XFA
+                      </span>
+                    </div>
+                  ) : Number.parseFloat(selectedInvoice.refund_amount || 0) >
+                    0 ? (
+                    <div className="totals-row refund">
+                      <span>Refund:</span>
+                      <span>
+                        {Number.parseFloat(
+                          selectedInvoice.refund_amount || 0,
+                        ).toFixed(2)}{" "}
+                        XFA
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="totals-row paid">
+                      <span>Fully Paid</span>
+                      <span>
+                        <Check size={16} />
+                      </span>
+                    </div>
+                  )}
+                  {selectedInvoice.is_credit_settled !== undefined && (
+                    <div className="totals-row">
+                      <span>Credit Settled:</span>
+                      <span>
+                        {selectedInvoice.is_credit_settled ? "Yes" : "No"}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="modal-footer">
+                {Number.parseFloat(selectedInvoice.remaining_amount || 0) >
+                  0 && (
+                  <button
+                    className="pay-debt-btn"
+                    onClick={() => {
+                      setPaymentAmount(
+                        Number.parseFloat(
+                          selectedInvoice.remaining_amount || 0,
+                        ),
+                      );
+                      setShowPaymentModal(true);
+                    }}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <Loader size={16} className="spin" />
+                    ) : (
+                      <>
+                        <DollarSign size={16} /> Pay Debt
+                      </>
+                    )}
+                  </button>
+                )}
                 <button
-                  className="pay-debt-btn"
-                  onClick={() => {
-                    setPaymentAmount(
-                      Number.parseFloat(selectedInvoice.remaining_amount || 0),
-                    );
-                    setShowPaymentModal(true);
-                  }}
+                  className="export-pdf-btn"
+                  onClick={() => handleExportPDF(selectedInvoice.id)}
                   disabled={isLoading}
                 >
                   {isLoading ? (
                     <Loader size={16} className="spin" />
                   ) : (
                     <>
-                      <DollarSign size={16} /> Pay Debt
+                      <FileText size={16} /> Export PDF
                     </>
                   )}
                 </button>
-              )}
-              <button
-                className="export-pdf-btn"
-                onClick={() => handleExportPDF(selectedInvoice.id)}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <Loader size={16} className="spin" />
-                ) : (
-                  <>
-                    <FileText size={16} /> Export PDF
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Confirm Archive Modal */}
-      {confirmArchive !== null && (
-        <div className="invoice-modal-overlay">
-          <div className="invoice-modal-content confirm-modal">
-            <div className="modal-header">
-              <h3>Confirm Delete</h3>
-              <button
-                className="close-modal-btn"
-                onClick={() => setConfirmArchive(null)}
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <div className="modal-body">
-              <p>Are you sure you want to delete invoice this invoice?</p>
-              <p>This action cannot be undone.</p>
-            </div>
-            <div className="modal-footer">
-              <button
-                className="cancel-btn"
-                onClick={() => setConfirmArchive(null)}
-              >
-                Cancel
-              </button>
-              <button
-                className="delete-btn"
-                onClick={confirmArchiveInvoice}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <Loader size={16} className="spin" />
-                ) : (
-                  <>
-                    <Trash2 size={16} /> Delete Invoice
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Payment Modal */}
-      {selectedInvoice && showPaymentModal && (
-        <div className="invoice-modal-overlay">
-          <div className="invoice-modal-content payment-modal">
-            <div className="modal-header">
-              <h3>Pay Invoice Debt</h3>
-              <button
-                className="close-modal-btn"
-                onClick={() => setShowPaymentModal(false)}
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <div className="modal-body">
-              <div className="payment-details">
-                <p>
-                  <strong>Invoice #:</strong>{" "}
-                  {selectedInvoice.number || selectedInvoice.id}
-                </p>
-                <p>
-                  <strong>Client:</strong>{" "}
-                  {selectedInvoice.client_name || "Anonymous"}
-                </p>
-                <p>
-                  <strong>Total Amount:</strong>{" "}
-                  {Number.parseFloat(selectedInvoice.total || 0).toFixed(2)} XFA
-                </p>
-                <p>
-                  <strong>Remaining Balance:</strong>{" "}
-                  {Number.parseFloat(
-                    selectedInvoice.remaining_amount || 0,
-                  ).toFixed(2)}{" "}
-                  XFA
-                </p>
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="payment-amount">Payment Amount (XFA)</label>
-                <input
-                  id="payment-amount"
-                  type="number"
-                  min="0"
-                  max={Number.parseFloat(selectedInvoice.remaining_amount || 0)}
-                  step="0.01"
-                  value={paymentAmount}
-                  onChange={(e) => setPaymentAmount(Number(e.target.value))}
-                  className="payment-input"
-                />
-                <small style={fieldHintStyle}>
-                  Maximum payment:{" "}
-                  {Number.parseFloat(
-                    selectedInvoice.remaining_amount || 0,
-                  ).toFixed(2)}{" "}
-                  XFA
-                </small>
               </div>
             </div>
-            <div className="modal-footer">
-              <button
-                className="cancel-btn"
-                onClick={() => setShowPaymentModal(false)}
-              >
-                Cancel
-              </button>
-              <button
-                className="pay-btn"
-                onClick={() => {
-                  handlePayDebt(selectedInvoice.id, paymentAmount);
-                  setShowPaymentModal(false);
-                }}
-                disabled={
-                  isLoading ||
-                  paymentAmount <= 0 ||
-                  paymentAmount >
-                    Number.parseFloat(selectedInvoice.remaining_amount || 0)
-                }
-              >
-                {isLoading ? (
-                  <Loader size={16} className="spin" />
-                ) : (
-                  <>
-                    <DollarSign size={16} /> Process Payment
-                  </>
-                )}
-              </button>
+          </div>
+        )}
+
+        {/* Confirm Archive Modal */}
+        {confirmArchive !== null && (
+          <div className="invoice-modal-overlay">
+            <div className="invoice-modal-content confirm-modal">
+              <div className="modal-header">
+                <h3>Confirm Delete</h3>
+                <button
+                  className="close-modal-btn"
+                  onClick={() => setConfirmArchive(null)}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="modal-body">
+                <p>Are you sure you want to delete invoice this invoice?</p>
+                <p>This action cannot be undone.</p>
+              </div>
+              <div className="modal-footer">
+                <button
+                  className="cancel-btn"
+                  onClick={() => setConfirmArchive(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="delete-btn"
+                  onClick={confirmArchiveInvoice}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <Loader size={16} className="spin" />
+                  ) : (
+                    <>
+                      <Trash2 size={16} /> Delete Invoice
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+
+        {/* Payment Modal */}
+        {selectedInvoice && showPaymentModal && (
+          <div className="invoice-modal-overlay">
+            <div className="invoice-modal-content payment-modal">
+              <div className="modal-header">
+                <h3>Pay Invoice Debt</h3>
+                <button
+                  className="close-modal-btn"
+                  onClick={() => setShowPaymentModal(false)}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="modal-body">
+                <div className="payment-details">
+                  <p>
+                    <strong>Invoice #:</strong>{" "}
+                    {selectedInvoice.number || selectedInvoice.id}
+                  </p>
+                  <p>
+                    <strong>Client:</strong>{" "}
+                    {selectedInvoice.client_name || "Anonymous"}
+                  </p>
+                  <p>
+                    <strong>Total Amount:</strong>{" "}
+                    {Number.parseFloat(selectedInvoice.total || 0).toFixed(2)}{" "}
+                    XFA
+                  </p>
+                  <p>
+                    <strong>Remaining Balance:</strong>{" "}
+                    {Number.parseFloat(
+                      selectedInvoice.remaining_amount || 0,
+                    ).toFixed(2)}{" "}
+                    XFA
+                  </p>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="payment-amount">Payment Amount (XFA)</label>
+                  <input
+                    id="payment-amount"
+                    type="number"
+                    min="0"
+                    max={Number.parseFloat(
+                      selectedInvoice.remaining_amount || 0,
+                    )}
+                    step="0.01"
+                    value={paymentAmount}
+                    onChange={(e) => setPaymentAmount(Number(e.target.value))}
+                    className="payment-input"
+                  />
+                  <small style={fieldHintStyle}>
+                    Maximum payment:{" "}
+                    {Number.parseFloat(
+                      selectedInvoice.remaining_amount || 0,
+                    ).toFixed(2)}{" "}
+                    XFA
+                  </small>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button
+                  className="cancel-btn"
+                  onClick={() => setShowPaymentModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="pay-btn"
+                  onClick={() => {
+                    handlePayDebt(selectedInvoice.id, paymentAmount);
+                    setShowPaymentModal(false);
+                  }}
+                  disabled={
+                    isLoading ||
+                    paymentAmount <= 0 ||
+                    paymentAmount >
+                      Number.parseFloat(selectedInvoice.remaining_amount || 0)
+                  }
+                >
+                  {isLoading ? (
+                    <Loader size={16} className="spin" />
+                  ) : (
+                    <>
+                      <DollarSign size={16} /> Process Payment
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </MainContent>
   );
 };
 

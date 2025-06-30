@@ -1107,14 +1107,6 @@
     padding: 0;
     border-radius: 0;
   }
-
-  .invoice-manager-container {
-    position: relative;
-    left: 0;
-    width: 100%;
-    padding: 0;
-    margin: 0;
-  }
 }
 
 @media (max-width: 576px) {
@@ -2183,23 +2175,4 @@
 
 .view-product-btn:hover {
   background-color: #4f46e5;
-}
-
-.invoice-manager-container {
-  position: absolute;
-  left: 5%;
-  padding: 1rem;
-  width: 95%;
-  margin: 0 auto;
-  background-color: #121212;
-}
-
-@media (max-width: 768px) {
-  .invoice-manager-container {
-    position: relative;
-    left: 0;
-    width: 100%;
-    padding: 0;
-    margin: 0;
-  }
 }

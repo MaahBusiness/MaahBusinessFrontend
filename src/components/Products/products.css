@@ -73,10 +73,7 @@
 }
 
 .search-container {
-  position: relative;
-  flex: 1;
-  min-width: 250px;
-  max-width: 400px;
+  margin-bottom: 1rem;
 }
 
 .search-icon {

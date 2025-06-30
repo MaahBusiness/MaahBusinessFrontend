@@ -1,39 +1,22 @@
 /* Invoice Manager Container */
 .invoice-manager-container {
-  position: absolute;
-  left: 5%;
-  padding: 1rem;
-  width: 95%;
-  margin: 0 auto;
   color: #f8f9fa;
 }
 .archive-button {
-  display: flex;
   text-decoration: none;
-  justify-content: space-between;
-  align-items: center;
-  color: #fff;
-  background-color: #dc2626;
-  border-radius: 10px;
-  padding: 1em;
-}
-.archive-button1 {
   display: flex;
-  justify-content: center;
   align-items: center;
+  gap: 0.5rem;
   background-color: #dc2626;
-  border-radius: 10px;
-  padding: 1em;
+  color: #fff;
   border: none;
-}
-
-/* Style the Link inside the button */
-.archive-button1 a {
-  color: #fff;
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  gap: 0.5em;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 1;
+  white-space: nowrap;
 }
 
 .header-actions {
@@ -46,12 +29,9 @@
 /* Header Styles */
 .invoice-manager-header {
   display: flex;
-  width: 70%;
-  margin: 1em auto;
+  margin-bottom: 1em;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
   background-color: #1e1e1e;
   padding: 1em;
   border-radius: 0.5em;
@@ -79,17 +59,6 @@
   border-radius: 3px;
 }
 
-.invoice-manager-header h2::before {
-  content: "";
-  position: absolute;
-  top: -5px;
-  left: 0;
-  width: 30px;
-  height: 3px;
-  background: #6366f1;
-  border-radius: 3px;
-}
-
 .add-button {
   display: flex;
   align-items: center;
@@ -102,8 +71,8 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  position: relative;
   z-index: 1;
+  white-space: nowrap;
 }
 
 .add-button:active {
@@ -112,14 +81,11 @@
 }
 
 .view-toggle {
-  margin: 1em auto;
-  width: 80%;
+  margin-bottom: 1em;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
+  justify-content: end;
   gap: 0.5rem;
-  margin-bottom: 1.5rem;
   position: relative;
   z-index: 1;
 }
@@ -152,11 +118,9 @@
 }
 
 .search-container {
-  width: 70%;
-  margin: 1em auto;
+  margin-bottom: 1rem !important;
   display: flex;
   gap: 1rem;
-  margin-bottom: 1.5rem;
 }
 
 .search-wrapper {
@@ -166,7 +130,7 @@
 
 .search-icon {
   position: absolute;
-  left: 1rem;
+  left: 0.25rem;
   top: 50%;
   transform: translateY(-50%);
   color: #a0a0a0;
@@ -263,11 +227,6 @@
 
 .invoice-table th {
   background-color: #252525;
-  .archive-button {
-    background-color: #dc2626;
-    border-radius: 10px;
-    color: white;
-  }
   color: #f8f9fa;
   font-weight: 600;
   text-align: left;
@@ -364,8 +323,7 @@
   border: 1px dashed #333;
   color: #a0a0a0;
   text-align: center;
-  width: 70%;
-  margin: 0 auto;
+  margin-bottom: 1rem;
 }
 
 .empty-state svg {
@@ -1378,47 +1336,18 @@
   }
 }
 
-/* Responsive styles */
-@media (max-width: 1200px) {
-  .invoice-manager-header,
-  .view-toggle,
-  .search-container,
-  .invoice-list,
-  .invoice-table-container,
-  .empty-state {
-    width: 85%;
-  }
-}
-
 @media (max-width: 992px) {
-  .invoice-manager-header,
-  .view-toggle,
-  .search-container,
-  .invoice-list,
-  .invoice-table-container,
-  .empty-state {
-    width: 90%;
-  }
-
   .invoice-list {
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  }
-
-  .search-container {
-    flex-direction: column;
-    gap: 0.75rem;
   }
 }
 
 @media (max-width: 768px) {
   .invoice-manager-container {
     padding: 1rem;
-    left: 0;
-    width: 100%;
   }
 
   .invoice-manager-header {
-    width: 95%;
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
@@ -1432,22 +1361,6 @@
     width: 100%;
   }
 
-  .view-toggle {
-    width: 95%;
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .search-container {
-    width: 95%;
-  }
-
-  .invoice-list,
-  .invoice-table-container,
-  .empty-state {
-    width: 95%;
-  }
-
   .invoice-list {
     grid-template-columns: 1fr;
   }
@@ -1457,7 +1370,6 @@
   }
 
   .invoice-create-modal-wide {
-    width: 95%;
     padding: 1rem;
   }
 
@@ -1473,6 +1385,15 @@
 }
 
 @media (max-width: 480px) {
+  .header-actions {
+    flex-wrap: wrap;
+  }
+
+  .search-container {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
   .invoice-manager-header h2 {
     font-size: 1.5rem;
   }

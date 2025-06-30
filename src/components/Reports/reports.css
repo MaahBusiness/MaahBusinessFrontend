@@ -53,6 +53,10 @@
   .report-grid {
     grid-template-columns: 1fr;
   }
+  .saved-reports-section {
+    height: 250px;
+    overflow-y: auto;
+  }
 }
 
 /* Form card */
