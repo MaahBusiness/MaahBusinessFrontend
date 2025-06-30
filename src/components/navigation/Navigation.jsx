@@ -110,11 +110,6 @@ const Navbar = () => {
               <li>
                 <Link to="/login">Login</Link>
               </li>
-              <li>
-                <Link to="/signup" className="signup-link">
-                  Sign Up
-                </Link>
-              </li>
             </>
           )}
           {/* Notification icon - visible only when logged in */}
@@ -139,6 +134,15 @@ const Navbar = () => {
               >
                 <Link to="/profile/info" title={`Profile: ${username}`}>
                   <FaUserCircle size={28} />
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/signup"
+                  className="signup-link"
+                  title="Only Manage can add members"
+                >
+                  Add Member
                 </Link>
               </li>
             </>

@@ -12,30 +12,33 @@ const Login = () => {
   const navigate = useNavigate();
 
   // Redirect if already logged in
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      const user = JSON.parse(localStorage.getItem("user"));
-      if (user?.role === "manager") {
-        navigate("/ArchiveManager");
-      } else {
-        navigate("/");
-      }
-    }
-  }, [navigate]);
+  // useEffect(() => {
+  //   const token = localStorage.getItem("token");
+  //   if (token) {
+  //     const user = JSON.parse(localStorage.getItem("user"));
+  //     if (user?.role === "manager") {
+  //       navigate("/ArchiveManager");
+  //     } else {
+  //       navigate("/");
+  //     }
+  //   }
+  // }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      const response = await fetch("https://victbackendmanagement.onrender.com/api/v1/login/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        "https://victbackendmanagement.onrender.com/api/v1/login/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ username, password }),
         },
-        body: JSON.stringify({ username, password }),
-      });
+      );
 
       const data = await response.json();
 
@@ -53,7 +56,7 @@ const Login = () => {
       if (data.user) {
         localStorage.setItem("user", JSON.stringify(data.user));
         console.log("User data stored from login response");
-        
+
         // Redirect based on role
         if (data.user.role === "manager") {
           navigate("/ArchiveManager");
@@ -78,7 +81,7 @@ const Login = () => {
             const userData = await userResponse.json();
             localStorage.setItem("user", JSON.stringify(userData));
             console.log("User data fetched and stored after login");
-            
+
             // Redirect based on role
             if (userData.role === "manager") {
               navigate("/ArchiveManager");
@@ -127,10 +130,10 @@ const Login = () => {
           {isLoading ? "Logging in..." : "Login"}
         </button>
         {errorMessage && <p className="auth-error">{errorMessage}</p>}
+
         <p className="auth-link-text">
-          I don't have an account?{" "}
-          <Link to="/signup">
-            <span className="auth-link">Sign up</span>
+          <Link to="/">
+            <span className="auth-link">Back to home</span>
           </Link>
         </p>
         <p className="auth-link-text">

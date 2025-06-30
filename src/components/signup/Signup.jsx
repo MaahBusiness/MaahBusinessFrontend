@@ -13,7 +13,8 @@ const Signup = () => {
         navigate("/login");
         return;
       } else {
-        if (!hasManagerPermission()) {
+        const hasPerm = await hasManagerPermission();
+        if (!hasPerm) {
           navigate("/login");
           return;
         }
@@ -228,6 +229,11 @@ const Signup = () => {
     <div className="auth-signup-container">
       <form onSubmit={handleSubmit} className="auth-signup-form">
         <h2 className="auth-signup-title">Sign Up</h2>
+        <h3
+          style={{ textAlign: "center", color: "#ccc", marginBottom: "1rem" }}
+        >
+          Add an account for a member
+        </h3>
         <p className="auth-label">Enter Username</p>
         <input
           type="text"
