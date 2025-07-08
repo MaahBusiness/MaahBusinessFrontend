@@ -22,7 +22,7 @@
   padding: 0.5em;
 }
 .nav-brand a {
-  color: #6366f1;
+  color: var(--primary-color);
   text-decoration: none;
   transition: color 0.2s ease;
 }
@@ -59,12 +59,12 @@
   height: 2px;
   bottom: 0;
   left: 0;
-  background-color: #6366f1;
+  background-color: var(--primary-color);
   transition: width 0.3s ease;
 }
 
 .nav-content ul li a:hover {
-  color: #6366f1;
+  color: var(--primary-color);
   text-decoration: none;
 }
 
@@ -73,7 +73,7 @@
 }
 
 .signup-link {
-  background-color: #6366f1;
+  background-color: var(--primary-color);
   color: white !important;
   padding: 0.5em 1em !important;
   border-radius: 4px;
@@ -81,7 +81,7 @@
 }
 
 .signup-link:hover {
-  background-color: #6366f1;
+  background-color: var(--primary-color);
   color: white !important;
 }
 
@@ -103,7 +103,7 @@
 }
 
 .nav-content ul li a:hover svg {
-  color: #6366f1;
+  color: var(--primary-color);
   transform: scale(1.1);
 }
 

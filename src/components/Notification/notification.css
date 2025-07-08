@@ -46,9 +46,9 @@
 }
 
 .notification-trigger.active {
-  background-color: #6366f1;
+  background-color: var(--primary-color);
   color: white;
-  border-color: #6366f1;
+  border-color: var(--primary-color);
   box-shadow: 0 4px 6px rgba(99, 102, 241, 0.2);
 }
 
@@ -135,7 +135,7 @@
 
 .notification-header h1 {
   margin: 0;
-  color: #6366f1;
+  color: var(--primary-color);
   font-size: 1.5rem;
   font-weight: 700;
   position: relative;
@@ -146,7 +146,7 @@
 }
 
 .title-icon {
-  color: #6366f1;
+  color: var(--primary-color);
 }
 
 .notification-header h1::after {
@@ -290,7 +290,7 @@
 }
 
 .filter-icon {
-  color: #6366f1;
+  color: var(--primary-color);
 }
 
 .filter-btn:hover {
@@ -300,9 +300,9 @@
 }
 
 .filter-btn.active {
-  background-color: #6366f1;
+  background-color: var(--primary-color);
   color: #f8f9fa;
-  border-color: #6366f1;
+  border-color: var(--primary-color);
 }
 
 /* Notification List */
@@ -374,7 +374,7 @@
 .notification-icon {
   width: 20px;
   height: 20px;
-  color: #6366f1;
+  color: var(--primary-color);
 }
 
 .notification-icon.critical {
@@ -430,7 +430,7 @@
 
 .notification-product {
   font-weight: 500;
-  color: #6366f1;
+  color: var(--primary-color);
   display: flex;
   align-items: center;
 }
@@ -491,7 +491,7 @@
 
 .view-details-btn:hover {
   background-color: rgba(99, 102, 241, 0.2);
-  color: #6366f1;
+  color: var(--primary-color);
   border-color: rgba(99, 102, 241, 0.3);
   transform: translateY(-2px);
 }
@@ -539,7 +539,7 @@
   align-items: center;
   gap: 8px;
   padding: 0.75rem 1.25rem;
-  background-color: #6366f1;
+  background-color: var(--primary-color);
   color: white;
   border: none;
   border-radius: 0.5rem;
@@ -682,7 +682,7 @@
 }
 
 .modal-icon {
-  color: #6366f1;
+  color: var(--primary-color);
 }
 
 .close-modal-btn {
@@ -730,7 +730,7 @@
 }
 
 .detail-value.status-unread {
-  color: #6366f1;
+  color: var(--primary-color);
   font-weight: 500;
   border-color: rgba(99, 102, 241, 0.3);
 }
@@ -767,7 +767,7 @@
 }
 
 .months-input:focus {
-  border-color: #6366f1;
+  border-color: var(--primary-color);
   box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
   outline: none;
 }
@@ -836,7 +836,7 @@
 
 .close-btn {
   padding: 0.75rem 1.5rem;
-  background-color: #6366f1;
+  background-color: var(--primary-color);
   width: 40%;
   display: flex;
   justify-content: center;

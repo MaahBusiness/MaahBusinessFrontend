@@ -61,7 +61,7 @@
 .invoice-manager-header h2 {
   font-size: 1.875rem;
   font-weight: 700;
-  color: #6366f1; /* Indigo primary color */
+  color: var(--primary-color); /* Indigo primary color */
   margin: 0;
   position: relative;
   letter-spacing: -0.5px;
@@ -82,7 +82,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background-color: #6366f1;
+  background-color: var(--primary-color);
   color: #fff;
   border: none;
   border-radius: 0.5rem;
@@ -131,9 +131,9 @@
 }
 
 .view-toggle-btn.active {
-  background-color: #6366f1;
+  background-color: var(--primary-color);
   color: #f8f9fa;
-  border-color: #6366f1;
+  border-color: var(--primary-color);
 }
 
 .search-container {
@@ -167,7 +167,7 @@
 }
 
 .search-input:focus {
-  border-color: #6366f1;
+  border-color: var(--primary-color);
   box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
   outline: none;
 }
@@ -201,7 +201,7 @@
 }
 
 .date-input:focus {
-  border-color: #6366f1;
+  border-color: var(--primary-color);
   box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
   outline: none;
 }
@@ -313,7 +313,7 @@
 }
 
 .view-btn {
-  color: #6366f1;
+  color: var(--primary-color);
   background-color: rgba(99, 102, 241, 0.1);
 }
 
@@ -384,7 +384,7 @@
 .invoice-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-  border-color: #6366f1;
+  border-color: var(--primary-color);
 }
 
 .invoice-card:hover::before {
@@ -486,7 +486,7 @@
 
 /* Colorful icons */
 .icon-user {
-  color: #6366f1; /* Indigo */
+  color: var(--primary-color); /* Indigo */
 }
 
 .icon-reason {
@@ -514,7 +514,7 @@
   align-items: center;
   gap: 0.5rem;
   margin-top: 0.5rem;
-  color: #6366f1;
+  color: var(--primary-color);
   font-size: 0.75rem;
   opacity: 0;
   transition: opacity 0.3s ease;
@@ -603,8 +603,8 @@
 }
 
 .pagination-btn:hover:not(:disabled) {
-  background-color: #6366f1;
-  border-color: #6366f1;
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
   transform: translateY(-2px);
 }
 
@@ -743,7 +743,7 @@
 .form-section h4 {
   font-size: 1rem;
   font-weight: 600;
-  color: #6366f1;
+  color: var(--primary-color);
   margin: 0 0 1rem 0;
   padding-bottom: 0.5rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -804,7 +804,7 @@
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {
-  border-color: #6366f1;
+  border-color: var(--primary-color);
   box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
   outline: none;
 }
@@ -915,7 +915,7 @@
 
 .line-item-col select:focus,
 .line-item-col input:focus {
-  border-color: #6366f1;
+  border-color: var(--primary-color);
   box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
   outline: none;
 }
@@ -999,12 +999,12 @@
 }
 
 .totals-row.refund {
-  color: #6366f1; /* Indigo */
+  color: var(--primary-color); /* Indigo */
   font-weight: 500;
 }
 
 .totals-row.refund span:last-child {
-  color: #6366f1;
+  color: var(--primary-color);
   font-weight: 700;
 }
 
@@ -1080,7 +1080,7 @@
 }
 
 .save-btn {
-  background-color: #6366f1;
+  background-color: var(--primary-color);
   color: white;
   border: none;
   box-shadow: 0 4px 6px rgba(99, 102, 241, 0.2);
@@ -1199,7 +1199,7 @@
 .invoice-detail-client h4 {
   font-size: 1rem;
   font-weight: 600;
-  color: #6366f1;
+  color: var(--primary-color);
   margin: 0 0 0.75rem 0;
 }
 
@@ -1221,7 +1221,7 @@
 .invoice-detail-items h4 {
   font-size: 1rem;
   font-weight: 600;
-  color: #6366f1;
+  color: var(--primary-color);
   margin: 0 0 0.75rem 0;
 }
 

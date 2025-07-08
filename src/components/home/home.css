@@ -1,4 +1,4 @@
-.hero {
+/* .hero {
   padding: 1rem;
 }
 
@@ -12,7 +12,7 @@
   font-size: 2.5rem;
   font-weight: bold;
   margin-bottom: 0.5em;
-  color: #6366f1;
+  color: var(--primary-color);
 }
 
 .hero_context p {
@@ -26,7 +26,7 @@
 .btn {
   padding: 1em 0.8em;
   font-size: 1rem;
-  background-color: #0b3899;
+  background-color: var(--primary-color-dark);
   color: white;
   width: 35%;
   border: none;
@@ -74,4 +74,58 @@
   .hero_image {
     justify-content: center;
   }
+} */
+
+.hero_context {
+  position: relative;
+  display: flex;
+  gap: 2rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2rem;
+  width: 100%;
+  height: 100vh;
+  overflow-y: scroll;
+  background-color: #000000bc;
+  /* backdrop-filter: blur(2px); */
+}
+
+.hero_context h1 {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: var(--primary-color);
+}
+
+.hero_context p {
+  font-size: 1.1rem;
+}
+
+.hero_context button {
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  background-color: var(--primary-color-dark);
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: background 0.3s ease;
+}
+
+.hero_image {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  overflow: hidden;
+  /* width: 100%;
+  height: 100vh; */
+}
+
+.hero_image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }

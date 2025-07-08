@@ -17,7 +17,7 @@
 .report-title {
   font-size: 1.875rem;
   font-weight: 600;
-  color: #6366f1;
+  color: var(--primary-color);
   margin: 0 0 1.5rem 0;
   position: relative;
   text-align: center;
@@ -28,7 +28,7 @@
 }
 
 .title-icon {
-  color: #6366f1;
+  color: var(--primary-color);
 }
 
 .report-title::after {
@@ -77,7 +77,7 @@
 }
 
 .form-title {
-  color: #6366f1;
+  color: var(--primary-color);
   font-size: 1.25rem;
   margin: 0 0 4px 0;
   font-weight: 600;
@@ -87,7 +87,7 @@
 }
 
 .form-title-icon {
-  color: #6366f1;
+  color: var(--primary-color);
 }
 
 .form-description {
@@ -112,7 +112,7 @@
 }
 
 .input-icon {
-  color: #6366f1;
+  color: var(--primary-color);
 }
 
 .form-select,
@@ -129,7 +129,7 @@
 
 .form-select:focus,
 .form-input:focus {
-  border-color: #6366f1;
+  border-color: var(--primary-color);
   box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
   outline: none;
 }
@@ -140,7 +140,7 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  background-color: #6366f1;
+  background-color: var(--primary-color);
   color: white;
   border: none;
   border-radius: 0.5rem;
@@ -162,7 +162,7 @@
 .generate-btn {
   width: 80%;
   margin: 1em auto;
-  background-color: #6366f1;
+  background-color: var(--primary-color);
   color: white;
   border: none;
   border-radius: 0.375rem;
@@ -242,14 +242,14 @@
 
 .report-type-btn:hover {
   background-color: #252538;
-  border-color: #6366f1;
+  border-color: var(--primary-color);
   color: #e0e0e0;
   transform: translateY(-2px);
 }
 
 .report-type-btn.active {
-  background-color: #6366f1;
-  border-color: #6366f1;
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
   color: white;
 }
 
@@ -272,7 +272,7 @@
 }
 
 .section-icon {
-  color: #6366f1;
+  color: var(--primary-color);
 }
 
 .saved-reports-list {
@@ -297,7 +297,7 @@
 
 .saved-report-item:hover {
   background-color: rgba(99, 102, 241, 0.1);
-  border-color: #6366f1;
+  border-color: var(--primary-color);
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
@@ -310,14 +310,14 @@
 .saved-report-type {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #6366f1;
+  color: var(--primary-color);
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
 .report-type-icon {
-  color: #6366f1;
+  color: var(--primary-color);
 }
 
 .saved-report-date {
@@ -360,7 +360,7 @@
 }
 
 .download-report-btn:hover {
-  color: #6366f1;
+  color: var(--primary-color);
   background-color: rgba(99, 102, 241, 0.1);
 }
 
@@ -380,7 +380,7 @@
 }
 
 .results-title {
-  color: #6366f1;
+  color: var(--primary-color);
   font-size: 1.25rem;
   margin: 0 0 4px 0;
   font-weight: 600;
@@ -390,7 +390,7 @@
 }
 
 .results-title-icon {
-  color: #6366f1;
+  color: var(--primary-color);
 }
 
 .results-description {
@@ -465,7 +465,7 @@
 .loading-icon {
   width: 48px;
   height: 48px;
-  color: #6366f1;
+  color: var(--primary-color);
   margin-bottom: 1rem;
   animation: spin 1s linear infinite;
 }
@@ -507,7 +507,7 @@
 }
 
 .filter-icon {
-  color: #6366f1;
+  color: var(--primary-color);
 }
 
 .date-filter-label {
@@ -535,7 +535,7 @@
 }
 
 .badge-icon {
-  color: #6366f1;
+  color: var(--primary-color);
 }
 
 .report-content-section {
@@ -579,7 +579,7 @@
 .stat-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-  border-color: #6366f1;
+  border-color: var(--primary-color);
 }
 
 .stat-card-icon {
@@ -668,7 +668,7 @@
 }
 
 .stat-icon {
-  color: #6366f1;
+  color: var(--primary-color);
 }
 
 .stat-content {
@@ -690,7 +690,7 @@
 }
 
 .stat-value.primary {
-  color: #6366f1;
+  color: var(--primary-color);
 }
 
 .stat-value.danger {
@@ -717,7 +717,7 @@
 }
 
 .table-icon {
-  color: #6366f1;
+  color: var(--primary-color);
 }
 
 .table-container {
@@ -752,7 +752,7 @@
 }
 
 .primary {
-  color: #6366f1;
+  color: var(--primary-color);
 }
 
 /* Report footer */
@@ -774,7 +774,7 @@
 }
 
 .user-icon {
-  color: #6366f1;
+  color: var(--primary-color);
 }
 
 .user-name {
@@ -789,7 +789,7 @@
 }
 
 .timestamp-icon {
-  color: #6366f1;
+  color: var(--primary-color);
 }
 
 /* Empty inventory message */
@@ -811,7 +811,7 @@
 }
 
 .refresh-inventory-btn {
-  background-color: #6366f1;
+  background-color: var(--primary-color);
   color: white;
   border: none;
   border-radius: 0.375rem;
@@ -834,7 +834,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  background-color: #6366f1;
+  background-color: var(--primary-color);
   color: white;
   border: none;
   border-radius: 0.375rem;
@@ -902,7 +902,7 @@
 }
 
 .modal-icon {
-  color: #6366f1;
+  color: var(--primary-color);
   margin-right: 0.5rem;
 }
 
@@ -954,7 +954,7 @@
 }
 
 .section-icon {
-  color: #6366f1;
+  color: var(--primary-color);
 }
 
 .date-inputs {
@@ -1015,7 +1015,7 @@
 
 .pagination-btn:hover:not(:disabled) {
   background-color: rgba(99, 102, 241, 0.1);
-  border-color: #6366f1;
+  border-color: var(--primary-color);
   color: #e0e0e0;
   transform: translateY(-2px);
 }
@@ -1081,7 +1081,7 @@
 }
 
 .icon-dollar {
-  color: #6366f1;
+  color: var(--primary-color);
 }
 
 .icon-credit {
@@ -1163,7 +1163,7 @@
 }
 
 .icon-dollar {
-  color: #6366f1;
+  color: var(--primary-color);
 }
 
 .icon-credit {

@@ -16,7 +16,7 @@
 .profile-header h2 {
   font-size: 2rem;
   font-weight: 600;
-  color: #6366f1;
+  color: var(--primary-color);
   margin-bottom: 0.5rem;
 }
 
