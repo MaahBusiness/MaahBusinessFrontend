@@ -1,6 +1,6 @@
 "use client";
 
-import No_image from "../../../public/assets/No_IMG.jpg";
+import No_image from "/src/assets/No_IMG.jpg";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import {

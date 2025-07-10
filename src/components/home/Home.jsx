@@ -1,9 +1,10 @@
 "use client";
 
 import "./home.css";
-import img from "../../../public/assets/hero.jpg";
+import img from "/src/assets/hero.jpg";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
+import { Button } from "@mui/material";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -42,6 +43,9 @@ const Home = () => {
         >
           Get Started
         </button>
+        <Button size="small" variant="contained">
+          Go to Dashboard
+        </Button>
       </div>
     </div>
   );

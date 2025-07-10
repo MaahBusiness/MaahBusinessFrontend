@@ -136,15 +136,6 @@ const Navbar = () => {
                   <FaUserCircle size={28} />
                 </Link>
               </li>
-              <li>
-                <Link
-                  to="/signup"
-                  className="signup-link"
-                  title="Only Manage can add members"
-                >
-                  Add Member
-                </Link>
-              </li>
             </>
           )}
         </ul>

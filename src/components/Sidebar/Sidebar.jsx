@@ -36,11 +36,6 @@ const Sidebar = () => {
         </div>
         <div className="sidebar-content">
           <ul>
-            <li className={isActive("/") ? "active" : ""}>
-              <Link to="/" onClick={toggleSidebar}>
-                <FaHome className="icon" /> Home
-              </Link>
-            </li>
             <li className={isActive("/dashboard") ? "active" : ""}>
               <Link to="/dashboard" onClick={toggleSidebar}>
                 <FaTachometerAlt className="icon" /> Dashboard
