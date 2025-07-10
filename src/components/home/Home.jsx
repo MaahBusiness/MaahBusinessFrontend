@@ -32,7 +32,7 @@ const Home = () => {
         <h1>Streamline Your Inventory Management</h1>
         <p>
           Take control of your stock with our powerful management system. Track
-          inventory in real-time, generate detailed reports, and make
+          inventory in real-time, generate detailed reports <br /> and make
           data-driven decisions to optimize your business operations.
         </p>
         <button

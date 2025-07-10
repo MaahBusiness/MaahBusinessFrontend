@@ -1,81 +1,3 @@
-/* .hero {
-  padding: 1rem;
-}
-
-.hero_context {
-  padding: 1rem 0 0 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.hero_context h1 {
-  font-size: 2.5rem;
-  font-weight: bold;
-  margin-bottom: 0.5em;
-  color: var(--primary-color);
-}
-
-.hero_context p {
-  font-size: 1.1rem;
-  margin-bottom: 0.8em;
-  line-height: 1.7;
-  color: #fff;
-  text-align: start;
-}
-
-.btn {
-  padding: 1em 0.8em;
-  font-size: 1rem;
-  background-color: var(--primary-color-dark);
-  color: white;
-  width: 35%;
-  border: none;
-  cursor: pointer;
-  border-radius: 10px;
-  transition: background 0.3s ease;
-}
-
-.hero_image {
-  display: flex;
-  height: auto;
-  margin-top: 1.5rem;
-}
-.hero_image img {
-  width: 90%;
-  border-radius: 1em;
-}
-@media screen and (max-width: 768px) {
-  .hero {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    min-height: auto;
-    padding: 2em 0;
-  }
-
-  .hero_context {
-    padding: 0 1rem;
-  }
-
-  .hero_context h1 {
-    font-size: 2rem;
-  }
-
-  .hero_context p {
-    font-size: 1rem;
-    text-align: center;
-  }
-
-  .btn {
-    width: 60%;
-    margin: 0 auto;
-  }
-
-  .hero_image {
-    justify-content: center;
-  }
-} */
-
 .hero_context {
   position: relative;
   display: flex;
@@ -103,13 +25,13 @@
 }
 
 .hero_context button {
-  padding: 1rem 2rem;
+  padding: 0.8rem 2rem;
   font-size: 1rem;
   background-color: var(--primary-color-dark);
   color: white;
   border: none;
   cursor: pointer;
-  border-radius: 10px;
+  border-radius: var(--border-radius);
   transition: background 0.3s ease;
 }
 
@@ -120,8 +42,6 @@
   left: 0;
   right: 0;
   overflow: hidden;
-  /* width: 100%;
-  height: 100vh; */
 }
 
 .hero_image img {

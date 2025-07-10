@@ -3,6 +3,7 @@
   --primary-color-dark: #0b3899;
   --sidebar-width: 200px;
   --navbar-height: 55px;
+  --border-radius: 10px;
 }
 
 * {
