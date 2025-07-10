@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import "./products.css";
 import MainContent from "../MainContend";
+import { API_URL } from "../../utils";
 
 const Product = () => {
   const [products, setProducts] = useState([]);
@@ -66,10 +67,8 @@ const Product = () => {
     subcategory_id: "",
   });
 
-  const apiBaseUrl =
-    "https://victbackendmanagement.onrender.com/api/v1/product";
-  const categoryApiBaseUrl =
-    "https://victbackendmanagement.onrender.com/api/v1/categories";
+  const apiBaseUrl = `${API_URL}/product`;
+  const categoryApiBaseUrl = `${API_URL}/categories`;
 
   // Check authentication on component mount
   useEffect(() => {
@@ -107,16 +106,13 @@ const Product = () => {
         }
 
         // Fetch latest user information from API
-        const response = await fetch(
-          "https://victbackendmanagement.onrender.com/api/v1/user-info/",
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
+        const response = await fetch(`${API_URL}/user-info/`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
           },
-        );
+        });
 
         if (response.ok) {
           const userData = await response.json();

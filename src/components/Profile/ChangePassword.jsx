@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import "./Profile.css";
+import { API_URL } from "../../utils";
 
 const ChangePassword = () => {
   const [formData, setFormData] = useState({
@@ -85,20 +86,17 @@ const ChangePassword = () => {
         throw new Error("You must be logged in to change your password");
       }
 
-      const response = await fetch(
-        "https://victbackendmanagement.onrender.com/api/v1/update-user/",
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            current_password: formData.currentPassword,
-            new_password: formData.newPassword,
-          }),
+      const response = await fetch(`${API_URL}/update-user/`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: JSON.stringify({
+          current_password: formData.currentPassword,
+          new_password: formData.newPassword,
+        }),
+      });
 
       const data = await response.json();
 

@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import "./dashboard.css";
 import MainContent from "../MainContend";
+import { API_URL } from "../../utils";
 
 // Register ChartJS components
 ChartJS.register(
@@ -200,9 +201,7 @@ const Dashboard = () => {
 
       // Try the user-info endpoint as a fallback
       try {
-        const userInfoResponse = await authAxios.get(
-          "https://victbackendmanagement.onrender.com/api/v1/user-info/",
-        );
+        const userInfoResponse = await authAxios.get(`${API_URL}/user-info/`);
         console.log("User info data:", userInfoResponse.data);
 
         if (userInfoResponse.data && userInfoResponse.data.role) {
@@ -259,9 +258,7 @@ const Dashboard = () => {
       setIsLoading(true);
       setError(null);
       const authAxios = getAuthAxios();
-      const response = await authAxios.get(
-        "https://victbackendmanagement.onrender.com/api/v1/users/",
-      );
+      const response = await authAxios.get(`${API_URL}/users/`);
 
       console.log("Users data:", response.data);
 
@@ -307,10 +304,7 @@ const Dashboard = () => {
       setError(null);
       const authAxios = getAuthAxios();
 
-      const response = await authAxios.post(
-        "https://victbackendmanagement.onrender.com/api/v1/users/",
-        newUser,
-      );
+      const response = await authAxios.post(`${API_URL}/users/`, newUser);
       console.log("User created:", response.data);
 
       // Refresh user list
@@ -366,7 +360,7 @@ const Dashboard = () => {
           user.role,
         );
         const roleResponse = await authAxios.post(
-          "https://victbackendmanagement.onrender.com/api/v1/users/assign-role/",
+          `${API_URL}/users/assign-role/`,
           {
             user_id: user.id,
             role: user.role,
@@ -384,7 +378,7 @@ const Dashboard = () => {
       };
 
       const updateResponse = await authAxios.put(
-        `https://victbackendmanagement.onrender.com/api/v1/users/${user.id}/`,
+        `${API_URL}/users/${user.id}/`,
         userToUpdate,
       );
       console.log("User update response:", updateResponse.data);
@@ -423,9 +417,7 @@ const Dashboard = () => {
       setIsLoading(true);
       setError(null);
       const authAxios = getAuthAxios();
-      const response = await authAxios.delete(
-        `https://victbackendmanagement.onrender.com/api/v1/users/${userId}/`,
-      );
+      const response = await authAxios.delete(`${API_URL}/users/${userId}/`);
       console.log("User delete response:", response.data);
 
       // Remove user from list
@@ -524,9 +516,7 @@ const Dashboard = () => {
     try {
       setIsLoading(true);
       const authAxios = getAuthAxios();
-      const response = await authAxios.get(
-        "https://victbackendmanagement.onrender.com/api/v1/dashboard/inventory/",
-      );
+      const response = await authAxios.get(`${API_URL}/dashboard/inventory/`);
       setInventoryData(response.data);
       console.log("Inventory data:", response.data);
     } catch (err) {
@@ -561,7 +551,7 @@ const Dashboard = () => {
       setIsLoading(true);
       const authAxios = getAuthAxios();
       const response = await authAxios.get(
-        `https://victbackendmanagement.onrender.com/api/v1/dashboard/top-sales-products/?start_date=${startDate}&end_date=${endDate}`,
+        `${API_URL}/dashboard/top-sales-products/?start_date=${startDate}&end_date=${endDate}`,
       );
       setProductPerformanceData(response.data);
       console.log(`Product performance data:`, response.data);
@@ -587,7 +577,7 @@ const Dashboard = () => {
       setIsLoading(true);
       const authAxios = getAuthAxios();
       const response = await authAxios.get(
-        `https://victbackendmanagement.onrender.com/api/v1/dashboard/sales/?start_date=${startDate}&end_date=${endDate}`,
+        `${API_URL}/dashboard/sales/?start_date=${startDate}&end_date=${endDate}`,
       );
 
       // Log the raw response to see what we're getting
@@ -641,7 +631,7 @@ const Dashboard = () => {
       setIsLoading(true);
       const authAxios = getAuthAxios();
       const response = await authAxios.get(
-        `https://victbackendmanagement.onrender.com/api/v1/dashboard/stats/?start_date=${startDate}&end_date=${endDate}`,
+        `${API_URL}/dashboard/stats/?start_date=${startDate}&end_date=${endDate}`,
       );
 
       // Process the stats data on the frontend
@@ -833,7 +823,7 @@ const Dashboard = () => {
       setIsLoading(true);
       const authAxios = getAuthAxios();
       const response = await authAxios.get(
-        `https://victbackendmanagement.onrender.com/api/v1/dashboard/recent-sales/?limit=10`,
+        `${API_URL}/dashboard/recent-sales/?limit=10`,
       );
       setRecentSales(
         Array.isArray(response.data) ? response.data : [response.data],

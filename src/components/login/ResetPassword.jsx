@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { API_URL } from "../../utils";
 
 const ResetPassword = () => {
   const { token } = useParams();
@@ -31,20 +32,17 @@ const ResetPassword = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch(
-        "https://victbackendmanagement.onrender.com/api/v1/password-reset-confirm/",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify({
-            token: token,
-            password: password,
-          }),
+      const response = await fetch(`${API_URL}/password-reset-confirm/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
         },
-      );
+        body: JSON.stringify({
+          token: token,
+          password: password,
+        }),
+      });
 
       // Try to parse response as JSON
       let data;

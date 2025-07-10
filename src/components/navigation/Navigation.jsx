@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { FaUserCircle, FaBell, FaSignOutAlt } from "react-icons/fa";
 import "./Navigation.css";
+import { API_URL } from "../../utils";
 
 const Navbar = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -28,7 +29,7 @@ const Navbar = () => {
         if (!token) return;
 
         const response = await fetch(
-          "https://victbackendmanagement.onrender.com/api/v1/notification/my-notifications/?status=UNREAD",
+          `${API_URL}/notification/my-notifications/?status=UNREAD`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

@@ -23,6 +23,7 @@ import {
 import axios from "axios";
 import "./category.css";
 import MainContent from "../MainContend";
+import { API_URL } from "../../utils";
 
 const Category = () => {
   // Categories state
@@ -97,10 +98,8 @@ const Category = () => {
   const [isLoadingCategoryDetails, setIsLoadingCategoryDetails] =
     useState(false);
 
-  const apiBaseUrl =
-    "https://victbackendmanagement.onrender.com/api/v1/categories";
-  const productApiBaseUrl =
-    "https://victbackendmanagement.onrender.com/api/v1/product";
+  const apiBaseUrl = `${API_URL}/categories`;
+  const productApiBaseUrl = `${API_URL}/product`;
 
   // Check authentication on component mount
   useEffect(() => {
@@ -123,16 +122,13 @@ const Category = () => {
         }
 
         // Fetch latest user information from API
-        const response = await fetch(
-          "https://victbackendmanagement.onrender.com/api/v1/user-info/",
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
+        const response = await fetch(`${API_URL}/user-info/`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
           },
-        );
+        });
 
         if (response.ok) {
           const userData = await response.json();

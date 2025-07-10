@@ -24,17 +24,6 @@
   font-size: 1.1rem;
 }
 
-.hero_context .btn {
-  padding: 0.8rem 2rem;
-  font-size: 1rem;
-  background-color: var(--primary-color-dark);
-  color: white;
-  border: none;
-  cursor: pointer;
-  border-radius: var(--border-radius);
-  transition: background 0.3s ease;
-}
-
 .hero_image {
   position: absolute;
   top: 0;

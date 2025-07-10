@@ -32,19 +32,17 @@ const Home = () => {
       <div className="hero_context">
         <h1>Streamline Your Inventory Management</h1>
         <p>
-          Take control of your stock with our powerful management system. Track
-          inventory in real-time, generate detailed reports <br /> and make
+          Take control of your stock with our powerful management system. <br />{" "}
+          Track inventory in real-time, generate detailed reports and make
           data-driven decisions to optimize your business operations.
         </p>
-        <button
-          className="btn"
+        <Button
+          size="large"
+          variant="contained"
           onClick={() => navigate("/dashboard")}
           aria-label="Get Started"
         >
           Get Started
-        </button>
-        <Button size="small" variant="contained">
-          Go to Dashboard
         </Button>
       </div>
     </div>

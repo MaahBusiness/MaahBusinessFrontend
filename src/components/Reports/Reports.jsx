@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import "./reports.css";
 import MainContent from "../MainContend";
+import { API_URL } from "../../utils";
 
 const Reports = () => {
   const navigate = useNavigate();
@@ -121,9 +122,7 @@ const Reports = () => {
       // Try the user-info endpoint as a fallback
       try {
         const authAxios = getAuthAxios();
-        const userInfoResponse = await authAxios.get(
-          "https://victbackendmanagement.onrender.com/api/v1/user-info/",
-        );
+        const userInfoResponse = await authAxios.get(`${API_URL}/user-info/`);
         console.log("User info data:", userInfoResponse.data);
 
         if (userInfoResponse.data) {
@@ -343,7 +342,7 @@ const Reports = () => {
       // Use the correct download endpoint from the API with POST method
       const response = await axios({
         method: "post",
-        url: "https://victbackendmanagement.onrender.com/api/v1/report/download-report/",
+        url: `${API_URL}/report/download-report/`,
         data: { report_id: reportId },
         headers: { Authorization: `Bearer ${token}` },
         responseType: "blob", // Important for handling file downloads
@@ -439,12 +438,9 @@ const Reports = () => {
     try {
       setIsLoading(true);
 
-      const response = await axios.get(
-        "https://victbackendmanagement.onrender.com/api/v1/report/all-report/",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
+      const response = await axios.get(`${API_URL}/report/all-report/`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       console.log("All reports response:", response.data);
 
@@ -532,7 +528,7 @@ const Reports = () => {
 
       // Generate the report using the API
       const response = await axios.get(
-        `https://victbackendmanagement.onrender.com/api/v1/report/generate/?${params.toString()}`,
+        `${API_URL}/report/generate/?${params.toString()}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -648,7 +644,7 @@ const Reports = () => {
       // Try to get the report data first
       try {
         const reportResponse = await axios.get(
-          `https://victbackendmanagement.onrender.com/api/v1/report/generate/?${reportParams.toString()}`,
+          `${API_URL}/report/generate/?${reportParams.toString()}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           },
@@ -684,8 +680,7 @@ const Reports = () => {
 
       // If report generation didn't return useful data, try the dashboard API
       // Build URL with query parameters for the dashboard API
-      let url =
-        "https://victbackendmanagement.onrender.com/api/v1/dashboard/inventory/";
+      let url = `${API_URL}/dashboard/inventory/`;
       const params = new URLSearchParams();
 
       // Only add date parameters if they are not empty strings
@@ -1091,7 +1086,7 @@ const Reports = () => {
 
       // Generate the report using the API
       const response = await axios.get(
-        `https://victbackendmanagement.onrender.com/api/v1/report/generate/?${params.toString()}`,
+        `${API_URL}/report/generate/?${params.toString()}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },

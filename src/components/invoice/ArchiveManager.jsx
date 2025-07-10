@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import "./Invoice.css";
 import MainContent from "../MainContend";
+import { API_URL } from "../../utils";
 
 const ArchiveManager = ({ onBack }) => {
   // State
@@ -56,7 +57,7 @@ const ArchiveManager = ({ onBack }) => {
       setIsLoading(true);
       const authAxios = getAuthAxios();
       const response = await authAxios.get(
-        "https://victbackendmanagement.onrender.com/api/v1/archive/all-archive-invoice/",
+        `${API_URL}/archive/all-archive-invoice/`,
       );
       console.log("Archived invoices fetched:", response.data);
 
@@ -105,7 +106,7 @@ const ArchiveManager = ({ onBack }) => {
         console.log("Fetching archived invoice details for ID:", invoiceId);
 
         const response = await authAxios.get(
-          `https://victbackendmanagement.onrender.com/api/v1/archive/archive-invoice-by-id/?invoice_id=${invoiceId}`,
+          `${API_URL}/archive/archive-invoice-by-id/?invoice_id=${invoiceId}`,
         );
         console.log("Archived invoice details response:", response.data);
         setSelectedInvoice(response.data);

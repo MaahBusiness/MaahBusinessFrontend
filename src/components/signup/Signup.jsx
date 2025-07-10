@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import "./signup.css";
+import { API_URL } from "../../utils";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -62,9 +63,7 @@ const Signup = () => {
 
       // Try the user-info endpoint as a fallback
       try {
-        const userInfoResponse = await authAxios.get(
-          "https://victbackendmanagement.onrender.com/api/v1/user-info/",
-        );
+        const userInfoResponse = await authAxios.get(`${API_URL}/user-info/`);
         console.log("User info data:", userInfoResponse.data);
 
         if (userInfoResponse.data && userInfoResponse.data.role) {
@@ -114,16 +113,13 @@ const Signup = () => {
     setModalErrorMessages([]);
 
     try {
-      const response = await fetch(
-        "https://victbackendmanagement.onrender.com/api/v1/register/",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(formData),
+      const response = await fetch(`${API_URL}/register/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        body: JSON.stringify(formData),
+      });
 
       const data = await response.json();
 
@@ -183,16 +179,13 @@ const Signup = () => {
       // If we have a token, attempt to fetch the complete user profile
       if (authToken) {
         try {
-          const profileResponse = await fetch(
-            "https://victbackendmanagement.onrender.com/api/v1/user-info/",
-            {
-              method: "GET",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${authToken}`,
-              },
+          const profileResponse = await fetch(`${API_URL}/user-info/`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${authToken}`,
             },
-          );
+          });
 
           if (profileResponse.ok) {
             const profileData = await profileResponse.json();

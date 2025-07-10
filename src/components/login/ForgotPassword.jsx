@@ -1,5 +1,6 @@
 import { useState } from "react";
 import "./forgotPassword.css";
+import { API_URL } from "../../utils";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
@@ -32,17 +33,14 @@ const ForgotPassword = () => {
     setMessage({ text: "Processing request...", type: "info" });
 
     try {
-      const response = await fetch(
-        "https://victbackendmanagement.onrender.com/api/v1/password-reset/",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify({ email }),
+      const response = await fetch(`${API_URL}/password-reset/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
         },
-      );
+        body: JSON.stringify({ email }),
+      });
 
       let data;
       const contentType = response.headers.get("Content-Type");

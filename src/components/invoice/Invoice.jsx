@@ -30,6 +30,7 @@ import {
 import "./Invoice.css";
 import { Link, useNavigate } from "react-router-dom";
 import MainContent from "../MainContend";
+import { API_URL } from "../../utils";
 
 const Invoice = () => {
   // Style definitions for form fields
@@ -127,7 +128,7 @@ const Invoice = () => {
       }
 
       // Fetch latest user information from API
-      fetch("https://victbackendmanagement.onrender.com/api/v1/user-info/", {
+      fetch(`${API_URL}/user-info/`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -199,9 +200,7 @@ const Invoice = () => {
     try {
       console.log("Fetching products...");
       const authAxios = getAuthAxios();
-      const response = await authAxios.get(
-        "https://victbackendmanagement.onrender.com/api/v1/product/products/",
-      );
+      const response = await authAxios.get(`${API_URL}/product/products/`);
       console.log("Products API response:", response.data);
 
       // Handle different response formats
@@ -279,7 +278,7 @@ const Invoice = () => {
       setIsLoading(true);
       const authAxios = getAuthAxios();
       const response = await authAxios.get(
-        `https://victbackendmanagement.onrender.com/api/v1/invoice/invoices/?page=${page}`,
+        `${API_URL}/invoice/invoices/?page=${page}`,
       );
       console.log("Invoices fetched:", response.data);
 
@@ -493,7 +492,7 @@ const Invoice = () => {
       try {
         // Create new invoice
         const response = await authAxios.post(
-          "https://victbackendmanagement.onrender.com/api/v1/invoice/create-invoice/",
+          `${API_URL}/invoice/create-invoice/`,
           payload,
         );
 
@@ -516,7 +515,7 @@ const Invoice = () => {
           };
 
           const response = await authAxios.post(
-            "https://victbackendmanagement.onrender.com/api/v1/invoice/create-invoice/",
+            `${API_URL}/invoice/create-invoice/`,
             retryPayload,
           );
 
@@ -596,13 +595,10 @@ const Invoice = () => {
       setIsLoading(true);
       const authAxios = getAuthAxios();
 
-      const response = await authAxios.post(
-        "https://victbackendmanagement.onrender.com/api/v1/invoice/pay-debt/",
-        {
-          invoice_id: invoiceId,
-          amount: amount.toString(),
-        },
-      );
+      const response = await authAxios.post(`${API_URL}/invoice/pay-debt/`, {
+        invoice_id: invoiceId,
+        amount: amount.toString(),
+      });
 
       console.log("Debt payment response:", response.data);
 
@@ -643,7 +639,7 @@ const Invoice = () => {
         // Otherwise fetch detailed invoice data
         const authAxios = getAuthAxios();
         const response = await authAxios.get(
-          `https://victbackendmanagement.onrender.com/api/v1/invoice/${invoice.id}/detail/`,
+          `${API_URL}/invoice/${invoice.id}/detail/`,
         );
         setSelectedInvoice(response.data);
       }
@@ -700,12 +696,9 @@ const Invoice = () => {
         console.log("Attempting to archive invoice with ID:", invoiceId);
 
         // First attempt - standard archive request
-        await authAxios.post(
-          "https://victbackendmanagement.onrender.com/api/v1/archive/archive-invoice/",
-          {
-            invoice_id: invoiceId,
-          },
-        );
+        await authAxios.post(`${API_URL}/archive/archive-invoice/`, {
+          invoice_id: invoiceId,
+        });
       } catch (firstError) {
         console.error("First Delete attempt failed:", firstError);
 
@@ -718,36 +711,27 @@ const Invoice = () => {
 
           // Second attempt - try with override_number in different formats
           try {
-            await authAxios.post(
-              "https://victbackendmanagement.onrender.com/api/v1/archive/archive-invoice/",
-              {
-                invoice_id: invoiceId,
-              },
-            );
+            await authAxios.post(`${API_URL}/archive/archive-invoice/`, {
+              invoice_id: invoiceId,
+            });
           } catch (secondError) {
             console.error("Second archive attempt failed:", secondError);
 
             // Third attempt - try with different parameter name
             try {
-              await authAxios.post(
-                "https://victbackendmanagement.onrender.com/api/v1//archive-invoice/",
-                {
-                  invoice_id: invoiceId,
-                  force: true,
-                },
-              );
+              await authAxios.post(`${API_URL}/archive/archive-invoice/`, {
+                invoice_id: invoiceId,
+                force: true,
+              });
             } catch (thirdError) {
               console.error("Third archive attempt failed:", thirdError);
 
               // Fourth attempt - try with a modified invoice number
               try {
-                await authAxios.post(
-                  "https://victbackendmanagement.onrender.com/api/v1/archive-invoice/",
-                  {
-                    invoice_id: invoiceId,
-                    new_number: `${invoiceNumber}-${Date.now()}`,
-                  },
-                );
+                await authAxios.post(`${API_URL}/archive/archive-invoice/`, {
+                  invoice_id: invoiceId,
+                  new_number: `${invoiceNumber}-${Date.now()}`,
+                });
               } catch (fourthError) {
                 console.error("Fourth archive attempt failed:", fourthError);
 

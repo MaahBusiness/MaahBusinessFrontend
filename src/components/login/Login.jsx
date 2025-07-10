@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./login.css";
+import { Button } from "@mui/material";
+import { API_URL } from "../../utils";
 
 const Login = () => {
   const [username, setUsername] = useState("");
@@ -29,16 +31,13 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch(
-        "https://victbackendmanagement.onrender.com/api/v1/login/",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ username, password }),
+      const response = await fetch(`${API_URL}/login/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        body: JSON.stringify({ username, password }),
+      });
 
       const data = await response.json();
 
@@ -66,16 +65,13 @@ const Login = () => {
       } else {
         // If no user data in response, fetch it separately
         try {
-          const userResponse = await fetch(
-            "https://victbackendmanagement.onrender.com/api/v1/user-info/",
-            {
-              method: "GET",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${data.access}`,
-              },
+          const userResponse = await fetch(`${API_URL}/user-info/`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${data.access}`,
             },
-          );
+          });
 
           if (userResponse.ok) {
             const userData = await userResponse.json();
@@ -106,7 +102,7 @@ const Login = () => {
 
   return (
     <div className="auth-login-container">
-      <h2 className="auth-login-title">Login</h2>
+      <h2 className="auth-login-title">Sign In</h2>
       <form onSubmit={handleSubmit} className="auth-login-form">
         <p className="auth-label">Enter Username</p>
         <input
@@ -126,10 +122,21 @@ const Login = () => {
           required
           className="auth-input"
         />
-        <button type="submit" className="auth-submit-btn" disabled={isLoading}>
+        <Button
+          type="submit"
+          variant="contained"
+          size="large"
+          disabled={isLoading}
+          style={{ margin: "20px 0" }}
+          fullWidth
+        >
           {isLoading ? "Logging in..." : "Login"}
-        </button>
-        {errorMessage && <p className="auth-error">{errorMessage}</p>}
+        </Button>
+        {errorMessage && (
+          <p className="auth-error" style={{ marginBottom: 20 }}>
+            {errorMessage}
+          </p>
+        )}
 
         <p className="auth-link-text">
           <Link to="/">

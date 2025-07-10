@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import "./Profile.css";
 import { useNavigate } from "react-router-dom";
+import { API_URL } from "../../utils";
 
 const ProfileInfo = () => {
   // State to manage user information and page state
@@ -42,16 +43,13 @@ const ProfileInfo = () => {
         }
 
         // Fetch latest user information from API using the token from signup/login
-        const response = await fetch(
-          "https://victbackendmanagement.onrender.com/api/v1/user-info/",
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
+        const response = await fetch(`${API_URL}/user-info/`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
           },
-        );
+        });
 
         // Handle response
         if (!response.ok) {
@@ -130,21 +128,18 @@ const ProfileInfo = () => {
     }
 
     try {
-      const response = await fetch(
-        "https://victbackendmanagement.onrender.com/api/v1/update-user/",
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            username: user.username,
-            email: user.email,
-            phone_number: user.phone_number,
-          }),
+      const response = await fetch(`${API_URL}/update-user/`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: JSON.stringify({
+          username: user.username,
+          email: user.email,
+          phone_number: user.phone_number,
+        }),
+      });
 
       const data = await response.json();
 
@@ -208,7 +203,7 @@ const ProfileInfo = () => {
     const token = localStorage.getItem("token");
 
     try {
-      const response = await fetch("https://victbackendmanagement.onrender.com/api/v1/logout/", {
+      const response = await fetch(`${API_URL}/logout/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

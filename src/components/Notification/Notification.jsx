@@ -23,6 +23,7 @@ import {
 } from "react-icons/fa";
 import "./notification.css";
 import MainContent from "../MainContend";
+import { API_URL } from "../../utils";
 
 const Notification = ({ isDropdown = false }) => {
   // State
@@ -70,7 +71,7 @@ const Notification = ({ isDropdown = false }) => {
 
     try {
       // Use the new API endpoint
-      let apiUrl = `https://victbackendmanagement.onrender.com/api/v1/notification/notifications/`;
+      let apiUrl = `${API_URL}/notification/notifications/`;
 
       // Add query parameters
       const params = new URLSearchParams();
@@ -147,7 +148,7 @@ const Notification = ({ isDropdown = false }) => {
 
     try {
       const response = await fetch(
-        `https://victbackendmanagement.onrender.com/api/v1/notification/notification/?notif_id=${id}`,
+        `${API_URL}/notification/notification/?notif_id=${id}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -237,19 +238,16 @@ const Notification = ({ isDropdown = false }) => {
       // Dispatch storage event for navbar to pick up the change
       window.dispatchEvent(new Event("storage"));
 
-      const response = await fetch(
-        `https://victbackendmanagement.onrender.com/api/v1/notification/mark-read/`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            notif_id: id,
-          }),
+      const response = await fetch(`${API_URL}/notification/mark-read/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: JSON.stringify({
+          notif_id: id,
+        }),
+      });
 
       if (!response.ok) {
         throw new Error("Failed to mark notification as read");
@@ -294,16 +292,13 @@ const Notification = ({ isDropdown = false }) => {
       // Dispatch storage event for navbar to pick up the change
       window.dispatchEvent(new Event("storage"));
 
-      const response = await fetch(
-        `https://victbackendmanagement.onrender.com/api/v1/notification/mark-all-read/`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
+      const response = await fetch(`${API_URL}/notification/mark-all-read/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      );
+      });
 
       if (!response.ok) {
         throw new Error("Failed to mark all notifications as read");
@@ -324,7 +319,7 @@ const Notification = ({ isDropdown = false }) => {
     try {
       // Always fetch fresh data from API for unread notifications
       const response = await fetch(
-        "https://victbackendmanagement.onrender.com/api/v1/my-notifications/?status=UNREAD",
+        `${API_URL}/my-notifications/?status=UNREAD`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -358,19 +353,16 @@ const Notification = ({ isDropdown = false }) => {
     if (!token) return;
 
     try {
-      const response = await fetch(
-        `https://victbackendmanagement.onrender.com/api/v1/notification/archive/`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            notif_id: id, // Using the correct parameter name as per API docs
-          }),
+      const response = await fetch(`${API_URL}/notification/archive/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: JSON.stringify({
+          notif_id: id, // Using the correct parameter name as per API docs
+        }),
+      });
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -409,17 +401,14 @@ const Notification = ({ isDropdown = false }) => {
   const archiveOldNotifications = async () => {
     setArchiveLoading(true);
     try {
-      const response = await fetch(
-        `https://victbackendmanagement.onrender.com/api/v1/notification/archive-old/`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ months: archiveMonths }),
+      const response = await fetch(`${API_URL}/notification/archive-old/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: JSON.stringify({ months: archiveMonths }),
+      });
 
       if (!response.ok) {
         throw new Error("Failed to archive old notifications");
