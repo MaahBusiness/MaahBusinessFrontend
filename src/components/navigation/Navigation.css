@@ -35,14 +35,14 @@
   list-style: none;
   display: flex;
   align-items: center;
-  margin: 0;
-  padding: 0;
+  gap: 1.5rem;
 }
 
 .nav-content ul li {
-  margin-left: 25px;
+  height: 38px;
+  display: flex;
+  align-items: center;
 }
-
 .nav-content ul li a {
   text-decoration: none;
   color: #e0e0e0;
@@ -89,12 +89,6 @@
   display: none !important;
 }
 
-.profile-icon a {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 .nav-content ul li a svg {
   color: #e0e0e0;
   transition:
@@ -108,16 +102,8 @@
 }
 
 @media (max-width: 768px) {
-  .navbar {
-    padding: 0.2em;
-  }
-
   .nav-brand {
     font-size: 1.2rem;
-  }
-
-  .nav-content ul li {
-    margin-left: 15px;
   }
 
   .signup-link {

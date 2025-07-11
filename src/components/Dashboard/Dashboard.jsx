@@ -37,7 +37,12 @@ import {
 } from "lucide-react";
 import "./dashboard.css";
 import MainContent from "../MainContend";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import { API_URL } from "../../utils";
+import IconButton from "@mui/material/IconButton";
+import Button from "@mui/material/Button";
+import DateRangePicker from "../common/DateRangePicker";
+import Box from "@mui/material/Box";
 
 // Register ChartJS components
 ChartJS.register(
@@ -59,7 +64,7 @@ const Dashboard = () => {
   const [startDate, setStartDate] = useState(() => {
     // Default to 30 days ago
     const date = new Date();
-    date.setDate(date.getDate() - 7);
+    date.setDate(date.getDate() - 30);
     return date.toISOString().split("T")[0];
   });
   const [endDate, setEndDate] = useState(() => {
@@ -986,56 +991,87 @@ const Dashboard = () => {
     <MainContent>
       <div className="dashboard">
         <div className="dashboard-header">
-          <h2>Dashboard</h2>
-          <div className="dashHeader">
-            <div className="date-range-filter">
-              <div className="date-input-container">
-                <label>Start Date:</label>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={handleStartDateChange}
-                  className="date-input"
-                />
-              </div>
-              <div className="date-input-container">
-                <label>End Date:</label>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={handleEndDateChange}
-                  className="date-input"
-                />
-              </div>
-              <button
-                className="refresh-btn"
+          <div
+            style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <h2 className="title" style={{ lineHeight: 1 }}>
+              Dashboard <br />
+              {currentUserRole && (
+                <span
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    fontSize: "0.8rem",
+                    opacity: 0.5,
+                  }}
+                >
+                  <User size={14} />
+                  &nbsp;
+                  {currentUserRole}
+                </span>
+              )}
+            </h2>
+            <Box
+              sx={{
+                display: { xs: "none", lg: "flex" },
+              }}
+            >
+              <DateRangePicker
+                startDate={startDate}
+                endDate={endDate}
+                setStartDate={setStartDate}
+                setEndDate={setEndDate}
+              />
+            </Box>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+              }}
+            >
+              {isAuthenticated && hasManagerPermission() && (
+                <Button
+                  variant="contained"
+                  onClick={() => setShowUserModal(true)}
+                >
+                  <Users size={18} />
+                  &nbsp; Manage Users
+                </Button>
+              )}{" "}
+              &emsp;
+              <Button
+                variant="outlined"
                 onClick={refreshDashboardData}
                 disabled={isRefreshing}
               >
                 {isRefreshing ? (
                   <Loader size={16} className="spin" />
                 ) : (
-                  "Refresh"
+                  <RefreshIcon />
                 )}
-              </button>
-            </div>
-            <div className="dashboard-actions">
-              {currentUserRole && (
-                <div className="role-indicator">
-                  <User size={16} />
-                  <span>Role: {currentUserRole}</span>
-                </div>
-              )}
-              {isAuthenticated && hasManagerPermission() && (
-                <button
-                  className="manage-users-btn"
-                  onClick={() => setShowUserModal(true)}
-                >
-                  <Users size={18} /> Manage Users
-                </button>
-              )}
+              </Button>
             </div>
           </div>
+          <Box
+            sx={{
+              display: { xs: "flex", lg: "none" },
+              width: "100%",
+              justifyContent: "center",
+              marginTop: "1.5rem",
+            }}
+          >
+            <DateRangePicker
+              startDate={startDate}
+              endDate={endDate}
+              setStartDate={setStartDate}
+              setEndDate={setEndDate}
+            />
+          </Box>
         </div>
 
         {isLoading && (
@@ -1053,17 +1089,6 @@ const Dashboard = () => {
             </p>
           </div>
         )}
-
-        <div className="time-period-info">
-          <div className="time-period-label">
-            <Calendar size={16} />
-            <span>
-              Viewing data from:{" "}
-              <strong>{new Date(startDate).toLocaleDateString()}</strong> to{" "}
-              <strong>{new Date(endDate).toLocaleDateString()}</strong>
-            </span>
-          </div>
-        </div>
 
         <div className="dashboard-cards">
           {cardIcons.map((card) => (

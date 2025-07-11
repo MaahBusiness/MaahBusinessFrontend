@@ -46,3 +46,20 @@
     margin-left: 0;
   }
 }
+
+.col {
+  color: var(--primary-color) !important;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  letter-spacing: -0.5px;
+}
+
+@media (max-width: 480px) {
+  .title {
+    font-size: 1.5rem;
+  }
+}

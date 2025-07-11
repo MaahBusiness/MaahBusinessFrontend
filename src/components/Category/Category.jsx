@@ -24,6 +24,7 @@ import axios from "axios";
 import "./category.css";
 import MainContent from "../MainContend";
 import { API_URL } from "../../utils";
+import SearchBarCmp from "../common/SearchBarCmp";
 
 const Category = () => {
   // Categories state
@@ -494,11 +495,6 @@ const Category = () => {
       return;
     }
 
-    if (!categoryDescription.trim()) {
-      setFormError("Category description is required");
-      return;
-    }
-
     const isDuplicate = categories.some(
       (cat) =>
         cat.name &&
@@ -513,14 +509,17 @@ const Category = () => {
 
     try {
       const authAxios = getAuthAxios();
+      const categoryData = categoryDescription
+        ? {
+            name: categoryName,
+            description: categoryDescription,
+          }
+        : {
+            name: categoryName,
+          };
 
       if (editingCategory) {
         // Update existing category via API
-        const categoryData = {
-          name: categoryName,
-          description: categoryDescription,
-        };
-
         await authAxios.put(
           `${apiBaseUrl}/${editingCategory.id}/category/update/`,
           categoryData,
@@ -533,10 +532,6 @@ const Category = () => {
         showStatusMessage("Category updated successfully!");
       } else {
         // Create a new category via API
-        const categoryData = {
-          name: categoryName,
-          description: categoryDescription,
-        };
 
         const response = await authAxios.post(
           `${apiBaseUrl}/category/create/`,
@@ -666,11 +661,6 @@ const Category = () => {
       return;
     }
 
-    if (!subcategoryDescription.trim()) {
-      setFormError("Subcategory description is required");
-      return;
-    }
-
     const isDuplicate = subcategories.some(
       (sub) =>
         sub.name &&
@@ -688,14 +678,19 @@ const Category = () => {
 
     try {
       const authAxios = getAuthAxios();
+      const subcategoryData = subcategoryDescription
+        ? {
+            name: subcategoryName,
+            description: subcategoryDescription,
+            category_id: selectedCategory.id,
+          }
+        : {
+            name: subcategoryName,
+            category_id: selectedCategory.id,
+          };
 
       if (editingSubcategory) {
         // Update existing subcategory via API
-        const subcategoryData = {
-          name: subcategoryName,
-          description: subcategoryDescription,
-          category_id: selectedCategory.id,
-        };
 
         const response = await authAxios.put(
           `${apiBaseUrl}/${editingSubcategory.id}/subcategory/update/`,
@@ -715,11 +710,6 @@ const Category = () => {
         showStatusMessage("Subcategory updated successfully!");
       } else {
         // Create a new subcategory via API
-        const subcategoryData = {
-          name: subcategoryName,
-          description: subcategoryDescription,
-          category_id: selectedCategory.id,
-        };
 
         const response = await authAxios.post(
           `${apiBaseUrl}/subcategory/create/`,
@@ -748,7 +738,7 @@ const Category = () => {
 
       setFormError(
         error.response?.data?.message ||
-          "Failed to process subcategory. Please try again.",
+          "A sub category with this name already exists. Please try again.",
       );
     }
   };
@@ -872,10 +862,8 @@ const Category = () => {
   };
 
   // Filter categories based on search term
-  const filteredCategories = categories.filter(
-    (category) =>
-      category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      category.description.toLowerCase().includes(searchTerm.toLowerCase()),
+  const filteredCategories = categories.filter((category) =>
+    category.name.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   // Filter subcategories based on search term and selected category
@@ -884,10 +872,7 @@ const Category = () => {
         (sub) =>
           sub.category_id === selectedCategory.id &&
           (searchSubcategory === "" ||
-            sub.name.toLowerCase().includes(searchSubcategory.toLowerCase()) ||
-            sub.description
-              .toLowerCase()
-              .includes(searchSubcategory.toLowerCase())),
+            sub.name.toLowerCase().includes(searchSubcategory.toLowerCase())),
       )
     : [];
 
@@ -982,14 +967,11 @@ const Category = () => {
               <p>Select a category to view details or manage subcategories</p>
 
               {/* Search for categories - moved to welcome section */}
-              <div className="search-container welcome-search">
-                <Search size={16} className="search-icon" />
-                <input
-                  type="text"
-                  placeholder="Search categories..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="search-input"
+              <div style={{ marginTop: "2rem", width: "100%" }}>
+                <SearchBarCmp
+                  placeholder={"Search categories..."}
+                  searchTerm={searchTerm}
+                  setSearchTerm={setSearchTerm}
                 />
               </div>
             </div>
@@ -1029,9 +1011,11 @@ const Category = () => {
                 ) : categoryDetails ? (
                   <div className="category-details-container">
                     <h2>{categoryDetails.name}</h2>
-                    <p className="category-description">
-                      {categoryDetails.description}
-                    </p>
+                    {categoryDetails.description && (
+                      <p className="category-description">
+                        {categoryDetails.description}
+                      </p>
+                    )}
 
                     <div className="category-meta-info">
                       <div className="category-meta-item">
@@ -1097,6 +1081,7 @@ const Category = () => {
               <div className="subcategories-section">
                 <div className="subcategories-header">
                   {/* Search for subcategories */}
+
                   <div className="search-container subcategory-search">
                     <Search size={16} className="search-icon" />
                     <input
@@ -1107,6 +1092,11 @@ const Category = () => {
                       className="search-input"
                     />
                   </div>
+                  {/* <SearchBarCmp
+                    placeholder={"Search subcategories..."}
+                    searchTerm={searchSubcategory}
+                    setSearchTerm={setSearchSubcategory}
+                  /> */}
                 </div>
 
                 <div className="subcategories-list">
@@ -1206,11 +1196,6 @@ const Category = () => {
                     placeholder="Enter category description"
                     value={categoryDescription}
                     onChange={(e) => setCategoryDescription(e.target.value)}
-                    className={
-                      formError && !categoryDescription.trim()
-                        ? "input-error"
-                        : ""
-                    }
                     rows="3"
                   ></textarea>
                 </div>
@@ -1291,11 +1276,6 @@ const Category = () => {
                     placeholder="Enter subcategory description"
                     value={subcategoryDescription}
                     onChange={(e) => setSubcategoryDescription(e.target.value)}
-                    className={
-                      formError && !subcategoryDescription.trim()
-                        ? "input-error"
-                        : ""
-                    }
                     rows="3"
                   ></textarea>
                 </div>

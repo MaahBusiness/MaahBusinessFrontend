@@ -17,45 +17,12 @@
   height: 300px;
   overflow-y: scroll;
 }
-.dashboard h2 {
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--primary-color);
-  margin-bottom: 1rem;
-  letter-spacing: -0.5px;
-}
 
 /* Dashboard Header */
 .dashboard-header {
   display: flex;
   flex-direction: column;
   margin-bottom: 2rem;
-}
-
-.dashHeader {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
-  width: 100%;
-}
-
-.dashboard-actions {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-/* Update the role indicator background */
-.role-indicator {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background-color: var(--primary-color);
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  color: #fff;
 }
 
 .login-button,
@@ -175,90 +142,20 @@
 .card {
   background: #1f2937;
   border-radius: 1rem;
-  padding: 1.5rem;
+  padding: 1rem;
   display: flex;
   align-items: flex-start;
   gap: 1rem;
+  width: 100%;
   transition:
     transform 0.2s,
     box-shadow 0.2s;
-}
-.date-range-filter {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 8px;
-  padding: 8px 12px;
 }
 
 .date-input-container {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.date-input-container label {
-  color: #e0e0e0;
-  font-size: 0.9rem;
-  white-space: nowrap;
-}
-
-.date-input {
-  background-color: #252525;
-  border: 1px solid #333;
-  border-radius: 4px;
-  color: #ffffff;
-  padding: 4px 8px;
-  font-size: 0.9rem;
-}
-
-.refresh-btn {
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 6px 12px;
-  font-size: 0.9rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: background-color 0.2s;
-  margin-left: 1rem;
-}
-
-.refresh-btn:hover {
-  background-color: #4f46e5;
-}
-
-.refresh-btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.time-period-info {
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 8px;
-  padding: 10px 16px;
-  margin-bottom: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.time-period-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #e0e0e0;
-  font-size: 0.9rem;
-}
-
-.time-period-label strong {
-  color: #ffffff;
-  font-weight: 600;
 }
 
 .spin {
@@ -381,44 +278,12 @@
   margin: 0;
 }
 
-@media (max-width: 768px) {
-  .date-range-filter {
-    flex-direction: column;
-    gap: 8px;
-    width: 100%;
-  }
-
-  .date-input-container {
-    width: 100%;
-  }
-
-  .date-input {
-    flex: 1;
-  }
-
-  .refresh-btn {
-    width: 100%;
-    justify-content: center;
-    margin-top: 4px;
-  }
-}
-
 /* Add CSS for search date filter */
 .search-container {
   position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
-}
-
-.date-input {
-  background-color: #252525;
-  border: 1px solid #333;
-  border-radius: 4px;
-  color: #ffffff;
-  padding: 8px 12px;
-  font-size: 0.9rem;
-  min-width: 150px;
 }
 
 .clear-date-btn {
@@ -1213,13 +1078,6 @@
     flex-direction: column;
     align-items: center;
   }
-  .card {
-    padding: 1rem;
-    margin-bottom: 0.5rem;
-    width: 70%;
-    margin-left: auto;
-    margin-right: auto;
-  }
   .card-icon-wrapper {
     width: 36px;
     height: 36px;
@@ -1309,18 +1167,6 @@
     padding: 1rem;
   }
 
-  .orders-card {
-    width: 100%;
-    min-width: unset;
-    padding: 1rem;
-  }
-
-  .revenue-card {
-    width: 100%;
-
-    padding: 1rem;
-  }
-
   .product-item {
     display: grid;
     grid-template-columns: auto 1fr auto;
@@ -1405,14 +1251,6 @@
   .dashboard {
     padding: 1rem;
     width: 100%;
-  }
-
-  .dashboard h2 {
-    font-size: 1.5rem;
-  }
-
-  .card {
-    padding: 1.25rem;
   }
 
   .card-value {

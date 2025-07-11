@@ -1,10 +1,24 @@
 "use client";
 
+import * as React from "react";
 import { useState, useEffect, useCallback } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { FaUserCircle, FaBell, FaSignOutAlt } from "react-icons/fa";
 import "./Navigation.css";
 import { API_URL } from "../../utils";
+import { IconButton, Link } from "@mui/material";
+import LogoutIcon from "@mui/icons-material/Logout";
+
+import { styled } from "@mui/material/styles";
+import Badge, { badgeClasses } from "@mui/material/Badge";
+import ShoppingCartIcon from "@mui/icons-material/ShoppingCartOutlined";
+
+const CartBadge = styled(Badge)`
+  & .${badgeClasses.badge} {
+    top: -12px;
+    right: -6px;
+  }
+`;
 
 const Navbar = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -105,36 +119,39 @@ const Navbar = () => {
       <div className="nav-brand"></div>
       <div className="nav-content">
         <ul>
-          {!isLoggedIn && (
-            // Show these links only when user is NOT logged in
-            <>
-              <li>
-                <Link to="/login">Login</Link>
-              </li>
-            </>
-          )}
-          {/* Notification icon - visible only when logged in */}
           {isLoggedIn && (
             <>
-              <li
-                className={`notification ${isNotificationPage ? "active" : ""}`}
-              >
+              <li className={`${isNotificationPage ? "active" : ""}`}>
                 <Link to="/Notification">
-                  <div className="notification-containerr">
+                  <IconButton>
                     <FaBell size={22} title="Notifications" />
-                    {notificationCount > 0 && (
-                      <span className="notification-badge">
-                        {notificationCount > 99 ? "99+" : notificationCount}
-                      </span>
-                    )}
-                  </div>
+                    <CartBadge
+                      badgeContent={
+                        notificationCount > 99 ? "99+" : notificationCount
+                      }
+                      color="primary"
+                      overlap="circular"
+                    />
+                  </IconButton>
                 </Link>
               </li>
               <li
-                className={`profile-icon ${location.pathname.startsWith("/profile") ? "active" : ""}`}
+                className={`${location.pathname.startsWith("/profile") ? "active" : ""}`}
               >
                 <Link to="/profile/info" title={`Profile: ${username}`}>
                   <FaUserCircle size={28} />
+                </Link>
+              </li>
+              <li
+                onClick={() => {
+                  if (confirm("Are you sur you want to logout?")) {
+                    localStorage.clear();
+                    navigate("/");
+                  }
+                }}
+              >
+                <Link>
+                  <LogoutIcon />
                 </Link>
               </li>
             </>

@@ -56,12 +56,8 @@ const Login = () => {
         localStorage.setItem("user", JSON.stringify(data.user));
         console.log("User data stored from login response");
 
-        // Redirect based on role
-        if (data.user.role === "manager") {
-          navigate("/ArchiveManager");
-        } else {
-          navigate("/");
-        }
+        // Redirect to dashboard
+        navigate("/dashboard");
       } else {
         // If no user data in response, fetch it separately
         try {
