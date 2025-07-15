@@ -21,6 +21,11 @@ import {
 import "./products.css";
 import MainContent from "../MainContend";
 import { API_URL } from "../../utils";
+import SearchBarCmp from "../common/SearchBarCmp";
+import Button from "@mui/material/Button";
+import Checkbox from "@mui/material/Checkbox";
+import DatePickerBasic from "../common/DatePickerBasic";
+import dayjs from "dayjs";
 
 const Product = () => {
   const [products, setProducts] = useState([]);
@@ -35,6 +40,7 @@ const Product = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingSubcategories, setIsLoadingSubcategories] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [expiredProducts, setExpiredProducts] = useState(false);
   const [editingProductId, setEditingProductId] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -58,10 +64,10 @@ const Product = () => {
     quantity: 0,
     min_quantity: 0,
     is_expired: false,
-    expiry_date: "",
+    expiry_date: new Date().toISOString().split("T")[0],
     on_promotion: false,
-    promotion_start_date: "",
-    promotion_end_date: "",
+    promotion_start_date: new Date().toISOString().split("T")[0],
+    promotion_end_date: dayjs().add(7, "day"),
     promo_price: "",
     category_id: "",
     subcategory_id: "",
@@ -296,6 +302,7 @@ const Product = () => {
               : null,
           }),
         );
+        setExpiredProducts(!expiredProducts);
 
         productsToDisplay.push(...formattedExpiredProducts);
       }
@@ -476,7 +483,9 @@ const Product = () => {
       ...formData,
       [name]: type === "checkbox" ? checked : value,
     });
-
+    if (name === "expiry_date") {
+      console.log("expiry date:", value);
+    }
     // Clear error when user types in name field
     if (name === "name" && errorMessage) {
       setErrorMessage("");
@@ -526,68 +535,80 @@ const Product = () => {
     e.preventDefault();
     setErrorMessage("");
 
+    // Check if product name already exists
+    const nameExists = products.some(
+      (item) =>
+        item.product.name &&
+        formData.name &&
+        item.product.name.toLowerCase() === formData.name.toLowerCase(),
+    );
+    if (!isEditing && nameExists) {
+      setErrorMessage("A product with this name already exists.");
+      return;
+    }
+
     try {
       const authAxios = getAuthAxios();
 
-      if (isEditing) {
-        // Update existing product via API
-        const productData = new FormData();
+      // Create a new product via API
+      const productData = new FormData();
 
+      // Format dates for API if they exist
+      const formattedData = { ...formData };
+      if (formData.promotion_start_date) {
+        formattedData.promotion_start_date = formData.promotion_start_date;
+      }
+      if (formData.promotion_end_date) {
+        formattedData.promotion_end_date = formData.promotion_end_date;
+      }
+      if (formData.expiry_date) {
+        formattedData.expiry_date = formData.expiry_date;
+      }
+
+      // Convert numeric fields to ensure they're sent as numbers
+      if (formattedData.unit_price) {
+        formattedData.unit_price = Number(formattedData.unit_price);
+      }
+      if (formattedData.purchase_price) {
+        formattedData.purchase_price = Number(formattedData.purchase_price);
+      }
+      // Only include promo_price if it has a value and product is on promotion
+      if (formattedData.on_promotion && formattedData.promo_price) {
+        formattedData.promo_price = Number(formattedData.promo_price);
+      } else if (!formattedData.on_promotion) {
+        // Remove promo_price if product is not on promotion
+        delete formattedData.promo_price;
+      }
+      formattedData.quantity = Number(formattedData.quantity);
+      formattedData.min_quantity = Number(formattedData.min_quantity);
+
+      // Then use formattedData instead of formData when adding to FormData
+      Object.keys(formattedData).forEach((key) => {
+        // Skip undefined, null, or empty string values
+        if (
+          formattedData[key] === undefined ||
+          formattedData[key] === null ||
+          formattedData[key] === ""
+        ) {
+          return;
+        }
+
+        if (
+          key !== "image" ||
+          (key === "image" && typeof formattedData[key] !== "string")
+        ) {
+          productData.append(key, formattedData[key]);
+        }
+      });
+
+      // If there's a new image file, append it
+      if (formData.image && typeof formData.image !== "string") {
+        productData.append("image", formData.image);
+      }
+
+      if (isEditing) {
         // IMPORTANT: Add product_id to the form data - this is what was missing
         productData.append("product_id", editingProductId);
-
-        // Format dates for API if they exist
-        const formattedData = { ...formData };
-        if (formData.promotion_start_date) {
-          formattedData.promotion_start_date = `${formData.promotion_start_date}T00:00:00Z`;
-        }
-        if (formData.promotion_end_date) {
-          formattedData.promotion_end_date = `${formData.promotion_end_date}T00:00:00Z`;
-        }
-        if (formData.expiry_date) {
-          formattedData.expiry_date = `${formData.expiry_date}T00:00:00Z`;
-        }
-
-        // Convert numeric fields to ensure they're sent as numbers
-        if (formattedData.unit_price) {
-          formattedData.unit_price = Number(formattedData.unit_price);
-        }
-        if (formattedData.purchase_price) {
-          formattedData.purchase_price = Number(formattedData.purchase_price);
-        }
-        // Only include promo_price if it has a value and product is on promotion
-        if (formattedData.on_promotion && formattedData.promo_price) {
-          formattedData.promo_price = Number(formattedData.promo_price);
-        } else if (!formattedData.on_promotion) {
-          // Remove promo_price if product is not on promotion
-          delete formattedData.promo_price;
-        }
-        formattedData.quantity = Number(formattedData.quantity);
-        formattedData.min_quantity = Number(formattedData.min_quantity);
-
-        // Then use formattedData instead of formData when adding to FormData
-        Object.keys(formattedData).forEach((key) => {
-          // Skip undefined, null, or empty string values
-          if (
-            formattedData[key] === undefined ||
-            formattedData[key] === null ||
-            formattedData[key] === ""
-          ) {
-            return;
-          }
-
-          if (
-            key !== "image" ||
-            (key === "image" && typeof formattedData[key] !== "string")
-          ) {
-            productData.append(key, formattedData[key]);
-          }
-        });
-
-        // If there's a new image file, append it
-        if (formData.image && typeof formData.image !== "string") {
-          productData.append("image", formData.image);
-        }
 
         console.log("Updating product with ID:", editingProductId);
         console.log("Form data entries:", [...productData.entries()]);
@@ -612,75 +633,6 @@ const Product = () => {
         // Reset form
         resetForm();
       } else {
-        // Check if product name already exists
-        const nameExists = products.some(
-          (item) =>
-            item.product.name &&
-            formData.name &&
-            item.product.name.toLowerCase() === formData.name.toLowerCase(),
-        );
-
-        if (nameExists) {
-          setErrorMessage("A product with this name already exists.");
-          return;
-        }
-
-        // Create a new product via API
-        const productData = new FormData();
-
-        // Format dates for API if they exist
-        const formattedData = { ...formData };
-        if (formData.promotion_start_date) {
-          formattedData.promotion_start_date = `${formData.promotion_start_date}T00:00:00Z`;
-        }
-        if (formData.promotion_end_date) {
-          formattedData.promotion_end_date = `${formData.promotion_end_date}T00:00:00Z`;
-        }
-        if (formData.expiry_date) {
-          formattedData.expiry_date = `${formData.expiry_date}T00:00:00Z`;
-        }
-
-        // Convert numeric fields to ensure they're sent as numbers
-        if (formattedData.unit_price) {
-          formattedData.unit_price = Number(formattedData.unit_price);
-        }
-        if (formattedData.purchase_price) {
-          formattedData.purchase_price = Number(formattedData.purchase_price);
-        }
-        // Only include promo_price if it has a value and product is on promotion
-        if (formattedData.on_promotion && formattedData.promo_price) {
-          formattedData.promo_price = Number(formattedData.promo_price);
-        } else if (!formattedData.on_promotion) {
-          // Remove promo_price if product is not on promotion
-          delete formattedData.promo_price;
-        }
-        formattedData.quantity = Number(formattedData.quantity);
-        formattedData.min_quantity = Number(formattedData.min_quantity);
-
-        // Then use formattedData instead of formData when adding to FormData
-        Object.keys(formattedData).forEach((key) => {
-          // Skip undefined, null, or empty string values
-          if (
-            formattedData[key] === undefined ||
-            formattedData[key] === null ||
-            formattedData[key] === ""
-          ) {
-            return;
-          }
-
-          if (
-            key !== "image" ||
-            (key === "image" && typeof formattedData[key] !== "string")
-          ) {
-            productData.append(key, formattedData[key]);
-          }
-        });
-
-        // If there's a new image file, append it
-        if (formData.image && typeof formData.image !== "string") {
-          productData.append("image", formData.image);
-        }
-
         console.log("Creating product with data:", [...productData.entries()]);
 
         const response = await authAxios.post(
@@ -1058,25 +1010,21 @@ const Product = () => {
 
         {/* Search and Filter Bar */}
         <div className="product-toolbar">
-          <div className="search-container">
-            <Search size={18} className="search-icon" />
-            <input
-              type="text"
-              placeholder="Search products..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="search-input"
-            />
-          </div>
+          <SearchBarCmp
+            placeholder={"Search products..."}
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+          />
 
           {/* Expiry Date Filter Button */}
           <div className="expiry-filter-container">
-            <button
+            <Button
+              variant={expiredProducts ? "contained" : "outlined"}
               className="expiry-filter-btn"
               onClick={fetchProductsByExpiryDate}
             >
               <Calendar size={18} /> Expired Products
-            </button>
+            </Button>
             <button
               className="clear-filter-btn"
               onClick={handleClearExpiryFilter}
@@ -1085,13 +1033,16 @@ const Product = () => {
             </button>
           </div>
 
-          <button
-            className={`view-btn ${viewMode === "list" ? "active" : ""}`}
+          <Button
+            size="small"
+            variant={viewMode === "list" ? "contained" : "text"}
+            sx={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
+            // className={`view-btn ${viewMode === "list" ? "active" : ""}`}
             onClick={() => setViewMode("list")}
             aria-label="List view"
           >
             <List size={18} /> List
-          </button>
+          </Button>
         </div>
 
         {/* Products Display */}
@@ -1281,6 +1232,14 @@ const Product = () => {
               </div>
 
               <form onSubmit={handleSubmit} className="product-form">
+                {errorMessage && (
+                  <div className="error-container">
+                    <AlertCircle size={16} />
+                    <span style={{ width: "100%" }} className="error-message">
+                      {errorMessage}
+                    </span>
+                  </div>
+                )}
                 <div className="form-grid">
                   {/* Basic Information */}
                   <div className="form-section">
@@ -1293,15 +1252,9 @@ const Product = () => {
                         name="name"
                         value={formData.name}
                         onChange={handleChange}
-                        className={errorMessage ? "input-error" : ""}
+                        // className={errorMessage ? "input-error" : ""}
                         required
                       />
-                      {errorMessage && (
-                        <div className="error-container">
-                          <AlertCircle size={16} />
-                          <span className="error-message">{errorMessage}</span>
-                        </div>
-                      )}
                     </div>
 
                     <div className="form-group">
@@ -1313,7 +1266,7 @@ const Product = () => {
                         min="0"
                         value={formData.purchase_price}
                         onChange={handleChange}
-                        className={errorMessage ? "input-error" : ""}
+                        // className={errorMessage ? "input-error" : ""}
                         required
                       />
                     </div>
@@ -1444,19 +1397,39 @@ const Product = () => {
 
                     <div className="form-group">
                       <label htmlFor="product-expiry">Expiry Date</label>
-                      <input
+                      {/* <input
                         id="product-expiry"
                         type="date"
                         name="expiry_date"
                         value={formData.expiry_date}
                         onChange={handleChange}
+                      /> */}
+                      <DatePickerBasic
+                        id={"product-expiry"}
+                        name={"expiry_date"}
+                        value={
+                          formData.expiry_date != ""
+                            ? formData.expiry_date
+                            : new Date().toISOString().split("T")[0]
+                        }
+                        onChange={(newValue) => {
+                          setFormData({
+                            ...formData,
+                            expiry_date: newValue ? newValue.toISOString() : "",
+                          });
+                          console.log(formData.expiry_date);
+                        }}
                       />
                     </div>
-
                     <div className="form-group checkbox-group">
                       <label className="checkbox-label">
-                        <input
+                        {/* <input
                           type="checkbox"
+                          name="is_expired"
+                          checked={formData.is_expired}
+                          onChange={handleChange}
+                        /> */}
+                        <Checkbox
                           name="is_expired"
                           checked={formData.is_expired}
                           onChange={handleChange}
@@ -1502,82 +1475,128 @@ const Product = () => {
                       </div>
                     </div>
                   </div>
+                </div>
+                {/* Promotion Information */}
+                <div className="form-section promotion-section">
+                  <h4>Promotion Details</h4>
 
-                  {/* Promotion Information */}
-                  <div className="form-section promotion-section">
-                    <h4>Promotion Details</h4>
-
-                    <div className="form-group checkbox-group">
-                      <label className="checkbox-label">
-                        <input
+                  <div className="form-group checkbox-group">
+                    <label className="checkbox-label">
+                      {/* <input
                           type="checkbox"
                           name="on_promotion"
                           checked={formData.on_promotion}
                           onChange={handleChange}
-                        />
-                        <span>Product is on promotion</span>
-                      </label>
-                    </div>
+                        /> */}
+                      <Checkbox
+                        name="on_promotion"
+                        checked={formData.on_promotion}
+                        onChange={handleChange}
+                      />
+                      <span>Product is on promotion</span>
+                    </label>
+                  </div>
 
-                    {formData.on_promotion && (
-                      <>
-                        <div className="form-row">
-                          <div className="form-group">
-                            <label htmlFor="promo-start">Start Date *</label>
-                            <input
+                  {formData.on_promotion && (
+                    <>
+                      <div className="form-row">
+                        <div className="form-group">
+                          <label htmlFor="promo-start">Start Date *</label>
+                          {/* <input
                               id="promo-start"
                               type="date"
                               name="promotion_start_date"
                               value={formData.promotion_start_date}
                               onChange={handleChange}
                               required={formData.on_promotion}
-                            />
-                          </div>
+                            /> */}
+                          <DatePickerBasic
+                            id={"promo-start"}
+                            name={"promotion_start_date"}
+                            value={
+                              formData.promotion_start_date != ""
+                                ? formData.promotion_start_date
+                                : new Date().toISOString().split("T")[0]
+                            }
+                            onChange={(newValue) => {
+                              setFormData({
+                                ...formData,
+                                promotion_start_date: newValue
+                                  ? newValue.toISOString()
+                                  : "",
+                              });
+                            }}
+                          />
+                        </div>
 
-                          <div className="form-group">
-                            <label htmlFor="promo-end">End Date *</label>
-                            <input
+                        <div className="form-group">
+                          <label htmlFor="promo-end">End Date *</label>
+                          {/* <input
                               id="promo-end"
                               type="date"
                               name="promotion_end_date"
                               value={formData.promotion_end_date}
                               onChange={handleChange}
                               required={formData.on_promotion}
-                            />
-                          </div>
+                            /> */}
+                          <DatePickerBasic
+                            id={"promo-end"}
+                            name={"promotion_end_date"}
+                            value={
+                              formData.promotion_end_date != ""
+                                ? formData.promotion_end_date
+                                : dayjs().add(7, "day")
+                            }
+                            onChange={(newValue) => {
+                              setFormData({
+                                ...formData,
+                                promotion_end_date: newValue
+                                  ? newValue.toISOString()
+                                  : "",
+                              });
+                            }}
+                          />
                         </div>
+                      </div>
 
-                        <div className="form-group">
-                          <label htmlFor="promo-price">
-                            Promotional Price *
-                          </label>
-                          <div className="input-with-prefix">
-                            <span className="input-prefix">$</span>
-                            <input
-                              id="promo-price"
-                              name="promo_price"
-                              type="decimal"
-                              min="0"
-                              value={formData.promo_price}
-                              onChange={handleChange}
-                              required={formData.on_promotion}
-                            />
-                          </div>
+                      <div className="form-group">
+                        <label htmlFor="promo-price">Promotional Price *</label>
+                        <div className="input-with-prefix">
+                          <span className="input-prefix">$</span>
+                          <input
+                            id="promo-price"
+                            name="promo_price"
+                            type="decimal"
+                            min="0"
+                            value={formData.promo_price}
+                            onChange={handleChange}
+                            required={formData.on_promotion}
+                          />
                         </div>
-                      </>
-                    )}
-                  </div>
+                      </div>
+                    </>
+                  )}
                 </div>
 
-                <div className="form-actions">
-                  <button
+                <div
+                  className="form-actions"
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
+                  <Button
                     type="button"
+                    variant="contained"
+                    color="error"
                     onClick={resetForm}
-                    className="cancel-btn"
+                    fullWidth
                   >
                     Cancel
-                  </button>
-                  <button type="submit" className="create-btn">
+                  </Button>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    type="submit"
+                    fullWidth
+                  >
                     {isEditing ? (
                       <>
                         <Check size={16} /> Update Product
@@ -1587,7 +1606,7 @@ const Product = () => {
                         <Plus size={16} /> Create Product
                       </>
                     )}
-                  </button>
+                  </Button>
                 </div>
               </form>
             </div>

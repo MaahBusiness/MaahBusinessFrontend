@@ -32,7 +32,7 @@ const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate }) => {
         <div className="date-input-container">
           {/* <label>From</label> */}
           <DatePicker
-            sx={{ maxWidth: "150px" }}
+            // sx={{ maxWidth: "150px" }}
             value={dayjs(startDate)}
             onChange={handleStartDateChange}
             format="DD-MM-YYYY" // For display
@@ -43,7 +43,7 @@ const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate }) => {
         <div className="date-input-container">
           {/* <label>To</label> */}
           <DatePicker
-            sx={{ maxWidth: "150px" }}
+            // sx={{ maxWidth: "150px" }}
             value={dayjs(endDate)}
             onChange={handleEndDateChange}
             format="DD-MM-YYYY"

@@ -31,6 +31,12 @@ import "./Invoice.css";
 import { Link, useNavigate } from "react-router-dom";
 import MainContent from "../MainContend";
 import { API_URL } from "../../utils";
+import SearchBarCmpThin from "../common/SearchBarCmpThin";
+
+import RefreshIcon from "@mui/icons-material/Refresh";
+import DatePickerCmp from "../common/DatePickerCmp";
+import Button from "@mui/material/Button";
+import DatePickerBasic from "../common/DatePickerBasic";
 
 const Invoice = () => {
   // Style definitions for form fields
@@ -1053,31 +1059,39 @@ const Invoice = () => {
           <h2>Invoice Management</h2>
           <div className="header-actions">
             {isAuthenticated ? (
-              <button
+              <Button
+                startIcon={<Plus size={16} />}
+                variant="contained"
                 className="add-button"
                 onClick={() => {
                   resetForm();
                   setShowModal(true);
                 }}
               >
-                <Plus size={18} /> Create Invoice
-              </button>
+                Create Invoice
+              </Button>
             ) : (
-              <button className="login-button" onClick={handleLogin}>
-                <User size={18} /> Login to Create Invoices
-              </button>
+              <Button
+                variant="contained"
+                color="error"
+                startIcon={<User size={16} />}
+                className="login-button"
+                onClick={handleLogin}
+              >
+                Login to Create Invoices
+              </Button>
             )}
             {isAuthenticated && selectedInvoice && (
               <Link
                 to={`/invoice/${selectedInvoice.id}`}
                 className="archive-button"
               >
-                <FileText size={18} /> View Invoice
+                <FileText size={16} /> View Invoice
               </Link>
             )}
             {isAuthenticated && isManager && (
               <Link to="/ArchiveManager" className="archive-button">
-                <Archive size={18} /> View Archived Invoices
+                <Archive size={16} /> View Archived Invoices
               </Link>
             )}
           </div>
@@ -1090,52 +1104,51 @@ const Invoice = () => {
           </div>
         )}
 
-        {/* View Toggle */}
-        <div className="view-toggle">
-          <button
-            className={`view-toggle-btn ${invoiceDisplayMode === "grid" ? "active" : ""}`}
-            onClick={() => setInvoiceDisplayMode("grid")}
-          >
-            <Grid size={16} /> Grid View
-          </button>
-          <button
-            className={`view-toggle-btn ${invoiceDisplayMode === "list" ? "active" : ""}`}
-            onClick={() => setInvoiceDisplayMode("list")}
-          >
-            <List size={16} /> List View
-          </button>
-        </div>
-
         {/* List View */}
         {currentView === "list" && (
           <div className="invoice-list-view">
             <div className="search-container">
-              <div className="search-wrapper">
-                <Search className="search-icon" size={18} />
-                <input
-                  type="text"
-                  placeholder="Search invoices by ID, client name, or reason..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="search-input"
-                />
-              </div>
-              <div className="date-filter">
-                <Calendar className="calendar-icon" size={18} />
-                <input
-                  type="date"
-                  value={searchDate}
-                  onChange={(e) => setSearchDate(e.target.value)}
-                  className="date-input"
-                  placeholder="Filter by date"
+              <SearchBarCmpThin
+                placeholder={"Search invoices by ID, client name, or reason..."}
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
+              />
+              <div style={{ display: "flex", gap: 5 }}>
+                {/* View Toggle */}
+                <div style={{ display: "flex", gap: 5 }}>
+                  <Button
+                    startIcon={<Grid size={16} />}
+                    onClick={() => setInvoiceDisplayMode("grid")}
+                    sx={{ whiteSpace: "nowrap" }}
+                    variant={
+                      invoiceDisplayMode === "grid" ? "contained" : "outlined"
+                    }
+                  >
+                    Grid View
+                  </Button>
+                  <Button
+                    startIcon={<List size={16} />}
+                    onClick={() => setInvoiceDisplayMode("list")}
+                    sx={{ whiteSpace: "nowrap" }}
+                    variant={
+                      invoiceDisplayMode === "list" ? "contained" : "outlined"
+                    }
+                  >
+                    List View
+                  </Button>
+                </div>
+                <DatePickerCmp
+                  searchDate={searchDate}
+                  setSearchDate={setSearchDate}
                 />
                 {searchDate && (
-                  <button
-                    className="clear-date-btn"
+                  <Button
+                    variant="outlined"
+                    color="secondary"
                     onClick={() => setSearchDate("")}
                   >
-                    <X size={14} />
-                  </button>
+                    <RefreshIcon />
+                  </Button>
                 )}
               </div>
             </div>
@@ -1327,7 +1340,7 @@ const Invoice = () => {
         {/* Create Invoice Modal */}
         {showModal && (
           <div className="invoice-modal-overlay">
-            <div className="invoice-modal-content invoice-create-modal-wide">
+            <div className="invoice-modal-content">
               <div className="modal-header">
                 <h3>Create New Invoice</h3>
                 <button
@@ -1401,14 +1414,21 @@ const Invoice = () => {
                         {advancePaid < calculateTotals().total ? (
                           <span style={requiredFieldStyle}>*</span>
                         ) : (
-                          <span style={optionalFieldStyle}>(Optional)</span>
+                          <span style={optionalFieldStyle}>
+                            (Optional) {dueDate}
+                          </span>
                         )}
                       </label>
-                      <input
-                        id="due-date"
-                        type="date"
-                        value={dueDate}
-                        onChange={(e) => setDueDate(e.target.value)}
+                      <DatePickerBasic
+                        id={"due-date"}
+                        value={
+                          dueDate != ""
+                            ? dueDate
+                            : new Date().toISOString().split("T")[0]
+                        }
+                        onChange={(newValue) =>
+                          setDueDate(newValue.format("YYYY-MM-DD"))
+                        }
                         className={
                           formError &&
                           advancePaid < calculateTotals().total &&
@@ -1668,7 +1688,10 @@ const Invoice = () => {
             <div className="invoice-modal-content invoice-detail-modal">
               <div className="modal-header">
                 <h3>Invoice Details</h3>
-                <div className="modal-header-actions">
+                <div
+                  className="modal-header-actions"
+                  style={{ display: "flex", alignItems: "center", gap: 20 }}
+                >
                   <Link
                     to={`/invoice/${selectedInvoice.id}`}
                     className="view-full-btn"
@@ -1846,8 +1869,17 @@ const Invoice = () => {
               <div className="modal-footer">
                 {Number.parseFloat(selectedInvoice.remaining_amount || 0) >
                   0 && (
-                  <button
-                    className="pay-debt-btn"
+                  <Button
+                    startIcon={
+                      isLoading ? (
+                        <Loader size={16} className="spin" />
+                      ) : (
+                        <>
+                          <DollarSign size={16} />
+                        </>
+                      )
+                    }
+                    variant="contained"
                     onClick={() => {
                       setPaymentAmount(
                         Number.parseFloat(
@@ -1858,28 +1890,26 @@ const Invoice = () => {
                     }}
                     disabled={isLoading}
                   >
-                    {isLoading ? (
+                    Pay Debt
+                  </Button>
+                )}
+                <Button
+                  variant="contained"
+                  color="error"
+                  startIcon={
+                    isLoading ? (
                       <Loader size={16} className="spin" />
                     ) : (
                       <>
-                        <DollarSign size={16} /> Pay Debt
+                        <FileText size={16} />
                       </>
-                    )}
-                  </button>
-                )}
-                <button
-                  className="export-pdf-btn"
+                    )
+                  }
                   onClick={() => handleExportPDF(selectedInvoice.id)}
                   disabled={isLoading}
                 >
-                  {isLoading ? (
-                    <Loader size={16} className="spin" />
-                  ) : (
-                    <>
-                      <FileText size={16} /> Export PDF
-                    </>
-                  )}
-                </button>
+                  Export PDF
+                </Button>
               </div>
             </div>
           </div>
@@ -1930,7 +1960,10 @@ const Invoice = () => {
         {/* Payment Modal */}
         {selectedInvoice && showPaymentModal && (
           <div className="invoice-modal-overlay">
-            <div className="invoice-modal-content payment-modal">
+            <div
+              className="invoice-modal-content payment-modal"
+              style={{ maxHeight: "max-content" }}
+            >
               <div className="modal-header">
                 <h3>Pay Invoice Debt</h3>
                 <button
@@ -1988,14 +2021,18 @@ const Invoice = () => {
                 </div>
               </div>
               <div className="modal-footer">
-                <button
-                  className="cancel-btn"
+                <Button
+                  variant="contained"
+                  color="error"
                   onClick={() => setShowPaymentModal(false)}
+                  fullWidth
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="contained"
                   className="pay-btn"
+                  fullWidth
                   onClick={() => {
                     handlePayDebt(selectedInvoice.id, paymentAmount);
                     setShowPaymentModal(false);
@@ -2014,7 +2051,7 @@ const Invoice = () => {
                       <DollarSign size={16} /> Process Payment
                     </>
                   )}
-                </button>
+                </Button>
               </div>
             </div>
           </div>

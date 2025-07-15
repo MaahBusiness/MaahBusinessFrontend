@@ -14,6 +14,7 @@ import {
   Tooltip,
   Legend,
   RadialLinearScale,
+  Filler,
 } from "chart.js";
 import { Line, Bar, Doughnut } from "react-chartjs-2";
 import {
@@ -53,6 +54,7 @@ ChartJS.register(
   BarElement,
   ArcElement,
   Title,
+  Filler,
   Tooltip,
   Legend,
   RadialLinearScale,

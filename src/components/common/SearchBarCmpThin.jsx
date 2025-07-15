@@ -1,8 +1,8 @@
 import { Search } from "lucide-react";
 
-const SearchBarCmp = ({ placeholder, searchTerm, setSearchTerm }) => {
+const SearchBarCmpThin = ({ placeholder, searchTerm, setSearchTerm }) => {
   return (
-    <div className="search-container welcome-searc">
+    <div className="" style={{ width: "100%" }}>
       <Search size={16} className="search-icon" />
       <input
         type="text"
@@ -15,4 +15,4 @@ const SearchBarCmp = ({ placeholder, searchTerm, setSearchTerm }) => {
   );
 };
 
-export default SearchBarCmp;
+export default SearchBarCmpThin;

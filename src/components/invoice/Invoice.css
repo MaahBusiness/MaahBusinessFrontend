@@ -11,7 +11,7 @@
   color: #fff;
   border: none;
   border-radius: 0.5rem;
-  padding: 0.75rem 1.25rem;
+  padding: 0.6rem 1rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -99,52 +99,11 @@
   box-shadow: 0 2px 4px rgba(99, 102, 241, 0.2);
 }
 
-.view-toggle {
-  margin-bottom: 1em;
-  display: flex;
-  align-items: center;
-  justify-content: end;
-  gap: 0.5rem;
-  position: relative;
-  z-index: 1;
-}
-
-.view-toggle-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background-color: #252525;
-  color: #a0a0a0;
-  border: 1px solid #333;
-  border-radius: 0.5rem;
-  padding: 0.5rem 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  position: relative;
-  z-index: 1;
-}
-
-.view-toggle-btn:hover {
-  background-color: #333;
-  color: #f8f9fa;
-}
-
-.view-toggle-btn.active {
-  background-color: var(--primary-color);
-  color: #f8f9fa;
-  border-color: var(--primary-color);
-}
-
 .search-container {
   margin-bottom: 1rem !important;
   display: flex;
+  align-items: center;
   gap: 1rem;
-}
-
-.search-wrapper {
-  position: relative;
-  flex: 1;
 }
 
 .search-icon {
@@ -170,14 +129,6 @@
   border-color: var(--primary-color);
   box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
   outline: none;
-}
-
-/* Date filter styles */
-.date-filter {
-  position: relative;
-  min-width: 200px;
-  display: flex;
-  align-items: center;
 }
 
 .calendar-icon {
@@ -206,31 +157,8 @@
   outline: none;
 }
 
-.clear-date-btn {
-  position: absolute;
-  right: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  color: #a0a0a0;
-  cursor: pointer;
-  padding: 0.25rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: all 0.2s ease;
-}
-
-.clear-date-btn:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: #f8f9fa;
-}
-
 /* Table view styles */
 .invoice-table-container {
-  width: 70%;
   margin: 0 auto;
   overflow-x: auto;
   background-color: #1e1e1e;
@@ -352,7 +280,6 @@
 
 /* Invoice List */
 .invoice-list {
-  width: 70%;
   margin: 1em auto;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -647,17 +574,6 @@
 
 .invoice-detail-modal {
   max-width: 700px;
-}
-
-.invoice-create-modal-wide {
-  max-width: 1400px;
-  width: 63%;
-  background-color: #1e1e1e;
-  border-radius: 1.2rem;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-  padding: 2rem;
-  margin: 2rem auto;
-  color: #fff;
 }
 
 .confirm-modal {
@@ -1066,6 +982,7 @@
   cursor: pointer;
   width: 100%;
   transition: all 0.3s ease;
+  white-space: nowrap !important;
 }
 
 .cancel-btn {
@@ -1386,10 +1303,6 @@
 
   .form-grid {
     grid-template-columns: 1fr;
-  }
-
-  .invoice-create-modal-wide {
-    padding: 1rem;
   }
 
   .modal-footer {

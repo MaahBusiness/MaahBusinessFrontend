@@ -47,8 +47,9 @@ const Login = () => {
         );
       }
 
-      // Store the token in localStorage
+      // Store the token and refreshToken in localStorage
       localStorage.setItem("token", data.access);
+      localStorage.setItem("refresh", data.refresh);
       console.log("Login successful, token stored");
 
       // If the login response includes user data, store it

@@ -19,6 +19,7 @@ import {
   Clock,
   Calendar,
   Eye,
+  User,
 } from "lucide-react";
 import axios from "axios";
 import "./category.css";
@@ -1035,6 +1036,10 @@ const Category = () => {
                               ).toLocaleTimeString()}
                             </span>
                           </div>
+                          <div className="date-time-display">
+                            <User size={14} />
+                            <span>{categoryDetails.created_by}</span>
+                          </div>
                         </span>
                       </div>
                       {categoryDetails.updated_at && (
@@ -1054,6 +1059,10 @@ const Category = () => {
                                   categoryDetails.updated_at,
                                 ).toLocaleTimeString()}
                               </span>
+                            </div>
+                            <div className="date-time-display">
+                              <User size={14} />
+                              <span>{categoryDetails.created_by}</span>
                             </div>
                           </span>
                         </div>
@@ -1333,7 +1342,9 @@ const Category = () => {
                           </span>
                         </div>
                         <div className="detail-item">
-                          <span className="detail-label">Created:</span>
+                          <span className="detail-label">
+                            Created by {subcategoryDetails.created_by}:
+                          </span>
                           <span className="detail-value">
                             {formatDateTime(subcategoryDetails.created_at)}
                           </span>

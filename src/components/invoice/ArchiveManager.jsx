@@ -18,6 +18,8 @@ import {
 import "./Invoice.css";
 import MainContent from "../MainContend";
 import { API_URL } from "../../utils";
+import SearchBarCmpThin from "../common/SearchBarCmpThin";
+import DatePickerCmp from "../common/DatePickerCmp";
 
 const ArchiveManager = ({ onBack }) => {
   // State
@@ -227,24 +229,12 @@ const ArchiveManager = ({ onBack }) => {
         {/* Search Container */}
         <div className="view-toggle">
           <div className="search-container">
-            <div className="search-wrapper">
-              <Search className="search-icon" size={18} />
-              <input
-                type="text"
-                placeholder="Search invoice"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="search-input"
-              />
-            </div>
-            <div className="date-filter">
-              <Calendar className="calendar-icon" size={18} />
-              <input
-                type="text"
-                placeholder="mm/dd/yyyy"
-                className="date-input"
-              />
-            </div>
+            <SearchBarCmpThin
+              placeholder={"Search invoices..."}
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+            />
+            <DatePickerCmp searchDate={""} setSearchDate={""} />
           </div>
         </div>
 

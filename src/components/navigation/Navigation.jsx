@@ -12,6 +12,7 @@ import LogoutIcon from "@mui/icons-material/Logout";
 import { styled } from "@mui/material/styles";
 import Badge, { badgeClasses } from "@mui/material/Badge";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCartOutlined";
+import axios from "axios";
 
 const CartBadge = styled(Badge)`
   & .${badgeClasses.badge} {
@@ -26,6 +27,41 @@ const Navbar = () => {
   const [username, setUsername] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Create axios instance with authentication headers
+  const getAuthAxios = () => {
+    const token = localStorage.getItem("token");
+    const refreshToken = localStorage.getItem("refresh");
+
+    const headers = {
+      "Content-Type": "application/json",
+    };
+
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+    if (refreshToken) headers["X-Refresh-Token"] = refreshToken;
+
+    return axios.create({ headers });
+  };
+
+  const logout = async () => {
+    try {
+      const authAxios = getAuthAxios();
+      await authAxios.post(`${API_URL}/logout/`);
+
+      localStorage.clear();
+      navigate("/");
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
+  };
+  // const logout = async () => {
+  //   try {
+  //     localStorage.clear();
+  //     navigate("/");
+  //   } catch (error) {
+  //     console.error("Error logging out:", error);
+  //   }
+  // };
 
   // Function to fetch notification count
   const fetchNotificationCount = useCallback(async () => {
@@ -145,8 +181,7 @@ const Navbar = () => {
               <li
                 onClick={() => {
                   if (confirm("Are you sur you want to logout?")) {
-                    localStorage.clear();
-                    navigate("/");
+                    logout();
                   }
                 }}
               >
