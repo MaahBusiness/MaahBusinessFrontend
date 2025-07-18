@@ -550,6 +550,12 @@ const Product = () => {
     try {
       const authAxios = getAuthAxios();
 
+      // Verify if pc price < price
+      if (formData.purchase_price > formData.unit_price) {
+        setErrorMessage("Purchase price cannot be greater than unit price.");
+        return;
+      }
+
       // Create a new product via API
       const productData = new FormData();
 
@@ -1232,14 +1238,6 @@ const Product = () => {
               </div>
 
               <form onSubmit={handleSubmit} className="product-form">
-                {errorMessage && (
-                  <div className="error-container">
-                    <AlertCircle size={16} />
-                    <span style={{ width: "100%" }} className="error-message">
-                      {errorMessage}
-                    </span>
-                  </div>
-                )}
                 <div className="form-grid">
                   {/* Basic Information */}
                   <div className="form-section">
@@ -1578,6 +1576,15 @@ const Product = () => {
                   )}
                 </div>
 
+                {errorMessage && (
+                  <div className="error-container">
+                    <AlertCircle size={16} />
+                    <span style={{ width: "100%" }} className="error-message">
+                      {errorMessage}
+                    </span>
+                  </div>
+                )}
+
                 <div
                   className="form-actions"
                   style={{ display: "flex", justifyContent: "space-between" }}
@@ -1595,17 +1602,20 @@ const Product = () => {
                     variant="contained"
                     size="small"
                     type="submit"
+                    startIcon={
+                      isEditing ? (
+                        <>
+                          <Check size={16} />
+                        </>
+                      ) : (
+                        <>
+                          <Plus size={16} />
+                        </>
+                      )
+                    }
                     fullWidth
                   >
-                    {isEditing ? (
-                      <>
-                        <Check size={16} /> Update Product
-                      </>
-                    ) : (
-                      <>
-                        <Plus size={16} /> Create Product
-                      </>
-                    )}
+                    {isEditing ? <>Update Product</> : <>Create Product</>}
                   </Button>
                 </div>
               </form>

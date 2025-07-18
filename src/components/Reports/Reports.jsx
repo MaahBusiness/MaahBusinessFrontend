@@ -304,26 +304,36 @@ const Reports = () => {
   };
 
   // Update the deleteReport function to also update localStorage
-  const deleteReport = (reportId, e) => {
+  const deleteReport = async (reportId, e) => {
     // Stop event propagation to prevent loading the report when clicking delete
     if (e) {
       e.stopPropagation();
     }
+    try {
+      const authAxios = getAuthAxios();
+      const response = await authAxios.delete(
+        `${API_URL}/report/delete-report/?report_id=${reportId}`,
+      );
 
-    // Filter out the report to delete
-    const updatedReports = savedReports.filter((report) => {
-      const id = report.id || report.report_id;
-      return id !== reportId;
-    });
+      // Filter out the report to delete
+      const updatedReports = savedReports.filter((report) => {
+        const id = report.id || report.report_id;
+        return id !== reportId;
+      });
 
-    // Update state and localStorage
-    setSavedReports(updatedReports);
-    localStorage.setItem("savedReportsData", JSON.stringify(updatedReports));
-    console.log("Updated reports after deletion:", updatedReports);
+      // Update state and localStorage
+      setSavedReports(updatedReports);
+      localStorage.setItem("savedReportsData", JSON.stringify(updatedReports));
+      console.log("Updated reports after deletion:", updatedReports);
 
-    // If the current report is the one being deleted, clear it
-    if (report && (report.id === reportId || report.report_id === reportId)) {
-      setReport(null);
+      // If the current report is the one being deleted, clear it
+      if (report && (report.id === reportId || report.report_id === reportId)) {
+        setReport(null);
+      }
+    } catch (error) {
+      console.error("Error deleting report:", error);
+      setError("Failed to delete report. Please try again.");
+      return;
     }
   };
 

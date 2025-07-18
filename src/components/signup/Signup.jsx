@@ -7,22 +7,22 @@ import { API_URL } from "../../utils";
 const Signup = () => {
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        navigate("/login");
-        return;
-      } else {
-        const hasPerm = await hasManagerPermission();
-        if (!hasPerm) {
-          navigate("/login");
-          return;
-        }
-      }
-    };
-    fetchUserData();
-  }, [navigate]);
+  // useEffect(() => {
+  //   const fetchUserData = async () => {
+  //     const token = localStorage.getItem("token");
+  //     if (!token) {
+  //       navigate("/login");
+  //       return;
+  //     } else {
+  //       const hasPerm = await hasManagerPermission();
+  //       if (!hasPerm) {
+  //         navigate("/login");
+  //         return;
+  //       }
+  //     }
+  //   };
+  //   fetchUserData();
+  // }, [navigate]);
 
   // Create axios instance with authentication headers
   const getAuthAxios = () => {

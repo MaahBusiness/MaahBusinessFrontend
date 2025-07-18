@@ -47,12 +47,11 @@ const Navbar = () => {
     try {
       const authAxios = getAuthAxios();
       await authAxios.post(`${API_URL}/logout/`);
-
-      localStorage.clear();
-      navigate("/");
     } catch (error) {
-      console.error("Error logging out:", error);
+      console.error("Error logging out on the API:", error);
     }
+    localStorage.clear();
+    navigate("/");
   };
   // const logout = async () => {
   //   try {
@@ -157,27 +156,28 @@ const Navbar = () => {
         <ul>
           {isLoggedIn && (
             <>
-              <li className={`${isNotificationPage ? "active" : ""}`}>
-                <Link to="/Notification">
-                  <IconButton>
-                    <FaBell size={22} title="Notifications" />
-                    <CartBadge
-                      badgeContent={
-                        notificationCount > 99 ? "99+" : notificationCount
-                      }
-                      color="primary"
-                      overlap="circular"
-                    />
-                  </IconButton>
-                </Link>
-              </li>
-              <li
-                className={`${location.pathname.startsWith("/profile") ? "active" : ""}`}
+              <IconButton
+                size="small"
+                className={`${isNotificationPage ? "active" : ""}`}
+                href="/Notification"
               >
-                <Link to="/profile/info" title={`Profile: ${username}`}>
-                  <FaUserCircle size={28} />
-                </Link>
-              </li>
+                <FaBell size={22} title="Notifications" />
+                <CartBadge
+                  badgeContent={
+                    notificationCount > 99 ? "99+" : notificationCount
+                  }
+                  color="primary"
+                  overlap="circular"
+                />
+              </IconButton>
+              <IconButton
+                size="small"
+                className={`${location.pathname.startsWith("/profile") ? "active" : ""}`}
+                href="/profile/info"
+                title={`Profile: ${username}`}
+              >
+                <FaUserCircle size={28} />
+              </IconButton>
               <li
                 onClick={() => {
                   if (confirm("Are you sur you want to logout?")) {

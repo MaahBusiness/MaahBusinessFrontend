@@ -741,7 +741,6 @@
 
 /* Line Items */
 .line-items {
-  display: grid;
   width: 100%;
   border: 1px solid #333;
   border-radius: 0.375rem;

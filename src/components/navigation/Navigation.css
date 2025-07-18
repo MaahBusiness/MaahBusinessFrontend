@@ -45,7 +45,6 @@
 }
 .nav-content ul li a {
   text-decoration: none;
-  color: #e0e0e0;
   font-weight: 500;
   padding: 0.5em 0;
   position: relative;
@@ -90,7 +89,6 @@
 }
 
 .nav-content ul li a svg {
-  color: #e0e0e0;
   transition:
     color 0.2s ease,
     transform 0.2s ease;

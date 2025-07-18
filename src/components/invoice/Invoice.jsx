@@ -456,7 +456,9 @@ const Invoice = () => {
 
     // Only require due date if there's a remaining balance (invoice not fully paid)
     if (remaining > 0 && !dueDate) {
-      setFormError("Due date is required for invoices with remaining balance");
+      setFormError(
+        "Due date and reason are required for invoices with the remaining amount balance",
+      );
       return;
     }
 
@@ -465,9 +467,7 @@ const Invoice = () => {
       (line) => !line.product_id || line.quantity <= 0,
     );
     if (invalidLines.length > 0) {
-      setFormError(
-        "All products must be selected and have a quantity greater than 0",
-      );
+      setFormError("All products selected must have a quantity greater than 0");
       return;
     }
 
