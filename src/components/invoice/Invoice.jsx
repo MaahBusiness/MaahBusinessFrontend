@@ -94,7 +94,9 @@ const Invoice = () => {
   const [reason, setReason] = useState("");
   const [tax, setTax] = useState(0);
   const [advancePaid, setAdvancePaid] = useState(0);
-  const [dueDate, setDueDate] = useState("");
+  const [dueDate, setDueDate] = useState(
+    new Date().toISOString().split("T")[0],
+  ); // Default to today
   const [lines, setLines] = useState([
     {
       product_id: "",
@@ -792,7 +794,7 @@ const Invoice = () => {
     setReason("");
     setTax(0);
     setAdvancePaid(0);
-    setDueDate("");
+    setDueDate(new Date().toISOString().split("T")[0]); // Reset to today
     setLines([
       {
         product_id: "",
@@ -1421,11 +1423,7 @@ const Invoice = () => {
                       </label>
                       <DatePickerBasic
                         id={"due-date"}
-                        value={
-                          dueDate != ""
-                            ? dueDate
-                            : new Date().toISOString().split("T")[0]
-                        }
+                        value={dueDate}
                         onChange={(newValue) =>
                           setDueDate(newValue.format("YYYY-MM-DD"))
                         }
