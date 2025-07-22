@@ -1209,13 +1209,13 @@ const Invoice = () => {
                             </td>
                             <td>
                               <div className="table-actions">
-                                <Link
+                                {/* <Link
                                   to={`/invoice/${invoice.id}`}
                                   className="view-btn"
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   <FileText size={16} />
-                                </Link>
+                                </Link> */}
                                 <button
                                   className="delete-btn"
                                   onClick={(e) =>
@@ -1690,12 +1690,12 @@ const Invoice = () => {
                   className="modal-header-actions"
                   style={{ display: "flex", alignItems: "center", gap: 20 }}
                 >
-                  <Link
+                  {/* <Link
                     to={`/invoice/${selectedInvoice.id}`}
                     className="view-full-btn"
                   >
                     <FileText size={16} /> View Full Page
-                  </Link>
+                  </Link> */}
                   <button
                     className="close-modal-btn"
                     onClick={() => setSelectedInvoice(null)}

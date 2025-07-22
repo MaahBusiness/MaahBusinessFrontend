@@ -1480,7 +1480,7 @@ const Reports = () => {
                             </div>
                           </div>
 
-                          {/* <div className="report-stats">
+                          <div className="report-stats">
                             <div className="stat-card">
                               <div className="stat-card-icon credit">
                                 <ShoppingCart
@@ -1513,9 +1513,9 @@ const Reports = () => {
                                 </p>
                               </div>
                             </div>
-                          </div> */}
+                          </div>
 
-                          {/* <div className="report-stats">
+                          <div className="report-stats">
                             <div className="stat-card">
                               <div className="stat-card-icon total">
                                 <DollarSign size={20} className="icon-total" />
@@ -1549,9 +1549,9 @@ const Reports = () => {
                                 </p>
                               </div>
                             </div>
-                          </div> */}
+                          </div>
 
-                          {/* <div className="report-stats">
+                          <div className="report-stats">
                             <div className="stat-card">
                               <div className="stat-card-icon advance">
                                 <DollarSign
@@ -1588,9 +1588,9 @@ const Reports = () => {
                                 </p>
                               </div>
                             </div>
-                          </div> */}
+                          </div>
 
-                          {/* <div className="report-stats">
+                          <div className="report-stats">
                             <div className="stat-card">
                               <div className="stat-card-icon credit-profit">
                                 <DollarSign
@@ -1627,9 +1627,9 @@ const Reports = () => {
                                 </p>
                               </div>
                             </div>
-                          </div> */}
+                          </div>
 
-                          {/* <div className="report-stats">
+                          <div className="report-stats">
                             <div className="stat-card">
                               <div className="stat-card-icon marge-nette">
                                 <DollarSign
@@ -1666,9 +1666,9 @@ const Reports = () => {
                                 </p>
                               </div>
                             </div>
-                          </div> */}
+                          </div>
 
-                          {/* <div className="report-stats">
+                          <div className="report-stats">
                             <div className="stat-card">
                               <div className="stat-card-icon profit-nette">
                                 <DollarSign
@@ -1687,15 +1687,15 @@ const Reports = () => {
                                 </p>
                               </div>
                             </div>
-                          </div> */}
+                          </div>
 
-                          {/* <div className="report-table-section">
+                          <div className="report-table-section">
                             <h4 className="table-title">
                               <ShoppingCart size={16} className="table-icon" />
                               Products Sold
                             </h4>
                             {renderSalesDataTable()}
-                          </div> */}
+                          </div>
                         </>
                       )}
 
