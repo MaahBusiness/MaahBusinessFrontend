@@ -12,7 +12,7 @@ import {
 } from "react-icons/fa";
 import "./sidebar.css";
 
-const Sidebar = () => {
+function Sidebar() {
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(window.innerWidth > 768);
 
@@ -20,7 +20,7 @@ const Sidebar = () => {
     setIsOpen(!isOpen);
   };
 
-  const isActive = (path) => location.pathname === path;
+  const isActive = (path: string): boolean => location.pathname === path;
 
   return (
     <>
@@ -71,6 +71,7 @@ const Sidebar = () => {
       </div>
     </>
   );
-};
+}
 
 export default Sidebar;
+

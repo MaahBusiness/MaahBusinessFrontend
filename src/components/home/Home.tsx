@@ -1,21 +1,19 @@
-"use client";
-
-import "./home.css";
-import img from "../../../public/assets/hero.jpg";
-import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import "./home.css";
+const heroImg = "/assets/hero.jpg";
 
-const Home = () => {
+function Home() {
   const navigate = useNavigate();
 
   // Add subtle animation effect when component mounts
   useEffect(() => {
     const heroElement = document.querySelector(".hero");
     if (heroElement) {
-      heroElement.style.opacity = "0";
+      (heroElement as HTMLElement).style.opacity = "0";
       setTimeout(() => {
-        heroElement.style.opacity = "1";
-        heroElement.style.transition = "opacity 0.8s ease-in-out";
+        (heroElement as HTMLElement).style.opacity = "1";
+        (heroElement as HTMLElement).style.transition = "opacity 0.8s ease-in-out";
       }, 100);
     }
   }, []);
@@ -40,13 +38,14 @@ const Home = () => {
         </div>
         <div className="hero_image">
           <img
-            src={img || "/placeholder.svg"}
+            src={heroImg || "/placeholder.svg"}
             alt="Stock management dashboard preview"
           />
         </div>
       </div>
     </div>
   );
-};
+}
 
 export default Home;
+

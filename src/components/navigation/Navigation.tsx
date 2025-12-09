@@ -1,15 +1,13 @@
-"use client";
-
 import { useState, useEffect, useCallback } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import { FaUserCircle, FaBell, FaSignOutAlt } from "react-icons/fa";
+import { Link, useLocation } from "react-router-dom";
+import { FaUserCircle, FaBell } from "react-icons/fa";
+import { notificationService } from "../../services";
 import "./Navigation.css";
 
-const Navbar = () => {
+function Navbar() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
   const [username, setUsername] = useState("");
-  const navigate = useNavigate();
   const location = useLocation();
 
   // Function to fetch notification count
@@ -27,25 +25,10 @@ const Navbar = () => {
         const token = localStorage.getItem("token");
         if (!token) return;
 
-        const response = await fetch(
-          "https://victbackendmanagement.onrender.com/api/v1/notification/my-notifications/?status=UNREAD",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          },
-        );
-
-        if (response.ok) {
-          const data = await response.json();
-          // Check if data is an array or has a count property
-          const unreadCount = Array.isArray(data)
-            ? data.filter((n) => n.status === "UNREAD").length
-            : data.count || 0;
-
-          setNotificationCount(unreadCount);
-          localStorage.setItem("notificationCount", unreadCount.toString());
-        }
+        const data = await notificationService.getNotifications("UNREAD");
+        const unreadCount = data.count || data.results?.length || 0;
+        setNotificationCount(unreadCount);
+        localStorage.setItem("notificationCount", unreadCount.toString());
       }
     } catch (error) {
       console.error("Failed to fetch notifications:", error);
@@ -56,9 +39,17 @@ const Navbar = () => {
   useEffect(() => {
     const checkAuthStatus = () => {
       const token = localStorage.getItem("token");
-      const storedUsername = localStorage.getItem("username");
+      const userStr = localStorage.getItem("user");
       setIsLoggedIn(!!token);
-      setUsername(storedUsername || "");
+      
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr);
+          setUsername(user.username || "");
+        } catch {
+          setUsername("");
+        }
+      }
     };
 
     const handleStorageChange = () => {
@@ -74,7 +65,7 @@ const Navbar = () => {
     window.addEventListener("storage", handleStorageChange);
 
     // Also poll for notifications periodically when logged in
-    let interval;
+    let interval: ReturnType<typeof setInterval> | undefined;
     if (isLoggedIn) {
       interval = setInterval(fetchNotificationCount, 60000); // Check every minute
     }
@@ -84,17 +75,6 @@ const Navbar = () => {
       if (interval) clearInterval(interval);
     };
   }, [isLoggedIn, fetchNotificationCount]);
-
-  // Function to handle logout
-  const handleLogout = useCallback(() => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("username");
-    localStorage.removeItem("notificationCount");
-    localStorage.removeItem("user");
-    setIsLoggedIn(false);
-    setNotificationCount(0);
-    navigate("/login");
-  }, [navigate]);
 
   // Check if we're on the notification page
   const isNotificationPage = location.pathname === "/Notification";
@@ -154,6 +134,7 @@ const Navbar = () => {
       </div>
     </nav>
   );
-};
+}
 
 export default Navbar;
+

@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import "./Invoice.css";
 
-const ArchiveManager = ({ onBack }) => {
+const ArchiveManager = ({ onBack = null }) => {
   // State
   const [archivedInvoices, setArchivedInvoices] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
