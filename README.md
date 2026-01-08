@@ -1,159 +1,87 @@
-# Stock Management System
+# Welcome to React Router!
 
-A comprehensive front-end stock management application built with React.js that allows users to manage products, categories, invoices, and generate reports.
+A modern, production-ready template for building full-stack React applications using React Router.
+
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/remix-run/react-router-templates/tree/main/default)
 
 ## Features
 
-### User Authentication
+- 🚀 Server-side rendering
+- ⚡️ Hot Module Replacement (HMR)
+- 📦 Asset bundling and optimization
+- 🔄 Data loading and mutations
+- 🔒 TypeScript by default
+- 🎉 TailwindCSS for styling
+- 📖 [React Router docs](https://reactrouter.com/)
 
-- Login and Sign up functionality
-- Manager privileges for advanced features
+## Getting Started
 
-### Product Management
+### Installation
 
-- Add new products
-- Edit existing products
-- Delete products
-- Assign products to categories
+Install the dependencies:
 
-### Category Management
-
-- Create main categories
-- Create subcategories
-- Edit categories/subcategories
-- Delete categories/subcategories
-
-### Invoice Management
-
-- Create new invoices
-- Update existing invoices
-- Delete invoices
-- Track advanced payments
-- Add products to invoices
-
-### Reporting
-
-- Generate daily reports
-- View sales and inventory statistics
-- Track business performance
-
-## Tech Stack
-
-- **Framework**: React.js with Vite
-- **State Management**: React Context API/Redux
-- **HTTP Client**: Axios
-- **UI Components**: Custom components with icon libraries
-- **Chat Functionality**: Integrated chat system
-
-## Project Structure
-
-All components are organized in their respective folders within the `src` directory:
-
-```
-src/
-├── assets/
-├── components/
-│   ├── Auth/
-│   ├── Products/
-│   ├── Categories/
-│   ├── Invoices/
-│   ├── Reports/
-│   ├── Dashboard/
-├── App.jsx
-└── main.jsx
+```bash
+npm install
 ```
 
-## Installation and Setup
+### Development
 
-1. Clone the repository:
+Start the development server with HMR:
 
-   ```bash
-   git clone <repository-url>
-   cd stock-management-system
-   ```
+```bash
+npm run dev
+```
 
-2. Install dependencies:
+Your application will be available at `http://localhost:5173`.
 
-   ```bash
-   npm install
-   ```
+## Building for Production
 
-3. Install additional packages:
+Create a production build:
 
-   ```bash
-   # Vite
-   npm install vite --save-dev
+```bash
+npm run build
+```
 
-   # Axios for API requests
-   npm install axios
+## Deployment
 
-   # Icons
-   npm install @fortawesome/react-fontawesome
-   npm install @fortawesome/free-solid-svg-icons
+### Docker Deployment
 
-   # Chat functionality
-   npm install socket.io-client
-   npm install chart.js react-chartjs-2
-   ```
+To build and run using Docker:
 
-4. Run the development server:
+```bash
+docker build -t my-app .
 
-   ```bash
-   npm run dev
-   ```
+# Run the container
+docker run -p 3000:3000 my-app
+```
 
-5. Open your browser and navigate to:
-   ```
-   http://localhost:5173
-   ```
+The containerized application can be deployed to any platform that supports Docker, including:
 
-## Usage
+- AWS ECS
+- Google Cloud Run
+- Azure Container Apps
+- Digital Ocean App Platform
+- Fly.io
+- Railway
 
-### Authentication
+### DIY Deployment
 
-- Sign up with your email and password
-- Login with your credentials
-- User: GipsZ1
-- Email: bantargipson@gmail.com
+If you're familiar with deploying Node applications, the built-in app server is production-ready.
 
-### Managing Products
+Make sure to deploy the output of `npm run build`
 
-1. Navigate to the Products section
-2. Add new products by filling out the product form
-3. Edit products by clicking the edit button
-4. Delete products by clicking the delete button
-5. Assign products to specific categories
+```
+├── package.json
+├── package-lock.json (or pnpm-lock.yaml, or bun.lockb)
+├── build/
+│   ├── client/    # Static assets
+│   └── server/    # Server-side code
+```
 
-### Managing Categories
+## Styling
 
-1. Navigate to the Categories section
-2. Create new categories and subcategories
-3. Edit categories by clicking the edit button
-4. Delete categories by clicking the delete button
+This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
 
-### Creating Invoices
+---
 
-1. Navigate to the Invoices section
-2. Click "New Invoice"
-3. Add products to the invoice
-4. Enter advanced payment information
-5. Save the invoice
-6. Print or download as needed
-
-### Generating Reports
-
-1. Navigate to the Reports section
-2. Select the date range
-3. Generate comprehensive reports of sales and inventory
-
-## API Reference
-
-The application uses multiple API endpoints for different functionalities:
-
-- Authentication APIs
-- Product management APIs
-- Category management APIs
-- Invoice management APIs
-- Reporting APIs
-
-All API calls are made through Axios.
+Built with ❤️ using React Router.
