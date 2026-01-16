@@ -1,0 +1,44 @@
+// auth-error-codes.ts
+
+export type AuthErrorCode =
+  // General
+  | "UNKNOWN"
+  | "NETWORK_ERROR"
+  | "TIMEOUT"
+  | "VALIDATION_ERROR"
+  | "RATE_LIMIT_EXCEEDED"
+
+  // Signup
+  | "EMAIL_REQUIRED"
+  | "EMAIL_INVALID"
+  | "EMAIL_EXISTS"
+  | "PASSWORD_REQUIRED"
+  | "PASSWORD_TOO_SHORT"
+  | "PASSWORD_TOO_WEAK"
+  | "PASSWORD_MISMATCH"
+
+  // Sign in
+  | "INVALID_CREDENTIALS"
+  | "ACCOUNT_NOT_FOUND"
+  | "ACCOUNT_DISABLED"
+
+  // OTP
+  | "OTP_REQUIRED"
+  | "OTP_NOT_FOUND"
+  | "OTP_EXPIRED"
+  | "OTP_ATTEMPTS_EXCEEDED"
+
+  // Resend
+  | "OTP_COOLDOWN_ACTIVE"
+  | "OTP_RESEND_LIMIT"
+
+  // Google Auth
+  | "GOOGLE_OAUTH_EXCHANGE_FAILED"
+  | "OTP_RESEND_LIMIT"
+
+  // Sign out
+  | "NOT_AUTHENTICATED"
+
+  // Session
+  | "SESSION_EXPIRED"
+  | "UNAUTHORIZED";
