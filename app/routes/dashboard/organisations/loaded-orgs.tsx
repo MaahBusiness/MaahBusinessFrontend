@@ -14,12 +14,12 @@ import {
 } from "@/components/ui/item";
 import { SearchIcon, PlusIcon } from "lucide-react";
 import { Link } from "react-router";
-import type { BusinessResponse } from "types";
+import type { OrganisationCore } from "types";
 
 export default function LoadedOrganisationsState({
   orgs,
 }: {
-  orgs: BusinessResponse[];
+  orgs: OrganisationCore[];
 }) {
   return (
     <div className="w-full min-h-full flex flex-col gap-8 items-stretch max-w-[1200px] lg:px-6 px-4 mx-auto pt-12">
@@ -47,6 +47,7 @@ export default function LoadedOrganisationsState({
           <div className="grid auto-rows-min gap-4  md:grid-cols-3">
             {orgs.map((org, idx) => (
               <Item
+                key={idx}
                 variant="outline"
                 className="bg-input/50 items-center gap-3 hover:bg-accent border-border"
                 asChild

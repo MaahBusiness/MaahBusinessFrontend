@@ -1,41 +1,80 @@
 // signup-form.tsx
 import { useEffect } from "react";
 import { CreateOrgForm } from "@/components/forms/create-org-form";
-import type { ServerActionState } from "types";
+import type { OrganisationCore, ServerActionState } from "types";
 import { genericErrorState } from "utils";
-import { data } from "react-router";
+import { redirect } from "react-router";
 import { getSession } from "@/lib/session.server";
 import type { Route } from ".react-router/types/app/routes/dashboard/organisations/+types/new";
 import { toast } from "sonner";
-import { createOrg } from "services/api";
+import { organisationKeys, organisationsApi } from "@/lib/api/organisation";
+import { useQueryClient } from "@tanstack/react-query";
 
 // -------------------------------------
-// ACTION ROUTER
+// ACTION ROUTER -- STILL USING IT THIS MUTATIONS
 // -------------------------------------
-export async function action({ request }: Route.ActionArgs) {
+export async function action({ request }: Route.ActionArgs): Promise<
+  ServerActionState & {
+    data?: OrganisationCore;
+  }
+> {
   const formData = await request.formData();
   const session = await getSession(request);
 
-  const intent = formData.get("intent");
+  const name = formData.get("name") as string | undefined;
+  const desc = formData.get("desc") as string | undefined;
+  const email = formData.get("email") as string | undefined;
+  const phone = formData.get("phone") as string | undefined;
+  const address = formData.get("address") as string | undefined;
+  const pfp = formData.get("pfp") as File | undefined;
+  const url = formData.get("url") as string | undefined;
 
-  switch (intent) {
-    case "create-org":
-      if (session?.accessToken) return createOrg(formData, session.accessToken);
+  const errors: Record<string, string> = {};
 
-    default:
-      return data<ServerActionState>(genericErrorState(), { status: 400 });
-  }
+  if (!name) errors.name = "Please enter your name.";
+  if (!email) errors.email = "Please enter your email address.";
+  if (!desc)
+    errors.desc = "Please provide a description for your organisation.";
+
+  if (Object.keys(errors).length > 0) return { success: false, errors };
+
+  if (session?.accessToken)
+    return await organisationsApi.create(session.accessToken, {
+      name: name!,
+      email: email!,
+      description: desc!,
+      address,
+      phone_number: phone,
+      logo: pfp,
+      logo_url: url,
+    });
+
+  return genericErrorState();
 }
 
 // -------------------------------------
 // PAGE
 // -------------------------------------
 export default function NewOrgPage({ actionData }: Route.ComponentProps) {
+  const queryClient = useQueryClient();
+
   // Show toasts based on action results
   useEffect(() => {
     if (actionData?.message) {
       if (!actionData.success) toast.error(actionData.message);
       else toast.success(actionData.message);
+    }
+
+    if (actionData?.data) {
+      // After creating/updating - refetch the list
+      toast.success("Your organisation has been created successfully.");
+      queryClient.invalidateQueries({ queryKey: organisationKeys.lists() });
+
+      queryClient.setQueryData(
+        organisationKeys.detail(actionData?.data?.id),
+        actionData.data,
+      );
+      redirect(`add-team?${actionData.data.id}`);
     }
   }, [actionData]);
 

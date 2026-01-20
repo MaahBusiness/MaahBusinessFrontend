@@ -13,7 +13,8 @@ export type Role =
   | "delivery"
   | "customer"
   | "wholesaler"
-  | "partner";
+  | "partner"
+  | "manager";
 
 export interface User extends UserSnapshot {
   is_active: boolean;
@@ -43,13 +44,15 @@ interface ExtendedUser {
   business?: BusinessSnapshot;
 }
 
-interface BusinessMemberUser extends UserSnapshot {
+/** User object in context of `OrganisationMember` */
+interface OrganisationMemberUser extends UserSnapshot {
   phone_number?: string;
   avatar_url?: string;
   is_active: boolean;
 }
 
-interface BusinessMember {
+/** Response data object for creating or retreiving business members (array) */
+interface OrganisationMember {
   id: string;
   role: Role;
   is_active: boolean;
@@ -57,10 +60,14 @@ interface BusinessMember {
   left_at?: string;
   created_at: string;
   updated_at: string;
-  user: BusinessMemberUser;
+  user?: OrganisationMemberUser;
 }
 
-interface BusinessResponse extends BusinessSnapshot {
+/**
+ * Core business data \
+ * The response data object for when a business is created or retreived (array)
+ */
+interface OrganisationCore extends BusinessSnapshot {
   owner_id: string;
   description?: string;
   address?: string;
@@ -73,8 +80,9 @@ interface BusinessResponse extends BusinessSnapshot {
   created_at: string;
   updated_at: string;
   member_count: number;
-  members?: BusinessMember[];
+  members?: OrganisationMember[];
   user?: UserSnapshot;
+  categories?: any[];
 }
 
 interface Pagination {
@@ -91,6 +99,30 @@ interface BusinessSnapshot {
   name: string;
   unique_name: string;
 }
+
+// Future: Other modules (fetched separately)
+export interface OrganisationCustomers {
+  // Will be added later
+}
+
+export interface OrganisationInventory {
+  // Will be added later
+}
+
+export interface OrganisationSales {
+  // Will be added later
+}
+
+// Combined organisation data (all modules)
+export interface Organisation {
+  core: OrganisationCore;
+  members?: OrganisationMember[];
+  customers?: OrganisationCustomers;
+  inventory?: OrganisationInventory;
+  sales?: OrganisationSales;
+}
+
+///////////////////////////////////////////////////////
 
 export type SessionData = {
   accessToken: string;
@@ -120,9 +152,9 @@ export interface BackendResponse {
     | GenericResponse
     | User // Retreiving profile
     | ExtendedUser // Log in or sign in or user session
-    | BusinessResponse // create business
-    | BusinessResponse[] // retreive businesss
-    | BusinessMember; //add new member
+    | OrganisationCore // create business
+    | OrganisationCore[] // retreive businesss
+    | OrganisationMember; //add new member
   error?: {
     code?: BACKEND_ERROR_CODES;
     message?: string;

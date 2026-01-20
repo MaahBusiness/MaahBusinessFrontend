@@ -11,13 +11,30 @@ import {
   CardContent,
   CardDescription,
 } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useOrganisation } from "@/hooks/use-organisation";
 
-export default function Organisation() {
+export default function OrganisationDashboard() {
+  const { organisation: res, isLoading, error } = useOrganisation();
+
+  if (isLoading || error || !res?.success) {
+    return (
+      <div className="flex flex-1 flex-col gap-4 p-4">
+        <div className="grid auto-rows-min gap-4 md:grid-cols-3">
+          <Skeleton className="aspect-video w-full" />
+          <Skeleton className="aspect-video w-full" />
+          <Skeleton className="aspect-video w-full" />
+        </div>
+        <Skeleton className=" min-h-[100vh] flex-1 md:min-h-min" />
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">At a glancce</h2>
+        <h2 className="text-3xl font-bold tracking-tight">At a glance</h2>
         <div className="flex items-center space-x-2">
           <CalendarDateRangePicker />
           <Button>Download</Button>

@@ -1,11 +1,4 @@
-import {
-  isRouteErrorResponse,
-  Links,
-  Meta,
-  Outlet,
-  Scripts,
-  ScrollRestoration,
-} from "react-router";
+import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
 
 import type { Route } from "./+types/root";
 import "./styles/app.css";
@@ -16,11 +9,12 @@ import "non.geist/italic";
 // For Geist Mono
 import "non.geist/mono"; // OR
 import "non.geist/mono-italic";
-import { ThemeProvider } from "@/providers/theme-provider";
-import { ClientOnly } from "@/providers/client-only";
+import { ThemeProvider } from "@/contexts/theme-context";
+import { ClientOnly } from "@/contexts/client-only";
 import { Toaster } from "sonner";
 import { requireUserSession } from "@/lib/session.server";
-import { AuthProvider } from "@/providers/auth-provider";
+import { AuthProvider } from "@/contexts/auth-context";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 // import "@fontsource/geist-mono/variable.css";
 
@@ -43,11 +37,20 @@ import { AuthProvider } from "@/providers/auth-provider";
 export async function loader({ request }: Route.LoaderArgs) {
   const { session, headers } = await requireUserSession(request);
 
-  return {
-    session,
-    headers,
-  };
+  return { session, headers };
 }
+
+// Create QueryClient once per app load
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30 * 60 * 1000, // 30 minutes - data considered fresh
+      gcTime: 40 * 60 * 1000, // 40 minutes - cache garbage collection
+      refetchOnWindowFocus: false, // Don't refetch on window focus
+      retry: 1, // Retry failed requests once
+    },
+  },
+});
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -87,9 +90,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
 // ------------------------------
 export default function Root({ loaderData }: Route.ComponentProps) {
   return (
-    <AuthProvider session={loaderData?.session}>
-      <Outlet />
-    </AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider session={loaderData?.session}>
+        <Outlet />
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }
 

@@ -12,10 +12,10 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useTheme } from "@/providers/theme-provider";
+import { useTheme } from "@/contexts/theme-context";
 import { useNavigation, useSubmit } from "react-router";
 import React from "react";
-import { useAuth } from "@/providers/auth-provider";
+import { useAuth } from "@/contexts/auth-context";
 import { Spinner } from "@/components/ui/spinner";
 
 export function UserNav() {
@@ -50,14 +50,16 @@ export function UserNav() {
       <DropdownMenuContent className="w-56 text-xs" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{user?.name}</p>
-            <p className="text-xs leading-none text-muted-foreground">
+            <p className="text-sm font-medium leading-none truncate">
+              {user?.name}
+            </p>
+            <p className="text-xs leading-none text-muted-foreground truncate">
               {user?.email}
             </p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuGroup>
+        {/* <DropdownMenuGroup>
           <DropdownMenuItem>
             Profile
             <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
@@ -72,15 +74,17 @@ export function UserNav() {
           </DropdownMenuItem>
           <DropdownMenuItem>New Team</DropdownMenuItem>
         </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuLabel>My Account</DropdownMenuLabel>
+        <DropdownMenuSeparator /> */}
+        <DropdownMenuLabel className="text-xs text-muted-foreground">
+          Theme
+        </DropdownMenuLabel>
         <DropdownMenuRadioGroup
           value={theme}
           onValueChange={(e) => setTheme(e as "dark" | "light" | "system")}
         >
           {themes.map((theme, id) => (
             <DropdownMenuRadioItem
-              className="outline-0"
+              className="outline-0 text-xs"
               key={theme + id}
               value={theme.toLocaleLowerCase()}
             >

@@ -72,7 +72,7 @@ export function getRateLimitMessage(retryAfterSeconds?: number): string {
 export function handleRateLimitError(
   step?: "EMAIL" | "OTP",
   retryAfterSeconds?: number,
-  otpSession?: OTPSessionData
+  otpSession?: OTPSessionData,
 ): SignUpActionType {
   if (retryAfterSeconds) {
     console.log(retryAfterSeconds);
@@ -118,4 +118,16 @@ export function verifyImageUrl(url: string): Promise<string> {
 
     img.src = url;
   });
+}
+
+/**
+ * This is a simple function to capitalize the first character of a string:
+ *
+ * `str.charAt(0).toUpperCase()`: Takes the first character of the string and converts it to uppercase.\
+ * `str.slice(1)`: Extracts the rest of the string starting from the second character\
+ * Concatenate the two parts to form the capitalized string.
+ */
+export function capitalizeFirstChar(str: string): string {
+  if (!str) return ""; // Handle empty strings or undefined input
+  return str.charAt(0).toUpperCase() + str.slice(1);
 }

@@ -2,14 +2,14 @@ import { Button } from "@/components/ui/button";
 import { Building2, Plus, Users, Sparkles, Library } from "lucide-react";
 import { Link } from "react-router";
 
-export default function EmptyOrganizationsState() {
+export default function EmptyOrganisationsState() {
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-6">
       <div className="max-w-2xl w-full">
         {/* Main Content */}
         <div className="text-center flex flex-col items-center gap-8">
           <h2 className="text-foreground text-1xl md:text-2xl font-bold tracking-tight mb-8">
-            No organizations yet
+            No organisations yet
           </h2>
 
           {/* Icon with decorative elements */}
@@ -46,7 +46,7 @@ export default function EmptyOrganizationsState() {
             <Link to={"/dashboard/organisations/new"}>
               <Button>
                 <Plus className="w-5 h-5" />
-                Create Organization
+                Create Organisation
               </Button>
             </Link>
             <p className="text-xs text-muted-foreground">

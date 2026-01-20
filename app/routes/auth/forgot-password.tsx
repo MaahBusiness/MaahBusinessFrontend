@@ -1,6 +1,6 @@
 import type { Route } from ".react-router/types/app/routes/auth/+types/forgot-password";
 import { ForgotPasswordForm } from "@/components/forms/forgot-password-form";
-import { sendPasswordResetLink } from "@/lib/auth";
+import { sendPasswordResetLink } from "@/lib/api/auth";
 import { requireUserSession } from "@/lib/session.server";
 import { useEffect } from "react";
 import { data, redirect } from "react-router";

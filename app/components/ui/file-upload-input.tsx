@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/input-group";
 import { toast } from "sonner";
 import { verifyImageUrl } from "utils";
+import { Spinner } from "@/components/ui/spinner";
 
 type UploadMode = "file" | "url";
 
@@ -98,7 +99,7 @@ export default function FileUploadInput() {
     if (!fileExtension || !allowedExtensions.includes(fileExtension)) {
       reset();
       throw toast.error(
-        `Invalid file format. Allowed formats: ${allowedExtensions.join(", ")}`
+        `Invalid file format. Allowed formats: ${allowedExtensions.join(", ")}`,
       );
     }
 
@@ -339,7 +340,7 @@ export default function FileUploadInput() {
             disabled={urlLoading || !url.trim()}
             className="w-full"
           >
-            {urlLoading && <Loader size={3} />}
+            {urlLoading && <Spinner />}
             Attach URL
           </Button>
 

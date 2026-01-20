@@ -1,0 +1,112 @@
+import type { Table } from "@tanstack/react-table";
+import { Check, ChevronDownIcon, X } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+
+import { DataTableFacetedFilter } from "../ui/data-table-faceted-filter";
+import { DataTableViewOptions } from "@/components/ui/data-table-view-options";
+import { roles, statuses } from "@/routes/dashboard/team/data";
+import {
+  InputGroup,
+  InputGroupInput,
+  InputGroupAddon,
+  InputGroupButton,
+} from "@/components/ui/input-group";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import { useState } from "react";
+import { capitalizeFirstChar } from "utils";
+import { cn } from "@/lib/utils";
+
+interface DataTableToolbarProps<TData> {
+  table: Table<TData>;
+}
+
+export function DataTableToolbar<TData>({
+  table,
+}: DataTableToolbarProps<TData>) {
+  const isFiltered = table.getState().columnFilters.length > 0;
+  const filters = ["name", "email"];
+
+  const [filter, setFilter] = useState(filters[0]);
+
+  return (
+    <div className="flex items-center justify-between">
+      <div className="flex flex-1 items-center space-x-2">
+        {/* <Input
+          placeholder="Filter tasks..."
+          value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
+          onChange={(event) =>
+            table.getColumn("name")?.setFilterValue(event.target.value)
+          }
+          className="h-8 w-[150px] lg:w-[250px]"
+        /> */}
+        <InputGroup className="h-8 w-[200px] lg:w-[250px]">
+          <InputGroupInput
+            placeholder="Search team..."
+            value={(table.getColumn(filter)?.getFilterValue() as string) ?? ""}
+            onChange={(event) =>
+              table.getColumn(filter)?.setFilterValue(event.target.value)
+            }
+          />
+          <InputGroupAddon align="inline-end">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <InputGroupButton
+                  variant="ghost"
+                  className="!pr-1.5 text-xs outline-0 focus-visible:ring-0"
+                >
+                  Search {filter}
+                  <ChevronDownIcon className="size-3" />
+                </InputGroupButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="[--radius:0.95rem]">
+                {filters.map((f, i) => (
+                  <DropdownMenuItem key={i} onClick={() => setFilter(f)}>
+                    {capitalizeFirstChar(f)}
+                    <Check
+                      className={cn(
+                        "ml-auto",
+                        f === filter ? "opacity-100" : "opacity-0",
+                      )}
+                    />
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </InputGroupAddon>
+        </InputGroup>
+        {table.getColumn("role") && (
+          <DataTableFacetedFilter
+            column={table.getColumn("role")}
+            title="Role"
+            options={roles}
+          />
+        )}
+        {table.getColumn("status") && (
+          <DataTableFacetedFilter
+            column={table.getColumn("status")}
+            title="Status"
+            options={statuses}
+          />
+        )}
+        {isFiltered && (
+          <Button
+            variant="ghost"
+            onClick={() => table.resetColumnFilters()}
+            className="h-8 px-2 lg:px-3"
+          >
+            Reset
+            <X />
+          </Button>
+        )}
+      </div>
+      <DataTableViewOptions table={table} />
+    </div>
+  );
+}

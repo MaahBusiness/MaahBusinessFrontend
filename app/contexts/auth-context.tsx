@@ -1,9 +1,12 @@
 // contexts/auth-context.tsx
-import { createContext, useContext } from "react";
+import { organisationKeys } from "@/lib/api/organisation";
+import { useQueryClient } from "@tanstack/react-query";
+import { createContext, useContext, useEffect } from "react";
 import type { User, SessionData } from "types";
 
 type AuthContextType = {
   user?: User;
+  accessToken?: string;
   isAuthenticated: boolean;
 };
 
@@ -15,11 +18,22 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ session, children }: AuthProviderProps) {
+  const queryClient = useQueryClient();
+
   const user = session?.user;
   const value: AuthContextType = {
     user,
     isAuthenticated: !!user && user.email_verified,
+    accessToken: session?.accessToken, // NEW: Exposing token for Tanstack Usage
   };
+
+  // Show toasts based on action results
+  useEffect(() => {
+    if (!session?.user) {
+      // Nuclear option - invalidate all cache stores when no user (sign out)
+      queryClient.invalidateQueries({ queryKey: organisationKeys.all });
+    }
+  }, [session?.user]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

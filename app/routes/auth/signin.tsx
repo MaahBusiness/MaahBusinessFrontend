@@ -6,7 +6,7 @@ import {
   resendOTP,
   signInWithEmail,
   verifyOTP,
-} from "@/lib/auth";
+} from "@/lib/api/auth";
 import { requireUserSession } from "@/lib/session.server";
 import { useEffect } from "react";
 import { data, redirect } from "react-router";
@@ -39,7 +39,7 @@ export async function action({ request }: Route.ActionArgs) {
       if (!otpSession) {
         return data<SignUpActionType>(
           { ...genericErrorState(), step: "EMAIL" },
-          { status: 400 }
+          { status: 400 },
         );
       }
       return verifyOTP(formData, otpSession);
@@ -48,7 +48,7 @@ export async function action({ request }: Route.ActionArgs) {
       if (!otpSession) {
         return data<SignUpActionType>(
           { ...genericErrorState(), step: "EMAIL" },
-          { status: 400 }
+          { status: 400 },
         );
       }
       return resendOTP(otpSession);
@@ -59,7 +59,7 @@ export async function action({ request }: Route.ActionArgs) {
     default:
       return data<SignUpActionType>(
         { ...genericErrorState(), step: "EMAIL" },
-        { status: 400 }
+        { status: 400 },
       );
   }
 }

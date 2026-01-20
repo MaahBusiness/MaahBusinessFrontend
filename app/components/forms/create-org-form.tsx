@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/popover";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
-import { useAuth } from "@/providers/auth-provider";
+import { useAuth } from "@/contexts/auth-context";
 
 import { ChevronDown } from "lucide-react";
 import {
@@ -47,11 +47,8 @@ export function CreateOrgForm({ ...props }: React.ComponentProps<typeof Card>) {
   const isSubmitting = navigation.state === "submitting";
 
   const handleBack = () => {
-    if (window.history.length > 1) {
-      navigate(-1);
-    } else {
-      navigate("/dashboard");
-    }
+    if (window.history.length > 1) navigate(-1);
+    else navigate("/dashboard");
   };
 
   return (
@@ -228,7 +225,7 @@ export function CreateOrgForm({ ...props }: React.ComponentProps<typeof Card>) {
                             disabled
                             className="teamaspace-y-1 flex flex-col items-start px-4 py-2"
                           >
-                            <p>Viewer</p>
+                            <p>Cashier</p>
                             <p className="text-sm text-muted-foreground">
                               Can view and comment.
                             </p>
@@ -237,7 +234,7 @@ export function CreateOrgForm({ ...props }: React.ComponentProps<typeof Card>) {
                             disabled
                             className="teamaspace-y-1 flex flex-col items-start px-4 py-2"
                           >
-                            <p>Developer</p>
+                            <p>Stock keeper</p>
                             <p className="text-sm text-muted-foreground">
                               Can view, comment and edit.
                             </p>
@@ -246,7 +243,7 @@ export function CreateOrgForm({ ...props }: React.ComponentProps<typeof Card>) {
                             disabled
                             className="teamaspace-y-1 flex flex-col items-start px-4 py-2"
                           >
-                            <p>Billing</p>
+                            <p>Manager</p>
                             <p className="text-sm text-muted-foreground">
                               Can view, comment and manage billing.
                             </p>

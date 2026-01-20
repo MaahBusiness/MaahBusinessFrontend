@@ -11,7 +11,6 @@ import type {
   OTPSessionData,
   ServerActionState,
   SignUpActionType,
-  SessionData,
   GenericResponse,
   ExtendedUser,
 } from "types";
@@ -23,20 +22,16 @@ import {
   handleRateLimitError,
 } from "utils";
 import {
+  BASE_URL,
   FORGOT_PASSWORD_URL,
   GOOGLE_AUTH_URL,
   RESEND_OTP_URL,
   RESET_PASSWORD_URL,
   SIGNIN_URL,
+  SIGNOUT_URL,
   SIGNUP_URL,
   VERIFY_OTP_URL,
-} from "utils/enpoints";
-
-export type User = {
-  id: string;
-  email: string;
-  role: "owner" | "manager" | "cashier";
-};
+} from "utils/endpoints";
 
 const MAX_RESEND_ATTEMPTS = 3;
 const SOFT_COOLDOWN_MINUTES = 5;
@@ -88,12 +83,12 @@ export async function signUpWithEmail(formData: FormData) {
   if (Object.keys(errors).length > 0) {
     return data<SignUpActionType>(
       { success: false, errors, step: "EMAIL" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   try {
-    const res = await fetch(SIGNUP_URL, {
+    const res = await fetch(BASE_URL + SIGNUP_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -116,27 +111,27 @@ export async function signUpWithEmail(formData: FormData) {
           handleRateLimitError("EMAIL", error.details?.retry_after),
           {
             status: res.status,
-          }
+          },
         );
       }
 
       if (error?.code === "VALIDATION_ERROR") {
         return data<SignUpActionType>(
           { success: false, message: error.message, step: "EMAIL" },
-          { status: res.status }
+          { status: res.status },
         );
       }
 
       return data<SignUpActionType>(
         { ...genericErrorState(), step: "EMAIL" },
-        { status: res.status }
+        { status: res.status },
       );
     }
 
     const otpExpiresAt = expiryFromNowSeconds(
       minutesToSeconds(
-        (result.data as GenericResponse)?.expires_in_minutes || 5
-      )
+        (result.data as GenericResponse)?.expires_in_minutes || 5,
+      ),
     );
 
     console.log("LOG::SIGN_UP_SUCCESS", raw, "otpSession", {
@@ -155,7 +150,7 @@ export async function signUpWithEmail(formData: FormData) {
           resendCount: 0,
         },
       },
-      { status: res.status }
+      { status: res.status },
     );
   } catch (err) {
     console.log("LOG::SIGN_UP_ERROR", (err as any).message);
@@ -164,7 +159,7 @@ export async function signUpWithEmail(formData: FormData) {
         ...(genericNetworkError((err as any).message) || genericErrorState()),
         step: "EMAIL",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -174,7 +169,7 @@ export async function signUpWithEmail(formData: FormData) {
 // -------------------------------------
 export async function verifyOTP(
   formData: FormData,
-  otpSession: OTPSessionData
+  otpSession: OTPSessionData,
 ) {
   const otp = formData.get("otp") as string | undefined;
 
@@ -186,12 +181,12 @@ export async function verifyOTP(
         step: "OTP",
         otpSession,
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   try {
-    const res = await fetch(VERIFY_OTP_URL, {
+    const res = await fetch(BASE_URL + VERIFY_OTP_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ otp }),
@@ -207,7 +202,7 @@ export async function verifyOTP(
       if (error?.code === "RATE_LIMIT_EXCEEDED") {
         return data<SignUpActionType>(
           handleRateLimitError("OTP", error.details?.retry_after, otpSession),
-          { status: res.status }
+          { status: res.status },
         );
       }
 
@@ -219,7 +214,7 @@ export async function verifyOTP(
             step: "OTP",
             otpSession,
           },
-          { status: res.status }
+          { status: res.status },
         );
       }
 
@@ -230,7 +225,7 @@ export async function verifyOTP(
           step: "OTP",
           otpSession,
         },
-        { status: res.status }
+        { status: res.status },
       );
     }
     const resData = result.data as ExtendedUser;
@@ -247,7 +242,7 @@ export async function verifyOTP(
           step: "OTP",
           otpSession,
         },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -270,7 +265,7 @@ export async function verifyOTP(
         step: "OTP",
         otpSession,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -291,14 +286,14 @@ export async function resendOTP(otpSession: OTPSessionData) {
         step: "OTP",
         otpSession,
       },
-      { status: 429 }
+      { status: 429 },
     );
   }
 
   // Soft limit: 3 attempts before triggering soft cooldown
   if (resendCount >= MAX_RESEND_ATTEMPTS && !resendAvailableAt) {
     const softCooldownAt = expiryFromNowSeconds(
-      minutesToSeconds(SOFT_COOLDOWN_MINUTES)
+      minutesToSeconds(SOFT_COOLDOWN_MINUTES),
     );
 
     return data<SignUpActionType>(
@@ -311,12 +306,12 @@ export async function resendOTP(otpSession: OTPSessionData) {
           resendAvailableAt: softCooldownAt,
         },
       },
-      { status: 429 }
+      { status: 429 },
     );
   }
 
   try {
-    const res = await fetch(RESEND_OTP_URL, {
+    const res = await fetch(BASE_URL + RESEND_OTP_URL, {
       credentials: "include",
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -339,7 +334,7 @@ export async function resendOTP(otpSession: OTPSessionData) {
             ...otpSession,
             resendCount: MAX_RESEND_ATTEMPTS, // Max out to prevent further attempts
           }),
-          { status: res.status }
+          { status: res.status },
         );
       }
 
@@ -351,7 +346,7 @@ export async function resendOTP(otpSession: OTPSessionData) {
             step: "OTP",
             otpSession,
           },
-          { status: res.status }
+          { status: res.status },
         );
       }
 
@@ -362,12 +357,14 @@ export async function resendOTP(otpSession: OTPSessionData) {
           step: "OTP",
           otpSession,
         },
-        { status: res.status }
+        { status: res.status },
       );
     }
 
     const newOtpExpiresAt = expiryFromNowSeconds(
-      minutesToSeconds((result.data as GenericResponse).expires_in_minutes || 5)
+      minutesToSeconds(
+        (result.data as GenericResponse).expires_in_minutes || 5,
+      ),
     );
 
     console.info("LOG::RESEND_OTP_SUCCESS", raw, "OTP_SESSION", {
@@ -397,7 +394,7 @@ export async function resendOTP(otpSession: OTPSessionData) {
         step: "OTP",
         otpSession,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -407,7 +404,7 @@ export async function resendOTP(otpSession: OTPSessionData) {
 // -------------------------------------
 export async function getGoogleAuthUrl() {
   try {
-    const res = await fetch(GOOGLE_AUTH_URL, {
+    const res = await fetch(BASE_URL + GOOGLE_AUTH_URL, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
     });
@@ -422,13 +419,13 @@ export async function getGoogleAuthUrl() {
       if (error?.code === "RATE_LIMIT_EXCEEDED") {
         return data<SignUpActionType>(
           handleRateLimitError("EMAIL", error.details?.retry_after),
-          { status: res.status }
+          { status: res.status },
         );
       }
 
       return data<SignUpActionType>(
         { ...genericErrorState(), step: "EMAIL" },
-        { status: res.status }
+        { status: res.status },
       );
     }
 
@@ -437,7 +434,7 @@ export async function getGoogleAuthUrl() {
       console.error("LOG::GOOGLE_AUTH_FAILED :: No AUTH_URL detected", raw);
       return data<SignUpActionType>(
         { ...genericErrorState(), step: "EMAIL" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -452,7 +449,7 @@ export async function getGoogleAuthUrl() {
         ...(genericNetworkError((error as any).message) || genericErrorState()),
         step: "EMAIL",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -477,12 +474,12 @@ export async function signInWithEmail(formData: FormData) {
   if (Object.keys(errors).length > 0) {
     return data<SignUpActionType>(
       { success: false, errors, step: "EMAIL" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   try {
-    const res = await fetch(SIGNIN_URL, {
+    const res = await fetch(BASE_URL + SIGNIN_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -503,14 +500,14 @@ export async function signInWithEmail(formData: FormData) {
           handleRateLimitError("EMAIL", error.details?.retry_after),
           {
             status: res.status,
-          }
+          },
         );
       }
 
       if (error?.code === "VALIDATION_ERROR") {
         return data<SignUpActionType>(
           { success: false, message: error.message, step: "EMAIL" },
-          { status: res.status }
+          { status: res.status },
         );
       }
 
@@ -522,14 +519,14 @@ export async function signInWithEmail(formData: FormData) {
         },
         {
           status: res.status,
-        }
+        },
       );
     }
 
     const otpExpiresAt = expiryFromNowSeconds(
       minutesToSeconds(
-        (result.data as GenericResponse)?.expires_in_minutes || 5
-      )
+        (result.data as GenericResponse)?.expires_in_minutes || 5,
+      ),
     );
 
     console.log("LOG::SIGN_IN_SUCCESS", raw, "otpSession", {
@@ -553,7 +550,7 @@ export async function signInWithEmail(formData: FormData) {
       {
         ...(genericNetworkError((err as any).message) || genericErrorState()),
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -563,14 +560,14 @@ export async function signInWithEmail(formData: FormData) {
 // -------------------------------------
 export async function sendPasswordResetLink(
   formData: FormData,
-  otpSession?: OTPSessionData
+  otpSession?: OTPSessionData,
 ) {
   const email = formData.get("email") as string | undefined;
 
   if (!email)
     return data<ServerActionState>(
       { success: false, errors: { email: "Please enter your email address." } },
-      { status: 400 }
+      { status: 400 },
     );
 
   // Check if still in cooldown period
@@ -579,7 +576,7 @@ export async function sendPasswordResetLink(
     Date.now() < otpSession?.resendAvailableAt
   ) {
     const secondsLeft = Math.ceil(
-      (otpSession?.resendAvailableAt - Date.now()) / 1000
+      (otpSession?.resendAvailableAt - Date.now()) / 1000,
     );
     return data<SignUpActionType>(
       {
@@ -587,7 +584,7 @@ export async function sendPasswordResetLink(
         message: getRateLimitMessage(secondsLeft),
         otpSession,
       },
-      { status: 429 }
+      { status: 429 },
     );
   }
 
@@ -598,7 +595,7 @@ export async function sendPasswordResetLink(
     !otpSession?.resendAvailableAt
   ) {
     const softCooldownAt = expiryFromNowSeconds(
-      minutesToSeconds(SOFT_COOLDOWN_MINUTES)
+      minutesToSeconds(SOFT_COOLDOWN_MINUTES),
     );
 
     return data<SignUpActionType>(
@@ -610,12 +607,12 @@ export async function sendPasswordResetLink(
           resendAvailableAt: softCooldownAt,
         },
       },
-      { status: 429 }
+      { status: 429 },
     );
   }
 
   try {
-    const res = await fetch(FORGOT_PASSWORD_URL, {
+    const res = await fetch(BASE_URL + FORGOT_PASSWORD_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ identifier: email }),
@@ -638,16 +635,16 @@ export async function sendPasswordResetLink(
                   ...otpSession,
                   resendCount: MAX_RESEND_ATTEMPTS, // Max out to prevent further attempts
                 }
-              : undefined
+              : undefined,
           ),
-          { status: res.status }
+          { status: res.status },
         );
       }
 
       if (error?.code === "VALIDATION_ERROR") {
         return data<SignUpActionType>(
           { success: false, message: error.message, otpSession },
-          { status: res.status }
+          { status: res.status },
         );
       }
 
@@ -659,14 +656,14 @@ export async function sendPasswordResetLink(
         },
         {
           status: res.status,
-        }
+        },
       );
     }
 
     const otpExpiresAt = expiryFromNowSeconds(
       minutesToSeconds(
-        (result.data as GenericResponse)?.expires_in_minutes || 5
-      )
+        (result.data as GenericResponse)?.expires_in_minutes || 5,
+      ),
     );
 
     console.info("LOG::PASSWORD_LINK_SUCCESS", raw, "otpSession", {
@@ -686,7 +683,7 @@ export async function sendPasswordResetLink(
           resendAvailableAt: undefined, // Clear cooldown
         },
       },
-      { status: res.status }
+      { status: res.status },
     );
   } catch (err) {
     console.log("LOG::PASS_RESET_LINK_ERROR", (err as any).message);
@@ -695,7 +692,7 @@ export async function sendPasswordResetLink(
         ...(genericNetworkError((err as any).message) || genericErrorState()),
         otpSession,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -727,7 +724,7 @@ export async function resetPassword(formData: FormData, token: string) {
   }
 
   try {
-    const res = await fetch(RESET_PASSWORD_URL, {
+    const res = await fetch(BASE_URL + RESET_PASSWORD_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -750,14 +747,14 @@ export async function resetPassword(formData: FormData, token: string) {
             success: false,
             message: getRateLimitMessage(error.details?.retry_after),
           },
-          { status: res.status }
+          { status: res.status },
         );
       }
 
       if (error?.code === "VALIDATION_ERROR") {
         return data<ServerActionState>(
           { success: false, message: error.message },
-          { status: res.status }
+          { status: res.status },
         );
       }
 
@@ -768,7 +765,7 @@ export async function resetPassword(formData: FormData, token: string) {
         },
         {
           status: res.status,
-        }
+        },
       );
     }
 
@@ -780,7 +777,7 @@ export async function resetPassword(formData: FormData, token: string) {
       {
         ...(genericNetworkError((err as any).message) || genericErrorState()),
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -790,7 +787,7 @@ export async function resetPassword(formData: FormData, token: string) {
 // -------------------------------------
 export async function signOut(accessToken: string) {
   try {
-    const res = await fetch(FORGOT_PASSWORD_URL, {
+    const res = await fetch(BASE_URL + SIGNOUT_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -811,14 +808,14 @@ export async function signOut(accessToken: string) {
             success: false,
             message: getRateLimitMessage(error.details?.retry_after),
           },
-          { status: res.status }
+          { status: res.status },
         );
       }
 
       if (error?.code === "VALIDATION_ERROR") {
         return data<ServerActionState>(
           { success: false, message: error.message },
-          { status: res.status }
+          { status: res.status },
         );
       }
 
@@ -829,7 +826,7 @@ export async function signOut(accessToken: string) {
         },
         {
           status: res.status,
-        }
+        },
       );
     }
 
@@ -841,7 +838,7 @@ export async function signOut(accessToken: string) {
       {
         ...(genericNetworkError((err as any).message) || genericErrorState()),
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

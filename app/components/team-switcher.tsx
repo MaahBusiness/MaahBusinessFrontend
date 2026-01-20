@@ -1,5 +1,3 @@
-"use client";
-
 import * as React from "react";
 import { Check, ChevronsUpDown, PlusCircle } from "lucide-react";
 
@@ -15,199 +13,177 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/components/ui/command";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Dialog } from "@/components/ui/dialog";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Link } from "react-router";
+  Link,
+  redirect,
+  useLocation,
+  useNavigate,
+  useParams,
+} from "react-router";
 import { Badge } from "@/components/ui/badge";
 import { BreadcrumbLink } from "@/components/ui/breadcrumb";
-
-const groups = [
-  {
-    label: "Personal Account",
-    teams: [
-      {
-        label: "Alicia Koch",
-        value: "personal",
-      },
-    ],
-  },
-  {
-    label: "Teams",
-    teams: [
-      {
-        label: "Acme Inc.",
-        value: "acme-inc",
-      },
-      {
-        label: "Monsters Inc.",
-        value: "monsters",
-      },
-    ],
-  },
-];
-
-type Team = (typeof groups)[number]["teams"][number];
+import { useAuth } from "@/contexts/auth-context";
+import { useQuery } from "@tanstack/react-query";
+import { organisationKeys, organisationsApi } from "@/lib/api/organisation";
+import { capitalizeFirstChar, genericErrorState } from "utils";
+import { Spinner } from "@/components/ui/spinner";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type PopoverTriggerProps = React.ComponentPropsWithoutRef<
   typeof PopoverTrigger
 >;
 
-interface TeamSwitcherProps extends PopoverTriggerProps {}
+interface TeamSwitcherProps extends PopoverTriggerProps {
+  currentId: string;
+}
 
-export default function TeamSwitcher({ className }: TeamSwitcherProps) {
+export default function TeamSwitcher({ currentId }: TeamSwitcherProps) {
+  const { user, accessToken } = useAuth(); // Get token from context
   const [open, setOpen] = React.useState(false);
   const [showNewTeamDialog, setShowNewTeamDialog] = React.useState(false);
-  const [selectedTeam, setSelectedTeam] = React.useState<Team>(
-    groups[0].teams[0]
-  );
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
+
+  // Fetch all organisations for the switcher dropdown
+  const { data: res, isLoading } = useQuery({
+    queryKey: organisationKeys.lists(),
+    queryFn: async () => {
+      if (!accessToken)
+        throw redirect(
+          `/auth/signin?redirectTo=${encodeURIComponent(pathname)}`,
+        );
+      return await organisationsApi.getAll(accessToken);
+    },
+    enabled: !!accessToken, // Only run if token exists
+  });
+
+  if (isLoading || !res?.success)
+    return (
+      <div className="flex items-center gap-2">
+        <Skeleton className="size-5 shrink-0 rounded-full" />
+        <Skeleton className="h-4 w-12" />
+        <Spinner className="size-4 text-muted-foreground" />
+      </div>
+    );
+
+  const selected =
+    res?.data?.find((d) => d.id === currentId) || res?.data?.at(0);
+  // Roundabout way to get the user's role in the current organisation
+  const businessUser = selected?.members?.find((m) => m.user?.id === user?.id);
+
+  if (selected && !businessUser) {
+    throw redirect("/dashboard/organisations/");
+    throw new Error(
+      "You must be a member of this organisation to access this page",
+    );
+  }
 
   return (
     <Dialog open={showNewTeamDialog} onOpenChange={setShowNewTeamDialog}>
       <BreadcrumbLink asChild>
-        <Link to="/dashboard" className="flex items-center gap-2">
+        <Link to={`org/${selected?.id}`} className="flex items-center gap-2">
           <Avatar className="h-5 w-5">
             <AvatarImage
-              src={`https://avatar.vercel.sh/${selectedTeam.value}.png`}
-              alt={selectedTeam.label}
+              src={selected?.logo_url}
+              alt={selected?.unique_name}
               className="grayscale"
             />
-            <AvatarFallback>SC</AvatarFallback>
+            <AvatarFallback name={selected?.name} />
           </Avatar>
-          <span>{selectedTeam.label} </span>
+          <span>{selected?.name} </span>
           <Badge variant="secondary" className="text-xxs">
-            Manager
+            {businessUser?.role && capitalizeFirstChar(businessUser?.role)}
           </Badge>
         </Link>
       </BreadcrumbLink>
 
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <Button variant="ghost" size="icon-sm" className="w-7">
+          <Button variant="ghost" size="icon-sm" className="w-6 -mr-1">
             <ChevronsUpDown className="opacity-75 size-4" />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[200px] p-0" align="start">
           <Command>
-            <CommandInput placeholder="Search team..." />
+            <CommandInput placeholder="Search orgs..." />
             <CommandList>
               <CommandEmpty>No team found.</CommandEmpty>
-              {groups.map((group) => (
-                <CommandGroup key={group.label} heading={group.label}>
-                  {group.teams.map((team) => (
+
+              {isLoading && <TeamSwitcherSkeleton />}
+
+              {!res?.success && (
+                <CommandEmpty>{genericErrorState().message}</CommandEmpty>
+              )}
+
+              {!res?.data && <CommandEmpty>No team found.</CommandEmpty>}
+
+              {res?.data && (
+                <CommandGroup heading={"Organisations"} className="text-xs">
+                  {res.data.map((team) => (
+                    // <Link to={`org/${team.id}`} key={team.id}>
                     <CommandItem
-                      key={team.value}
-                      onSelect={() => {
-                        setSelectedTeam(team);
-                        setOpen(false);
-                      }}
-                      className="text-sm"
+                      onSelect={() => navigate(`org/${team.id}`)}
+                      key={team.id}
+                      className="text-xs"
                     >
-                      <Avatar className="mr-2 h-5 w-5">
+                      <Avatar className="mr-1 h-5 w-5">
                         <AvatarImage
-                          src={`https://avatar.vercel.sh/${team.value}.png`}
-                          alt={team.label}
+                          src={team.logo_url}
+                          alt={team.unique_name}
                           className="grayscale"
                         />
-                        <AvatarFallback>SC</AvatarFallback>
+                        <AvatarFallback name={team.unique_name} />
                       </Avatar>
-                      {team.label}
+                      {team.name}
                       <Check
                         className={cn(
                           "ml-auto",
-                          selectedTeam.value === team.value
+                          selected?.id === team.id
                             ? "opacity-100"
-                            : "opacity-0"
+                            : "opacity-0",
                         )}
                       />
                     </CommandItem>
+                    // </Link>
                   ))}
                 </CommandGroup>
-              ))}
+              )}
             </CommandList>
             <CommandSeparator />
             <CommandList>
               <CommandGroup>
-                <DialogTrigger asChild>
-                  <CommandItem
-                    onSelect={() => {
-                      setOpen(false);
-                      setShowNewTeamDialog(true);
-                    }}
-                  >
+                <Link to={"organisations/new"}>
+                  <CommandItem>
                     <PlusCircle className="h-5 w-5" />
-                    Create Team
+                    Create organisation
                   </CommandItem>
-                </DialogTrigger>
+                </Link>
               </CommandGroup>
             </CommandList>
           </Command>
         </PopoverContent>
       </Popover>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Create team</DialogTitle>
-          <DialogDescription>
-            Add a new team to manage products and customers.
-          </DialogDescription>
-        </DialogHeader>
-        <div>
-          <div className="space-y-4 py-2 pb-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Team name</Label>
-              <Input id="name" placeholder="Acme Inc." />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="plan">Subscription plan</Label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a plan" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="free">
-                    <span className="font-medium">Free</span> -{" "}
-                    <span className="text-muted-foreground">
-                      Trial for two weeks
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="pro">
-                    <span className="font-medium">Pro</span> -{" "}
-                    <span className="text-muted-foreground">
-                      $9/month per user
-                    </span>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setShowNewTeamDialog(false)}>
-            Cancel
-          </Button>
-          <Button type="submit">Continue</Button>
-        </DialogFooter>
-      </DialogContent>
     </Dialog>
+  );
+}
+
+function TeamSwitcherSkeleton() {
+  return (
+    <CommandGroup>
+      {[0, 1, 2].map((i, dx) => (
+        <CommandItem
+          key={dx}
+          className="text-sm h-8 w-full bg-accent animate-pulse"
+        >
+          <div className=""></div>
+        </CommandItem>
+      ))}
+    </CommandGroup>
   );
 }

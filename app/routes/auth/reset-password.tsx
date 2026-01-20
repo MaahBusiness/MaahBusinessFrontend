@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { toast } from "sonner";
 import { requireUserSession } from "@/lib/session.server";
 import { redirect } from "react-router";
-import { resetPassword } from "@/lib/auth";
+import { resetPassword } from "@/lib/api/auth";
 
 export async function action({ request }: Route.ActionArgs) {
   const url = new URL(request.url);

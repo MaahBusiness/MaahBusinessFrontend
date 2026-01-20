@@ -1,7 +1,7 @@
 // session.server.ts
-import { createCookie } from "react-router";
-import type { BackendResponse, SessionData } from "types";
-import { REFRESH_TOKEN_URL } from "utils/enpoints";
+import { createCookie, redirect } from "react-router";
+import type { BackendResponse, GenericResponse, SessionData } from "types";
+import { BASE_URL, REFRESH_TOKEN_URL } from "utils/endpoints";
 
 // ------------------------------
 // Cookie configuration
@@ -18,7 +18,7 @@ export const sessionCookie = createCookie("rp-session", {
 // Read session from request
 // ------------------------------
 export async function getSession(
-  request: Request
+  request: Request,
 ): Promise<SessionData | null> {
   const cookieHeader = request.headers.get("Cookie");
   if (!cookieHeader) return null;
@@ -33,11 +33,12 @@ export async function getSession(
 // Refresh access token safely
 // ------------------------------
 async function refreshAccessToken(
-  refreshToken: string
+  refreshToken: string,
 ): Promise<SessionData | null> {
   console.log("REFRESHING REFRESH TOKEN", refreshToken);
+  console.log("ENDPOINT::", `${BASE_URL}${REFRESH_TOKEN_URL}`);
   try {
-    const res = await fetch(REFRESH_TOKEN_URL, {
+    const res = await fetch(`${BASE_URL}${REFRESH_TOKEN_URL}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refresh_token: refreshToken }),
@@ -51,8 +52,8 @@ async function refreshAccessToken(
 
     const data = raw as BackendResponse;
 
-    const accessToken = data.data?.access_token;
-    const newRefreshToken = data.data?.refresh_token;
+    const accessToken = (data.data as GenericResponse)?.access_token;
+    const newRefreshToken = (data.data as GenericResponse)?.refresh_token;
     // const user = data.data?.user;
 
     if (!accessToken || !newRefreshToken) {
@@ -61,6 +62,11 @@ async function refreshAccessToken(
     }
 
     console.log("token refresh success");
+    console.log(
+      newRefreshToken,
+      refreshToken,
+      newRefreshToken === refreshToken,
+    );
     return {
       accessToken,
       refreshToken: newRefreshToken,
@@ -68,7 +74,7 @@ async function refreshAccessToken(
     };
   } catch (error) {
     console.error("Token refresh failed:", error);
-    return null;
+    throw redirect("/auth/signin");
   }
 }
 
@@ -82,7 +88,7 @@ async function validateAccessToken(token: string): Promise<boolean> {
     if (!payload) return false;
 
     const decoded = JSON.parse(
-      Buffer.from(payload, "base64").toString("utf-8")
+      Buffer.from(payload, "base64").toString("utf-8"),
     );
 
     // console.log(payload, decoded);
