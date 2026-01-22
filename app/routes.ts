@@ -24,6 +24,7 @@ export default [
 
   route("dashboard", "routes/dashboard/layout.tsx", [
     index("routes/dashboard/index.tsx"), // /dashboard
+    route("table", "routes/dashboard/table/page.tsx"),
 
     route("organisations", "routes/dashboard/organisations/index.tsx", [
       // child routes
