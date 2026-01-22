@@ -8,10 +8,15 @@ import { FieldError } from "@/components/ui/field";
 
 type PasswordInputProps = {
   error?: string;
+  required?: boolean;
   onValidityChange?: (valid: boolean) => void;
 };
 
-export function PasswordInput({ error, onValidityChange }: PasswordInputProps) {
+export function PasswordInput({
+  error,
+  required = true,
+  onValidityChange,
+}: PasswordInputProps) {
   const [password, setPassword] = React.useState("");
   const [focused, setFocused] = React.useState(false);
   const [show, setShow] = React.useState(false);
@@ -57,7 +62,7 @@ export function PasswordInput({ error, onValidityChange }: PasswordInputProps) {
           //   onBlur={() => setFocused(false)}
           placeholder="Enter your password"
           className="pr-10"
-          required
+          required={required}
         />
 
         <Button
@@ -104,7 +109,7 @@ function Rule({ ok, children }: { ok: boolean; children: React.ReactNode }) {
     <li
       className={cn(
         "flex items-center gap-2 text-muted-foreground",
-        ok && "text-foreground"
+        ok && "text-foreground",
       )}
     >
       {ok ? (

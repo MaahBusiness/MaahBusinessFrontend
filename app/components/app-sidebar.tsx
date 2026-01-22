@@ -1,15 +1,7 @@
 import * as React from "react";
-import {
-  BookOpen,
-  Bot,
-  PieChart,
-  Settings2,
-  SidebarIcon,
-  SquareTerminal,
-  Users,
-} from "lucide-react";
+import { Database, Gauge, SidebarIcon, Store, Users } from "lucide-react";
 
-import { NavMain } from "@/components/nav-projects";
+import { NavMain } from "@/components/nav-main";
 import {
   Sidebar,
   SidebarContent,
@@ -18,111 +10,38 @@ import {
   SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar";
+import type { SideItem } from "types";
 
-// This is sample data.
-const data = {
+// This is the sidebar navigation schema
+const schema: { [key: string]: SideItem[] } = {
   navMain: [
     {
-      title: "Playground",
+      title: "Dashboard",
       url: "#",
-      icon: SquareTerminal,
+      icon: Gauge,
+    },
+    {
+      title: "Products",
+      url: "#",
+      icon: Database,
       isActive: true,
       items: [
         {
-          title: "History",
-          url: "#",
+          title: "All Products",
+          url: "products",
         },
         {
-          title: "Starred",
-          url: "#",
-        },
-        {
-          title: "Settings",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Models",
-      url: "#",
-      icon: Bot,
-      items: [
-        {
-          title: "Genesis",
-          url: "#",
-        },
-        {
-          title: "Explorer",
-          url: "#",
-        },
-        {
-          title: "Quantum",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Documentation",
-      url: "#",
-      icon: BookOpen,
-      items: [
-        {
-          title: "Introduction",
-          url: "#",
-        },
-        {
-          title: "Get Started",
-          url: "#",
-        },
-        {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Settings",
-      url: "#",
-      icon: Settings2,
-      items: [
-        {
-          title: "General",
-          url: "#",
-        },
-        {
-          title: "Team",
-          url: "#",
-        },
-        {
-          title: "Billing",
-          url: "#",
-        },
-        {
-          title: "Limits",
-          url: "#",
+          title: "Categories",
+          url: "categories",
         },
       ],
     },
   ],
-  main: [
+  secondary: [
     {
-      name: "Dashboard",
-      url: "#",
-      icon: PieChart,
-    },
-    {
-      name: "Team",
+      title: "Team",
       url: "team",
       icon: Users,
-    },
-    {
-      name: "Sales & Marketing",
-      url: "#",
-      icon: PieChart,
     },
   ],
 };
@@ -136,12 +55,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       className="top-[--header-height] !h-[calc(100svh-var(--header-height))] border-border z-10 bg-background"
       {...props}
     >
-      {/* <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
-      </SidebarHeader> */}
       <SidebarContent>
-        {/* <NavMain items={data.navMain} /> */}
-        <NavMain items={data.main} />
+        <NavMain data={schema} />
       </SidebarContent>
       <SidebarFooter>
         {/* <NavUser user={data.user} /> */}

@@ -1,0 +1,85 @@
+import type { ColumnDef } from "@tanstack/react-table";
+
+import { Checkbox } from "@/components/ui/checkbox";
+
+import type { Subcategory } from "types";
+import { DataTableRowActions } from "@/components/categories/cat-table-row-actions";
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
+
+export const subCatCols: ColumnDef<Subcategory>[] = [
+  {
+    id: "select",
+    header: ({ table }) => (
+      <Checkbox
+        checked={
+          table.getIsAllPageRowsSelected() ||
+          (table.getIsSomePageRowsSelected() && "indeterminate")
+        }
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+        aria-label="Select all"
+        className="translate-y-[2px]"
+      />
+    ),
+    cell: ({ row }) => {
+      return (
+        <div className="flex flex-row items-center gap-2">
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label="Select row"
+            className="translate-y-[2px]"
+          />
+        </div>
+      );
+    },
+    enableSorting: false,
+    enableHiding: false,
+  },
+
+  {
+    id: "name",
+    accessorKey: "name",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Name" />
+    ),
+    cell: ({ row }) => {
+      return (
+        <div className="flex gap-2 items-center">
+          <span className="max-w-[500px] truncate ">
+            {row.getValue("name")}
+          </span>
+        </div>
+      );
+    },
+    enableHiding: false,
+  },
+  {
+    id: "desc",
+    accessorKey: "description",
+    header: "Description",
+    cell: ({ row }) => (
+      <div className="flex gap-2 items-center">
+        {row.getValue("desc") ? (
+          <span
+            title={row.getValue("desc")}
+            className="max-w-[600px] truncate "
+          >
+            {row.getValue("desc")}
+          </span>
+        ) : (
+          <span className="text-muted-foreground ">No description</span>
+        )}
+      </div>
+    ),
+    enableHiding: false,
+  },
+
+  {
+    id: "actions",
+    cell: ({ row }) => (
+      <div className="text-right">
+        <DataTableRowActions row={row} />
+      </div>
+    ),
+  },
+];

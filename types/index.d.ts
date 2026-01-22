@@ -16,6 +16,8 @@ export type Role =
   | "partner"
   | "manager";
 
+export type Customer = "regular" | "wholesaler";
+
 export interface User extends UserSnapshot {
   is_active: boolean;
   email_verified: boolean;
@@ -82,7 +84,7 @@ interface OrganisationCore extends BusinessSnapshot {
   member_count: number;
   members?: OrganisationMember[];
   user?: UserSnapshot;
-  categories?: any[];
+  categories?: Category[];
 }
 
 interface Pagination {
@@ -100,11 +102,65 @@ interface BusinessSnapshot {
   unique_name: string;
 }
 
-// Future: Other modules (fetched separately)
 export interface OrganisationCustomers {
-  // Will be added later
+  id: string;
+  business_id?: string;
+  name: string;
+  email?: string;
+  phone_number?: string;
+  address?: string;
+  customer_type: string;
+  loyalty_points: string;
+  total_purchases: string;
+  created_at: string;
+  updated_at: string;
 }
 
+export interface CreditCreate {
+  customer_id: string;
+  invoice_id: string;
+  amount: number;
+  due_date: string;
+  notes?: string;
+}
+
+interface Credit {
+  id: string;
+  business_id: string;
+  customer_id: string;
+  invoice_id: string;
+  amount: number;
+  paid_amount: number;
+  remaining_amount: number;
+  due_date: string;
+  status: string;
+  notes?: string;
+  is_overdue: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Category {
+  id: string;
+  business_id: string;
+  name: string;
+  description?: string;
+  created_at: string;
+  updated_at: string;
+  subcategories?: Subcategory[];
+}
+
+export interface Subcategory {
+  id: string;
+  business_id: string;
+  category_id: string;
+  name: string;
+  description?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Future: Other modules (fetched separately)
 export interface OrganisationInventory {
   // Will be added later
 }
@@ -189,4 +245,22 @@ export interface SignUpActionType extends ServerActionState {
   step?: "EMAIL" | "OTP";
   otpSession?: OTPSessionData;
   googleAuthUrl?: string;
+}
+
+/**Config type for sidebar nav items */
+export interface SideItem {
+  title: string;
+  url: string;
+  icon: LucideIcon;
+  isActive?: boolean;
+  collapsible?: boolean;
+  items?: {
+    title: string;
+    url: string;
+  }[];
+}
+[];
+
+export interface DataTableToolbarProps<TData> {
+  table: Table<TData>;
 }

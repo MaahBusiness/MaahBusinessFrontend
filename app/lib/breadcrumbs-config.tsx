@@ -75,6 +75,32 @@ export const breadcrumbsConfig: BreadcrumbConfig = {
     },
   ],
 
+  // Single organisation (with switcher)
+  "/dashboard/org/:id/products": [
+    { label: "Dashboard", icon: Home, href: "/dashboard", hidden: true },
+    {
+      label: (params) => params.id, // Will be replaced by org name
+      href: (params) => `/dashboard/orgs/${params.id}`,
+      isOrgSwitcher: true, // Renders as dropdown
+    },
+    {
+      label: "Products",
+    },
+  ],
+
+  // Single organisation (with switcher)
+  "/dashboard/org/:id/categories": [
+    { label: "Dashboard", icon: Home, href: "/dashboard", hidden: true },
+    {
+      label: (params) => params.id, // Will be replaced by org name
+      href: (params) => `/dashboard/orgs/${params.id}`,
+      isOrgSwitcher: true, // Renders as dropdown
+    },
+    {
+      label: "Products",
+    },
+  ],
+
   // Organisation customers
   "/dashboard/orgs/:orgId/customers": [
     { label: "Dashboard", icon: Home, href: "/dashboard", hidden: true },

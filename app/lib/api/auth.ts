@@ -20,6 +20,7 @@ import {
   genericNetworkError,
   getRateLimitMessage,
   handleRateLimitError,
+  passwordRules,
 } from "utils";
 import {
   BASE_URL,
@@ -35,30 +36,6 @@ import {
 
 const MAX_RESEND_ATTEMPTS = 3;
 const SOFT_COOLDOWN_MINUTES = 5;
-
-const passwordRules = [
-  {
-    test: (p: string) => p.length >= 8,
-    message: "Your password needs to be at least 8 characters long.",
-  },
-  {
-    test: (p: string) => /[a-z]/.test(p),
-    message: "Your password should include at least one lowercase letter.",
-  },
-  {
-    test: (p: string) => /[A-Z]/.test(p),
-    message: "Your password should include at least one uppercase letter.",
-  },
-  {
-    test: (p: string) => /[0-9]/.test(p),
-    message: "Your password should include at least one number.",
-  },
-  {
-    test: (p: string) => /[^A-Za-z0-9]/.test(p),
-    message:
-      "Your password should include at least one special character (e.g. !@#$%).",
-  },
-];
 
 // -------------------------------------
 // EMAIL SIGNUP

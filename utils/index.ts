@@ -131,3 +131,74 @@ export function capitalizeFirstChar(str: string): string {
   if (!str) return ""; // Handle empty strings or undefined input
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
+
+export const passwordRules = [
+  {
+    test: (p: string) => p.length >= 8,
+    message: "Your password needs to be at least 8 characters long.",
+  },
+  {
+    test: (p: string) => /[a-z]/.test(p),
+    message: "Your password should include at least one lowercase letter.",
+  },
+  {
+    test: (p: string) => /[A-Z]/.test(p),
+    message: "Your password should include at least one uppercase letter.",
+  },
+  {
+    test: (p: string) => /[0-9]/.test(p),
+    message: "Your password should include at least one number.",
+  },
+  {
+    test: (p: string) => /[^A-Za-z0-9]/.test(p),
+    message:
+      "Your password should include at least one special character (e.g. !@#$%).",
+  },
+];
+
+/**
+ * Removes undefined properties and empty File objects from an object\
+ * Useful before JSON.stringify or sending data to API
+ */
+export function cleanPayload<T extends Record<string, any>>(
+  obj: T,
+): Partial<T> {
+  return Object.fromEntries<any>(
+    Object.entries(obj).filter(([, value]) => {
+      if (value === undefined) return false;
+      if (value === "") return false;
+      if (value instanceof File && !value.name && !value.size) return false;
+      if (typeof value === "object" && Object.keys(value).length === 0)
+        return false;
+      return true;
+    }),
+  ) as any;
+}
+
+/**
+ * Removes undefined properties and empty File objects from an object\
+ * Useful before JSON.stringify or sending data to API
+ */
+export function removeUndefined<T extends Record<string, any>>(
+  obj: T,
+): Partial<T> {
+  return Object.entries(obj).reduce((acc, [key, value]) => {
+    // Skip undefined values
+    if (value === undefined) {
+      return acc;
+    }
+
+    // Skip empty File objects (File with no name/size)
+    if (value instanceof File && !value.name && !value.size) {
+      return acc;
+    }
+
+    // Skip objects that stringify to empty {}
+    if (value && typeof value === "object" && Object.keys(value).length === 0) {
+      return acc;
+    }
+
+    // acc[key] = value;
+    return acc;
+  }, {} as Partial<T>);
+}

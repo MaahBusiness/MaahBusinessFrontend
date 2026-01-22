@@ -1,9 +1,11 @@
 import { redirect } from "react-router";
 import type { BackendResponse, ServerActionState } from "types";
 import {
+  cleanPayload,
   genericErrorState,
   genericNetworkError,
   getRateLimitMessage,
+  removeUndefined,
 } from "utils";
 import { BASE_URL } from "utils/endpoints";
 
@@ -24,13 +26,12 @@ class ApiClient {
   ): Promise<ServerActionState & { data?: T }> {
     const { token, ...fetchOptions } = options;
 
-
     if (!token) {
       // throw redirect(`/auth/signin`);
       throw new Error("Access token required for API requests");
     }
 
-    console.log(`URL::${this.baseUrl}${endpoint}`, fetchOptions.method);
+    console.log(`URL::${this.baseUrl}${endpoint}`, fetchOptions);
 
     try {
       const res = await fetch(`${this.baseUrl}${endpoint}`, {
@@ -88,7 +89,7 @@ class ApiClient {
       ...options,
       token,
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify(cleanPayload(data)),
     });
   }
 
@@ -97,7 +98,7 @@ class ApiClient {
       ...options,
       token,
       method: "PUT",
-      body: JSON.stringify(data),
+      body: JSON.stringify(cleanPayload(data)),
     });
   }
 

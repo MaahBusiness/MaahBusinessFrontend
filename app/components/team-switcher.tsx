@@ -13,19 +13,12 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/components/ui/command";
-import { Dialog } from "@/components/ui/dialog";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Link,
-  redirect,
-  useLocation,
-  useNavigate,
-  useParams,
-} from "react-router";
+import { Link, redirect, useLocation, useNavigate } from "react-router";
 import { Badge } from "@/components/ui/badge";
 import { BreadcrumbLink } from "@/components/ui/breadcrumb";
 import { useAuth } from "@/contexts/auth-context";
@@ -46,7 +39,6 @@ interface TeamSwitcherProps extends PopoverTriggerProps {
 export default function TeamSwitcher({ currentId }: TeamSwitcherProps) {
   const { user, accessToken } = useAuth(); // Get token from context
   const [open, setOpen] = React.useState(false);
-  const [showNewTeamDialog, setShowNewTeamDialog] = React.useState(false);
   const { pathname } = useLocation();
   const navigate = useNavigate();
 
@@ -85,7 +77,7 @@ export default function TeamSwitcher({ currentId }: TeamSwitcherProps) {
   }
 
   return (
-    <Dialog open={showNewTeamDialog} onOpenChange={setShowNewTeamDialog}>
+    <div className="flex items-center gap-1">
       <BreadcrumbLink asChild>
         <Link to={`org/${selected?.id}`} className="flex items-center gap-2">
           <Avatar className="h-5 w-5">
@@ -94,7 +86,7 @@ export default function TeamSwitcher({ currentId }: TeamSwitcherProps) {
               alt={selected?.unique_name}
               className="grayscale"
             />
-            <AvatarFallback name={selected?.name} />
+            <AvatarFallback name={selected?.unique_name} />
           </Avatar>
           <span>{selected?.name} </span>
           <Badge variant="secondary" className="text-xxs">
@@ -169,7 +161,7 @@ export default function TeamSwitcher({ currentId }: TeamSwitcherProps) {
           </Command>
         </PopoverContent>
       </Popover>
-    </Dialog>
+    </div>
   );
 }
 

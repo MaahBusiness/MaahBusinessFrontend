@@ -1,7 +1,8 @@
 // contexts/auth-context.tsx
 import { organisationKeys } from "@/lib/api/organisation";
 import { useQueryClient } from "@tanstack/react-query";
-import { createContext, useContext, useEffect } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
+import { toast } from "sonner";
 import type { User, SessionData } from "types";
 
 type AuthContextType = {
@@ -20,20 +21,25 @@ interface AuthProviderProps {
 export function AuthProvider({ session, children }: AuthProviderProps) {
   const queryClient = useQueryClient();
 
-  const user = session?.user;
-  const value: AuthContextType = {
-    user,
-    isAuthenticated: !!user && user.email_verified,
-    accessToken: session?.accessToken, // NEW: Exposing token for Tanstack Usage
-  };
+  const [sesh, setSesh] = useState(session);
 
   // Show toasts based on action results
   useEffect(() => {
+    console.log({ session, sesh });
+    setSesh(session);
     if (!session?.user) {
       // Nuclear option - invalidate all cache stores when no user (sign out)
       queryClient.invalidateQueries({ queryKey: organisationKeys.all });
     }
-  }, [session?.user]);
+    if (session?.refreshToken && !session.user)
+      toast.error("Failed to re-authenticate user. Please sign in again");
+  }, [session]);
+
+  const value: AuthContextType = {
+    user: sesh?.user,
+    isAuthenticated: !!sesh?.user && sesh?.user.email_verified,
+    accessToken: sesh?.accessToken, // NEW: Exposing token for Tanstack Usage
+  };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

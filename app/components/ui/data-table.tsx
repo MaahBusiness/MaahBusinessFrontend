@@ -24,16 +24,20 @@ import {
 } from "@/components/ui/table";
 
 import { DataTablePagination } from "./data-table-pagination";
-import { DataTableToolbar } from "../team/data-table-toolbar";
+import type { DataTableToolbarProps } from "types";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  DataTableToolbar<TData>({
+    table,
+  }: DataTableToolbarProps<TData>): React.JSX.Element;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  DataTableToolbar,
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({});
   // const [columnVisibility, setColumnVisibility] =
@@ -96,7 +100,7 @@ export function DataTable<TData, TValue>({
                 {headerGroup.headers.map((header) => {
                   return (
                     <TableHead
-                      className="text-xs font-normal "
+                      className="text-xs font-normal px-4 "
                       key={header.id}
                       colSpan={header.colSpan}
                     >
@@ -120,7 +124,7 @@ export function DataTable<TData, TValue>({
                   data-state={row.getIsSelected() && "selected"}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="text-xs">
+                    <TableCell key={cell.id} className="text-xs px-4">
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext(),

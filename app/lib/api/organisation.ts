@@ -3,12 +3,23 @@
 // ============================================================================
 
 import { apiClient } from "@/lib/api-client";
-import type { OrganisationCore, OrganisationMember, Role } from "types";
+import type {
+  Category,
+  OrganisationCore,
+  OrganisationMember,
+  Role,
+  Subcategory,
+} from "types";
 import {
   BUSINESS_URL,
+  CATEGORY_URL,
+  CUSTOMERS_URL,
+  INVENTORY_CO_URL,
+  INVENTORY_URL,
   LIST_BUSINESS_URL,
   LIST_MEMBERS_URL,
   MEMBERS_URL,
+  SUBCATEGORY_URL,
 } from "utils/endpoints";
 
 export const organisationsApi = {
@@ -27,7 +38,7 @@ export const organisationsApi = {
       description: string;
       address?: string;
       phone_number?: string;
-      logo?: File;
+      logo?: File | undefined;
       logo_url?: string;
     },
   ) => apiClient.post<OrganisationCore>(BUSINESS_URL, token, data),
@@ -72,8 +83,9 @@ export const organisationsApi = {
     token: string,
     id: string,
     data: {
-      name: string;
+      name?: string;
       email: string;
+      password?: string;
       role: Role;
     },
   ) =>
@@ -86,6 +98,53 @@ export const organisationsApi = {
   removeMember: (token: string, id: string, memberId: string) =>
     apiClient.delete<undefined>(
       LIST_BUSINESS_URL + id + MEMBERS_URL + memberId,
+      token,
+    ),
+
+  // Categories data
+  addCategory: (
+    token: string,
+    id: string,
+    data: { name: string; description?: string },
+  ) =>
+    apiClient.post<Category>(
+      INVENTORY_CO_URL + BUSINESS_URL + id + CATEGORY_URL,
+      token,
+      data,
+    ),
+
+  addSubCategory: (
+    token: string,
+    id: string,
+    data: { name: string; description?: string; category_id: string },
+  ) =>
+    apiClient.post<Subcategory>(
+      INVENTORY_CO_URL + BUSINESS_URL + id + SUBCATEGORY_URL,
+      token,
+      data,
+    ),
+
+  updateCategory: (
+    token: string,
+    id: string,
+    data: { name: string; description?: string },
+  ) => apiClient.put<Category>(CATEGORY_URL + id, token, data),
+
+  updateSubcategory: (
+    token: string,
+    id: string,
+    data: { name: string; description?: string },
+  ) => apiClient.put<Category>(SUBCATEGORY_URL + id, token, data),
+
+  deleteCategory: (token: string, id: string) =>
+    apiClient.delete<Category>(CATEGORY_URL + id, token),
+
+  deleteSubcategory: (token: string, id: string) =>
+    apiClient.delete<Category>(SUBCATEGORY_URL + id, token),
+
+  getCustomers: (token: string, id: string) =>
+    apiClient.get<OrganisationMember[]>(
+      CUSTOMERS_URL + "?business_id=" + id,
       token,
     ),
 

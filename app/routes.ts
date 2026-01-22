@@ -24,7 +24,6 @@ export default [
 
   route("dashboard", "routes/dashboard/layout.tsx", [
     index("routes/dashboard/index.tsx"), // /dashboard
-    route("table", "routes/dashboard/table/page.tsx"),
 
     route("organisations", "routes/dashboard/organisations/index.tsx", [
       // child routes
@@ -36,11 +35,15 @@ export default [
     // route("organisations", "routes/dashboard/organisations.tsx"),
     // route("new", "routes/dashboard/new.tsx"),
 
-    layout("routes/dashboard/sidebar-layout.tsx", [
-      route("org/:id", "routes/dashboard/org/index.tsx", [
-        index("routes/dashboard/org/dashboard.tsx"),
-        route("team", "routes/dashboard/team/index.tsx"),
-      ]),
+    route("org/:id", "routes/dashboard/sidebar-layout.tsx", [
+      index("routes/dashboard/org/dashboard.tsx"),
+      route("team", "routes/dashboard/team/index.tsx"),
+      route("products", "routes/dashboard/products/index.tsx"),
+      route("categories", "routes/dashboard/products/categories.tsx"),
+      route(
+        "categories/:catId",
+        "routes/dashboard/products/single-category.tsx",
+      ),
     ]),
     route("*", "routes/dashboard/404.tsx"),
   ]),

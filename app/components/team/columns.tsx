@@ -78,7 +78,7 @@ export const columns = (user_id: string): ColumnDef<OrganisationMember>[] => [
       const isYou = row.original.user?.id === user_id;
 
       return (
-        <div className="flex space-x-2 items-center">
+        <div className="flex gap-2 items-center">
           <span className="max-w-[500px] truncate ">
             {row.getValue("name")}
           </span>
@@ -112,7 +112,7 @@ export const columns = (user_id: string): ColumnDef<OrganisationMember>[] => [
       const role = roles.find((r) => r.value === row.original.role);
 
       return (
-        <div className="flex space-x-2">
+        <div className="flex gap-2">
           <span className="max-w-[500px] truncate ">{role?.label}</span>
           {/* {label && <Badge variant="outline">{label.label}</Badge>} */}
         </div>
@@ -151,6 +151,24 @@ export const columns = (user_id: string): ColumnDef<OrganisationMember>[] => [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Joined at" />
     ),
+    cell: ({ row }) => {
+      const date = row.getValue("joined") as string | undefined;
+      if (date)
+        return (
+          <span
+            title={new Date(date).toLocaleString("en", {
+              hour: "2-digit",
+              minute: "2-digit",
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })}
+          >
+            {new Date(date).toLocaleDateString()}
+          </span>
+        );
+      else return null;
+    },
     meta: { hidden: true, sort: true },
   },
   {
@@ -159,7 +177,24 @@ export const columns = (user_id: string): ColumnDef<OrganisationMember>[] => [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Left at" />
     ),
-    cell: ({ row }) => row.getValue("left") || null,
+    cell: ({ row }) => {
+      const date = row.getValue("left") as string | undefined;
+      if (date)
+        return (
+          <span
+            title={new Date(date).toLocaleString("en", {
+              hour: "2-digit",
+              minute: "2-digit",
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })}
+          >
+            {new Date(date).toLocaleDateString()}
+          </span>
+        );
+      else return null;
+    },
     meta: { hidden: true },
   },
   {

@@ -2,7 +2,6 @@ import type { Table } from "@tanstack/react-table";
 import { Check, ChevronDownIcon, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 
 import { DataTableFacetedFilter } from "../ui/data-table-faceted-filter";
 import { DataTableViewOptions } from "@/components/ui/data-table-view-options";
@@ -22,16 +21,17 @@ import {
 import { useState } from "react";
 import { capitalizeFirstChar } from "utils";
 import { cn } from "@/lib/utils";
-
-interface DataTableToolbarProps<TData> {
-  table: Table<TData>;
-}
+import AddNewDialog from "@/components/team/add-new-dailog";
+import { hasPermission } from "utils/permissions";
+import { useOrganisation } from "@/hooks/use-organisation";
+import type { DataTableToolbarProps } from "types";
 
 export function DataTableToolbar<TData>({
   table,
 }: DataTableToolbarProps<TData>) {
   const isFiltered = table.getState().columnFilters.length > 0;
   const filters = ["name", "email"];
+  const { businessMember } = useOrganisation();
 
   const [filter, setFilter] = useState(filters[0]);
 
@@ -106,7 +106,12 @@ export function DataTableToolbar<TData>({
           </Button>
         )}
       </div>
-      <DataTableViewOptions table={table} />
+      <div className="flex items-center space-x-2">
+        <DataTableViewOptions table={table} />
+        {hasPermission(businessMember?.role, "manage:members") && (
+          <AddNewDialog />
+        )}
+      </div>
     </div>
   );
 }

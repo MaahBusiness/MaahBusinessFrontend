@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { CreateOrgForm } from "@/components/forms/create-org-form";
 import type { OrganisationCore, ServerActionState } from "types";
 import { genericErrorState } from "utils";
-import { redirect } from "react-router";
+import { redirect, useNavigate } from "react-router";
 import { getSession } from "@/lib/session.server";
 import type { Route } from ".react-router/types/app/routes/dashboard/organisations/+types/new";
 import { toast } from "sonner";
@@ -45,7 +45,7 @@ export async function action({ request }: Route.ActionArgs): Promise<
       description: desc!,
       address,
       phone_number: phone,
-      logo: pfp,
+      logo: pfp || undefined,
       logo_url: url,
     });
 
@@ -57,6 +57,7 @@ export async function action({ request }: Route.ActionArgs): Promise<
 // -------------------------------------
 export default function NewOrgPage({ actionData }: Route.ComponentProps) {
   const queryClient = useQueryClient();
+  let navigate = useNavigate();
 
   // Show toasts based on action results
   useEffect(() => {
@@ -71,10 +72,13 @@ export default function NewOrgPage({ actionData }: Route.ComponentProps) {
       queryClient.invalidateQueries({ queryKey: organisationKeys.lists() });
 
       queryClient.setQueryData(
-        organisationKeys.detail(actionData?.data?.id),
+        organisationKeys.core(actionData?.data?.id),
         actionData.data,
       );
-      redirect(`add-team?${actionData.data.id}`);
+      // navigate(
+      //   `/dashboard/organisations/add-team?id=${actionData.data.id}&name=${actionData.data.name}`,
+      // );
+      navigate(`/dashboard/orgs/${actionData.data.id}`);
     }
   }, [actionData]);
 

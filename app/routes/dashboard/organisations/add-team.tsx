@@ -25,7 +25,14 @@ import {
   CommandItem,
 } from "@/components/ui/command";
 import { Check, ChevronDown } from "lucide-react";
-import { Form, redirect, useNavigation, useSearchParams } from "react-router";
+import {
+  Form,
+  Link,
+  redirect,
+  useNavigate,
+  useNavigation,
+  useSearchParams,
+} from "react-router";
 import { useEffect, useState } from "react";
 import type {
   OrganisationMember,
@@ -47,6 +54,8 @@ import type { Route } from ".react-router/types/app/routes/dashboard/organisatio
 import { getSession } from "@/lib/session.server";
 import { Spinner } from "@/components/ui/spinner";
 import { organisationKeys, organisationsApi } from "@/lib/api/organisation";
+import RoleSelector from "@/components/role-selector";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export async function action({ request }: Route.ActionArgs): Promise<
   ServerActionState & {
@@ -84,57 +93,42 @@ export default function AddTeam({ actionData }: Route.ComponentProps) {
   // Access the client
   const queryClient = useQueryClient();
   const orgId = searchParams.get("id");
+  const navigate = useNavigate();
 
   const navigation = useNavigation();
   const errors = actionData?.errors;
   const isSubmitting = navigation.state === "submitting";
 
-  if (!orgId) throw redirect("organisations");
+  if (!orgId) throw navigate("organisations");
 
   //   Fetch organisation
   const { data: res, isLoading } = useQuery({
     queryKey: organisationKeys.core(orgId),
     queryFn: async () => {
-      if (!accessToken) throw redirect(`/auth/signin`);
+      if (!accessToken) throw navigate(`/auth/signin`);
       return await organisationsApi.getById(accessToken, orgId);
     },
     enabled: !!accessToken, // Only run if token exists
   });
 
-  useEffect(() => {
-    if (actionData?.data) {
-      // After creating/updating - refetch the list
-      toast.success("Your organisation has been created successfully.");
-      queryClient.invalidateQueries({
-        queryKey: organisationKeys.core(orgId),
-      });
-      queryClient.setQueryData(
-        organisationKeys.members(orgId),
-        actionData.data,
-      );
-      redirect(`orgs/${orgId}`);
-    }
-  }, [actionData]);
-
   if (isLoading) return <LoadingUI />;
   if (!res?.success) toast.error(genericErrorState().message);
-  if (!res?.data) throw redirect("organisations");
+  if (!res?.data) throw navigate("organisations");
 
   return (
     <div className="w-full min-h-full flex flex-col gap-8 items-stretch max-w-3xl lg:px-6 px-0 mx-auto pt-12 pb-12">
       <div className="w-full flex flex-row items-center justify-between gap-6">
         <div className="">
           <h3 className="text-muted-foreground text-xs font-medium">
-            Your organisation has been created. {orgId}
+            Your organisation, {res.data?.name} has been created.
           </h3>
           <h1 className="text-2xl font-medium">Now let's add your team</h1>
-          <h2 className="text-muted-foreground text-sm font-medium">
-            Get everyone set up so you can start working together.{" "}
-          </h2>
         </div>{" "}
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant={"outline"}>Skip for now </Button>
+            <Link to={"/dashboard/orgs/" + orgId}>
+              <Button variant={"outline"}>Skip for now </Button>
+            </Link>
           </TooltipTrigger>
           <TooltipContent>
             <p className="w-36 text-center">
@@ -160,9 +154,9 @@ export default function AddTeam({ actionData }: Route.ComponentProps) {
                 />
                 {/* <FieldError errors={[{ message: errors?.name }]} /> */}
               </div>
-              <RoleSelector />
+              <RoleSelector className="!w-auto" />
               <Button type="submit" disabled={isSubmitting} className="!w-auto">
-                {isSubmitting && <Spinner />}Create organisation
+                {isSubmitting && <Spinner />}Add member
               </Button>
             </Field>
             <FieldError errors={[{ message: errors?.email }]} />
@@ -312,101 +306,11 @@ function LoadingUI() {
         <div className="flex flex-1 flex-col gap-4">
           <div className="flex flex-col gap-12 ">
             {[1, 2].map(() => (
-              <Item
-                variant="outline"
-                className="bg-muted items-center gap-3 h-20 hover:bg-accent border-border animate-pulse"
-                asChild
-              >
-                <div></div>
-              </Item>
+              <Skeleton className="bg-muted items-center gap-3 h-20 hover:bg-accent border-border animate-pulse"></Skeleton>
             ))}
           </div>
         </div>
       </div>
     </div>
-  );
-}
-
-const roles: {
-  id: Role;
-  label: string;
-  desc?: string;
-}[] = [
-  { id: "cashier", label: "Cashier", desc: "Can view and comment." },
-  {
-    id: "stock_keeper",
-    label: "Stock Keeper",
-    desc: "Can view, comment and edit.",
-  },
-  {
-    id: "manager",
-    label: "Manager",
-    desc: "Can view, comment and manage billing.",
-  },
-  //   { id: "owner", label: "Owner", desc: "Admin-level access to all resources." },
-];
-
-function RoleSelector({
-  value,
-  disabled,
-}: {
-  value?: Role;
-  disabled?: boolean;
-}) {
-  const [role, setRole] = useState<(typeof roles)[0]>(
-    roles.find((r) => r.id === value) || roles[0],
-  );
-  const isOwner = value === "owner";
-
-  return (
-    <Popover>
-      <input type="hidden" name="role" value={role.id} />
-
-      <PopoverTrigger disabled={disabled} asChild>
-        <Button variant="outline" className="!w-auto bg-card">
-          {capitalizeFirstChar(role.label)}
-          <ChevronDown className="text-muted-foreground" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="p-0" align="end">
-        <Command>
-          <CommandInput placeholder="Select new role..." />
-          <CommandList>
-            <CommandEmpty>No roles found.</CommandEmpty>
-            <CommandGroup>
-              {roles.map((r) => (
-                <CommandItem
-                  id={r.id}
-                  onSelect={() => setRole(r)}
-                  disabled={isOwner}
-                  value={r.id}
-                  className={"teamaspace-y-1 px-4 py-2"}
-                >
-                  <div className="flex flex-col items-start ">
-                    <p>{r.label}</p>
-                    <p className="text-sm text-muted-foreground">{r.desc}</p>
-                  </div>
-                  <Check
-                    className={cn(
-                      "ml-auto",
-                      r?.id === role.id ? "opacity-100" : "opacity-0",
-                    )}
-                  />
-                </CommandItem>
-              ))}
-              <CommandItem
-                disabled={!isOwner}
-                className="teamaspace-y-1 flex flex-col items-start px-4 py-2"
-              >
-                <p>Owner</p>
-                <p className="text-sm text-muted-foreground">
-                  Admin-level access to all resources.
-                </p>
-              </CommandItem>
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
   );
 }

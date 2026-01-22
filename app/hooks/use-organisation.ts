@@ -44,6 +44,17 @@ export function useOrganisation() {
     // staleTime: 2 * 60 * 1000, // 2 minutes (more dynamic data)
   });
 
+  // Fetch members
+  const customersQuery = useQuery({
+    queryKey: organisationKeys.customers(orgId),
+    queryFn: async () => {
+      if (!accessToken) throw rdr;
+      return await organisationsApi.getMembers(accessToken, orgId);
+    },
+    enabled: !!accessToken && !!coreQuery.data,
+    // staleTime: 2 * 60 * 1000, // 2 minutes (more dynamic data)
+  });
+
   // Update organisation mutation
   const updateOrganisation = useMutation({
     mutationFn: async (data: {
@@ -109,6 +120,27 @@ export function useOrganisation() {
     },
   });
 
+  const removeCategory = useMutation({
+    mutationFn: async (data: { id: string; sub?: boolean }) => {
+      if (!accessToken) throw rdr;
+      return data.sub
+        ? organisationsApi.deleteSubcategory(accessToken, orgId)
+        : organisationsApi.deleteCategory(accessToken, orgId);
+    },
+    onSuccess: (res) => {
+      if (res.success) {
+        // Automatically refetch members
+        queryClient.invalidateQueries({
+          queryKey: organisationKeys.core(orgId),
+        });
+        toast.success("The category has been removed!");
+      } else toast.error(res.message);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
   // You can handle custom success toast messages for fetchers on individual components since no success message is returned from the API (intentionally)
 
   useEffect(() => {
@@ -147,9 +179,15 @@ export function useOrganisation() {
 
     addMember: addMember.mutate,
     isAddingMember: addMember.isPending,
+    addMemberState: addMember.status,
 
     removeMember: removeMember.mutate,
     isRemovingMember: removeMember.isPending,
+    removeMemberState: removeMember.data,
+
+    removeCategory: removeCategory.mutate,
+    isRemovingCategory: removeCategory.isPending,
+    removeCategoryState: removeCategory.data,
 
     // Refetch functions
     refetchCore: coreQuery.refetch,

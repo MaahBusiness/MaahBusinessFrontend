@@ -3,6 +3,8 @@ import { createCookie, redirect } from "react-router";
 import type { BackendResponse, GenericResponse, SessionData } from "types";
 import { BASE_URL, REFRESH_TOKEN_URL } from "utils/endpoints";
 
+const REFRESH_THRESHOLD_MS = 2 * 60 * 1000; // 2 minutes
+
 // ------------------------------
 // Cookie configuration
 // ------------------------------
@@ -70,7 +72,6 @@ async function refreshAccessToken(
     return {
       accessToken,
       refreshToken: newRefreshToken,
-      // user,
     };
   } catch (error) {
     console.error("Token refresh failed:", error);
@@ -99,6 +100,41 @@ async function validateAccessToken(token: string): Promise<boolean> {
   }
 }
 
+function getTokenStatus(token: string): "valid" | "refresh" | "expired" {
+  try {
+    const [, payload] = token.split(".");
+    if (!payload) return "expired";
+
+    const decoded = JSON.parse(
+      Buffer.from(payload, "base64").toString("utf-8"),
+    );
+
+    const expiresAt = decoded.exp * 1000;
+    const now = Date.now();
+
+    if (expiresAt <= now) return "expired";
+
+    if (expiresAt - now <= REFRESH_THRESHOLD_MS) {
+      return "refresh";
+    }
+
+    return "valid";
+  } catch {
+    return "expired";
+  }
+}
+
+let refreshPromise: Promise<any> | null = null;
+
+async function safeRefresh(refreshToken: string) {
+  if (!refreshPromise) {
+    refreshPromise = refreshAccessToken(refreshToken).finally(() => {
+      refreshPromise = null;
+    });
+  }
+  return refreshPromise;
+}
+
 // ------------------------------
 // Main auth helper (used by loaders)
 // ------------------------------
@@ -109,34 +145,37 @@ export async function requireUserSession(request: Request) {
     return { headers: undefined };
   }
 
-  // Check if access token is still valid
-  const tokenValid = await validateAccessToken(session.accessToken);
-  console.log("TOKENVALID?", tokenValid);
-  if (tokenValid) {
+  const status = getTokenStatus(session.accessToken);
+
+  // ✅ Token is healthy
+  if (status === "valid") {
     return { session, headers: undefined };
   }
 
-  // Attempt refresh
+  // 🔄 Token is near expiry OR expired → refresh
   const refreshed = await refreshAccessToken(session.refreshToken);
 
-  if (!refreshed) {
-    // Refresh token expired or invalid - clear cookie
+  if (!refreshed && status === "expired") {
+    // ❌ Refresh token invalid → sign out
     return {
-      headers: {
-        "Set-Cookie": await sessionCookie.serialize("", { maxAge: 0 }),
-      },
+      headers: await destroySession(),
     };
   }
 
-  console.log("TOKEN REFRESHED?", refreshed);
-
-  // Return refreshed session with updated cookie
+  // ✅ Refresh succeeded
   return {
-    session: refreshed,
+    session: { ...session, ...refreshed },
     headers: {
-      "Set-Cookie": await sessionCookie.serialize(refreshed),
+      "Set-Cookie": await commitSession({
+        ...session,
+        ...refreshed,
+      }),
     },
   };
+}
+
+export async function commitSession(session: SessionData) {
+  return sessionCookie.serialize(session);
 }
 
 // ------------------------------
