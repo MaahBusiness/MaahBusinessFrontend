@@ -28,7 +28,7 @@ const schema: { [key: string]: SideItem[] } = {
       items: [
         {
           title: "All Products",
-          url: "products",
+          url: "#",
         },
         {
           title: "Categories",
