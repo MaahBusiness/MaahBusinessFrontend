@@ -1,4 +1,4 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, BoringFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   InputGroup,
@@ -12,6 +12,7 @@ import {
   ItemDescription,
   Item,
 } from "@/components/ui/item";
+import { organisationsApi } from "@/lib/api/organisation";
 import { SearchIcon, PlusIcon } from "lucide-react";
 import { Link } from "react-router";
 import type { OrganisationCore } from "types";
@@ -36,6 +37,23 @@ export default function LoadedOrganisationsState({
             </InputGroupAddon>
           </InputGroup>
 
+          <Button
+            size="sm"
+            onClick={() =>
+              console.log(
+                organisationsApi.getFilteredProducts("123", "id123", {
+                  category_id: "catid",
+                  expired_only: true,
+                  low_stock_only: false,
+                  name: "tadana",
+                  order_by: "current_price",
+                  page: 2,
+                }),
+              )
+            }
+          >
+            <PlusIcon /> Console
+          </Button>
           <Link to={"/dashboard/organisations/new"}>
             <Button size="sm">
               <PlusIcon /> New organisation
@@ -56,7 +74,7 @@ export default function LoadedOrganisationsState({
                   <ItemMedia>
                     <Avatar className="size-10">
                       <AvatarImage src={org.logo_url} />
-                      <AvatarFallback name={org?.name} />
+                      <BoringFallback name={org?.name} />
                     </Avatar>
                   </ItemMedia>
                   <ItemContent className="gap-0">

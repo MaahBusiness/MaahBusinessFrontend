@@ -75,10 +75,8 @@ export default function NewOrgPage({ actionData }: Route.ComponentProps) {
         organisationKeys.core(actionData?.data?.id),
         actionData.data,
       );
-      // navigate(
-      //   `/dashboard/organisations/add-team?id=${actionData.data.id}&name=${actionData.data.name}`,
-      // );
-      navigate(`/dashboard/orgs/${actionData.data.id}`);
+      navigate(`/dashboard/organisations/add-team?id=${actionData.data.id}`);
+      // navigate(`/dashboard/org/${actionData.data.id}`);
     }
   }, [actionData]);
 

@@ -27,7 +27,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { catData } from "@/routes/dashboard/products/data";
 import { useOrganisation } from "@/hooks/use-organisation";
 
 export default function EditDialog({ data }: { data: Category | Subcategory }) {

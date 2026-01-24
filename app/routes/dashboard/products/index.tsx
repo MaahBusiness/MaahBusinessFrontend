@@ -1,24 +1,31 @@
-import type { Route } from ".react-router/types/app/routes/dashboard/team/+types";
-import { columns } from "@/components/team/columns";
-import { DataTableToolbar } from "@/components/team/data-table-toolbar";
+import type { Route } from ".react-router/types/app/routes/dashboard/products/+types";
+import { productCols } from "@/components/products/columns";
+import { DataTableToolbar } from "@/components/products/data-table-toolbar";
 import { DataTable } from "@/components/ui/data-table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TableCell, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/contexts/auth-context";
 import { useOrganisation } from "@/hooks/use-organisation";
 import { organisationKeys, organisationsApi } from "@/lib/api/organisation";
 import { getSession } from "@/lib/session.server";
+import { productData } from "@/routes/dashboard/products/data";
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
-import { redirect, useParams } from "react-router";
+import { useEffect, useState } from "react";
+import { redirect, useParams, useSearchParams } from "react-router";
 import { toast } from "sonner";
 import type {
-  OrganisationCore,
   OrganisationMember,
+  Product,
+  ProductFilters,
   Role,
   ServerActionState,
 } from "types";
-import { genericErrorState, passwordRules } from "utils";
+import {
+  buildQueryParams,
+  genericErrorState,
+  parseSearchParams,
+  passwordRules,
+  productFilterParsers,
+} from "utils";
 
 export async function action({ request, params }: Route.ActionArgs): Promise<
   ServerActionState & {
@@ -83,13 +90,19 @@ export async function action({ request, params }: Route.ActionArgs): Promise<
   }
 }
 
-export default function TeamPage({ actionData }: Route.ComponentProps) {
+export default function CustomersPage({ actionData }: Route.ComponentProps) {
   const { user } = useAuth(); // Get token from context
-  const { members: res, isLoadingMembers } = useOrganisation();
+  const { organisation: orgRes, fetchProducts } = useOrganisation();
   const queryClient = useQueryClient();
   const { id } = useParams();
 
-  const cols = columns(user?.id || "");
+  const [searchParams, setSearchParams] = useSearchParams();
+  // const [data, setData] = useState<Product[]>();
+  const [filters, setFilters] = useState<ProductFilters>();
+
+  const { data: res, isLoading } = fetchProducts(filters);
+
+  const cols = productCols({ cats: orgRes?.data?.categories });
 
   // Show toasts based on action results
   useEffect(() => {
@@ -107,42 +120,39 @@ export default function TeamPage({ actionData }: Route.ComponentProps) {
     }
   }, [actionData]);
 
+  useEffect(() => {
+    const _filters = parseSearchParams<ProductFilters>(
+      searchParams,
+      productFilterParsers,
+    );
+    setFilters(_filters);
+  }, [searchParams]);
+
   return (
     <div className="w-full min-h-full flex flex-col gap-8 items-stretch max-w-[1200px] lg:px-6 px-4 mx-auto py-12">
       <div className="w-full flex items-center gap-2">
-        <h2 className="text-lg tracking-tight">Team</h2>
+        <h2 className="text-lg tracking-tight">Products</h2>
       </div>
 
-      {(isLoadingMembers || !res?.success) && (
-        <div className="">
+      {(isLoading || !res?.success) && (
+        <div className="flex w-full flex-col gap-2 p-4 rounded-md border border-border">
           {Array.from({ length: 10 }).map((_, index) => (
-            <TableRow key={index}>
-              {Array.from({ length: 5 }).map((_, colIndex) => (
-                <TableCell key={colIndex}>
-                  <Skeleton />
-                </TableCell>
-              ))}
-            </TableRow>
+            <div className="flex gap-4" key={index}>
+              <Skeleton className="size-6 shrink-0 rounded-full" />
+              <Skeleton className="h-4 flex-1" />
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-20" />
+            </div>
           ))}
         </div>
-
-        // <div className="flex w-full flex-col gap-2 p-4 rounded-md border border-border">
-        //   {Array.from({ length: 10 }).map((_, index) => (
-        //     <div className="flex gap-4" key={index}>
-        //       <Skeleton className="size-6 shrink-0 rounded-full" />
-        //       <Skeleton className="h-4 flex-1" />
-        //       <Skeleton className="h-4 w-24" />
-        //       <Skeleton className="h-4 w-20" />
-        //     </div>
-        //   ))}
-        // </div>
       )}
 
-      {/* {!res?.data?.res && <div>No Team Members</div>} */}
+      {!res?.data && <div>No products</div>}
 
-      {res?.data && (
+      {res?.data && res.meta && (
         <DataTable
-          data={res?.data || []}
+          data={res.data}
+          meta={res.meta}
           columns={cols}
           DataTableToolbar={DataTableToolbar}
         />

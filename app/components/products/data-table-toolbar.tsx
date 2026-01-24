@@ -1,11 +1,8 @@
-import type { Table } from "@tanstack/react-table";
 import { Check, ChevronDownIcon, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
-import { DataTableFacetedFilter } from "../ui/data-table-faceted-filter";
 import { DataTableViewOptions } from "@/components/ui/data-table-view-options";
-import { roles, rolesMini, statuses } from "@/routes/dashboard/team/data";
 import {
   InputGroup,
   InputGroupInput,
@@ -21,39 +18,52 @@ import {
 import { useState } from "react";
 import { capitalizeFirstChar } from "utils";
 import { cn } from "@/lib/utils";
-import AddNewDialog from "@/components/team/add-new-dailog";
-import { hasPermission } from "utils/permissions";
 import { useOrganisation } from "@/hooks/use-organisation";
 import type { DataTableToolbarProps } from "types";
+import { DataTableFacetedFilter } from "@/components/products/data-table-faceted-filter";
+import {
+  expiry,
+  filters,
+  searchFilters,
+} from "@/routes/dashboard/products/data";
+import { useSearchParams } from "react-router";
 
 export function DataTableToolbar<TData>({
   table,
 }: DataTableToolbarProps<TData>) {
-  const isFiltered = table.getState().columnFilters.length > 0;
-  const filters = ["name", "email"];
-  const { businessMember } = useOrganisation();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [filter, setFilter] = useState(filters[0]);
+  const isFiltered = table.getState().columnFilters.length > 0;
+
+  const [filter, setFilter] = useState(searchFilters[0].value);
+  const [search, setSearch] = useState("");
 
   return (
     <div className="flex items-center justify-between">
       <div className="flex flex-1 items-center space-x-2">
-        {/* <Input
-          placeholder="Filter tasks..."
-          value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
-            table.getColumn("name")?.setFilterValue(event.target.value)
-          }
-          className="h-8 w-[150px] lg:w-[250px]"
-        /> */}
         <InputGroup className="h-8 w-[200px] lg:w-[250px]">
           <InputGroupInput
             placeholder="Search team..."
-            value={(table.getColumn(filter)?.getFilterValue() as string) ?? ""}
-            onChange={(event) =>
-              table.getColumn(filter)?.setFilterValue(event.target.value)
-            }
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                const value = search.trim();
+
+                setSearchParams((params) => {
+                  if (value) {
+                    params.set("search", value);
+                    params.set("name", filter);
+                  } else {
+                    params.delete("search");
+                    params.delete("name");
+                  }
+                  return params;
+                });
+              }
+            }}
           />
+
           <InputGroupAddon align="inline-end">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -66,13 +76,13 @@ export function DataTableToolbar<TData>({
                 </InputGroupButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="[--radius:0.95rem]">
-                {filters.map((f, i) => (
-                  <DropdownMenuItem key={i} onClick={() => setFilter(f)}>
-                    {capitalizeFirstChar(f)}
+                {searchFilters.map((f, i) => (
+                  <DropdownMenuItem key={i} onClick={() => setFilter(f.value)}>
+                    {f.label}
                     <Check
                       className={cn(
                         "ml-auto",
-                        f === filter ? "opacity-100" : "opacity-0",
+                        f.value === filter ? "opacity-100" : "opacity-0",
                       )}
                     />
                   </DropdownMenuItem>
@@ -81,24 +91,20 @@ export function DataTableToolbar<TData>({
             </DropdownMenu>
           </InputGroupAddon>
         </InputGroup>
-        {table.getColumn("role") && (
-          <DataTableFacetedFilter
-            column={table.getColumn("role")}
-            title="Role"
-            options={rolesMini}
-          />
-        )}
-        {table.getColumn("status") && (
-          <DataTableFacetedFilter
-            column={table.getColumn("status")}
-            title="Status"
-            options={statuses}
-          />
-        )}
+
+        <DataTableFacetedFilter title="Filters" options={filters} />
+
         {isFiltered && (
           <Button
             variant="ghost"
-            onClick={() => table.resetColumnFilters()}
+            onClick={() =>
+              setSearchParams((_params) => {
+                [...filters, ...searchFilters].forEach((f) =>
+                  _params.delete(f.value),
+                );
+                return _params;
+              })
+            }
             className="h-8 px-2 lg:px-3"
           >
             Reset
@@ -108,9 +114,9 @@ export function DataTableToolbar<TData>({
       </div>
       <div className="flex items-center space-x-2">
         <DataTableViewOptions table={table} />
-        {hasPermission(businessMember?.role, "manage:members") && (
+        {/* {hasPermission(businessMember?.role, "manage:members") && (
           <AddNewDialog />
-        )}
+        )} */}
       </div>
     </div>
   );

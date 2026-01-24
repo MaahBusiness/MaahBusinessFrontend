@@ -73,11 +73,37 @@ export const subCatCols: ColumnDef<Subcategory>[] = [
     ),
     enableHiding: false,
   },
+  {
+    id: "updated",
+    accessorKey: "updated_at",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Updated" />
+    ),
+    cell: ({ row }) => {
+      const date = row.getValue("updated") as string | undefined;
+      if (date)
+        return (
+          <span
+            title={new Date(date).toLocaleString("en", {
+              hour: "2-digit",
+              minute: "2-digit",
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })}
+          >
+            {new Date(date).toLocaleDateString()}
+          </span>
+        );
+      else return null;
+    },
+    meta: { hidden: true, sort: true },
+  },
 
   {
     id: "actions",
     cell: ({ row }) => (
-      <div className="text-right">
+      <div className=" w-full flex items-center justify-end">
         <DataTableRowActions row={row} />
       </div>
     ),

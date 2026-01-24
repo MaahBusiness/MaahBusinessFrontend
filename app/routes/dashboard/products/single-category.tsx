@@ -1,8 +1,7 @@
 import { DataTableToolbar } from "@/components/categories/cat-table-toolbar";
 import { DataTable } from "@/components/ui/data-table";
 import { useAuth } from "@/contexts/auth-context";
-import { catData } from "@/routes/dashboard/products/data";
-import { redirect, useParams } from "react-router";
+import { Link, redirect, useParams } from "react-router";
 import { subCatCols } from "@/components/categories/sub-columns";
 import { ChevronRight } from "lucide-react";
 import { organisationKeys, organisationsApi } from "@/lib/api/organisation";
@@ -107,10 +106,18 @@ export default function SingleCatPage({ actionData }: Route.ComponentProps) {
   return (
     <div className="w-full min-h-full flex flex-col gap-8 items-stretch max-w-[1200px] lg:px-6 px-4 mx-auto py-12">
       <div className="w-full flex items-center gap-2">
-        <h2 className="text-lg  tracking-tight">{`Products`}</h2>
-        <ChevronRight />
-        <h2 className="text-lg tracking-tight">Categories</h2>
-        <ChevronRight />
+        {/* <Link to="products"> */}
+        <h2 className="text-lg tracking-tight text-muted-foreground">
+          Products
+        </h2>
+        {/* </Link> */}
+        <ChevronRight className="text-muted-foreground size-4" />
+        {/* <Link to="products/categories"> */}
+        <h2 className="text-lg tracking-tight text-muted-foreground">
+          Categories
+        </h2>
+        {/* </Link> */}
+        <ChevronRight className="text-muted-foreground size-4" />
         <h2 className="text-lg tracking-tight">{cat?.name}</h2>
       </div>
 

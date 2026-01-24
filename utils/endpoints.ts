@@ -21,6 +21,7 @@ export const LIST_MEMBERS_URL = `/members/list/`;
 export const MEMBERS_URL = `/members/`;
 
 export const CUSTOMERS_URL = "/customers/";
+export const PRODUCTS_URL = "/products/";
 export const INVENTORY_CO_URL = "/inventory";
 export const INVENTORY_URL = "/inventory/";
 export const CATEGORY_URL = "/categories/";

@@ -48,6 +48,7 @@ export function SignupForm({
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Form method="post">
         <input type="hidden" name="intent" value="email-signup" />
+        <input type="hidden" name="redirectTo" value={redirectTo} />
 
         <FieldGroup>
           <div className="flex flex-col items-center gap-2 text-center">

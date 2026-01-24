@@ -2,7 +2,7 @@ import * as React from "react";
 import { Check, ChevronsUpDown, PlusCircle } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, BoringFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -86,7 +86,7 @@ export default function TeamSwitcher({ currentId }: TeamSwitcherProps) {
               alt={selected?.unique_name}
               className="grayscale"
             />
-            <AvatarFallback name={selected?.unique_name} />
+            <BoringFallback name={selected?.unique_name} />
           </Avatar>
           <span>{selected?.name} </span>
           <Badge variant="secondary" className="text-xxs">
@@ -130,7 +130,7 @@ export default function TeamSwitcher({ currentId }: TeamSwitcherProps) {
                           alt={team.unique_name}
                           className="grayscale"
                         />
-                        <AvatarFallback name={team.unique_name} />
+                        <BoringFallback name={team.unique_name} />
                       </Avatar>
                       {team.name}
                       <Check

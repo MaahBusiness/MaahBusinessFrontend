@@ -51,7 +51,6 @@ export function DataTableRowActions<TData>({
   if (!businessMember) throw redirect("/dashboard/organisations/");
 
   const handleDeleteUser = () => {
-    console.log("HEREHERERE");
     removeCategory({ id: row.original.id, sub: "category_id" in row.original });
   };
 
@@ -113,6 +112,7 @@ export function DataTableRowActions<TData>({
 
             <AlertDialogAction
               variant="destructive"
+              disabled={isRemovingCategory}
               onClick={(e) => {
                 e.preventDefault();
                 handleDeleteUser();
@@ -120,7 +120,7 @@ export function DataTableRowActions<TData>({
               // type="button"
             >
               {isRemovingCategory && <Spinner className="size-4" />}
-              Remove this
+              Remove
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -7,9 +7,12 @@ import type {
   Category,
   OrganisationCore,
   OrganisationMember,
+  Product,
+  ProductFilters,
   Role,
   Subcategory,
 } from "types";
+import { buildQueryParams } from "utils";
 import {
   BUSINESS_URL,
   CATEGORY_URL,
@@ -19,6 +22,7 @@ import {
   LIST_BUSINESS_URL,
   LIST_MEMBERS_URL,
   MEMBERS_URL,
+  PRODUCTS_URL,
   SUBCATEGORY_URL,
 } from "utils/endpoints";
 
@@ -142,6 +146,20 @@ export const organisationsApi = {
   deleteSubcategory: (token: string, id: string) =>
     apiClient.delete<Category>(SUBCATEGORY_URL + id, token),
 
+  // PRODUCTS
+
+  getProducts: (token: string, id: string) =>
+    apiClient.get<Product[]>(PRODUCTS_URL + "?business_id=" + id, token),
+
+  getFilteredProducts: (
+    token: string,
+    id: string,
+    filters?: ProductFilters,
+  ) => {
+    const query = buildQueryParams({ business_id: id, ...filters });
+    return apiClient.get<Product[]>(`${PRODUCTS_URL}${query}`, token);
+  },
+
   getCustomers: (token: string, id: string) =>
     apiClient.get<OrganisationMember[]>(
       CUSTOMERS_URL + "?business_id=" + id,
@@ -170,6 +188,10 @@ export const organisationKeys = {
   // Organisation modules (specific data)
   core: (id: string) => [...organisationKeys.detail(id), "core"] as const,
   members: (id: string) => [...organisationKeys.detail(id), "members"] as const,
+  products: (id: string) =>
+    [...organisationKeys.detail(id), "products"] as const,
+  prodlist: (id: string, filters?: ProductFilters) =>
+    [...organisationKeys.lists(), "products", { filters }] as const,
   customers: (id: string) =>
     [...organisationKeys.detail(id), "customers"] as const,
   inventory: (id: string) =>

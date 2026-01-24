@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { redirect, useLocation, useNavigation, useSubmit } from "react-router";
-import type { OrganisationMember, Role } from "types";
+import type { OrganisationMember, Product, Role } from "types";
 import { useAuth } from "@/contexts/auth-context";
 import { useOrganisation } from "@/hooks/use-organisation";
 import {
@@ -33,7 +33,7 @@ import { hasPermission } from "utils/permissions";
 import { Spinner } from "@/components/ui/spinner";
 
 interface DataTableRowActionsProps<TData> {
-  row: Row<OrganisationMember>;
+  row: Row<Product>;
 }
 
 export function DataTableRowActions<TData>({

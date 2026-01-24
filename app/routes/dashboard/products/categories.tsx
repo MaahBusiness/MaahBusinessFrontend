@@ -1,13 +1,12 @@
-import { catCols } from "@/components/categories/columns";
+import { catCols } from "@/components/categories/cat-columns";
 import { DataTableToolbar } from "@/components/categories/cat-table-toolbar";
 import { DataTable } from "@/components/ui/data-table";
 import { useAuth } from "@/contexts/auth-context";
 import { organisationKeys, organisationsApi } from "@/lib/api/organisation";
 import { getSession } from "@/lib/session.server";
-import { catData } from "@/routes/dashboard/products/data";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { redirect, useParams } from "react-router";
+import { Link, redirect, useParams } from "react-router";
 import { toast } from "sonner";
 import type { Category, Role, ServerActionState, Subcategory } from "types";
 import { genericErrorState } from "utils";
@@ -102,9 +101,13 @@ export default function CategoriesPage({ actionData }: Route.ComponentProps) {
   return (
     <div className="w-full min-h-full flex flex-col gap-8 items-stretch max-w-[1200px] lg:px-6 px-4 mx-auto py-12">
       <div className="w-full flex items-center gap-2">
-        <h2 className="text-lg  tracking-tight">{`Products`}</h2>
-        <ChevronRight />
-        <h2 className="text-lg tracking-tight">Categories </h2>
+        {/* <Link to="/products"> */}
+        <h2 className="text-lg tracking-tight text-muted-foreground">
+          Products
+        </h2>
+        {/* </Link> */}
+        <ChevronRight className="text-muted-foreground size-4" />
+        <h2 className="text-lg tracking-tight">Categories</h2>
       </div>
 
       {(isLoading || !res?.success) && (

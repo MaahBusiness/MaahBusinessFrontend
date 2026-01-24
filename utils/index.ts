@@ -1,4 +1,9 @@
-import type { OTPSessionData, SignUpActionType } from "types";
+import type {
+  OTPSessionData,
+  Product,
+  ProductFilters,
+  SignUpActionType,
+} from "types";
 
 /**Generic error message */
 export function genericErrorState() {
@@ -165,8 +170,7 @@ export function cleanPayload<T extends Record<string, any>>(
 ): Partial<T> {
   return Object.fromEntries<any>(
     Object.entries(obj).filter(([, value]) => {
-      if (value === undefined) return false;
-      if (value === "") return false;
+      if ([undefined, null, ""].includes(value)) return false;
       if (value instanceof File && !value.name && !value.size) return false;
       if (typeof value === "object" && Object.keys(value).length === 0)
         return false;
@@ -178,13 +182,14 @@ export function cleanPayload<T extends Record<string, any>>(
 /**
  * Removes undefined properties and empty File objects from an object\
  * Useful before JSON.stringify or sending data to API
+ * @deprecated
  */
 export function removeUndefined<T extends Record<string, any>>(
   obj: T,
 ): Partial<T> {
   return Object.entries(obj).reduce((acc, [key, value]) => {
     // Skip undefined values
-    if (value === undefined) {
+    if ([undefined, null, ""].includes(value)) {
       return acc;
     }
 
@@ -201,4 +206,72 @@ export function removeUndefined<T extends Record<string, any>>(
     // acc[key] = value;
     return acc;
   }, {} as Partial<T>);
+}
+
+type QueryValue = string | number | boolean | undefined;
+/**
+ * A clean query builder for filters.
+ * * only defined filters
+ * * booleans preserved (false must not be dropped)
+ * * numbers preserved
+ * * keys mapped cleanly to query params
+ * @param params filter options. e,g
+ * ```js
+ * buildQueryParams({
+ *  business_id: "abc",
+ *  low_stock_only: false,
+ *  search: "milk",
+ *  page: 2,
+ * });
+ * ```
+ * @returns the built query e.g `?business_id=abc&low_stock_only=false&search=milk&page=2`
+ */
+export function buildQueryParams<T extends Record<string, QueryValue>>(
+  params?: T,
+) {
+  if (
+    !params ||
+    (typeof params === "object" && Object.keys(params).length === 0)
+  )
+    return "";
+
+  return (
+    "?" +
+    new URLSearchParams(
+      Object.entries(cleanPayload(params)).map(([k, v]) => [k, String(v)]),
+    ).toString()
+  );
+}
+
+export const productFilterParsers = {
+  category_id: (v: string | null) => v || undefined,
+  subcategory_id: (v: string | null) => v || undefined,
+  search: (v: string | null) => v || undefined,
+  order_by: (v: string | null) => v as keyof Product | undefined,
+
+  expired_only: (v: string | null) =>
+    v === "true" ? true : v === "false" ? false : undefined,
+
+  low_stock_only: (v: string | null) =>
+    v === "true" ? true : v === "false" ? false : undefined,
+
+  page: (v: string | null) => (v ? Number(v) : undefined),
+  page_size: (v: string | null) => (v ? Number(v) : undefined),
+  name: (v: string | null) => v as keyof Product | undefined,
+} satisfies Record<keyof ProductFilters, (v: string | null) => any>;
+
+export function parseSearchParams<T>(
+  searchParams: URLSearchParams,
+  parsers: Record<keyof T, (value: string | null) => any>,
+): Partial<T> {
+  const result: Partial<T> = {};
+
+  for (const key in parsers) {
+    const parsed = parsers[key](searchParams.get(key));
+    if (![undefined, null, ""].includes(parsed)) {
+      result[key] = parsed;
+    }
+  }
+
+  return result;
 }

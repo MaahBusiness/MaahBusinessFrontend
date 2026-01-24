@@ -17,22 +17,22 @@ const schema: { [key: string]: SideItem[] } = {
   navMain: [
     {
       title: "Dashboard",
-      url: "#",
+      url: "//",
       icon: Gauge,
     },
     {
       title: "Products",
-      url: "#",
+      url: "products",
       icon: Database,
       isActive: true,
       items: [
         {
           title: "All Products",
-          url: "#",
+          url: "products",
         },
         {
           title: "Categories",
-          url: "categories",
+          url: "products/categories",
         },
       ],
     },

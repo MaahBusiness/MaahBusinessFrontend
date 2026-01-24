@@ -1,61 +1,34 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarImage, BoringFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Field, FieldError, FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useAuth } from "@/contexts/auth-context";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Command,
-  CommandInput,
-  CommandList,
-  CommandEmpty,
-  CommandGroup,
-  CommandItem,
-} from "@/components/ui/command";
-import { Check, ChevronDown } from "lucide-react";
 import {
   Form,
   Link,
-  redirect,
   useNavigate,
   useNavigation,
   useSearchParams,
 } from "react-router";
-import { useEffect, useState } from "react";
-import type {
-  OrganisationMember,
-  OrganisationCore,
-  Role,
-  ServerActionState,
-} from "types";
+import type { OrganisationMember, Role, ServerActionState } from "types";
 import { capitalizeFirstChar, genericErrorState } from "utils";
-import { cn } from "@/lib/utils";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Item } from "@/components/ui/item";
 import { toast } from "sonner";
-import type { Route } from ".react-router/types/app/routes/dashboard/organisations/+types/add-team";
 import { getSession } from "@/lib/session.server";
 import { Spinner } from "@/components/ui/spinner";
 import { organisationKeys, organisationsApi } from "@/lib/api/organisation";
 import RoleSelector from "@/components/role-selector";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useEffect } from "react";
+import type { Route } from ".react-router/types/app/routes/dashboard/organisations/+types/add-team";
+import { roles } from "@/routes/dashboard/team/data";
+import { Badge } from "@/components/ui/badge";
 
 export async function action({ request }: Route.ActionArgs): Promise<
   ServerActionState & {
@@ -72,8 +45,9 @@ export async function action({ request }: Route.ActionArgs): Promise<
   const errors: Record<string, string> = {};
 
   if (!email) errors.email = "Please enter your email address.";
-  if (!role) errors.desc = "Please provide a role for the new member.";
+  if (!role) errors.role = "Please provide a role for the new member.";
 
+  console.log("Adding...");
   if (Object.keys(errors).length > 0) return { success: false, errors };
 
   if (session?.accessToken)
@@ -111,6 +85,20 @@ export default function AddTeam({ actionData }: Route.ComponentProps) {
     enabled: !!accessToken, // Only run if token exists
   });
 
+  // Show toasts based on action results
+  useEffect(() => {
+    if (actionData?.message) {
+      if (!actionData.success) toast.error(actionData.message);
+      else toast.success(actionData.message);
+    }
+
+    if (actionData?.data) {
+      // After creating/updating - refetch the list
+      toast.success("New member has been created successfully.");
+      queryClient.invalidateQueries({ queryKey: organisationKeys.core(orgId) });
+    }
+  }, [actionData]);
+
   if (isLoading) return <LoadingUI />;
   if (!res?.success) toast.error(genericErrorState().message);
   if (!res?.data) throw navigate("organisations");
@@ -126,7 +114,7 @@ export default function AddTeam({ actionData }: Route.ComponentProps) {
         </div>{" "}
         <Tooltip>
           <TooltipTrigger asChild>
-            <Link to={"/dashboard/orgs/" + orgId}>
+            <Link to={"/dashboard/org/" + orgId}>
               <Button variant={"outline"}>Skip for now </Button>
             </Link>
           </TooltipTrigger>
@@ -144,7 +132,7 @@ export default function AddTeam({ actionData }: Route.ComponentProps) {
           <input type="hidden" name="id" value={orgId} />
           <FieldGroup className="gap-0 bg-card text-card-foreground flex flex-col rounded-xl border border-border py-2 shadow-sm">
             <Field className="flex-row gap-4 p-6">
-              <div className="">
+              <div className=" flex flex-col gap-1">
                 <Input
                   id="email"
                   type="email"
@@ -152,15 +140,14 @@ export default function AddTeam({ actionData }: Route.ComponentProps) {
                   placeholder="member@acme.com"
                   required
                 />
-                {/* <FieldError errors={[{ message: errors?.name }]} /> */}
+                <FieldError errors={[{ message: errors?.email }]} />
+                <FieldError errors={[{ message: errors?.role }]} />
               </div>
               <RoleSelector className="!w-auto" />
               <Button type="submit" disabled={isSubmitting} className="!w-auto">
                 {isSubmitting && <Spinner />}Add member
               </Button>
             </Field>
-            <FieldError errors={[{ message: errors?.email }]} />
-            <FieldError errors={[{ message: errors?.role }]} />
           </FieldGroup>
         </Form>
 
@@ -168,125 +155,53 @@ export default function AddTeam({ actionData }: Route.ComponentProps) {
           <h2 className="text-xl">Team Members</h2>
 
           <Card>
-            <CardContent>
-              {res.data.members?.map((m) => (
-                <div
-                  className="flex items-center justify-between space-x-4"
-                  id={m.id}
-                >
-                  <div className="flex items-center space-x-4">
-                    <Avatar className="size-10">
-                      <AvatarImage src={m?.user?.avatar_url} />
-                      <AvatarFallback name={m?.user?.name} />
-                    </Avatar>
+            <CardContent className="gap-2 flex flex-col">
+              {res.data.members?.map((m) => {
+                const role = roles.find((r) => r.id === m.role);
+                return (
+                  <div
+                    key={m.id}
+                    className="flex items-center justify-between space-x-4"
+                    id={m.id}
+                  >
+                    <div className="flex items-center space-x-4">
+                      <Avatar className="size-6">
+                        <AvatarImage src={m?.user?.avatar_url} />
+                        <BoringFallback name={m?.user?.name} />
+                      </Avatar>
 
-                    <div>
-                      <p className="text-sm font-medium leading-none">
-                        {m.user?.name}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {m.user?.email}
-                      </p>
+                      <div className="text-sm flex items-center gap-2">
+                        <span className="max-w-50 truncate">
+                          {m.user?.name}
+                        </span>
+                        {m.user?.id === user?.id && (
+                          <Badge
+                            variant={"outline"}
+                            className="text-muted-foreground text-xxs bg-muted"
+                          >
+                            You{" "}
+                          </Badge>
+                        )}
+                        <span className="max-w-50 truncate text-muted-foreground">
+                          {m.user?.email}
+                        </span>
+                      </div>
                     </div>
+                    <Button size={"sm"} variant={"outline"} title={role?.desc}>
+                      {capitalizeFirstChar(role?.label!)}
+                    </Button>
                   </div>
-                  <RoleSelector value={m.role} />
-                </div>
-              ))}
+                );
+              })}
             </CardContent>
           </Card>
         </div>
 
-        <Card>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="grid gap-6">
-                <div className="flex items-center justify-between space-x-4">
-                  <div className="flex items-center space-x-4">
-                    <Avatar>
-                      <AvatarImage src="/avatars/03.png" />
-                      <AvatarFallback>OM</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="text-sm font-medium leading-none">
-                        Olivia Martin
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        m@example.com
-                      </p>
-                    </div>
-                  </div>
-                  <Select defaultValue="edit">
-                    <SelectTrigger className="ml-auto w-[110px]">
-                      <SelectValue placeholder="Select" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="edit">Can edit</SelectItem>
-                      <SelectItem value="view">Can view</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex items-center justify-between space-x-4">
-                  <div className="flex items-center space-x-4">
-                    <Avatar>
-                      <AvatarImage src="/avatars/05.png" />
-                      <AvatarFallback>IN</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="text-sm font-medium leading-none">
-                        Isabella Nguyen
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        b@example.com
-                      </p>
-                    </div>
-                  </div>
-                  <Select defaultValue="view">
-                    <SelectTrigger className="ml-auto w-[110px]">
-                      <SelectValue placeholder="Select" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="edit">Can edit</SelectItem>
-                      <SelectItem value="view">Can view</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex items-center justify-between space-x-4">
-                  <div className="flex items-center space-x-4">
-                    <Avatar>
-                      <AvatarImage src="/avatars/01.png" />
-                      <AvatarFallback />
-                    </Avatar>
-                    <div>
-                      <p className="text-sm font-medium leading-none">
-                        Sofia Davis
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        p@example.com
-                      </p>
-                    </div>
-                  </div>
-                  <Select defaultValue="view">
-                    <SelectTrigger className="ml-auto w-[110px]">
-                      <SelectValue placeholder="Select" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="edit">Can edit</SelectItem>
-                      <SelectItem value="view">Can view</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Field className="grid gap-4 sm:grid-cols-2">
-          <Button variant={"outline"}>Skip </Button>
-          <Button type="submit" disabled={false}>
-            {/* {isSubmitting && <Spinner />} */}
-            Create organisation
-          </Button>
-        </Field>
+        <div className="flex w-full items-center justify-end">
+          <Link to={"/dashboard/org/" + orgId}>
+            <Button>Continue to dashboard</Button>
+          </Link>
+        </div>
       </div>
     </div>
   );
@@ -297,16 +212,13 @@ function LoadingUI() {
     <div className="w-full min-h-full flex flex-col gap-8 items-stretch max-w-3xl lg:px-6 px-4 mx-auto pt-12">
       <div className="w-full">
         <h1 className="text-2xl font-medium">Now let's add your team</h1>
-        <h2 className="text-muted-foreground text-sm font-medium">
-          Get everyone set up so you can start working together.{" "}
-        </h2>
       </div>
 
       <div className="flex flex-col gap-4">
         <div className="flex flex-1 flex-col gap-4">
           <div className="flex flex-col gap-12 ">
             {[1, 2].map(() => (
-              <Skeleton className="bg-muted items-center gap-3 h-20 hover:bg-accent border-border animate-pulse"></Skeleton>
+              <Skeleton className="h-20 w-full"></Skeleton>
             ))}
           </div>
         </div>

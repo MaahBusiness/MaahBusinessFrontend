@@ -160,6 +160,45 @@ export interface Subcategory {
   updated_at: string;
 }
 
+interface Product {
+  id: string;
+  business_id: string;
+  name: string;
+  description?: string;
+  barcode?: string;
+  barcode_image_url?: string;
+  category_id: string;
+  subcategory_id?: string;
+  purchase_price: number;
+  unit_price: number;
+  current_price: number;
+  image_url?: string;
+  quantity: number;
+  min_quantity: number;
+  is_low_stock: boolean;
+  expiry_date?: string;
+  is_expired: boolean;
+  on_promotion: boolean;
+  promotion_start_date?: string;
+  promotion_end_date?: string;
+  promo_price?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+interface ProductFilters {
+  // business_id: string,
+  category_id?: string;
+  subcategory_id?: string;
+  name?: keyof Product;
+  low_stock_only?: boolean;
+  expired_only?: boolean;
+  search?: string;
+  page?: number;
+  page_size?: number;
+  order_by?: keyof Product;
+}
+
 // Future: Other modules (fetched separately)
 export interface OrganisationInventory {
   // Will be added later

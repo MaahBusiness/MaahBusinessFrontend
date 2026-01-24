@@ -1,4 +1,4 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, BoringFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -197,7 +197,7 @@ export function CreateOrgForm({ ...props }: React.ComponentProps<typeof Card>) {
                 <div className="flex items-center space-x-4">
                   <Avatar className="size-10">
                     <AvatarImage src={user?.avatar_url} />
-                    <AvatarFallback name={user?.name} />
+                    <BoringFallback name={user?.name} />
                   </Avatar>
 
                   <div>

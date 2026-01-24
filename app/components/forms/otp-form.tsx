@@ -65,7 +65,7 @@ export function OTPForm({ className, login, ...props }: OTPFormProps) {
         intent: "resend-otp",
         otpSession: JSON.stringify(actionData?.otpSession),
       },
-      { method: "POST" }
+      { method: "POST" },
     );
   };
 

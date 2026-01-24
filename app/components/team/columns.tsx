@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 
 import type { OrganisationMember } from "types";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, BoringFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { DataTableRowActions } from "@/components/team/data-table-row-actions";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
@@ -45,7 +45,7 @@ export const columns = (user_id: string): ColumnDef<OrganisationMember>[] => [
 
           <Avatar className="size-6">
             <AvatarImage src={user?.avatar_url} />
-            <AvatarFallback name={user?.name} />
+            <BoringFallback name={user?.name} />
           </Avatar>
         </div>
       );
@@ -72,7 +72,7 @@ export const columns = (user_id: string): ColumnDef<OrganisationMember>[] => [
     id: "name",
     accessorKey: "user.name",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Display name" />
+      <DataTableColumnHeader column={column} title="Name" />
     ),
     cell: ({ row }) => {
       const isYou = row.original.user?.id === user_id;
@@ -109,7 +109,7 @@ export const columns = (user_id: string): ColumnDef<OrganisationMember>[] => [
       <DataTableColumnHeader column={column} title="Role" />
     ),
     cell: ({ row }) => {
-      const role = roles.find((r) => r.value === row.original.role);
+      const role = roles.find((r) => r.id === row.original.role);
 
       return (
         <div className="flex gap-2">

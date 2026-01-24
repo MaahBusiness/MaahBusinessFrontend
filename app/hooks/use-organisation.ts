@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { toast } from "sonner";
 import { organisationKeys, organisationsApi } from "@/lib/api/organisation";
 import { useEffect } from "react";
+import type { ProductFilters } from "types";
 
 export function useOrganisation() {
   const { id: orgId } = useParams<{ id: string }>();
@@ -44,16 +45,20 @@ export function useOrganisation() {
     // staleTime: 2 * 60 * 1000, // 2 minutes (more dynamic data)
   });
 
-  // Fetch members
-  const customersQuery = useQuery({
-    queryKey: organisationKeys.customers(orgId),
-    queryFn: async () => {
-      if (!accessToken) throw rdr;
-      return await organisationsApi.getMembers(accessToken, orgId);
-    },
-    enabled: !!accessToken && !!coreQuery.data,
-    // staleTime: 2 * 60 * 1000, // 2 minutes (more dynamic data)
-  });
+  const productsQuery = (filters?: ProductFilters) =>
+    useQuery({
+      queryKey: organisationKeys.prodlist(orgId, filters),
+      queryFn: async () => {
+        if (!accessToken) throw rdr;
+        return await organisationsApi.getFilteredProducts(
+          accessToken,
+          orgId,
+          filters,
+        );
+      },
+      enabled: !!accessToken && !!coreQuery.data,
+      // staleTime: 2 * 60 * 1000, // 2 minutes (more dynamic data)
+    });
 
   // Update organisation mutation
   const updateOrganisation = useMutation({
@@ -161,10 +166,12 @@ export function useOrganisation() {
     // Data
     organisation: coreQuery.data,
     members: membersQuery.data,
-    /**Special usage: User relative to current organisation */
-    businessMember: membersQuery.data?.data?.find(
+    /**Special usage: User relative to current organisation     */
+    businessMember: coreQuery.data?.data?.members?.find(
       (m) => m.user?.id === user?.id,
     ),
+
+    fetchProducts: productsQuery,
 
     // Loading states
     isLoading: coreQuery.isLoading,

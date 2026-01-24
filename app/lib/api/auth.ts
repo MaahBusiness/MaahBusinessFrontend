@@ -44,6 +44,7 @@ export async function signUpWithEmail(formData: FormData) {
   const name = formData.get("name") as string | undefined;
   const email = formData.get("email") as string | undefined;
   const password = formData.get("password") as string | undefined;
+  const redirectTo = formData.get("redirectTo") as string | undefined;
 
   const errors: Record<string, string> = {};
 
@@ -125,6 +126,7 @@ export async function signUpWithEmail(formData: FormData) {
           email: email!,
           otpExpiresAt,
           resendCount: 0,
+          redirectTo,
         },
       },
       { status: res.status },
@@ -437,6 +439,7 @@ export async function getGoogleAuthUrl() {
 export async function signInWithEmail(formData: FormData) {
   const email = formData.get("email") as string | undefined;
   const password = formData.get("password") as string | undefined;
+  const redirectTo = formData.get("redirectTo") as string | undefined;
 
   const errors: Record<string, string> = {};
 
@@ -519,6 +522,7 @@ export async function signInWithEmail(formData: FormData) {
         email: email!,
         otpExpiresAt,
         resendCount: 0,
+        redirectTo,
       },
     });
   } catch (err) {

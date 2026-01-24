@@ -1,9 +1,7 @@
 import type { Route } from ".react-router/types/app/routes/dashboard/team/+types";
 import { columns } from "@/components/team/columns";
-import { DataTableToolbar } from "@/components/team/data-table-toolbar";
 import { DataTable } from "@/components/ui/data-table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TableCell, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/contexts/auth-context";
 import { useOrganisation } from "@/hooks/use-organisation";
 import { organisationKeys, organisationsApi } from "@/lib/api/organisation";
@@ -83,7 +81,7 @@ export async function action({ request, params }: Route.ActionArgs): Promise<
   }
 }
 
-export default function TeamPage({ actionData }: Route.ComponentProps) {
+export default function CustomersPage({ actionData }: Route.ComponentProps) {
   const { user } = useAuth(); // Get token from context
   const { members: res, isLoadingMembers } = useOrganisation();
   const queryClient = useQueryClient();
@@ -108,45 +106,27 @@ export default function TeamPage({ actionData }: Route.ComponentProps) {
   }, [actionData]);
 
   return (
-    <div className="w-full min-h-full flex flex-col gap-8 items-stretch max-w-[1200px] lg:px-6 px-4 mx-auto py-12">
-      <div className="w-full flex items-center gap-2">
-        <h2 className="text-lg tracking-tight">Team</h2>
+    <div className="w-full min-h-full flex flex-col gap-8 items-stretch max-w-[1200px] lg:px-6 px-4 mx-auto pt-12">
+      <div className="w-full">
+        <h2 className="text-3xl font-bold tracking-tight">Team</h2>
       </div>
 
       {(isLoadingMembers || !res?.success) && (
-        <div className="">
+        <div className="flex w-full flex-col gap-2 p-4 rounded-md border border-border">
           {Array.from({ length: 10 }).map((_, index) => (
-            <TableRow key={index}>
-              {Array.from({ length: 5 }).map((_, colIndex) => (
-                <TableCell key={colIndex}>
-                  <Skeleton />
-                </TableCell>
-              ))}
-            </TableRow>
+            <div className="flex gap-4" key={index}>
+              <Skeleton className="size-6 shrink-0 rounded-full" />
+              <Skeleton className="h-4 flex-1" />
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-20" />
+            </div>
           ))}
         </div>
-
-        // <div className="flex w-full flex-col gap-2 p-4 rounded-md border border-border">
-        //   {Array.from({ length: 10 }).map((_, index) => (
-        //     <div className="flex gap-4" key={index}>
-        //       <Skeleton className="size-6 shrink-0 rounded-full" />
-        //       <Skeleton className="h-4 flex-1" />
-        //       <Skeleton className="h-4 w-24" />
-        //       <Skeleton className="h-4 w-20" />
-        //     </div>
-        //   ))}
-        // </div>
       )}
 
       {/* {!res?.data?.res && <div>No Team Members</div>} */}
 
-      {res?.data && (
-        <DataTable
-          data={res?.data || []}
-          columns={cols}
-          DataTableToolbar={DataTableToolbar}
-        />
-      )}
+      {res?.data && <DataTable data={res?.data || []} columns={cols} />}
     </div>
   );
 }

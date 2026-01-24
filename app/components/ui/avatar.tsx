@@ -3,6 +3,7 @@ import * as AvatarPrimitive from "@radix-ui/react-avatar";
 import * as BAV from "boring-avatars";
 
 import { cn } from "@/lib/utils";
+import type { AvatarProps } from "boring-avatars/dist/components/types";
 
 function Avatar({
   className,
@@ -35,28 +36,51 @@ function AvatarImage({
 
 function AvatarFallback({
   className,
-  name,
   ...props
-}: React.ComponentProps<typeof AvatarPrimitive.Fallback> & { name?: string }) {
+}: React.ComponentProps<typeof AvatarPrimitive.Fallback>) {
+  return (
+    <AvatarPrimitive.Fallback
+      data-slot="avatar-fallback"
+      className={cn(
+        "bg-muted flex size-full items-center justify-center rounded-full",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+function BoringFallback({
+  className,
+  variant,
+  colors,
+  name,
+  title,
+  size,
+  square,
+  ...props
+}: Partial<AvatarProps> & {
+  variant?:
+    | "pixel"
+    | "bauhaus"
+    | "ring"
+    | "beam"
+    | "sunset"
+    | "marble"
+    | "geometric"
+    | "abstract";
+}) {
   const Boring = BAV.default;
 
   return (
-    // <AvatarPrimitive.Fallback
-    //   data-slot="avatar-fallback"
-    //   className={cn(
-    //     "bg-muted flex size-full items-center justify-center rounded-full",
-    //     className
-    //   )}
-    //   {...props}
-    // />
     <Boring
       name={name}
+      {...{ variant, colors, title, size, square, ...props }}
       className={cn(
-        "bg-muted flex size-full items-center justify-center rounded-full",
+        "bg-muted flex size-full items-center justify-center",
         className,
       )}
     />
   );
 }
 
-export { Avatar, AvatarImage, AvatarFallback };
+export { Avatar, AvatarImage, AvatarFallback, BoringFallback };

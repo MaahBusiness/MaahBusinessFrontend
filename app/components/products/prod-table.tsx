@@ -23,13 +23,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import { DataTablePagination } from "./params-table-pagination";
-import type { DataTableToolbarProps, Pagination } from "types";
+import { DataTablePagination } from "./data-table-pagination";
+import type { DataTableToolbarProps } from "types";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
-  meta: Pagination;
   DataTableToolbar<TData>({
     table,
   }: DataTableToolbarProps<TData>): React.JSX.Element;
@@ -38,7 +37,6 @@ interface DataTableProps<TData, TValue> {
 export function DataTable<TData, TValue>({
   columns,
   data,
-  meta,
   DataTableToolbar,
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({});
@@ -148,7 +146,7 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-      <DataTablePagination table={table} meta={meta} />
+      <DataTablePagination table={table} />
     </div>
   );
 }

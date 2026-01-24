@@ -13,29 +13,11 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { roles } from "@/routes/dashboard/team/data";
 import { ChevronDown, Check } from "lucide-react";
 import { useState } from "react";
 import type { Role } from "types";
 import { capitalizeFirstChar } from "utils";
-
-const roles: {
-  id: Role;
-  label: string;
-  desc?: string;
-}[] = [
-  { id: "cashier", label: "Cashier", desc: "Can view and comment." },
-  {
-    id: "stock_keeper",
-    label: "Stock Keeper",
-    desc: "Can view, comment and edit.",
-  },
-  {
-    id: "manager",
-    label: "Manager",
-    desc: "Can view, comment and manage billing.",
-  },
-  //   { id: "owner", label: "Owner", desc: "Admin-level access to all resources." },
-];
 
 export default function RoleSelector({
   value,
@@ -73,7 +55,7 @@ export default function RoleSelector({
                   onSelect={() => {
                     (setRole(r), setOpen(false));
                   }}
-                  disabled={isOwner}
+                  disabled={isOwner || r.id == "owner"}
                   // value={r.id}
                   className={"teamaspace-y-1 px-4 py-2"}
                 >
@@ -89,15 +71,6 @@ export default function RoleSelector({
                   />
                 </CommandItem>
               ))}
-              <CommandItem
-                disabled={!isOwner}
-                className="teamaspace-y-1 flex flex-col items-start px-4 py-2"
-              >
-                <p>Owner</p>
-                <p className="text-sm text-muted-foreground">
-                  Admin-level access to all resources.
-                </p>
-              </CommandItem>
             </CommandGroup>
           </CommandList>
         </Command>

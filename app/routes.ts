@@ -38,10 +38,10 @@ export default [
     route("org/:id", "routes/dashboard/sidebar-layout.tsx", [
       index("routes/dashboard/org/dashboard.tsx"),
       route("team", "routes/dashboard/team/index.tsx"),
-      // route("products", "routes/dashboard/products/index.tsx"),
-      route("categories", "routes/dashboard/products/categories.tsx"),
+      route("products", "routes/dashboard/products/index.tsx"),
+      route("products/categories", "routes/dashboard/products/categories.tsx"),
       route(
-        "categories/:catId",
+        "products/categories/:catId",
         "routes/dashboard/products/single-category.tsx",
       ),
     ]),

@@ -1,5 +1,5 @@
 import { redirect } from "react-router";
-import type { BackendResponse, ServerActionState } from "types";
+import type { BackendResponse, Pagination, ServerActionState } from "types";
 import {
   cleanPayload,
   genericErrorState,
@@ -23,7 +23,7 @@ class ApiClient {
   async fetch<T>(
     endpoint: string,
     options: FetchOptions = {},
-  ): Promise<ServerActionState & { data?: T }> {
+  ): Promise<ServerActionState & { data?: T; meta?: Pagination }> {
     const { token, ...fetchOptions } = options;
 
     if (!token) {
@@ -65,10 +65,11 @@ class ApiClient {
       }
 
       const resData = result.data as T;
+      const resMeta = result.pagination as Pagination | undefined;
 
-      console.log("LOG::", endpoint, fetchOptions.method, resData);
+      console.log("LOG::", endpoint, fetchOptions.method, resData, resMeta);
 
-      return { success: true, data: resData };
+      return { success: true, data: resData, meta: resMeta };
     } catch (err) {
       console.log(
         "LOG::CATCH",
