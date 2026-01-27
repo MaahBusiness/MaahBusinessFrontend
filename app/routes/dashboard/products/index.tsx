@@ -1,35 +1,31 @@
 import type { Route } from ".react-router/types/app/routes/dashboard/products/+types";
-import { productCols } from "@/components/products/columns";
-import { DataTableToolbar } from "@/components/products/data-table-toolbar";
+import DataTableSkeleton from "@/components/data-table-skeleton";
+import { productCols } from "@/components/products/product-columns";
+import { ProductTableToolbar } from "@/components/products/product-table-toolbar";
 import { DataTable } from "@/components/ui/data-table";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useAuth } from "@/contexts/auth-context";
 import { useOrganisation } from "@/hooks/use-organisation";
 import { organisationKeys, organisationsApi } from "@/lib/api/organisation";
 import { getSession } from "@/lib/session.server";
-import { productData } from "@/routes/dashboard/products/data";
+import { RequestFailed } from "@/routes/404";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { redirect, useParams, useSearchParams } from "react-router";
-import { toast } from "sonner";
-import type {
-  OrganisationMember,
-  Product,
-  ProductFilters,
-  Role,
-  ServerActionState,
-} from "types";
 import {
-  buildQueryParams,
+  redirect,
+  useParams,
+  useSearchParams,
+  type SessionData,
+} from "react-router";
+import { toast } from "sonner";
+import type { Product, ProductFilters, ServerActionState } from "types";
+import {
   genericErrorState,
   parseSearchParams,
-  passwordRules,
   productFilterParsers,
 } from "utils";
 
 export async function action({ request, params }: Route.ActionArgs): Promise<
   ServerActionState & {
-    data?: OrganisationMember;
+    data?: Product;
   }
 > {
   const { id } = params;
@@ -38,49 +34,115 @@ export async function action({ request, params }: Route.ActionArgs): Promise<
   const formData = await request.formData();
   const session = await getSession(request);
 
+  return await handleProductActions({ formData, id, session });
+}
+
+export async function handleProductActions({
+  formData,
+  id,
+  session,
+}: {
+  session?: SessionData | null;
+  formData: FormData;
+  id: string;
+}) {
   const intent = formData.get("intent");
 
-  switch (intent) {
-    case "delete-user": {
-      const userId = formData.get("userId") as string | undefined;
+  const prodId = formData.get("id") as string | undefined;
 
-      if (session?.accessToken && userId)
-        return await organisationsApi.removeMember(
-          session.accessToken,
-          id,
-          userId,
-        );
+  const name = formData.get("name") as string | undefined;
+  const desc = formData.get("desc") as string | undefined;
+  const code = formData.get("code") as string | undefined;
+  const cat = formData.get("cat") as string | undefined;
+  const subcat = formData.get("subcat") as string | undefined;
+  const _purchase = formData.get("purchase") as string | undefined;
+  const _unit = formData.get("unit") as string | undefined;
+  const _qty = formData.get("qty") as string | undefined;
+  const _min = formData.get("min") as string | undefined;
+  const exp = formData.get("exp") as string | undefined;
+  const onPromo = formData.get("on-promo") as string | undefined;
+  const promoStart = formData.get("promo-start") as string | undefined;
+  const promoEnd = formData.get("promo-end") as string | undefined;
+  const _promo = formData.get("promo") as string | undefined;
+
+  // Converting formatted amounts back to numbers
+  const purchase = parseInt(`${_purchase}`.replace(/\D/g, ""), 10) || 0;
+  const unit = parseInt(`${_unit}`.replace(/\D/g, ""), 10) || 0;
+  const promo = parseInt(`${_promo}`.replace(/\D/g, ""), 10) || 0;
+
+  // Converting string to actual numbers
+  const qty = Number(_qty);
+  const min = Number(_min);
+
+  // For comparing the promo dates
+  const isEarlier = (a?: string, b?: string) => {
+    if (!a || !b) return;
+    return new Date(a).getTime() < new Date(b).getTime();
+  };
+
+  const errors: Record<string, string> = {};
+
+  if (!name) errors.name = "Please provide an product name.";
+  if (!cat) errors.cat = "Please select a product category.";
+  if (purchase <= 0) errors.purchase = "Please provide the purchase price.";
+  if (unit <= 0) errors.unit = "Please provide the unit price.";
+  else if (unit <= purchase)
+    errors.unit = "Selling price must be greater than purchase price";
+  if (min > qty)
+    errors.min = "Low threshold should be lower than the initial quantity";
+
+  if (onPromo) {
+    if (promo <= 0) errors.promo = "Please provide the promotional price.";
+    else if (promo >= unit)
+      errors.promo = "Promotional price must be lower than selling price";
+    if (!isEarlier(promoStart, promoEnd)) {
+      errors.promo_end =
+        "The promotion end date should be after the start date.";
+    }
+  }
+
+  console.log(errors);
+  if (Object.keys(errors).length > 0) return { success: false, errors };
+  switch (intent) {
+    case "add-product": {
+      if (session?.accessToken)
+        return await organisationsApi.addProduct(session.accessToken, id, {
+          business_id: id,
+          name: name!,
+          category_id: cat!,
+          purchase_price: purchase,
+          unit_price: unit,
+
+          // Optional
+          barcode: code,
+          description: desc,
+          expiry_date: exp,
+          min_quantity: min > 0 ? min : undefined,
+          quantity: qty > 0 ? qty : undefined,
+          on_promotion: Boolean(onPromo) || false,
+          promo_price: promo > 0 ? promo : unit,
+          promotion_end_date: promoEnd,
+          promotion_start_date: promoStart,
+          subcategory_id: subcat,
+        });
     }
 
-    case "add-member": {
-      const role = formData.get("role") as Role | undefined;
-      const email = formData.get("email") as string | undefined;
-      const name = formData.get("name") as string | undefined;
-      const password = formData.get("password") as string | undefined;
-
-      const errors: Record<string, string> = {};
-
-      if (!email) errors.email = "Please provide an email address.";
-      if (!role) errors.role = "Please select a role.";
-      else if (role === "owner")
-        errors.role = "Please select a different role.";
-
-      if (password) {
-        const failedRule = passwordRules.find((rule) => !rule.test(password));
-        if (failedRule) errors.password = failedRule.message;
-      }
-
-      if (Object.keys(errors).length > 0) return { success: false, errors };
-
-      if (session?.accessToken)
-        return await organisationsApi.addMemberByEmail(
+    case "update-product": {
+      if (session?.accessToken && prodId)
+        return await organisationsApi.updateProduct(
           session.accessToken,
-          id,
+          prodId,
           {
-            name: name || email,
-            email: email!,
-            password,
-            role: role!,
+            name: name,
+            category_id: cat,
+            purchase_price: purchase,
+            unit_price: unit,
+            barcode: code,
+            description: desc,
+            expiry_date: exp,
+            min_quantity: min > 0 ? min : undefined,
+            quantity: qty > 0 ? qty : undefined,
+            subcategory_id: subcat,
           },
         );
     }
@@ -90,18 +152,15 @@ export async function action({ request, params }: Route.ActionArgs): Promise<
   }
 }
 
-export default function CustomersPage({ actionData }: Route.ComponentProps) {
-  const { user } = useAuth(); // Get token from context
+export default function ProductsPage({ actionData }: Route.ComponentProps) {
   const { organisation: orgRes, fetchProducts } = useOrganisation();
   const queryClient = useQueryClient();
   const { id } = useParams();
 
-  const [searchParams, setSearchParams] = useSearchParams();
-  // const [data, setData] = useState<Product[]>();
+  const [searchParams] = useSearchParams();
   const [filters, setFilters] = useState<ProductFilters>();
 
   const { data: res, isLoading } = fetchProducts(filters);
-
   const cols = productCols({ cats: orgRes?.data?.categories });
 
   // Show toasts based on action results
@@ -113,9 +172,9 @@ export default function CustomersPage({ actionData }: Route.ComponentProps) {
 
     if (actionData?.success) {
       if (id)
-        // Automatically refetch members
+        // Automatically refetch products
         queryClient.invalidateQueries({
-          queryKey: organisationKeys.members(id),
+          queryKey: organisationKeys.prodlist(id, filters),
         });
     }
   }, [actionData]);
@@ -128,35 +187,22 @@ export default function CustomersPage({ actionData }: Route.ComponentProps) {
     setFilters(_filters);
   }, [searchParams]);
 
+  if (isLoading) return <DataTableSkeleton />;
+  if (!res?.success) return <RequestFailed />;
+
   return (
     <div className="w-full min-h-full flex flex-col gap-8 items-stretch max-w-[1200px] lg:px-6 px-4 mx-auto py-12">
       <div className="w-full flex items-center gap-2">
         <h2 className="text-lg tracking-tight">Products</h2>
       </div>
 
-      {(isLoading || !res?.success) && (
-        <div className="flex w-full flex-col gap-2 p-4 rounded-md border border-border">
-          {Array.from({ length: 10 }).map((_, index) => (
-            <div className="flex gap-4" key={index}>
-              <Skeleton className="size-6 shrink-0 rounded-full" />
-              <Skeleton className="h-4 flex-1" />
-              <Skeleton className="h-4 w-24" />
-              <Skeleton className="h-4 w-20" />
-            </div>
-          ))}
-        </div>
-      )}
-
-      {!res?.data && <div>No products</div>}
-
-      {res?.data && res.meta && (
-        <DataTable
-          data={res.data}
-          meta={res.meta}
-          columns={cols}
-          DataTableToolbar={DataTableToolbar}
-        />
-      )}
+      <DataTable
+        data={res.data ?? []}
+        // data={productData}
+        meta={res.meta}
+        columns={cols}
+        DataTableToolbar={ProductTableToolbar}
+      />
     </div>
   );
 }

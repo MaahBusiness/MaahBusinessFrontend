@@ -1,3 +1,4 @@
+import type { Locale } from "date-fns";
 import type {
   OTPSessionData,
   Product,
@@ -171,6 +172,7 @@ export function cleanPayload<T extends Record<string, any>>(
   return Object.fromEntries<any>(
     Object.entries(obj).filter(([, value]) => {
       if ([undefined, null, ""].includes(value)) return false;
+      if (typeof value === "string" && value.trim() === "") return false;
       if (value instanceof File && !value.name && !value.size) return false;
       if (typeof value === "object" && Object.keys(value).length === 0)
         return false;
@@ -274,4 +276,82 @@ export function parseSearchParams<T>(
   }
 
   return result;
+}
+
+/**Formats amount into readable format, thousand with separators */
+export const formatAmount = (input: string): string => {
+  const numericinput = input.replace(/\D/g, ""); // Strip non-numeric characters
+  return numericinput.replace(/\B(?=(\d{3})+(?!\d))/g, ","); // Thousand separators
+};
+
+type FormatStyle = boolean | "verbose" | "date";
+
+interface FormatDateOptions {
+  extended?: FormatStyle;
+  minimal?: boolean;
+  locale?: Locale;
+}
+
+/**
+ * Returns a human-readable duration string for how much time is left until a date,
+ * or how much time has passed since.
+ *
+ * Examples:
+ *  - "2 days left"
+ *  - "Expired 5 hours ago"
+ *
+ * @param targetDate - A future or past date (iSO string or timestamp)
+ * @returns A formatted string representing the time difference
+ */
+export function getTimeUntilOrSince(
+  targetDate: string | number,
+  options: FormatDateOptions = {},
+): string {
+  const { minimal } = options;
+
+  const now = new Date();
+  const date = new Date(targetDate);
+  const diffinMs = date.getTime() - now.getTime();
+
+  const isFuture = diffinMs > 0;
+  const absDiff = Math.abs(diffinMs);
+  const seconds = Math.floor(absDiff / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  const weeks = Math.floor(days / 7);
+  const months = Math.floor(days / 30);
+
+  if (minimal) {
+    if (seconds < 60) return isFuture ? "a few secs" : "Just now";
+    if (minutes < 60) return isFuture ? `${minutes}m left` : `${minutes}m ago`;
+    if (hours < 24) return isFuture ? `${hours}h left` : `${hours}h ago`;
+
+    if (days < 30) return isFuture ? `${days}d left` : `${days}d ago`;
+    return isFuture ? `${months}m left` : `${months}m ago`;
+  }
+
+  if (seconds < 60) return isFuture ? "in a few seconds" : "Just now";
+  if (minutes < 60)
+    return isFuture
+      ? `${minutes} min${minutes !== 1 ? "s" : ""} left`
+      : `${minutes} min${minutes !== 1 ? "s" : ""} ago`;
+  if (hours < 24)
+    return isFuture
+      ? `${hours} hour${hours !== 1 ? "s" : ""} left`
+      : `${hours} hour${hours !== 1 ? "s" : ""} ago`;
+
+  if (days < 7)
+    return isFuture
+      ? `${days} day${days !== 1 ? "s" : ""} left`
+      : `${days} day${days !== 1 ? "s" : ""} ago`;
+
+  if (weeks < 4)
+    return isFuture
+      ? `${weeks} week${weeks !== 1 ? "s" : ""} left`
+      : `${weeks} week${weeks !== 1 ? "s" : ""} ago`;
+
+  return isFuture
+    ? `${months} month${months !== 1 ? "s" : ""} left`
+    : `${months} month${months !== 1 ? "s" : ""} ago`;
 }

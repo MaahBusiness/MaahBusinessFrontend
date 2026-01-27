@@ -23,13 +23,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import { DataTablePagination } from "./params-table-pagination";
+import { DataTablePagination } from "./data-table-pagination";
+import { TablePagination } from "./params-table-pagination";
 import type { DataTableToolbarProps, Pagination } from "types";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
-  meta: Pagination;
+  meta?: Pagination;
   DataTableToolbar<TData>({
     table,
   }: DataTableToolbarProps<TData>): React.JSX.Element;
@@ -42,8 +43,6 @@ export function DataTable<TData, TValue>({
   DataTableToolbar,
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({});
-  // const [columnVisibility, setColumnVisibility] =
-  //   React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     [],
   );
@@ -118,15 +117,16 @@ export function DataTable<TData, TValue>({
               </TableRow>
             ))}
           </TableHeader>
-          <TableBody>
+          <TableBody className="py-2">
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
+                  className="hover:bg-muted"
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="text-xs px-4">
+                    <TableCell key={cell.id} className="text-sm p-0 h-12">
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext(),
@@ -136,10 +136,10 @@ export function DataTable<TData, TValue>({
                 </TableRow>
               ))
             ) : (
-              <TableRow>
+              <TableRow className="hover:bg-muted">
                 <TableCell
                   colSpan={columns.length}
-                  className="h-24 text-center"
+                  className="h-32 text-center"
                 >
                   No results.
                 </TableCell>
@@ -148,7 +148,11 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-      <DataTablePagination table={table} meta={meta} />
+      {meta ? (
+        <TablePagination table={table} meta={meta} />
+      ) : (
+        <DataTablePagination table={table} />
+      )}
     </div>
   );
 }

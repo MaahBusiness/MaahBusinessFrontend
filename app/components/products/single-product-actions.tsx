@@ -1,13 +1,4 @@
-import { type Row } from "@tanstack/react-table";
-import {
-  Copy,
-  Edit,
-  Edit3,
-  MoreHorizontal,
-  MoreVertical,
-  Trash2,
-  Trash2Icon,
-} from "lucide-react";
+import { Copy, Edit, MoreVertical, Trash2, Trash2Icon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -19,9 +10,8 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { redirect, useLocation } from "react-router";
-import type { Category, Subcategory } from "types";
-import { useAuth } from "@/contexts/auth-context";
+import { redirect } from "react-router";
+import type { Product } from "types";
 import { useOrganisation } from "@/hooks/use-organisation";
 import {
   AlertDialogTitle,
@@ -32,30 +22,28 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogTrigger,
   AlertDialogMedia,
-  // AlertDialogMedia,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
 import { hasPermission } from "utils/permissions";
-import EditDialog from "@/components/categories/edit-dialog";
-import { Dialog } from "@radix-ui/react-dialog";
-import { DialogTrigger } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
-import { useClipboard } from "@/hooks/useClipboard";
+import { Drawer, DrawerTrigger } from "@/components/ui/drawer";
+import { EditProductDrawer } from "@/components/products/product-edit-row-drawer";
 import { toast } from "sonner";
+import { useClipboard } from "@/hooks/useClipboard";
 
-interface DataTableRowActionsProps<TData> {
-  row: Row<Category | Subcategory>;
+interface SingleProductActionsProps {
+  data: Product;
 }
 
-export function CatTableRowActions<TData>({
-  row,
-}: DataTableRowActionsProps<TData>) {
-  const { user } = useAuth();
-  const { pathname } = useLocation();
-  const { removeCategory, isRemovingCategory, businessMember } =
+export function SingleProductActions({ data }: SingleProductActionsProps) {
+  const { removeProduct, isRemovingProduct, businessMember } =
     useOrganisation();
+
+  if (!businessMember) {
+    redirect("/dashboard/organisations/");
+  }
 
   const clipboard = useClipboard({
     resetDelay: 3000,
@@ -63,33 +51,40 @@ export function CatTableRowActions<TData>({
     onError: () => toast.error("Copy was unsuccessful"),
   });
 
-  if (!user)
-    throw redirect(`/auth/signin?redirectTo=${encodeURIComponent(pathname)}`);
-  if (!businessMember) throw redirect("/dashboard/organisations/");
-
   const handleCopyRow = () => {
     if (clipboard.isCopying) return;
-    clipboard.copy(JSON.stringify(row.original));
+    clipboard.copy(JSON.stringify(data));
   };
 
-  const handleDeleteUser = () => {
-    removeCategory({ id: row.original.id, sub: "category_id" in row.original });
+  const handleDeleteProduct = () => {
+    removeProduct(data.id);
   };
 
   return (
-    <AlertDialog>
-      <Dialog>
+    <Drawer direction="right">
+      <AlertDialog>
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              size={"icon-sm"}
-              className="flex h-7 w-6 rounded-sm p-0 data-[state=open]:bg-muted mr-4"
-            >
-              <MoreVertical className="size-3" />
-              <span className="sr-only">Open menu</span>
-            </Button>
-          </DropdownMenuTrigger>
+          <div className="flex items-center gap-2">
+            {hasPermission(businessMember?.role, "products:crud") && (
+              <DrawerTrigger asChild>
+                <Button size="sm" variant={"outline"}>
+                  <Edit className="size-3" />
+                  Update product
+                </Button>
+              </DrawerTrigger>
+            )}
+
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size={"icon-sm"}
+                className="flex w-7 rounded-sm data-[state=open]:bg-muted"
+              >
+                <MoreVertical />
+                <span className="sr-only">Open menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+          </div>
 
           {/* Dropdown Content */}
           <DropdownMenuContent align="end">
@@ -98,7 +93,7 @@ export function CatTableRowActions<TData>({
                 className="text-xs px-1.5 py-1"
                 onClick={handleCopyRow}
               >
-                Copy row
+                Copy product
                 <DropdownMenuShortcut>
                   <Copy className="size-3" />
                 </DropdownMenuShortcut>
@@ -108,23 +103,12 @@ export function CatTableRowActions<TData>({
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
-                  <DialogTrigger asChild>
-                    <DropdownMenuItem className="text-xs px-1.5 py-1">
-                      Edit row
-                      <DropdownMenuShortcut>
-                        <Edit className="size-3" />
-                      </DropdownMenuShortcut>
-                    </DropdownMenuItem>
-                  </DialogTrigger>
-                </DropdownMenuGroup>
-                <DropdownMenuSeparator />
-                <DropdownMenuGroup>
                   <AlertDialogTrigger asChild>
                     <DropdownMenuItem
                       className="text-xs px-1.5 py-1"
                       variant="destructive"
                     >
-                      Delete row
+                      Delete product
                       <DropdownMenuShortcut>
                         <Trash2 className="size-3 text-destructive" />
                       </DropdownMenuShortcut>
@@ -136,37 +120,36 @@ export function CatTableRowActions<TData>({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <EditDialog data={row.original} />
+        <EditProductDrawer data={data} />
 
         <AlertDialogContent size="sm">
           <AlertDialogHeader>
             <AlertDialogMedia className="bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive">
               <Trash2Icon />
             </AlertDialogMedia>
-            <AlertDialogTitle>Remove '{row.original.name}'?</AlertDialogTitle>
+            <AlertDialogTitle>Remove {data.name}?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently remove '{row.original.name}' from all
-              inventory controls.
+              This will permanently remove {data.name} from your products. Are
+              you sure you want to continue?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel variant="outline">Cancel</AlertDialogCancel>
-
             <AlertDialogAction
               variant="destructive"
-              disabled={isRemovingCategory}
+              disabled={isRemovingProduct}
               onClick={(e) => {
                 e.preventDefault();
-                handleDeleteUser();
+                handleDeleteProduct();
+                // return true;
               }}
-              // type="button"
             >
-              {isRemovingCategory && <Spinner className="size-4" />}
+              {isRemovingProduct && <Spinner />}
               Remove
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
-      </Dialog>
-    </AlertDialog>
+      </AlertDialog>
+    </Drawer>
   );
 }

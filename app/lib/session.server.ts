@@ -4,6 +4,7 @@ import type { BackendResponse, GenericResponse, SessionData } from "types";
 import { BASE_URL, REFRESH_TOKEN_URL } from "utils/endpoints";
 
 const REFRESH_THRESHOLD_MS = 2 * 60 * 1000; // 2 minutes
+let isRefreshing = false;
 
 // ------------------------------
 // Cookie configuration
@@ -64,11 +65,8 @@ async function refreshAccessToken(
     }
 
     console.log("token refresh success");
-    console.log(
-      newRefreshToken,
-      refreshToken,
-      newRefreshToken === refreshToken,
-    );
+    console.log({ newRefreshToken });
+
     return {
       accessToken,
       refreshToken: newRefreshToken,
@@ -148,9 +146,7 @@ export async function requireUserSession(request: Request) {
   const status = getTokenStatus(session.accessToken);
 
   // ✅ Token is healthy
-  if (status === "valid") {
-    return { session, headers: undefined };
-  }
+  if (status === "valid") return { session, headers: undefined };
 
   // 🔄 Token is near expiry OR expired → refresh
   const refreshed = await refreshAccessToken(session.refreshToken);

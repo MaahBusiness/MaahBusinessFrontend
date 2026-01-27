@@ -189,4 +189,12 @@
     --normal-border: rgb(96 165 250);
     --normal-text: rgb(219 234 254); /* blue-100 */
   }
+
+  .border,
+  .border-b,
+  .border-t,
+  .border-l,
+  .border-r {
+    border-color: var(--border);
+  }
 }

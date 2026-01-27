@@ -1,5 +1,5 @@
 import type { Route } from ".react-router/types/app/routes/dashboard/team/+types";
-import { columns } from "@/components/team/columns";
+import { columns } from "@/components/team/team-columns";
 import { DataTable } from "@/components/ui/data-table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/auth-context";

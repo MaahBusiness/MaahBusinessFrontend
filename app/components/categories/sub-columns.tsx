@@ -1,12 +1,15 @@
-import type { ColumnDef } from "@tanstack/react-table";
+import type { ColumnDef, RowData } from "@tanstack/react-table";
 
 import { Checkbox } from "@/components/ui/checkbox";
 
-import type { Subcategory } from "types";
-import { DataTableRowActions } from "@/components/categories/cat-table-row-actions";
+import type { Category, Subcategory } from "types";
+import { CatTableRowActions } from "@/components/categories/cat-table-row-actions";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router";
+import { CatTableContextMenu } from "@/components/categories/cat-table-context-menu";
 
-export const subCatCols: ColumnDef<Subcategory>[] = [
+export const subCatCols: ColumnDef<Category | Subcategory>[] = [
   {
     id: "select",
     header: ({ table }) => (
@@ -22,7 +25,7 @@ export const subCatCols: ColumnDef<Subcategory>[] = [
     ),
     cell: ({ row }) => {
       return (
-        <div className="flex flex-row items-center gap-2">
+        <div className="flex flex-row items-center gap-2 px-4">
           <Checkbox
             checked={row.getIsSelected()}
             onCheckedChange={(value) => row.toggleSelected(!!value)}
@@ -42,13 +45,17 @@ export const subCatCols: ColumnDef<Subcategory>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Name" />
     ),
-    cell: ({ row }) => {
+    cell: ({ cell }) => {
       return (
-        <div className="flex gap-2 items-center">
-          <span className="max-w-[500px] truncate ">
-            {row.getValue("name")}
-          </span>
-        </div>
+        <CatTableContextMenu
+          className="max-w-[500px] "
+          title={`${cell.getValue()}`}
+          {...{ cell }}
+        >
+          <Link to={`${cell.row.original.id}`} className="hover:underline">
+            <span className="truncate">{`${cell.getValue()}`}</span>
+          </Link>
+        </CatTableContextMenu>
       );
     },
     enableHiding: false,
@@ -56,21 +63,15 @@ export const subCatCols: ColumnDef<Subcategory>[] = [
   {
     id: "desc",
     accessorKey: "description",
-    header: "Description",
-    cell: ({ row }) => (
-      <div className="flex gap-2 items-center">
-        {row.getValue("desc") ? (
-          <span
-            title={row.getValue("desc")}
-            className="max-w-[600px] truncate "
-          >
-            {row.getValue("desc")}
-          </span>
-        ) : (
-          <span className="text-muted-foreground ">No description</span>
-        )}
-      </div>
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Description" />
     ),
+    cell: ({ cell }) => (
+      <CatTableContextMenu className="max-w-[500px] " {...{ cell }}>
+        <span className="truncate">{`${cell.getValue()}`}</span>
+      </CatTableContextMenu>
+    ),
+    enableSorting: false,
     enableHiding: false,
   },
   {
@@ -79,11 +80,12 @@ export const subCatCols: ColumnDef<Subcategory>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Updated" />
     ),
-    cell: ({ row }) => {
+    cell: ({ row, cell }) => {
       const date = row.getValue("updated") as string | undefined;
       if (date)
         return (
-          <span
+          <CatTableContextMenu
+            {...{ cell }}
             title={new Date(date).toLocaleString("en", {
               hour: "2-digit",
               minute: "2-digit",
@@ -92,19 +94,23 @@ export const subCatCols: ColumnDef<Subcategory>[] = [
               year: "numeric",
             })}
           >
-            {new Date(date).toLocaleDateString()}
-          </span>
+            {new Date(date).toLocaleDateString("en", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })}
+          </CatTableContextMenu>
         );
       else return null;
     },
-    meta: { hidden: true, sort: true },
+    meta: { sort: true },
   },
 
   {
     id: "actions",
     cell: ({ row }) => (
       <div className=" w-full flex items-center justify-end">
-        <DataTableRowActions row={row} />
+        <CatTableRowActions row={row} />
       </div>
     ),
   },

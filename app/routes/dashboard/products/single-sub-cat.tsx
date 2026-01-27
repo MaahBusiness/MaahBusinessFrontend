@@ -19,16 +19,14 @@ import type {
 import { parseSearchParams, productFilterParsers } from "utils";
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import type { Route } from ".react-router/types/app/routes/dashboard/products/+types/single-category";
 import { toast } from "sonner";
 import { useOrganisation } from "@/hooks/use-organisation";
-import { CatTableToolbar } from "@/components/categories/cat-table-toolbar";
-import { subCatCols } from "@/components/categories/sub-columns";
 import DataTableSkeleton from "@/components/data-table-skeleton";
 import { RequestFailed } from "@/routes/404";
 import { productCols } from "@/components/products/product-columns";
 import { ProductTableToolbar } from "@/components/products/product-table-toolbar";
 import { handleProductActions } from "@/routes/dashboard/products";
+import type { Route } from ".react-router/types/app/routes/dashboard/products/+types/single-sub-cat";
 import { SingleCatActions } from "@/components/categories/single-cat-action";
 
 export async function action({ request, params }: Route.ActionArgs): Promise<
@@ -94,7 +92,7 @@ export async function action({ request, params }: Route.ActionArgs): Promise<
 }
 
 export default function SingleCatPage({ actionData }: Route.ComponentProps) {
-  const { catId, id } = useParams();
+  const { catId, id, subId } = useParams();
   const { organisation: res, isLoading, fetchProducts } = useOrganisation();
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
@@ -105,12 +103,14 @@ export default function SingleCatPage({ actionData }: Route.ComponentProps) {
   if (!catId) throw redirect("categories");
 
   const cat = res?.data?.categories?.find((cat) => cat.id === catId);
-  const subs = cat?.subcategories;
+  const sub = cat?.subcategories?.find((cat) => cat.id === subId);
+
   const intent = navigation.formData?.get("intent");
 
   const { data: prodRes, isFetching } = fetchProducts({
     ...filters,
-    category_id: cat?.id,
+    // category_id: cat?.id,
+    subcategory_id: sub?.id,
   });
   const cols = productCols({ cats: res?.data?.categories });
 
@@ -140,16 +140,14 @@ export default function SingleCatPage({ actionData }: Route.ComponentProps) {
       searchParams,
       productFilterParsers,
     );
-    setFilters({ ..._filters, category_id: cat?.id });
+    setFilters({
+      ..._filters,
+      // category_id: cat?.id,
+      subcategory_id: sub?.id,
+    });
   }, [searchParams]);
 
-  if (isLoading)
-    return (
-      <div className="flex flex-col ">
-        <DataTableSkeleton classname="" rows={5} />
-        <DataTableSkeleton classname="" rows={5} />
-      </div>
-    );
+  if (isLoading) return <DataTableSkeleton />;
   if (!res?.success) return <RequestFailed />;
 
   return (
@@ -168,24 +166,17 @@ export default function SingleCatPage({ actionData }: Route.ComponentProps) {
             </h2>
           </Link>
           <ChevronRight className="text-muted-foreground size-4" />
-          <h2 className="text-lg tracking-tight">{cat?.name}</h2>
+          <Link to={`../products/categories/${cat?.id}`}>
+            <h2 className="text-lg tracking-tight text-muted-foreground">
+              {cat?.name}
+            </h2>
+          </Link>
+          <ChevronRight className="text-muted-foreground size-4" />
+          <h2 className="text-lg tracking-tight">{sub?.name}</h2>
 
           <div className="ml-auto flex items-center justify-end">
-            {cat && <SingleCatActions data={cat} />}
+            {sub && <SingleCatActions data={sub} />}
           </div>
-        </div>
-
-        <DataTable
-          data={subs || []}
-          columns={subCatCols}
-          meta={res.meta}
-          DataTableToolbar={CatTableToolbar}
-        />
-      </div>
-
-      <div className="w-full flex flex-col gap-8 items-stretch max-w-[1200px] lg:px-6 px-4 mx-auto py-12">
-        <div className="w-full flex items-center gap-2">
-          <h2 className="text-lg tracking-tight">{cat?.name}'s Products</h2>
         </div>
 
         <DataTable

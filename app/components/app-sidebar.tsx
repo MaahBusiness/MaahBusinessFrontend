@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Database, Gauge, SidebarIcon, Store, Users } from "lucide-react";
+import { Database, Gauge, SidebarIcon, Users } from "lucide-react";
 
 import { NavMain } from "@/components/nav-main";
 import {
@@ -17,7 +17,7 @@ const schema: { [key: string]: SideItem[] } = {
   navMain: [
     {
       title: "Dashboard",
-      url: "//",
+      url: "",
       icon: Gauge,
     },
     {

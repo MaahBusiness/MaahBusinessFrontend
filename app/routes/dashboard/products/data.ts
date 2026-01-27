@@ -1,5 +1,5 @@
 import { Check, X } from "lucide-react";
-import type { Category, Product } from "types";
+import type { Product } from "types";
 
 export const productData: Product[] = [
   {
@@ -386,8 +386,8 @@ export const productData: Product[] = [
       "Wax warmer for creating a soothing atmosphere with fragrances.",
     barcode: "",
     barcode_image_url: "http://dummyimage.com/108x100.png/dddddd/000000",
-    category_id: "25be833c-5849-41f8-89da-97b01a153415",
-    subcategory_id: "880124a1-7e37-4f94-bade-a3200d555ccd",
+    category_id: "b382232f-ff1c-4bd6-ae31-e7b37eff6a32",
+    subcategory_id: "9506e31c-2d8b-493e-96bf-a7dca3b8dec7",
     purchase_price: 2144.36,
     unit_price: 2634.91,
     current_price: 2644.77,
@@ -525,7 +525,27 @@ export const searchFilters = [
   { value: "barcode", label: "Barcode" },
   { value: "unit", label: "Unit Price" },
 ];
+
 export const filters = [
-  { label: "Low on stock?", value: "low_stock_only" },
-  { label: "Expired?", value: "expired_only" },
+  { label: "Low on stock?", value: "true", key: "low_stock_only" },
+  { label: "Expired?", value: "true", key: "expired_only" },
+];
+
+export const visibles = [
+  { value: "id", label: "ID" },
+  { value: "name", label: "Name" },
+  { value: "desc", label: "Description" },
+  { value: "barcode", label: "Barcode" },
+  { value: "cat", label: "Category" },
+  { value: "sub", label: "Subcategory" },
+  { value: "purchase", label: "Purchase Price" },
+  { value: "unit", label: "Unit Price" },
+  { value: "current", label: "Current Price" },
+  { value: "stock", label: "QTY in Stock" },
+  { value: "expiry", label: "Expiry Date" },
+  { value: "promo-price", label: "Promo Price" },
+  { value: "promo-start", label: "Promo Start Date" },
+  { value: "promo-end", label: "Promo End Date" },
+  { value: "updated", label: "Date Updated" },
+  { value: "subs", label: "Subcategories" },
 ];

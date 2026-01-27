@@ -1,11 +1,10 @@
-import type { Table } from "@tanstack/react-table";
 import { Check, ChevronDownIcon, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
 import { DataTableFacetedFilter } from "../ui/data-table-faceted-filter";
 import { DataTableViewOptions } from "@/components/ui/data-table-view-options";
-import { roles, rolesMini, statuses } from "@/routes/dashboard/team/data";
+import { rolesMini, statuses, visibles } from "@/routes/dashboard/team/data";
 import {
   InputGroup,
   InputGroupInput,
@@ -26,7 +25,7 @@ import { hasPermission } from "utils/permissions";
 import { useOrganisation } from "@/hooks/use-organisation";
 import type { DataTableToolbarProps } from "types";
 
-export function DataTableToolbar<TData>({
+export function TeamTableToolbar<TData>({
   table,
 }: DataTableToolbarProps<TData>) {
   const isFiltered = table.getState().columnFilters.length > 0;
@@ -38,14 +37,6 @@ export function DataTableToolbar<TData>({
   return (
     <div className="flex items-center justify-between">
       <div className="flex flex-1 items-center space-x-2">
-        {/* <Input
-          placeholder="Filter tasks..."
-          value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
-            table.getColumn("name")?.setFilterValue(event.target.value)
-          }
-          className="h-8 w-[150px] lg:w-[250px]"
-        /> */}
         <InputGroup className="h-8 w-[200px] lg:w-[250px]">
           <InputGroupInput
             placeholder="Search team..."
@@ -107,7 +98,7 @@ export function DataTableToolbar<TData>({
         )}
       </div>
       <div className="flex items-center space-x-2">
-        <DataTableViewOptions table={table} />
+        <DataTableViewOptions table={table} options={visibles} />
         {hasPermission(businessMember?.role, "manage:members") && (
           <AddNewDialog />
         )}

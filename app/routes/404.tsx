@@ -1,33 +1,64 @@
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
+import {
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+  EmptyDescription,
+  EmptyContent,
+} from "@/components/ui/empty";
+import { CircleSlash, ChevronRight, RefreshCcwIcon } from "lucide-react";
+import { genericErrorState } from "utils";
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="max-w-2xl w-full text-center space-y-4">
-        <div className="relative">
-          <h1 className="text-8xl font-bold leading-none select-none">404</h1>
-        </div>
-
-        {/* Content */}
-        <div className="space-y-2">
-          <p className="text-muted-foreground text-sm max-w-md mx-auto">
-            The page you're looking for doesn't exist or has been moved to a new
-            location.
-          </p>
-        </div>
-
-        {/* Actions */}
-        <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
-          <Button asChild>
-            <Link to="/dashboard"> Dashboard </Link>
+    <Empty className="p-0 h-screen">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <CircleSlash />
+        </EmptyMedia>
+        <EmptyTitle className="text-4xl">404</EmptyTitle>
+        <EmptyDescription className="max-w-xs text-pretty">
+          The page you're looking for doesn't exist or has been moved to a new
+          location.
+        </EmptyDescription>
+      </EmptyHeader>
+      <EmptyContent>
+        <Link to="/dashboard">
+          <Button>
+            <ChevronRight />
+            Go to dashboard
           </Button>
-        </div>
+        </Link>
+      </EmptyContent>
+    </Empty>
+  );
+}
 
-        {/* Decorative elements */}
-        <div className="absolute top-1/4 left-10 w-20 h-20 rounded-full bg-primary/5 blur-2xl -z-10" />
-        <div className="absolute bottom-1/4 right-10 w-32 h-32 rounded-full bg-primary/5 blur-3xl -z-10" />
-      </div>
-    </div>
+export function RequestFailed() {
+  const navigate = useNavigate();
+  return (
+    <Empty className="p-0">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <CircleSlash />
+        </EmptyMedia>
+        <EmptyTitle>Something went wrong</EmptyTitle>
+        <EmptyDescription className="max-w-xs text-pretty">
+          {genericErrorState().message}
+        </EmptyDescription>
+      </EmptyHeader>
+      <EmptyContent>
+        <Button
+          onClick={
+            () => navigate(0) // hard refresh current route
+          }
+        >
+          <RefreshCcwIcon />
+          Try again
+        </Button>
+      </EmptyContent>
+    </Empty>
   );
 }

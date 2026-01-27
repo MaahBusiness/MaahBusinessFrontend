@@ -4,23 +4,16 @@ import { Checkbox } from "@/components/ui/checkbox";
 
 import type { Category, Product, Subcategory } from "types";
 import { Avatar, AvatarImage, BoringFallback } from "@/components/ui/avatar";
-import { DataTableColumnHeader } from "@/components/ui/param-table-column-header";
+import { DataTableColumnHeader } from "@/components/ui/params-table-column-header";
 import { Check, TrendingDown, X } from "lucide-react";
-import { expiry } from "@/routes/dashboard/products/data";
-
-declare module "@tanstack/react-table" {
-  interface ColumnMeta<TData extends RowData, TValue> {
-    hidden?: boolean;
-    sort?: boolean;
-  }
-}
+import { ProductTableContextMenu } from "@/components/products/product-table-context-menu";
+import { ProductTableRowActions } from "@/components/products/product-table-row-actions";
+import { Link } from "react-router";
 
 export const productCols = ({
   cats,
-  subs,
 }: {
   cats?: Category[];
-  subs?: Subcategory[];
 }): ColumnDef<Product>[] => [
   {
     id: "select",
@@ -38,7 +31,7 @@ export const productCols = ({
     cell: ({ row }) => {
       const entry = row.original;
       return (
-        <div className="flex flex-row items-center gap-2">
+        <div className="flex flex-row items-center gap-2 px-4">
           <Checkbox
             checked={row.getIsSelected()}
             onCheckedChange={(value) => row.toggleSelected(!!value)}
@@ -47,7 +40,7 @@ export const productCols = ({
           />
           <Avatar className="size-10 rounded-sm">
             <AvatarImage src={entry.image_url} />
-            <BoringFallback name={entry.id} square variant="bauhaus" />
+            <BoringFallback name={entry.id} square variant="marble" />
           </Avatar>
         </div>
       );
@@ -61,10 +54,11 @@ export const productCols = ({
     header: ({ column }) => (
       <DataTableColumnHeader accessorKey="id" column={column} title="ID" />
     ),
-    cell: ({ row }) => (
-      <div className="w-[80px] truncate">{row.getValue("id")}</div>
+    cell: ({ row, cell }) => (
+      <ProductTableContextMenu className="w-[80px]" {...{ cell }}>
+        <span className="truncate">{row.getValue("id")}</span>
+      </ProductTableContextMenu>
     ),
-
     enableSorting: false,
     meta: { hidden: true },
 
@@ -76,10 +70,16 @@ export const productCols = ({
     header: ({ column }) => (
       <DataTableColumnHeader accessorKey="name" column={column} title="Name" />
     ),
-    cell: ({ row }) => (
-      <div className="w-[200px] truncate" title={row.getValue("name")}>
-        {row.getValue("name")}
-      </div>
+    cell: ({ row, cell }) => (
+      <ProductTableContextMenu
+        className="w-[200px] truncate"
+        title={row.getValue("name")}
+        {...{ cell }}
+      >
+        <Link to={`../products/${row.original.id}`} className="hover:underline">
+          {row.getValue("name")}
+        </Link>
+      </ProductTableContextMenu>
     ),
     enableHiding: false,
   },
@@ -93,20 +93,19 @@ export const productCols = ({
         title="Description"
       />
     ),
-    cell: ({ row }) => (
-      <div className="flex gap-2 items-center">
-        {row.getValue("desc") ? (
+    cell: ({ row, cell }) =>
+      row.getValue("desc") ? (
+        <ProductTableContextMenu className="gap-2" {...{ cell }}>
           <span
             title={row.getValue("desc")}
             className="max-w-[400px] truncate "
           >
             {row.getValue("desc")}
           </span>
-        ) : (
-          <span className="text-muted-foreground ">No description</span>
-        )}
-      </div>
-    ),
+        </ProductTableContextMenu>
+      ) : (
+        <span className="text-muted-foreground ">No description</span>
+      ),
     enableSorting: false,
   },
   {
@@ -119,11 +118,13 @@ export const productCols = ({
         title="Barcode"
       />
     ),
-    cell: ({ row }) => (
-      <Avatar className="size-10 rounded-sm">
-        <AvatarImage src={row.original.barcode_image_url} />
-        <BoringFallback name={row.original.id} square variant="bauhaus" />
-      </Avatar>
+    cell: ({ row, cell }) => (
+      <ProductTableContextMenu {...{ cell }}>
+        <Avatar className="size-10 rounded-sm">
+          <AvatarImage src={row.original.barcode_image_url} />
+          <BoringFallback name={row.original.id} square variant="bauhaus" />
+        </Avatar>
+      </ProductTableContextMenu>
     ),
     enableSorting: false,
   },
@@ -137,10 +138,19 @@ export const productCols = ({
         title="Category"
       />
     ),
-    cell: ({ row }) => {
+    cell: ({ row, cell }) => {
       const id = row.getValue("cat");
       const cat = cats?.find((c) => c.id === id);
-      return cat?.name || id;
+      return (
+        <ProductTableContextMenu {...{ cell }}>
+          <Link
+            to={`../products/categories/${cat?.id}`}
+            className="hover:underline"
+          >
+            <span>{cat?.name || `${id}`}</span>
+          </Link>
+        </ProductTableContextMenu>
+      );
     },
     enableSorting: false,
   },
@@ -154,6 +164,22 @@ export const productCols = ({
         title="Subcategory"
       />
     ),
+    cell: ({ row, cell }) => {
+      const data = row.original;
+      const sub = cats
+        ?.find((c) => c.id === data.category_id)
+        ?.subcategories?.find((s) => s.id === data.subcategory_id);
+      return (
+        <ProductTableContextMenu {...{ cell }}>
+          <Link
+            to={`../product/categories/${data.category_id}/${data.subcategory_id}`}
+            className="hover:underline"
+          >
+            <span>{sub?.name || `${data.subcategory_id}`}</span>
+          </Link>
+        </ProductTableContextMenu>
+      );
+    },
     enableSorting: false,
   },
   {
@@ -167,14 +193,21 @@ export const productCols = ({
         title="Purchase Price"
       />
     ),
-    cell: ({ row }) => {
+    cell: ({ row, cell }) => {
       const amount = parseFloat(row.getValue("purchase"));
       const formatted = new Intl.NumberFormat("en-US", {
         style: "currency",
         currency: "USD",
       }).format(amount);
 
-      return <div className="text-right font-medium">{formatted}</div>;
+      return (
+        <ProductTableContextMenu
+          {...{ cell }}
+          className="text-right font-medium"
+        >
+          <span>{formatted}</span>
+        </ProductTableContextMenu>
+      );
     },
     meta: { hidden: true },
     enableSorting: false,
@@ -190,14 +223,21 @@ export const productCols = ({
         title="Unit Price"
       />
     ),
-    cell: ({ row }) => {
+    cell: ({ row, cell }) => {
       const amount = parseFloat(row.getValue("unit"));
       const formatted = new Intl.NumberFormat("en-US", {
         style: "currency",
         currency: "USD",
       }).format(amount);
 
-      return <div className="text-right font-medium">{formatted}</div>;
+      return (
+        <ProductTableContextMenu
+          {...{ cell }}
+          className="text-right font-medium"
+        >
+          <span>{formatted}</span>
+        </ProductTableContextMenu>
+      );
     },
   },
   {
@@ -211,14 +251,21 @@ export const productCols = ({
         title="Current Price"
       />
     ),
-    cell: ({ row }) => {
+    cell: ({ row, cell }) => {
       const amount = parseFloat(row.getValue("current"));
       const formatted = new Intl.NumberFormat("en-US", {
         style: "currency",
         currency: "USD",
       }).format(amount);
 
-      return <div className="text-right font-medium">{formatted}</div>;
+      return (
+        <ProductTableContextMenu
+          {...{ cell }}
+          className="justify-end font-medium"
+        >
+          {formatted}
+        </ProductTableContextMenu>
+      );
     },
     enableSorting: false,
     meta: { hidden: true },
@@ -233,16 +280,16 @@ export const productCols = ({
         title="QTY In Stock"
       />
     ),
-    cell: ({ row }) => {
+    cell: ({ row, cell }) => {
       const item = row.original;
 
       return (
-        <div className="flex gap-2 items-center justify-center">
+        <ProductTableContextMenu {...{ cell }}>
           <span className="max-w-[500px] truncate ">{item?.quantity}</span>
           {item.is_low_stock && (
             <TrendingDown className="h-3.5 w-3.5 text-destructive" />
           )}
-        </div>
+        </ProductTableContextMenu>
       );
     },
   },
@@ -257,67 +304,32 @@ export const productCols = ({
         title="Expiry Date"
       />
     ),
-    cell: ({ row }) => {
+    cell: ({ row, cell }) => {
       const item = row.original;
-      if (item.expiry_date)
-        return (
-          <span
-            title={new Date(item.expiry_date).toLocaleString("en", {
-              hour: "2-digit",
-              minute: "2-digit",
-              day: "2-digit",
-              month: "short",
-              year: "numeric",
-            })}
-          >
-            {item.is_expired ? (
-              <span className="text-destructive">Expired</span>
-            ) : (
-              new Date(item.expiry_date).toLocaleDateString()
-            )}
-          </span>
-        );
-      else return null;
+      return (
+        <ProductTableContextMenu
+          {...{ cell }}
+          title={new Date(item.expiry_date ?? "").toLocaleString("en", {
+            hour: "2-digit",
+            minute: "2-digit",
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          })}
+        >
+          {item.is_expired ? (
+            <span className="text-destructive">Expired</span>
+          ) : item.expiry_date ? (
+            new Date(item.expiry_date).toLocaleDateString()
+          ) : (
+            "---"
+          )}
+        </ProductTableContextMenu>
+      );
     },
     enableSorting: false,
-
-    // meta: { hidden: true },
   },
-  // {
-  //   id: "expired",
-  //   accessorKey: "is_expired",
-  //   header: ({ column }) => (
-  //     <DataTableColumnHeader
-  //       accessorKey="is_expired"
-  //       column={column}
-  //       className="text-right"
-  //       title="Expired?"
-  //     />
-  //   ),
-  //   cell: ({ row }) => {
-  //     const priority = expiry.find(
-  //       (priority) => Boolean(priority.value) == row.original.is_expired,
-  //     );
 
-  //     if (!priority) {
-  //       return null;
-  //     }
-
-  //     return (
-  //       <div className="flex items-center">
-  //         {priority.icon && (
-  //           <priority.icon className="mr-2 h-4 w-4 text-muted-foreground" />
-  //         )}
-  //         <span>
-  //           {priority.label} - {row.getValue("expiry")}
-  //         </span>
-  //       </div>
-  //     );
-  //   },
-  //   enableSorting: false,
-
-  //   meta: { hidden: true },
-  // },
   {
     id: "promotion",
     accessorKey: "on_promotion",
@@ -328,19 +340,17 @@ export const productCols = ({
         title="On Promotion?"
       />
     ),
-    cell: ({ row }) => {
+    cell: ({ row, cell }) => {
       const item = row.original;
-      if (item.expiry_date)
-        return (
-          <div className="flex items-center justify-center">
-            {item.is_expired ? (
-              <Check className="size-4 text-muted-foreground" />
-            ) : (
-              <X className="size-4 text-muted-foreground" />
-            )}
-          </div>
-        );
-      else return null;
+      return (
+        <ProductTableContextMenu {...{ cell }} className="justify-center">
+          {item.on_promotion ? (
+            <Check className="size-4 text-muted-foreground" />
+          ) : (
+            <X className="size-4 text-muted-foreground" />
+          )}
+        </ProductTableContextMenu>
+      );
     },
     enableSorting: false,
   },
@@ -355,14 +365,21 @@ export const productCols = ({
         title="Promo Price"
       />
     ),
-    cell: ({ row }) => {
+    cell: ({ row, cell }) => {
       const amount = parseFloat(row.getValue("promo-price"));
       const formatted = new Intl.NumberFormat("en-US", {
         style: "currency",
         currency: "USD",
       }).format(amount);
 
-      return <div className="text-right font-medium">{formatted}</div>;
+      return (
+        <ProductTableContextMenu
+          {...{ cell }}
+          className="text-right font-medium"
+        >
+          {row.original.on_promotion ? formatted : "--"}
+        </ProductTableContextMenu>
+      );
     },
     enableSorting: false,
   },
@@ -377,11 +394,12 @@ export const productCols = ({
         title="Start Date"
       />
     ),
-    cell: ({ row }) => {
+    cell: ({ row, cell }) => {
       const item = row.original;
       if (item.promotion_start_date)
         return (
-          <span
+          <ProductTableContextMenu
+            {...{ cell }}
             title={new Date(item.promotion_start_date).toLocaleString("en", {
               hour: "2-digit",
               minute: "2-digit",
@@ -391,7 +409,7 @@ export const productCols = ({
             })}
           >
             {new Date(item.promotion_start_date).toLocaleDateString()}
-          </span>
+          </ProductTableContextMenu>
         );
       else return null;
     },
@@ -408,11 +426,12 @@ export const productCols = ({
         title="End Date"
       />
     ),
-    cell: ({ row }) => {
+    cell: ({ row, cell }) => {
       const item = row.original;
       if (item.promotion_end_date)
         return (
-          <span
+          <ProductTableContextMenu
+            {...{ cell }}
             title={new Date(item.promotion_end_date).toLocaleString("en", {
               hour: "2-digit",
               minute: "2-digit",
@@ -422,7 +441,7 @@ export const productCols = ({
             })}
           >
             {new Date(item.promotion_end_date).toLocaleDateString()}
-          </span>
+          </ProductTableContextMenu>
         );
       else return null;
     },
@@ -439,11 +458,12 @@ export const productCols = ({
         title="Last Updated"
       />
     ),
-    cell: ({ row }) => {
+    cell: ({ row, cell }) => {
       const item = row.original;
       if (item.updated_at)
         return (
-          <span
+          <ProductTableContextMenu
+            {...{ cell }}
             title={new Date(item.updated_at).toLocaleString("en", {
               hour: "2-digit",
               minute: "2-digit",
@@ -453,7 +473,7 @@ export const productCols = ({
             })}
           >
             {new Date(item.updated_at).toLocaleDateString()}
-          </span>
+          </ProductTableContextMenu>
         );
       else return null;
     },
@@ -461,6 +481,6 @@ export const productCols = ({
   },
   {
     id: "actions",
-    // cell: ({ row }) => <DataTableRowActions row={row} />,
+    cell: ({ row }) => <ProductTableRowActions row={row} />,
   },
 ];

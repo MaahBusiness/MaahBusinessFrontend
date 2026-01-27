@@ -60,6 +60,17 @@ export function useOrganisation() {
       // staleTime: 2 * 60 * 1000, // 2 minutes (more dynamic data)
     });
 
+  const productQuery = (id: string) =>
+    useQuery({
+      queryKey: organisationKeys.product(id),
+      queryFn: async () => {
+        if (!accessToken) throw rdr;
+        return await organisationsApi.getProduct(accessToken, id);
+      },
+      enabled: !!accessToken,
+      // staleTime: 2 * 60 * 1000, // 2 minutes (more dynamic data)
+    });
+
   // Update organisation mutation
   const updateOrganisation = useMutation({
     mutationFn: async (data: {
@@ -146,6 +157,28 @@ export function useOrganisation() {
     },
   });
 
+  const removeProduct = useMutation({
+    mutationFn: async (id: string) => {
+      if (!accessToken) throw rdr;
+      return organisationsApi.removeProduct(accessToken, id);
+    },
+    onSuccess: (res) => {
+      if (res.success) {
+        // Automatically refetch product
+        queryClient.invalidateQueries({
+          queryKey: organisationKeys.prodlist(orgId),
+        });
+        queryClient.invalidateQueries({
+          queryKey: organisationKeys.product(res.data?.id!),
+        });
+        toast.success("The product has been removed successfully!");
+      } else toast.error(res.message);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
   // You can handle custom success toast messages for fetchers on individual components since no success message is returned from the API (intentionally)
 
   useEffect(() => {
@@ -172,6 +205,7 @@ export function useOrganisation() {
     ),
 
     fetchProducts: productsQuery,
+    fetchSingleProduct: productQuery,
 
     // Loading states
     isLoading: coreQuery.isLoading,
@@ -195,6 +229,10 @@ export function useOrganisation() {
     removeCategory: removeCategory.mutate,
     isRemovingCategory: removeCategory.isPending,
     removeCategoryState: removeCategory.data,
+
+    removeProduct: removeProduct.mutate,
+    isRemovingProduct: removeProduct.isPending,
+    removeProductState: removeProduct.data,
 
     // Refetch functions
     refetchCore: coreQuery.refetch,

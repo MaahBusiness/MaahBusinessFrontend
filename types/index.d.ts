@@ -300,6 +300,35 @@ export interface SideItem {
 }
 [];
 
+interface ProductCreateParams extends ProductUpdateParams {
+  business_id: string;
+  on_promotion?: boolean;
+  promotion_start_date?: string;
+  promotion_end_date?: string;
+  promo_price?: number;
+}
+
+interface ProductUpdateParams {
+  name: string;
+  description?: string;
+  barcode?: string;
+  category_id: string;
+  subcategory_id?: string;
+  purchase_price: number;
+  unit_price: number;
+  quantity?: number;
+  min_quantity?: number;
+  expiry_date?: string;
+}
+
 export interface DataTableToolbarProps<TData> {
   table: Table<TData>;
+}
+
+declare module "@tanstack/react-table" {
+  export interface ColumnMeta<TData extends RowData, TValue> {
+    hidden?: boolean;
+    /**Use this for the default sort column. Used only once per table */
+    sort?: boolean;
+  }
 }

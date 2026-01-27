@@ -71,12 +71,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Meta />
         <Links />
       </head>
-      <body className="font-sans bg-background text-xs">
+      <body className="font-sans bg-background text-sm">
         <ClientOnly>
           <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
             {children}
           </ThemeProvider>
-          <Toaster position="top-right" />
+          <Toaster position="top-right" className="z-100" />
         </ClientOnly>
         <ScrollRestoration />
         <Scripts />

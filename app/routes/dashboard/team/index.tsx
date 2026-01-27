@@ -1,23 +1,18 @@
 import type { Route } from ".react-router/types/app/routes/dashboard/team/+types";
-import { columns } from "@/components/team/columns";
-import { DataTableToolbar } from "@/components/team/data-table-toolbar";
+import DataTableSkeleton from "@/components/data-table-skeleton";
+import { columns } from "@/components/team/team-columns";
+import { TeamTableToolbar } from "@/components/team/team-table-toolbar";
 import { DataTable } from "@/components/ui/data-table";
-import { Skeleton } from "@/components/ui/skeleton";
-import { TableCell, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/contexts/auth-context";
 import { useOrganisation } from "@/hooks/use-organisation";
 import { organisationKeys, organisationsApi } from "@/lib/api/organisation";
 import { getSession } from "@/lib/session.server";
+import { RequestFailed } from "@/routes/404";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { redirect, useParams } from "react-router";
 import { toast } from "sonner";
-import type {
-  OrganisationCore,
-  OrganisationMember,
-  Role,
-  ServerActionState,
-} from "types";
+import type { OrganisationMember, Role, ServerActionState } from "types";
 import { genericErrorState, passwordRules } from "utils";
 
 export async function action({ request, params }: Route.ActionArgs): Promise<
@@ -107,46 +102,21 @@ export default function TeamPage({ actionData }: Route.ComponentProps) {
     }
   }, [actionData]);
 
+  if (isLoadingMembers) return <DataTableSkeleton />;
+  if (!res?.success) return <RequestFailed />;
+
   return (
     <div className="w-full min-h-full flex flex-col gap-8 items-stretch max-w-[1200px] lg:px-6 px-4 mx-auto py-12">
       <div className="w-full flex items-center gap-2">
         <h2 className="text-lg tracking-tight">Team</h2>
       </div>
 
-      {(isLoadingMembers || !res?.success) && (
-        <div className="">
-          {Array.from({ length: 10 }).map((_, index) => (
-            <TableRow key={index}>
-              {Array.from({ length: 5 }).map((_, colIndex) => (
-                <TableCell key={colIndex}>
-                  <Skeleton />
-                </TableCell>
-              ))}
-            </TableRow>
-          ))}
-        </div>
-
-        // <div className="flex w-full flex-col gap-2 p-4 rounded-md border border-border">
-        //   {Array.from({ length: 10 }).map((_, index) => (
-        //     <div className="flex gap-4" key={index}>
-        //       <Skeleton className="size-6 shrink-0 rounded-full" />
-        //       <Skeleton className="h-4 flex-1" />
-        //       <Skeleton className="h-4 w-24" />
-        //       <Skeleton className="h-4 w-20" />
-        //     </div>
-        //   ))}
-        // </div>
-      )}
-
-      {/* {!res?.data?.res && <div>No Team Members</div>} */}
-
-      {res?.data && (
-        <DataTable
-          data={res?.data || []}
-          columns={cols}
-          DataTableToolbar={DataTableToolbar}
-        />
-      )}
+      <DataTable
+        data={res?.data ?? []}
+        meta={res.meta}
+        columns={cols}
+        DataTableToolbar={TeamTableToolbar}
+      />
     </div>
   );
 }

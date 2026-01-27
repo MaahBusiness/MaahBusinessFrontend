@@ -1,11 +1,12 @@
+/**CURRENTLY DEFUNCT */
+
 // -------------------------------------
 // CREATE A BUSINESS
 
-import { AUTH_ERROR_MESSAGES } from "@/lib/auth-error-state";
 import { data, redirect } from "react-router";
 import type {
   BackendResponse,
-  BusinessResponse,
+  OrganisationCore,
   ServerActionState,
 } from "types";
 import {
@@ -14,10 +15,10 @@ import {
   getRateLimitMessage,
 } from "utils";
 import {
+  BASE_URL,
   CREATE_BUSINESS_URL,
   LIST_BUSINESS_URL,
-  SIGNUP_URL,
-} from "utils/enpoints";
+} from "utils/endpoints";
 
 // -------------------------------------
 export async function createOrg(formData: FormData, accessToken: string) {
@@ -40,7 +41,7 @@ export async function createOrg(formData: FormData, accessToken: string) {
     return data<ServerActionState>({ success: false, errors }, { status: 400 });
 
   try {
-    const res = await fetch(CREATE_BUSINESS_URL, {
+    const res = await fetch(BASE_URL + CREATE_BUSINESS_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -70,14 +71,14 @@ export async function createOrg(formData: FormData, accessToken: string) {
             success: false,
             message: getRateLimitMessage(error.details?.retry_after),
           },
-          { status: res.status }
+          { status: res.status },
         );
       }
 
       if (error?.code === "VALIDATION_ERROR") {
         return data<ServerActionState>(
           { success: false, message: error.message },
-          { status: res.status }
+          { status: res.status },
         );
       }
 
@@ -86,7 +87,7 @@ export async function createOrg(formData: FormData, accessToken: string) {
       });
     }
 
-    const resData = result.data as BusinessResponse;
+    const resData = result.data as OrganisationCore;
 
     console.log("LOG::CREATE_ORG_SUCCESS", resData);
 
@@ -98,21 +99,22 @@ export async function createOrg(formData: FormData, accessToken: string) {
       {
         ...(genericNetworkError((err as any).message) || genericErrorState()),
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function fetchAllOrgs(
-  accessToken: string
-): Promise<ServerActionState & { orgs?: BusinessResponse[] }> {
+  accessToken: string,
+): Promise<ServerActionState & { orgs?: OrganisationCore[] }> {
   try {
-    const res = await fetch(LIST_BUSINESS_URL, {
+    const res = await fetch(BASE_URL + LIST_BUSINESS_URL, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${accessToken}`,
       },
+      credentials: "include", // 👈 important
     });
 
     const raw = await res.json();
@@ -136,7 +138,7 @@ export async function fetchAllOrgs(
       return genericErrorState();
     }
 
-    const resData = result.data as BusinessResponse[];
+    const resData = result.data as OrganisationCore[];
 
     console.log("LOG::FETCH_ORGS_SUCCESS", resData);
 

@@ -8,7 +8,9 @@ import type {
   OrganisationCore,
   OrganisationMember,
   Product,
+  ProductCreateParams,
   ProductFilters,
+  ProductUpdateParams,
   Role,
   Subcategory,
 } from "types";
@@ -147,7 +149,6 @@ export const organisationsApi = {
     apiClient.delete<Category>(SUBCATEGORY_URL + id, token),
 
   // PRODUCTS
-
   getProducts: (token: string, id: string) =>
     apiClient.get<Product[]>(PRODUCTS_URL + "?business_id=" + id, token),
 
@@ -158,6 +159,30 @@ export const organisationsApi = {
   ) => {
     const query = buildQueryParams({ business_id: id, ...filters });
     return apiClient.get<Product[]>(`${PRODUCTS_URL}${query}`, token);
+  },
+
+  getProduct: (token: string, id: string) => {
+    return apiClient.get<Product>(PRODUCTS_URL + id, token);
+  },
+
+  addProduct: (token: string, id: string, data: ProductCreateParams) => {
+    return apiClient.post<Product>(
+      PRODUCTS_URL + "?business_id=" + id,
+      token,
+      data,
+    );
+  },
+
+  updateProduct: (
+    token: string,
+    id: string,
+    data: Partial<ProductUpdateParams>,
+  ) => {
+    return apiClient.put<Product>(PRODUCTS_URL + id, token, data);
+  },
+
+  removeProduct: (token: string, id: string) => {
+    return apiClient.delete<Product>(PRODUCTS_URL + id, token);
   },
 
   getCustomers: (token: string, id: string) =>
@@ -190,8 +215,9 @@ export const organisationKeys = {
   members: (id: string) => [...organisationKeys.detail(id), "members"] as const,
   products: (id: string) =>
     [...organisationKeys.detail(id), "products"] as const,
+  product: (id: string) => ["product", id] as const,
   prodlist: (id: string, filters?: ProductFilters) =>
-    [...organisationKeys.lists(), "products", { filters }] as const,
+    [...organisationKeys.detail(id), "products", { filters }] as const,
   customers: (id: string) =>
     [...organisationKeys.detail(id), "customers"] as const,
   inventory: (id: string) =>

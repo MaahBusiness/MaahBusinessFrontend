@@ -7,12 +7,14 @@ import AddNewDialog from "@/components/categories/add-new-dailog";
 import { hasPermission } from "utils/permissions";
 import { useOrganisation } from "@/hooks/use-organisation";
 import { Input } from "@/components/ui/input";
+import { DataTableViewOptions } from "@/components/ui/data-table-view-options";
+import { visibles } from "@/routes/dashboard/products/data";
 
 interface DataTableToolbarProps<TData> {
   table: Table<TData>;
 }
 
-export function DataTableToolbar<TData>({
+export function CatTableToolbar<TData>({
   table,
 }: DataTableToolbarProps<TData>) {
   const isFiltered = table.getState().columnFilters.length > 0;
@@ -42,6 +44,7 @@ export function DataTableToolbar<TData>({
         )}
       </div>
       <div className="flex items-center space-x-2">
+        <DataTableViewOptions table={table} options={visibles} />
         {hasPermission(businessMember?.role, "products:crud") && (
           <AddNewDialog />
         )}

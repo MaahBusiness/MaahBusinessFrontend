@@ -1,14 +1,34 @@
 import type { Route } from ".react-router/types/app/routes/dashboard/organisations/+types/home";
+import { Avatar, AvatarImage, BoringFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Item } from "@/components/ui/item";
+import {
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+  EmptyDescription,
+  EmptyContent,
+} from "@/components/ui/empty";
+import {
+  InputGroup,
+  InputGroupInput,
+  InputGroupAddon,
+} from "@/components/ui/input-group";
+import {
+  Item,
+  ItemContent,
+  ItemDescription,
+  ItemMedia,
+  ItemTitle,
+} from "@/components/ui/item";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/auth-context";
 import { organisationKeys, organisationsApi } from "@/lib/api/organisation";
 import { requireUserSession } from "@/lib/session.server";
-import EmptyOrganisationsState from "@/routes/dashboard/organisations/empty-orgs";
-import LoadedOrganisationsState from "@/routes/dashboard/organisations/loaded-orgs";
-import { useQueryClient, useQuery } from "@tanstack/react-query";
-import { redirect } from "react-router";
-import { genericErrorState } from "utils";
+import { RequestFailed } from "@/routes/404";
+import { useQuery } from "@tanstack/react-query";
+import { Library, Plus, PlusIcon, SearchIcon } from "lucide-react";
+import { Link, redirect } from "react-router";
 
 // ------------------------------
 // Loader - only handles auth now since Tanstack added
@@ -31,8 +51,6 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 export default function Organisations() {
   const { accessToken } = useAuth(); // Get token from context
-  // Access the client
-  const queryClient = useQueryClient();
 
   // Fetch organisations
   const { data: res, isLoading } = useQuery({
@@ -44,14 +62,10 @@ export default function Organisations() {
     enabled: !!accessToken, // Only run if token exists
   });
 
-  if (isLoading) return <LoadingUI />;
-  if (!res?.success) return <ErrorUI error={res?.message} />;
-  if (!res.data) return <EmptyOrganisationsState />;
+  if (isLoading) return <OrganisationsSkeleton />;
+  if (!res?.success) return <RequestFailed />;
+  if (!res.data) return <OrgsNotFound />;
 
-  return <LoadedOrganisationsState orgs={res.data} />;
-}
-
-function LoadingUI() {
   return (
     <div className="w-full min-h-full flex flex-col gap-8 items-stretch max-w-[1200px] lg:px-6 px-4 mx-auto pt-12">
       <div className="w-full">
@@ -59,16 +73,46 @@ function LoadingUI() {
       </div>
 
       <div className="flex flex-col gap-4">
+        <div className="flex justify-between gap-4">
+          <InputGroup className="w-auto focus-visible:!ring-0">
+            <InputGroupInput placeholder="Search organisations..." />
+            <InputGroupAddon>
+              <SearchIcon />
+            </InputGroupAddon>
+          </InputGroup>
+
+          <Link to={"/dashboard/organisations/new"}>
+            <Button size="sm">
+              <PlusIcon /> New organisation
+            </Button>
+          </Link>
+        </div>
+
         <div className="flex flex-1 flex-col gap-4">
           <div className="grid auto-rows-min gap-4  md:grid-cols-3">
-            {[1, 2, 3].map((i) => (
+            {res.data.map((org, idx) => (
               <Item
-                key={i}
+                key={idx}
                 variant="outline"
-                className="bg-muted items-center gap-3 h-20 hover:bg-accent border-border animate-pulse"
+                className="bg-input/50 items-center gap-3 hover:bg-accent border-border"
                 asChild
               >
-                <div></div>
+                <Link to={`/dashboard/org/${org.id}`}>
+                  <ItemMedia>
+                    <Avatar className="size-10">
+                      <AvatarImage src={org.logo_url} />
+                      <BoringFallback name={org?.name} />
+                    </Avatar>
+                  </ItemMedia>
+                  <ItemContent className="gap-0">
+                    <ItemTitle>{org.name}</ItemTitle>
+                    <ItemDescription className="text-xxs flex gap-1.5">
+                      <span>{org.member_count} members</span>
+                      <span>·</span>
+                      <span>Owner</span>
+                    </ItemDescription>
+                  </ItemContent>
+                </Link>
               </Item>
             ))}
           </div>
@@ -78,39 +122,63 @@ function LoadingUI() {
   );
 }
 
-function ErrorUI({ error }: { error?: string }) {
+function OrganisationsSkeleton() {
   return (
-    <div className="w-full min-h-full flex flex-col  gap-12 items-stretch max-w-[1200px] lg:px-6 px-4 mx-auto pt-12">
-      <div className="w-full">
-        <h1 className="text-2xl font-medium">Your organisations</h1>
+    <div className="w-full min-h-full flex flex-col gap-8 items-stretch max-w-[1200px] lg:px-6 px-4 mx-auto py-12">
+      <div className="w-full flex items-center gap-2">
+        <Skeleton className="h-5 w-32" />
       </div>
 
-      <div className=" flex items-center justify-center p-4 mx-8">
-        <div className="max-w-2xl w-full text-center space-y-4">
-          <div className="relative">
-            <h1 className="text-4xl font-bold leading-none select-none">
-              Error loading
-            </h1>
+      <div className="flex flex-col gap-8">
+        {/* Toolbar */}
+        <div className="flex items-center justify-between">
+          <div className="flex flex-1 items-center space-x-2">
+            <Skeleton className="h-8 w-[200px] lg:w-[250px]" />
           </div>
 
-          {/* Content */}
-          <div className="space-y-2">
-            <p className="text-muted-foreground max-w-md mx-auto">
-              {genericErrorState().message}
-            </p>
-            {error && <pre className="text-xs opacity-70">{error}</pre>}
+          <div className="flex items-center space-x-2">
+            <Button>
+              <Skeleton className="h-2 w-12" />
+            </Button>
           </div>
+        </div>
 
-          {/* Actions */}
-          <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
-            <Button onClick={() => window.location.reload()}>Reload</Button>
-          </div>
-
-          {/* Decorative elements */}
-          <div className="absolute top-1/4 left-10 w-20 h-20 rounded-full bg-primary/5 blur-2xl -z-10" />
-          <div className="absolute bottom-1/4 right-10 w-32 h-32 rounded-full bg-primary/5 blur-3xl -z-10" />
+        {/* Orgs */}
+        <div className="grid auto-rows-min gap-4  md:grid-cols-3">
+          {Array.from({ length: 3 }).map((_) => (
+            <div className="flex flex-col gap-4">
+              <Skeleton className="h-20" />
+            </div>
+          ))}
         </div>
       </div>
     </div>
+  );
+}
+
+export function OrgsNotFound() {
+  return (
+    <Empty className="p-0 !h-[calc(100svh-var(--header-height))]">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <Library />
+        </EmptyMedia>
+        <EmptyTitle>
+          Looks like you aren't part of any organisations yet
+        </EmptyTitle>
+        <EmptyDescription className="max-w-xs text-pretty">
+          Organisations help you manage teams, projects, finances, and
+          performance — all in one place.
+        </EmptyDescription>
+      </EmptyHeader>
+      <EmptyContent>
+        <Link to={"new"}>
+          <Button>
+            <Plus />
+            Create Organisation
+          </Button>
+        </Link>
+      </EmptyContent>
+    </Empty>
   );
 }

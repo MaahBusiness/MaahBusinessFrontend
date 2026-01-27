@@ -48,3 +48,9 @@ export const roles: {
   },
   { id: "owner", label: "Owner", desc: "Admin-level access to all resources." },
 ];
+
+export const visibles = [
+  { value: "id", label: "ID" },
+  { value: "joined", label: "Date Joined" },
+  { value: "left", label: "Date Left" },
+];

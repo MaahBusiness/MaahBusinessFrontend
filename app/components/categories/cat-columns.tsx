@@ -3,10 +3,11 @@ import type { ColumnDef, RowData } from "@tanstack/react-table";
 import { Checkbox } from "@/components/ui/checkbox";
 
 import type { Category, Subcategory } from "types";
-import { DataTableRowActions } from "@/components/categories/cat-table-row-actions";
+import { CatTableRowActions } from "@/components/categories/cat-table-row-actions";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router";
+import { CatTableContextMenu } from "@/components/categories/cat-table-context-menu";
 
 export const catCols: ColumnDef<Category>[] = [
   {
@@ -24,7 +25,7 @@ export const catCols: ColumnDef<Category>[] = [
     ),
     cell: ({ row }) => {
       return (
-        <div className="flex flex-row items-center gap-2">
+        <div className="flex flex-row items-center gap-2 px-4">
           <Checkbox
             checked={row.getIsSelected()}
             onCheckedChange={(value) => row.toggleSelected(!!value)}
@@ -44,13 +45,17 @@ export const catCols: ColumnDef<Category>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Name" />
     ),
-    cell: ({ row }) => {
+    cell: ({ cell }) => {
       return (
-        <div className="flex gap-2 items-center">
-          <span className="max-w-[500px] truncate ">
-            {row.getValue("name")}
-          </span>
-        </div>
+        <CatTableContextMenu
+          className="max-w-[500px] "
+          title={`${cell.getValue()}`}
+          {...{ cell }}
+        >
+          <Link to={`${cell.row.original.id}`} className="hover:underline">
+            <span className="truncate">{`${cell.getValue()}`}</span>
+          </Link>
+        </CatTableContextMenu>
       );
     },
     enableHiding: false,
@@ -58,41 +63,41 @@ export const catCols: ColumnDef<Category>[] = [
   {
     id: "desc",
     accessorKey: "description",
-    header: "Description",
-    cell: ({ row }) => (
-      <div className="flex gap-2 items-center">
-        {row.getValue("desc") ? (
-          <span
-            title={row.getValue("desc")}
-            className="max-w-[600px] truncate "
-          >
-            {row.getValue("desc")}
-          </span>
-        ) : (
-          <span className="text-muted-foreground ">No description</span>
-        )}
-      </div>
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Description" />
     ),
+    cell: ({ cell }) => (
+      <CatTableContextMenu className="max-w-[500px] " {...{ cell }}>
+        <span className="truncate">{`${cell.getValue()}`}</span>
+      </CatTableContextMenu>
+    ),
+    enableSorting: false,
     enableHiding: false,
   },
   {
     id: "subs",
     accessorKey: "subcategories",
-    header: () => <div className="text-center">Subcategories</div>,
-    cell: ({ row }) => {
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        column={column}
+        title="Subcategories"
+        className="text-center"
+      />
+    ),
+    cell: ({ row, cell }) => {
       const subs = row.getValue("subs") as Subcategory[] | undefined;
       return (
-        <div className="text-center">
+        <CatTableContextMenu {...{ cell }} className="text-center">
           {subs?.length && subs.length > 0 ? (
-            <Link to={`${row.original.id}`}>
+            <Link to={`${row.original.id}`} className="hover:underline">
               <Button size={"sm"} className="text-xxs" variant={"outline"}>
                 {subs?.length} subcategories
               </Button>
             </Link>
           ) : (
-            <span className="text-muted-foreground">None</span>
+            "--"
           )}
-        </div>
+        </CatTableContextMenu>
       );
     },
   },
@@ -102,11 +107,12 @@ export const catCols: ColumnDef<Category>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Updated" />
     ),
-    cell: ({ row }) => {
+    cell: ({ row, cell }) => {
       const date = row.getValue("updated") as string | undefined;
       if (date)
         return (
-          <span
+          <CatTableContextMenu
+            {...{ cell }}
             title={new Date(date).toLocaleString("en", {
               hour: "2-digit",
               minute: "2-digit",
@@ -115,8 +121,12 @@ export const catCols: ColumnDef<Category>[] = [
               year: "numeric",
             })}
           >
-            {new Date(date).toLocaleDateString()}
-          </span>
+            {new Date(date).toLocaleDateString("en", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })}
+          </CatTableContextMenu>
         );
       else return null;
     },
@@ -127,7 +137,7 @@ export const catCols: ColumnDef<Category>[] = [
     id: "actions",
     cell: ({ row }) => (
       <div className=" w-full flex items-center justify-end">
-        <DataTableRowActions row={row} />
+        <CatTableRowActions row={row} />
       </div>
     ),
   },

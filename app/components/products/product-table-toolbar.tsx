@@ -16,27 +16,62 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { useState } from "react";
-import { capitalizeFirstChar } from "utils";
 import { cn } from "@/lib/utils";
 import { useOrganisation } from "@/hooks/use-organisation";
 import type { DataTableToolbarProps } from "types";
 import { DataTableFacetedFilter } from "@/components/products/data-table-faceted-filter";
 import {
-  expiry,
   filters,
   searchFilters,
+  visibles,
 } from "@/routes/dashboard/products/data";
-import { useSearchParams } from "react-router";
+import { useParams, useSearchParams } from "react-router";
+import { AddProductDrawer } from "@/components/products/product-add-new-drawer";
+import { hasPermission } from "utils/permissions";
 
-export function DataTableToolbar<TData>({
+export function ProductTableToolbar<TData>({
   table,
 }: DataTableToolbarProps<TData>) {
   const [searchParams, setSearchParams] = useSearchParams();
-
-  const isFiltered = table.getState().columnFilters.length > 0;
+  const { businessMember, organisation: res } = useOrganisation();
+  const { catId, subId } = useParams();
 
   const [filter, setFilter] = useState(searchFilters[0].value);
   const [search, setSearch] = useState("");
+
+  const flatCats =
+    res?.data?.categories?.flatMap((c) => {
+      const categoryOption = {
+        label: c.name,
+        value: c.id,
+        key: "category_id",
+      };
+
+      const subcategoryOptions =
+        c.subcategories?.map((sc) => ({
+          label: `-> ${sc.name}`,
+          value: sc.id,
+          key: "subcategory_id",
+        })) ?? [];
+
+      return [categoryOption, ...subcategoryOptions];
+    }) ?? [];
+
+  const cats =
+    res?.data?.categories?.map((c) => {
+      return { label: c.name, value: c.id, key: "category_id" };
+    }) ?? [];
+
+  const defaultCat = res?.data?.categories?.find((c) => c.id === catId);
+
+  const subcats = (
+    defaultCat ??
+    res?.data?.categories?.find((c) => c.id === searchParams.get("category_id"))
+  )?.subcategories?.map((c) => {
+    return { label: c.name, value: c.id, key: "subcategory_id" };
+  });
+
+  const defaultSubCat = defaultCat?.subcategories?.find((c) => c.id === subId);
 
   return (
     <div className="flex items-center justify-between">
@@ -92,17 +127,26 @@ export function DataTableToolbar<TData>({
           </InputGroupAddon>
         </InputGroup>
 
+        {!defaultCat && (
+          <DataTableFacetedFilter title="Categories" options={cats} />
+        )}
+        {subcats && !defaultSubCat && (
+          <DataTableFacetedFilter title="Subcategories" options={subcats} />
+        )}
         <DataTableFacetedFilter title="Filters" options={filters} />
 
-        {isFiltered && (
+        {searchParams.size > 2 && (
           <Button
             variant="ghost"
             onClick={() =>
               setSearchParams((_params) => {
-                [...filters, ...searchFilters].forEach((f) =>
-                  _params.delete(f.value),
-                );
-                return _params;
+                let record: Record<string, string> = {};
+
+                Array.from(_params.entries())
+                  .filter(([key]) => key === "page_size" || key === "page")
+                  .forEach(([key, value]) => (record[key] = value));
+
+                return new URLSearchParams(record);
               })
             }
             className="h-8 px-2 lg:px-3"
@@ -113,10 +157,10 @@ export function DataTableToolbar<TData>({
         )}
       </div>
       <div className="flex items-center space-x-2">
-        <DataTableViewOptions table={table} />
-        {/* {hasPermission(businessMember?.role, "manage:members") && (
-          <AddNewDialog />
-        )} */}
+        <DataTableViewOptions table={table} options={visibles} />
+        {hasPermission(businessMember?.role, "products:crud") && (
+          <AddProductDrawer />
+        )}
       </div>
     </div>
   );

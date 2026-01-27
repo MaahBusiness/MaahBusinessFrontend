@@ -22,7 +22,7 @@ interface DataTablePaginationProps<TData> {
   meta: Pagination;
 }
 
-export function DataTablePagination<TData>({
+export function TablePagination<TData>({
   table,
   meta,
 }: DataTablePaginationProps<TData>) {

@@ -6,16 +6,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import type { OrganisationMember } from "types";
 import { Avatar, BoringFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-import { DataTableRowActions } from "@/components/team/data-table-row-actions";
+import { TeamTableRowActions } from "@/components/team/team-table-row-actions";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import { roles } from "@/routes/dashboard/team/data";
-
-declare module "@tanstack/react-table" {
-  interface ColumnMeta<TData extends RowData, TValue> {
-    hidden?: boolean;
-    sort?: boolean;
-  }
-}
+import { TeamTableContextMenu } from "@/components/team/team-table-context-menu";
 
 export const columns = (user_id: string): ColumnDef<OrganisationMember>[] => [
   {
@@ -35,7 +29,7 @@ export const columns = (user_id: string): ColumnDef<OrganisationMember>[] => [
       const user = row.original.user;
 
       return (
-        <div className="flex flex-row items-center gap-2">
+        <div className="flex flex-row items-center gap-2 px-4">
           <Checkbox
             checked={row.getIsSelected()}
             onCheckedChange={(value) => row.toggleSelected(!!value)}
@@ -56,12 +50,17 @@ export const columns = (user_id: string): ColumnDef<OrganisationMember>[] => [
   {
     id: "id",
     accessorKey: "user.id",
-    // accessorFn: (row) => row.user?.id ?? "",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="ID" />
     ),
-    cell: ({ row }) => (
-      <div className="w-[80px] truncate">{row.getValue("id")}</div>
+    cell: ({ row, cell }) => (
+      <TeamTableContextMenu
+        title={row.getValue("id")}
+        className="w-32"
+        {...{ cell }}
+      >
+        <span className="truncate">{row.getValue("id")}</span>
+      </TeamTableContextMenu>
     ),
     enableSorting: false,
     meta: { hidden: true },
@@ -74,14 +73,16 @@ export const columns = (user_id: string): ColumnDef<OrganisationMember>[] => [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Name" />
     ),
-    cell: ({ row }) => {
+    cell: ({ row, cell }) => {
       const isYou = row.original.user?.id === user_id;
 
       return (
-        <div className="flex gap-2 items-center">
-          <span className="max-w-[500px] truncate ">
-            {row.getValue("name")}
-          </span>
+        <TeamTableContextMenu
+          className="w-[200px] "
+          title={row.getValue("name")}
+          {...{ cell }}
+        >
+          <span className="truncate">{row.getValue("name")}</span>
           {isYou && (
             <Badge
               className="text-xxs h-5 min-w-5 tabular-nums capitalize"
@@ -90,17 +91,36 @@ export const columns = (user_id: string): ColumnDef<OrganisationMember>[] => [
               {"You"}
             </Badge>
           )}
-        </div>
+        </TeamTableContextMenu>
       );
     },
     enableHiding: false,
   },
-  { id: "email", accessorKey: "user.email", header: "Email" },
+  {
+    id: "email",
+    accessorKey: "user.email",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Email" />
+    ),
+    cell: ({ cell }) => (
+      <TeamTableContextMenu {...{ cell }} className="text-right ">
+        <span>{`${cell.getValue()}`}</span>
+      </TeamTableContextMenu>
+    ),
+    enableSorting: false,
+  },
   {
     id: "phone",
     accessorKey: "user.phone_number",
-    header: "Phone",
-    cell: ({ row }) => row.getValue("phone") || null,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Phone" />
+    ),
+    cell: ({ cell }) => (
+      <TeamTableContextMenu {...{ cell }} className="text-right ">
+        <span>{`${cell.getValue() ?? "--"}`}</span>
+      </TeamTableContextMenu>
+    ),
+    enableSorting: false,
   },
   {
     id: "role",
@@ -108,14 +128,11 @@ export const columns = (user_id: string): ColumnDef<OrganisationMember>[] => [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Role" />
     ),
-    cell: ({ row }) => {
-      const role = roles.find((r) => r.id === row.original.role);
+    cell: ({ cell }) => {
+      const role = roles.find((r) => r.id === cell.row.original.role);
 
       return (
-        <div className="flex gap-2">
-          <span className="max-w-[500px] truncate ">{role?.label}</span>
-          {/* {label && <Badge variant="outline">{label.label}</Badge>} */}
-        </div>
+        <TeamTableContextMenu {...{ cell }}>{role?.label}</TeamTableContextMenu>
       );
     },
     filterFn: (row, id, value) => {
@@ -129,16 +146,20 @@ export const columns = (user_id: string): ColumnDef<OrganisationMember>[] => [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Status" />
     ),
-    cell: ({ row }) => {
-      const isActive = row.original.is_active;
+    cell: ({ cell }) => {
+      const isActive = cell.row.original.is_active;
 
       return (
-        <Badge
-          variant="outline"
-          className={cn(isActive ? "" : "bg-warning text-foreground")}
-        >
-          {isActive ? "Active" : "Inactive"}
-        </Badge>
+        <TeamTableContextMenu {...{ cell }}>
+          <Badge
+            variant="outline"
+            className={cn(
+              isActive ? "" : "text-destructive border-destructive",
+            )}
+          >
+            {isActive ? "Active" : "Inactive"}
+          </Badge>
+        </TeamTableContextMenu>
       );
     },
     filterFn: (row, id, value) => {
@@ -151,11 +172,12 @@ export const columns = (user_id: string): ColumnDef<OrganisationMember>[] => [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Joined at" />
     ),
-    cell: ({ row }) => {
+    cell: ({ row, cell }) => {
       const date = row.getValue("joined") as string | undefined;
       if (date)
         return (
-          <span
+          <TeamTableContextMenu
+            {...{ cell }}
             title={new Date(date).toLocaleString("en", {
               hour: "2-digit",
               minute: "2-digit",
@@ -164,8 +186,12 @@ export const columns = (user_id: string): ColumnDef<OrganisationMember>[] => [
               year: "numeric",
             })}
           >
-            {new Date(date).toLocaleDateString()}
-          </span>
+            {new Date(date).toLocaleDateString("en", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })}
+          </TeamTableContextMenu>
         );
       else return null;
     },
@@ -177,11 +203,12 @@ export const columns = (user_id: string): ColumnDef<OrganisationMember>[] => [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Left at" />
     ),
-    cell: ({ row }) => {
+    cell: ({ row, cell }) => {
       const date = row.getValue("left") as string | undefined;
       if (date)
         return (
-          <span
+          <TeamTableContextMenu
+            {...{ cell }}
             title={new Date(date).toLocaleString("en", {
               hour: "2-digit",
               minute: "2-digit",
@@ -190,8 +217,12 @@ export const columns = (user_id: string): ColumnDef<OrganisationMember>[] => [
               year: "numeric",
             })}
           >
-            {new Date(date).toLocaleDateString()}
-          </span>
+            {new Date(date).toLocaleDateString("en", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })}
+          </TeamTableContextMenu>
         );
       else return null;
     },
@@ -199,6 +230,6 @@ export const columns = (user_id: string): ColumnDef<OrganisationMember>[] => [
   },
   {
     id: "actions",
-    cell: ({ row }) => <DataTableRowActions row={row} />,
+    cell: ({ row }) => <TeamTableRowActions row={row} />,
   },
 ];

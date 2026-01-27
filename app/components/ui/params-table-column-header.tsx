@@ -28,7 +28,7 @@ export function DataTableColumnHeader<TData, TValue>({
   className,
 }: DataTableColumnHeaderProps<TData, TValue>) {
   const [searchParams, setSearchParams] = useSearchParams();
-  const ordered = searchParams.get("name") === accessorKey;
+  const ordered = searchParams.get("order_by") === accessorKey;
   if (!column.getCanSort()) {
     return (
       <div

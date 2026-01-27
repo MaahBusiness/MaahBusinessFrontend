@@ -26,7 +26,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useOrganisation } from "@/hooks/use-organisation";
-import { catData } from "@/routes/dashboard/products/data";
 
 import {
   Command,
@@ -171,7 +170,7 @@ export function CategorySelector({
           <CommandList>
             <CommandEmpty>No categories found.</CommandEmpty>
             <CommandGroup className="overflow-y-auto">
-              {catData.map((r) => (
+              {/* {[].map((r) => (
                 <CommandItem
                   key={r.id}
                   id={r.id}
@@ -191,7 +190,7 @@ export function CategorySelector({
                     )}
                   />
                 </CommandItem>
-              ))}
+              ))} */}
             </CommandGroup>
           </CommandList>
         </Command>

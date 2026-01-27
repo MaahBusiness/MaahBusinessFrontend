@@ -39,10 +39,15 @@ export default [
       index("routes/dashboard/org/dashboard.tsx"),
       route("team", "routes/dashboard/team/index.tsx"),
       route("products", "routes/dashboard/products/index.tsx"),
+      route("products/:prodId", "routes/dashboard/products/single-product.tsx"),
       route("products/categories", "routes/dashboard/products/categories.tsx"),
       route(
         "products/categories/:catId",
         "routes/dashboard/products/single-category.tsx",
+      ),
+      route(
+        "products/categories/:catId/:subId",
+        "routes/dashboard/products/single-sub-cat.tsx",
       ),
     ]),
     route("*", "routes/dashboard/404.tsx"),
