@@ -66,11 +66,6 @@ export function AddProductDrawer() {
     setter(formatAmount(rawInput)); // Update the input display value
   };
 
-  React.useEffect(() => {
-    if (intent === "add-product" && actionData?.success)
-      toast.success(`${actionData.data?.name} has been added succesfully!`);
-  }, [actionData]);
-
   return (
     <div className="flex flex-wrap gap-2">
       <Drawer direction="right">

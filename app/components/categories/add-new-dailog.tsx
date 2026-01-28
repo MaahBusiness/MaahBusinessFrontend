@@ -56,11 +56,6 @@ export default function AddNewDialog() {
   const intent = navigation.formData?.get("intent");
   const isAddingCat = isSubmitting && intent === "add-category";
 
-  React.useEffect(() => {
-    if (intent === "add-category" && actionData?.success)
-      toast.success(`New category has been added succesfully!`);
-  }, [actionData]);
-
   if (!res?.data) throw redirect("/dashboard/organisations");
 
   return (

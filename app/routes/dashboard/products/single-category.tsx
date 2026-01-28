@@ -131,6 +131,22 @@ export default function SingleCatPage({ actionData }: Route.ComponentProps) {
         queryClient.invalidateQueries({
           queryKey: organisationKeys.core(id),
         });
+
+        if (intent === "update-category")
+          toast.success(
+            actionData?.data?.name + " " + " has been updated succesfully!",
+          );
+
+        if (intent === "add-category")
+          toast.success(`New category has been added succesfully!`);
+
+        if (intent === "add-product")
+          toast.success(`${actionData.data?.name} has been added succesfully!`);
+
+        if (intent === "update-product")
+          toast.success(
+            `${actionData.data?.name} has been updated succesfully!`,
+          );
       }
     }
   }, [actionData]);

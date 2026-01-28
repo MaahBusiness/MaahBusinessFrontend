@@ -17,6 +17,14 @@ export type Role =
   | "manager";
 
 export type Customer = "regular" | "wholesaler";
+export type PaymentMethod =
+  | "cash"
+  | "card"
+  | "mobile_money"
+  | "stripe"
+  | "paypal"
+  | "credit";
+export type InvoiceStatus = "paid" | "partial" | "refunded" | "cancelled";
 
 export interface User extends UserSnapshot {
   is_active: boolean;
@@ -319,6 +327,79 @@ interface ProductUpdateParams {
   quantity?: number;
   min_quantity?: number;
   expiry_date?: string;
+}
+
+export interface invoice {
+  id: string;
+  business_id: string;
+  number: number;
+  cashier_id: string;
+  status: string;
+  total: number;
+  tax: number;
+  total_discount: number;
+  advance_paid: number;
+  remaining_amount: number;
+  payment_method: PaymentMethod;
+  is_credit_settled: boolean;
+  created_at: string;
+  updated_at: string;
+  customer_name?: string;
+  customer_id?: string;
+  cashier_name?: string;
+  due_date: string;
+  reason?: string;
+  is_archived: boolean;
+  lines: InvoiceLine[];
+  refund_amount: number;
+}
+
+export interface InvoiceCreateParams {
+  business_id: string;
+  customer_name?: string;
+  customer_id?: string;
+  customer_email?: string;
+  customer_phone?: string;
+  customer_address?: string;
+  customer_type?: "REGULAR" | "WHOLESALER";
+  lines: InvoiceLineCreateParams[];
+  tax?: number;
+  advance_paid?: number;
+  payment_method: PaymentMethod;
+  is_credit: boolean; // If True, due_date and reason are required.
+  due_date?: string;
+  reason?: string;
+}
+
+export interface InvoiceLine {
+  id: string;
+  invoice_id: string;
+  product_id: string;
+  quantity: number;
+  unit_price: number;
+  discount: number;
+  line_total: number;
+  created_at: string;
+  product_name: string;
+}
+
+export interface InvoiceLineCreateParams {
+  product_id: string;
+  quantity: string;
+  discount?: number;
+}
+
+export interface InvoiceQuery {
+  // business_id: string,
+  category_id?: string;
+  subcategory_id?: string;
+  name?: keyof Product;
+  low_stock_only?: boolean;
+  expired_only?: boolean;
+  search?: string;
+  page?: number;
+  page_size?: number;
+  order_by?: keyof Product;
 }
 
 export interface DataTableToolbarProps<TData> {

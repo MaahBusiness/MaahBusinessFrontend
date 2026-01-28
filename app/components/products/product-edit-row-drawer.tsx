@@ -62,11 +62,6 @@ export function EditProductDrawer({ data }: { data: Product }) {
     setter(formatAmount(rawInput)); // Update the input display value
   };
 
-  React.useEffect(() => {
-    if (intent === "update-product" && actionData?.success)
-      toast.success(`${data?.name} has been updated succesfully!`);
-  }, [actionData]);
-
   return (
     <DrawerContent className="border-border data-[vaul-drawer-direction=right]:sm:max-w-xl data-[vaul-drawer-direction=bottom]:max-h-[90vh] focus-visible:outline-0">
       <Form

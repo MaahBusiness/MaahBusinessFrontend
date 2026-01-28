@@ -19,6 +19,7 @@ import {
   BUSINESS_URL,
   CATEGORY_URL,
   CUSTOMERS_URL,
+  EDIT_MEMBERS_URL,
   INVENTORY_CO_URL,
   INVENTORY_URL,
   LIST_BUSINESS_URL,
@@ -97,6 +98,21 @@ export const organisationsApi = {
   ) =>
     apiClient.post<OrganisationMember>(
       BUSINESS_URL + id + MEMBERS_URL,
+      token,
+      data,
+    ),
+
+  updateMember: (
+    token: string,
+    id: string,
+    memberId: string,
+    data: {
+      is_active?: boolean;
+      role?: Role;
+    },
+  ) =>
+    apiClient.post<OrganisationMember>(
+      BUSINESS_URL + id + MEMBERS_URL + memberId + EDIT_MEMBERS_URL,
       token,
       data,
     ),
@@ -218,6 +234,11 @@ export const organisationKeys = {
   product: (id: string) => ["product", id] as const,
   prodlist: (id: string, filters?: ProductFilters) =>
     [...organisationKeys.detail(id), "products", { filters }] as const,
+  invoices: (id: string) =>
+    [...organisationKeys.detail(id), "invoices"] as const,
+  invoice: (id: string) => ["invoice", id] as const,
+  // invoiceList: (id: string, filters?: invoiceFilters) =>
+  //   [...organisationKeys.detail(id), "products", { filters }] as const,
   customers: (id: string) =>
     [...organisationKeys.detail(id), "customers"] as const,
   inventory: (id: string) =>

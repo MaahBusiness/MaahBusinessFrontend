@@ -5,7 +5,7 @@ import { organisationKeys, organisationsApi } from "@/lib/api/organisation";
 import { getSession } from "@/lib/session.server";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { redirect, useParams } from "react-router";
+import { redirect, useNavigation, useParams } from "react-router";
 import { toast } from "sonner";
 import type { Category, ServerActionState, Subcategory } from "types";
 import { genericErrorState } from "utils";
@@ -80,6 +80,8 @@ export default function CategoriesPage({ actionData }: Route.ComponentProps) {
   const { organisation: res, isLoading } = useOrganisation();
   const queryClient = useQueryClient();
   const { id } = useParams();
+  const navigation = useNavigation();
+  const intent = navigation.formData?.get("intent");
 
   // Show toasts based on action results
   useEffect(() => {
@@ -94,6 +96,14 @@ export default function CategoriesPage({ actionData }: Route.ComponentProps) {
         queryClient.invalidateQueries({
           queryKey: organisationKeys.core(id),
         });
+
+      if (intent === "update-category")
+        toast.success(
+          actionData?.data?.name + " " + " has been updated succesfully!",
+        );
+
+      if (intent === "add-category")
+        toast.success(`New category has been added succesfully!`);
     }
   }, [actionData]);
 

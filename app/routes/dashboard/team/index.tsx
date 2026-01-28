@@ -10,7 +10,7 @@ import { getSession } from "@/lib/session.server";
 import { RequestFailed } from "@/routes/404";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { redirect, useParams } from "react-router";
+import { redirect, useNavigation, useParams } from "react-router";
 import { toast } from "sonner";
 import type { OrganisationMember, Role, ServerActionState } from "types";
 import { genericErrorState, passwordRules } from "utils";
@@ -73,6 +73,24 @@ export async function action({ request, params }: Route.ActionArgs): Promise<
         );
     }
 
+    case "update-member": {
+      const memberId = formData.get("id") as string | undefined;
+      const role = formData.get("role") as Role | undefined;
+      const isChecked = formData.get("sswitch") as string | undefined;
+      const status = formData.get("status") as string | undefined;
+
+      if (session?.accessToken && memberId)
+        return await organisationsApi.updateMember(
+          session.accessToken,
+          id,
+          memberId,
+          {
+            role,
+            is_active: isChecked ? (Boolean(status) ? false : true) : undefined,
+          },
+        );
+    }
+
     default:
       return genericErrorState();
   }
@@ -83,6 +101,9 @@ export default function TeamPage({ actionData }: Route.ComponentProps) {
   const { members: res, isLoadingMembers } = useOrganisation();
   const queryClient = useQueryClient();
   const { id } = useParams();
+
+  const navigation = useNavigation();
+  const intent = navigation.formData?.get("intent");
 
   const cols = columns(user?.id || "");
 
@@ -99,6 +120,14 @@ export default function TeamPage({ actionData }: Route.ComponentProps) {
         queryClient.invalidateQueries({
           queryKey: organisationKeys.members(id),
         });
+
+      if (intent === "update-member" && actionData?.success)
+        toast.success(
+          `${actionData.data?.user?.name} has been updated successfully!`,
+        );
+
+      if (intent === "add-member")
+        toast.success("New member has been added succesfully!");
     }
   }, [actionData]);
 

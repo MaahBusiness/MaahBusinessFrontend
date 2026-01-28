@@ -28,8 +28,9 @@ export default function RoleSelector({
   disabled?: boolean;
   className?: string;
 }) {
+  const defaultRole = roles.find((r) => r.id === value);
   const [open, setOpen] = useState(false);
-  const [role, setRole] = useState<(typeof roles)[0]>();
+  const [role, setRole] = useState<(typeof roles)[0]>(defaultRole ?? roles[0]);
   const isOwner = value === "owner";
 
   return (

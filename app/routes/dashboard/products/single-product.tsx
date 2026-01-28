@@ -35,6 +35,7 @@ import { useClipboard } from "@/hooks/useClipboard";
 import { organisationKeys, organisationsApi } from "@/lib/api/organisation";
 import { getSession } from "@/lib/session.server";
 import { RequestFailed } from "@/routes/404";
+import { handleProductActions } from "@/routes/dashboard/products";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   BadgeCheckIcon,
@@ -49,7 +50,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, redirect, useParams } from "react-router";
+import { Link, redirect, useNavigation, useParams } from "react-router";
 import { toast } from "sonner";
 import type { ServerActionState, Product } from "types";
 import { formatAmount, genericErrorState, getTimeUntilOrSince } from "utils";
@@ -65,69 +66,7 @@ export async function action({ request, params }: Route.ActionArgs): Promise<
   const formData = await request.formData();
   const session = await getSession(request);
 
-  const intent = formData.get("intent");
-
-  const prodId = formData.get("id") as string | undefined;
-
-  const name = formData.get("name") as string | undefined;
-  const desc = formData.get("desc") as string | undefined;
-  const code = formData.get("code") as string | undefined;
-  const cat = formData.get("cat") as string | undefined;
-  const subcat = formData.get("subcat") as string | undefined;
-  const _purchase = formData.get("purchase") as string | undefined;
-  const _unit = formData.get("unit") as string | undefined;
-  const _qty = formData.get("qty") as string | undefined;
-  const _min = formData.get("min") as string | undefined;
-  const exp = formData.get("exp") as string | undefined;
-  const _promo = formData.get("promo") as string | undefined;
-
-  // Converting formatted amounts back to numbers
-  const purchase = parseInt(`${_purchase}`.replace(/\D/g, ""), 10) || 0;
-  const unit = parseInt(`${_unit}`.replace(/\D/g, ""), 10) || 0;
-
-  // Converting string to actual numbers
-  const qty = Number(_qty);
-  const min = Number(_min);
-
-  // For comparing the promo dates
-
-  const errors: Record<string, string> = {};
-
-  if (!name) errors.name = "Please provide an product name.";
-  if (!cat) errors.cat = "Please select a product category.";
-  if (purchase <= 0) errors.purchase = "Please provide the purchase price.";
-  if (unit <= 0) errors.unit = "Please provide the unit price.";
-  else if (unit <= purchase)
-    errors.unit = "Selling price must be greater than purchase price";
-  if (min >= qty)
-    errors.min = "Low threshold should be lower than the initial quantity";
-
-  if (Object.keys(errors).length > 0) return { success: false, errors };
-
-  switch (intent) {
-    case "update-product": {
-      if (session?.accessToken && prodId)
-        return await organisationsApi.updateProduct(
-          session.accessToken,
-          prodId,
-          {
-            name: name,
-            category_id: cat,
-            purchase_price: purchase,
-            unit_price: unit,
-            barcode: code,
-            description: desc,
-            expiry_date: exp,
-            min_quantity: min > 0 ? min : undefined,
-            quantity: qty > 0 ? qty : undefined,
-            subcategory_id: subcat,
-          },
-        );
-    }
-
-    default:
-      return genericErrorState();
-  }
+  return await handleProductActions({ formData, id, session });
 }
 
 export default function SingleproductPage({
@@ -146,6 +85,9 @@ export default function SingleproductPage({
     },
     onError: () => toast.error("Copy was unsuccessful"),
   });
+
+  const navigation = useNavigation();
+  const intent = navigation.formData?.get("intent");
 
   if (!prodId) return;
 
@@ -181,6 +123,9 @@ export default function SingleproductPage({
       queryClient.invalidateQueries({
         queryKey: organisationKeys.product(prodId),
       });
+
+      if (intent === "update-product")
+        toast.success(`${actionData.data?.name} has been updated succesfully!`);
     }
   }, [actionData]);
 
@@ -334,7 +279,7 @@ export default function SingleproductPage({
                   <div className="flex flex-col gap-1 p-4 border-b ">
                     <h5 className="scroll-m-20 tracking-tight">Category</h5>
                     <Breadcrumb>
-                      <BreadcrumbList className="text-xs sm:gap-1.5">
+                      <BreadcrumbList className=" sm:gap-1.5">
                         <BreadcrumbItem>
                           <BreadcrumbLink asChild>
                             <Link
@@ -393,10 +338,8 @@ export default function SingleproductPage({
 
                 <div className="flex flex-col flex-1 p-4 items-start">
                   <img
-                    src={
-                      res.data.image_url ?? "https://avatar.vercel.sh/shadcn1"
-                    }
-                    alt="Event cover"
+                    src={res.data.image_url}
+                    alt="Product image"
                     className="relative z-20 aspect-auto w-full object-cover brightness-60 grayscale dark:brightness-40 rounded-lg"
                   />
                 </div>

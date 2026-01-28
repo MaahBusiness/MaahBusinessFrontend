@@ -38,6 +38,8 @@ export default [
     route("org/:id", "routes/dashboard/sidebar-layout.tsx", [
       index("routes/dashboard/org/dashboard.tsx"),
       route("team", "routes/dashboard/team/index.tsx"),
+
+      // Products
       route("products", "routes/dashboard/products/index.tsx"),
       route("products/:prodId", "routes/dashboard/products/single-product.tsx"),
       route("products/categories", "routes/dashboard/products/categories.tsx"),
@@ -49,6 +51,9 @@ export default [
         "products/categories/:catId/:subId",
         "routes/dashboard/products/single-sub-cat.tsx",
       ),
+
+      // Sales
+      // route("sales", "routes/dashboard/sales/index.tsx"),
     ]),
     route("*", "routes/dashboard/404.tsx"),
   ]),

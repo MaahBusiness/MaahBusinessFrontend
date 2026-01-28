@@ -1,4 +1,3 @@
-import type { Route } from ".react-router/types/app/routes/dashboard/products/+types";
 import DataTableSkeleton from "@/components/data-table-skeleton";
 import { productCols } from "@/components/products/product-columns";
 import { ProductTableToolbar } from "@/components/products/product-table-toolbar";
@@ -11,7 +10,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import {
   redirect,
-  useNavigation,
   useParams,
   useSearchParams,
   type SessionData,
@@ -102,6 +100,7 @@ export async function handleProductActions({
     }
   }
 
+  console.log(errors);
   if (Object.keys(errors).length > 0) return { success: false, errors };
   switch (intent) {
     case "add-product": {
@@ -158,10 +157,7 @@ export default function ProductsPage({ actionData }: Route.ComponentProps) {
   const { id } = useParams();
 
   const [searchParams] = useSearchParams();
-  const navigation = useNavigation();
-
   const [filters, setFilters] = useState<ProductFilters>();
-  const intent = navigation.formData?.get("intent");
 
   const { data: res, isLoading } = fetchProducts(filters);
   const cols = productCols({ cats: orgRes?.data?.categories });
@@ -179,12 +175,6 @@ export default function ProductsPage({ actionData }: Route.ComponentProps) {
         queryClient.invalidateQueries({
           queryKey: organisationKeys.prodlist(id, filters),
         });
-
-      if (intent === "add-product")
-        toast.success(`${actionData.data?.name} has been added succesfully!`);
-
-      if (intent === "update-product")
-        toast.success(`${actionData.data?.name} has been updated succesfully!`);
     }
   }, [actionData]);
 

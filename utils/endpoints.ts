@@ -19,6 +19,7 @@ export const BUSINESS_URL = `/businesses/`;
 // MEMBERS
 export const LIST_MEMBERS_URL = `/members/list/`;
 export const MEMBERS_URL = `/members/`;
+export const EDIT_MEMBERS_URL = `/edit-member-role/`;
 
 export const CUSTOMERS_URL = "/customers/";
 export const PRODUCTS_URL = "/products/";

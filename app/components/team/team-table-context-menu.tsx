@@ -1,14 +1,5 @@
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogMedia,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { TeamEditDeleteDialogs } from "@/components/team/team-dialogs";
+import { AlertDialog } from "@/components/ui/alert-dialog";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -18,14 +9,13 @@ import {
   ContextMenuShortcut,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import { Drawer } from "@/components/ui/drawer";
-import { Spinner } from "@/components/ui/spinner";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/auth-context";
 import { useOrganisation } from "@/hooks/use-organisation";
 import { useClipboard } from "@/hooks/useClipboard";
 import { cn } from "@/lib/utils";
 import type { Cell } from "@tanstack/react-table";
-import { Copy, Trash2, Trash2Icon } from "lucide-react";
+import { Copy, Edit, Trash2 } from "lucide-react";
 import { redirect, useLocation } from "react-router";
 import { toast } from "sonner";
 import type { OrganisationMember } from "types";
@@ -45,7 +35,7 @@ export function TeamTableContextMenu<TData, TValue>({
   title,
 }: DataTableContextMenuProps<TData, TValue>) {
   const { user } = useAuth();
-  const { removeMember, isRemovingMember, businessMember } = useOrganisation();
+  const { businessMember } = useOrganisation();
   const { pathname } = useLocation();
 
   const val = cell.getValue() as string | number | undefined;
@@ -76,93 +66,77 @@ export function TeamTableContextMenu<TData, TValue>({
     member,
   );
 
-  const handleDeleteUser = () => {
-    if (member.user) removeMember(member.id);
-  };
-
   return (
     <ContextMenu>
-      <AlertDialog>
-        <ContextMenuTrigger
-          title={title}
-          className={cn(
-            "flex h-full w-full max-w-xs items-center justify-start gap-2  px-4",
-            className,
-          )}
-        >
-          {children}
-        </ContextMenuTrigger>
-
-        {/* Context Menu */}
-        <ContextMenuContent>
-          <ContextMenuGroup>
-            <ContextMenuItem
-              className="text-xs px-1.5 py-1"
-              onClick={handleCopyCell}
-            >
-              Copy cell
-              <ContextMenuShortcut>
-                <Copy className="size-3" />
-              </ContextMenuShortcut>
-            </ContextMenuItem>
-            <ContextMenuItem
-              className="text-xs px-1.5 py-1"
-              onClick={handleCopyRow}
-            >
-              Copy row
-              <ContextMenuShortcut>
-                <Copy className="size-3" />
-              </ContextMenuShortcut>
-            </ContextMenuItem>
-          </ContextMenuGroup>
-          {hasPermission(businessMember?.role, "products:crud") &&
-            canDelete && (
-              <>
-                <ContextMenuSeparator />
-                <ContextMenuGroup>
-                  <ContextMenuItem
-                    className="text-xs px-1.5 py-1"
-                    variant="destructive"
-                  >
-                    Delete row
-                    <ContextMenuShortcut>
-                      <Trash2 className="size-3 text-destructive" />
-                    </ContextMenuShortcut>
-                  </ContextMenuItem>
-                </ContextMenuGroup>
-              </>
+      <Dialog>
+        <AlertDialog>
+          <ContextMenuTrigger
+            title={title}
+            className={cn(
+              "flex h-full w-full max-w-xs items-center justify-start gap-2  px-4",
+              className,
             )}
-        </ContextMenuContent>
+          >
+            {children}
+          </ContextMenuTrigger>
 
-        {/* Alert Dialog */}
-        <AlertDialogContent size="sm">
-          <AlertDialogHeader>
-            <AlertDialogMedia className="bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive">
-              <Trash2Icon />
-            </AlertDialogMedia>
-            <AlertDialogTitle>Remove {member.user?.name}?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently remove {member.user?.name}r from your team.
-              Are you sure you want to continue?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel variant="outline">Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              disabled={isRemovingMember}
-              onClick={(e) => {
-                e.preventDefault();
-                handleDeleteUser();
-                // return true;
-              }}
-            >
-              {isRemovingMember && <Spinner />}
-              Remove
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+          {/* Context Menu */}
+          <ContextMenuContent>
+            <ContextMenuGroup>
+              <ContextMenuItem
+                className="text-xs px-1.5 py-1"
+                onClick={handleCopyCell}
+              >
+                Copy cell
+                <ContextMenuShortcut>
+                  <Copy className="size-3" />
+                </ContextMenuShortcut>
+              </ContextMenuItem>
+              <ContextMenuItem
+                className="text-xs px-1.5 py-1"
+                onClick={handleCopyRow}
+              >
+                Copy row
+                <ContextMenuShortcut>
+                  <Copy className="size-3" />
+                </ContextMenuShortcut>
+              </ContextMenuItem>
+            </ContextMenuGroup>
+            {hasPermission(businessMember?.role, "products:crud") &&
+              canDelete && (
+                <>
+                  <ContextMenuSeparator />
+                  <ContextMenuGroup>
+                    <DialogTrigger asChild>
+                      <ContextMenuItem className="text-xs px-1.5 py-1">
+                        Edit row
+                        <ContextMenuShortcut>
+                          <Edit className="size-3" />
+                        </ContextMenuShortcut>
+                      </ContextMenuItem>
+                    </DialogTrigger>
+                  </ContextMenuGroup>
+
+                  <ContextMenuSeparator />
+                  <ContextMenuGroup>
+                    <ContextMenuItem
+                      className="text-xs px-1.5 py-1"
+                      variant="destructive"
+                    >
+                      Delete row
+                      <ContextMenuShortcut>
+                        <Trash2 className="size-3 text-destructive" />
+                      </ContextMenuShortcut>
+                    </ContextMenuItem>
+                  </ContextMenuGroup>
+                </>
+              )}
+          </ContextMenuContent>
+
+          {/* Alert Dialog */}
+          <TeamEditDeleteDialogs row={cell.row} />
+        </AlertDialog>
+      </Dialog>
     </ContextMenu>
   );
 }

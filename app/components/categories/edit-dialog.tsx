@@ -40,11 +40,6 @@ export default function EditDialog({ data }: { data: Category | Subcategory }) {
   const intent = navigation.formData?.get("intent");
   const idUpdating = isSubmitting && intent === "update-category";
 
-  React.useEffect(() => {
-    if (intent === "update-category" && actionData?.success)
-      toast.success(data.name + " " + " has been updated succesfully!");
-  }, [actionData]);
-
   if (!res?.data) throw redirect("/dashboard/organisations");
 
   return (
@@ -93,12 +88,21 @@ export default function EditDialog({ data }: { data: Category | Subcategory }) {
               )}
               <Field>
                 <FieldLabel htmlFor="name">Name</FieldLabel>{" "}
-                <Input id="name" type="text" name="name" value={data.name} />
+                <Input
+                  id="name"
+                  type="text"
+                  name="name"
+                  defaultValue={data.name}
+                />
                 <FieldError errors={[{ message: errors?.name }]} />
               </Field>
               <Field>
                 <FieldLabel htmlFor="name">Description</FieldLabel>{" "}
-                <Textarea id="desc" name="desc" value={data.description} />
+                <Textarea
+                  id="desc"
+                  name="desc"
+                  defaultValue={data.description}
+                />
               </Field>
             </div>
           </div>

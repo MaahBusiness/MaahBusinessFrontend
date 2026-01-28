@@ -20,7 +20,7 @@ import {
 import { useState } from "react";
 import { capitalizeFirstChar } from "utils";
 import { cn } from "@/lib/utils";
-import AddNewDialog from "@/components/team/add-new-dailog";
+import { AddNewDialog } from "@/components/team/team-dialogs";
 import { hasPermission } from "utils/permissions";
 import { useOrganisation } from "@/hooks/use-organisation";
 import type { DataTableToolbarProps } from "types";
