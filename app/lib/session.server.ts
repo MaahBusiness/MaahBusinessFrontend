@@ -121,16 +121,16 @@ function getTokenStatus(token: string): "valid" | "refresh" | "expired" {
   }
 }
 
-let refreshPromise: Promise<any> | null = null;
+// let refreshPromise: Promise<any> | null = null;
 
-async function safeRefresh(refreshToken: string) {
-  if (!refreshPromise) {
-    refreshPromise = refreshAccessToken(refreshToken).finally(() => {
-      refreshPromise = null;
-    });
-  }
-  return refreshPromise;
-}
+// async function safeRefresh(refreshToken: string) {
+//   if (!refreshPromise) {
+//     refreshPromise = refreshAccessToken(refreshToken).finally(() => {
+//       refreshPromise = null;
+//     });
+//   }
+//   return refreshPromise;
+// }
 
 // ------------------------------
 // Main auth helper (used by loaders)
