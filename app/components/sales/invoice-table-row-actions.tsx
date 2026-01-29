@@ -1,12 +1,5 @@
-/* eslint-disable react/no-unescaped-entities */
 import { type Row } from "@tanstack/react-table";
-import {
-  Copy,
-  Edit,
-  MoreVertical,
-  Trash2,
-  Trash2Icon,
-} from "lucide-react";
+import { Copy, Edit, MoreVertical, Trash2, Trash2Icon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -18,9 +11,8 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { redirect, useLocation } from "react-router";
-import type { Category, Subcategory } from "types";
-import { useAuth } from "@/contexts/auth-context";
+import { redirect } from "react-router";
+import type { Invoice } from "types";
 import { useOrganisation } from "@/hooks/use-organisation";
 import {
   AlertDialogTitle,
@@ -31,30 +23,23 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogTrigger,
   AlertDialogMedia,
-  // AlertDialogMedia,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
 import { hasPermission } from "utils/permissions";
-import EditDialog from "@/components/categories/edit-dialog";
-import { Dialog } from "@radix-ui/react-dialog";
-import { DialogTrigger } from "@/components/ui/dialog";
-import { Spinner } from "@/components/ui/spinner";
-import { useClipboard } from "@/hooks/useClipboard";
+import { Drawer, DrawerTrigger } from "@/components/ui/drawer";
 import { toast } from "sonner";
+import { useClipboard } from "@/hooks/useClipboard";
 
-interface DataTableRowActionsProps {
-  row: Row<Category | Subcategory>;
+interface InvoiceTableRowActionsProps {
+  row: Row<Invoice>;
 }
 
-export function CatTableRowActions({
-  row,
-}: DataTableRowActionsProps) {
-  const { user } = useAuth();
-  const { pathname } = useLocation();
-  const { removeCategory, isRemovingCategory, businessMember } =
-    useOrganisation();
+export function InvoiceTableRowActions({ row }: InvoiceTableRowActionsProps) {
+  const { businessMember } = useOrganisation();
+
+  if (!businessMember) throw redirect("/dashboard/organisations/");
 
   const clipboard = useClipboard({
     resetDelay: 3000,
@@ -62,22 +47,18 @@ export function CatTableRowActions({
     onError: () => toast.error("Copy was unsuccessful"),
   });
 
-  if (!user)
-    throw redirect(`/auth/signin?redirectTo=${encodeURIComponent(pathname)}`);
-  if (!businessMember) throw redirect("/dashboard/organisations/");
-
   const handleCopyRow = () => {
     if (clipboard.isCopying) return;
     clipboard.copy(JSON.stringify(row.original));
   };
 
-  const handleDeleteUser = () => {
-    removeCategory({ id: row.original.id, sub: "category_id" in row.original });
-  };
+  // const handleDeleteProduct = () => {
+  //   removeProduct(row.original.id);
+  // };
 
   return (
-    <AlertDialog>
-      <Dialog>
+    <Drawer direction="right">
+      <AlertDialog>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -103,19 +84,23 @@ export function CatTableRowActions({
                 </DropdownMenuShortcut>
               </DropdownMenuItem>
             </DropdownMenuGroup>
-            {hasPermission(businessMember?.role, "products:crud") && (
+            {hasPermission(businessMember?.role, "invoice:create") && (
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
-                  <DialogTrigger asChild>
+                  <DrawerTrigger asChild>
                     <DropdownMenuItem className="text-xs px-1.5 py-1">
                       Edit row
                       <DropdownMenuShortcut>
                         <Edit className="size-3" />
                       </DropdownMenuShortcut>
                     </DropdownMenuItem>
-                  </DialogTrigger>
+                  </DrawerTrigger>
                 </DropdownMenuGroup>
+              </>
+            )}
+            {hasPermission(businessMember?.role, "invoice:delete") && (
+              <>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
                   <AlertDialogTrigger asChild>
@@ -135,37 +120,36 @@ export function CatTableRowActions({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <EditDialog data={row.original} />
+        {/* <EditProductDrawer data={row.original} /> */}
 
         <AlertDialogContent size="sm">
           <AlertDialogHeader>
             <AlertDialogMedia className="bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive">
               <Trash2Icon />
             </AlertDialogMedia>
-            <AlertDialogTitle>Remove '{row.original.name}'?</AlertDialogTitle>
+            <AlertDialogTitle>Remove {row.original.number}?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently remove '{row.original.name}' from all
-              inventory controls.
+              This will permanently remove {row.original.number} from your
+              invoices. Are you sure you want to continue?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel variant="outline">Cancel</AlertDialogCancel>
-
             <AlertDialogAction
               variant="destructive"
-              disabled={isRemovingCategory}
+              // disabled={isRemovingProduct}
               onClick={(e) => {
                 e.preventDefault();
-                handleDeleteUser();
+                // handleDeleteProduct();
+                // return true;
               }}
-              // type="button"
             >
-              {isRemovingCategory && <Spinner className="size-4" />}
+              {/* {isRemovingProduct && <Spinner />} */}
               Remove
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
-      </Dialog>
-    </AlertDialog>
+      </AlertDialog>
+    </Drawer>
   );
 }

@@ -2,17 +2,9 @@
 // BREADCRUMB COMPONENT
 // ============================================================================
 
-import {
-  ChevronRight,
-  GalleryVerticalEnd,
-  MoreHorizontal,
-  SlashIcon,
-} from "lucide-react";
+import { GalleryVerticalEnd, SlashIcon } from "lucide-react";
 import { Link, useLocation } from "react-router";
-import {
-  matchBreadcrumbConfig,
-  type BreadcrumbSegment,
-} from "@/lib/breadcrumbs-config";
+import { matchBreadcrumbConfig } from "@/lib/breadcrumbs-config";
 import { Fragment } from "react";
 import {
   Breadcrumb,
@@ -24,11 +16,12 @@ import {
 } from "@/components/ui/breadcrumb";
 import TeamSwitcher from "@/components/team-switcher";
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface BreadcrumbProps {
   maxDepth?: number; // Future: collapse after this depth
 }
 
-export function Breadcrumbs({}: BreadcrumbProps) {
+export function Breadcrumbs() {
   const location = useLocation();
 
   const match = matchBreadcrumbConfig(location.pathname);

@@ -24,6 +24,7 @@ export type PaymentMethod =
   | "stripe"
   | "paypal"
   | "credit";
+
 export type InvoiceStatus = "paid" | "partial" | "refunded" | "cancelled";
 
 export interface User extends UserSnapshot {
@@ -86,7 +87,7 @@ interface OrganisationCore extends BusinessSnapshot {
   qr_code_url?: string;
   logo_url?: string;
   is_active: boolean;
-  settings?: {};
+  settings?: object;
   created_at: string;
   updated_at: string;
   member_count: number;
@@ -208,13 +209,13 @@ interface ProductFilters {
 }
 
 // Future: Other modules (fetched separately)
-export interface OrganisationInventory {
-  // Will be added later
-}
+// export interface OrganisationInventory {
+//   // Will be added later
+// }
 
-export interface OrganisationSales {
-  // Will be added later
-}
+// export interface OrganisationSales {
+//   // Will be added later
+// }
 
 // Combined organisation data (all modules)
 export interface Organisation {
@@ -306,7 +307,6 @@ export interface SideItem {
     url: string;
   }[];
 }
-[];
 
 interface ProductCreateParams extends ProductUpdateParams {
   business_id: string;
@@ -329,29 +329,34 @@ interface ProductUpdateParams {
   expiry_date?: string;
 }
 
-export interface invoice {
-  id: string;
+export interface Invoice {
+  id: string; //
   business_id: string;
-  number: number;
-  cashier_id: string;
-  status: string;
-  total: number;
-  tax: number;
-  total_discount: number;
-  advance_paid: number;
-  remaining_amount: number;
+  number: number; //
+
+  cashier_id: string; //
+  cashier_name?: string;
+
+  status: InvoiceStatus; //
+  total: number; //
+  tax: number; //
+  total_discount: number; //
+  advance_paid: number; //
+  remaining_amount: number; //
   payment_method: PaymentMethod;
   is_credit_settled: boolean;
-  created_at: string;
-  updated_at: string;
-  customer_name?: string;
+  due_date?: string; //
+
+  created_at: string; //
+  updated_at: string; //
+
+  customer_name?: string; //
   customer_id?: string;
-  cashier_name?: string;
-  due_date: string;
-  reason?: string;
+
+  reason?: string; ///
   is_archived: boolean;
-  lines: InvoiceLine[];
-  refund_amount: number;
+  lines: InvoiceLine[]; //
+  refund_amount: number; //
 }
 
 export interface InvoiceCreateParams {
@@ -389,17 +394,15 @@ export interface InvoiceLineCreateParams {
   discount?: number;
 }
 
-export interface InvoiceQuery {
-  // business_id: string,
-  category_id?: string;
-  subcategory_id?: string;
-  name?: keyof Product;
-  low_stock_only?: boolean;
-  expired_only?: boolean;
+export interface InvoiceFilters {
+  // business_id: string, //this is passed as route params, so not here
+  status?: InvoiceStatus;
+  start_date?: string;
+  end_date?: string;
   search?: string;
   page?: number;
   page_size?: number;
-  order_by?: keyof Product;
+  order_by?: keyof Invoice;
 }
 
 export interface DataTableToolbarProps<TData> {

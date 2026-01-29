@@ -110,7 +110,7 @@ export default function AddTeam({ actionData }: Route.ComponentProps) {
           <h3 className="text-muted-foreground text-xs font-medium">
             Your organisation, {res.data?.name} has been created.
           </h3>
-          <h1 className="text-2xl font-medium">Now let's add your team</h1>
+          <h1 className="text-2xl font-medium">Now let&apos;s add your team</h1>
         </div>{" "}
         <Tooltip>
           <TooltipTrigger asChild>
@@ -188,7 +188,7 @@ export default function AddTeam({ actionData }: Route.ComponentProps) {
                       </div>
                     </div>
                     <Button size={"sm"} variant={"outline"} title={role?.desc}>
-                      {capitalizeFirstChar(role?.label!)}
+                      {capitalizeFirstChar(role?.label ?? "")}
                     </Button>
                   </div>
                 );
@@ -211,14 +211,14 @@ function LoadingUI() {
   return (
     <div className="w-full min-h-full flex flex-col gap-8 items-stretch max-w-3xl lg:px-6 px-4 mx-auto pt-12">
       <div className="w-full">
-        <h1 className="text-2xl font-medium">Now let's add your team</h1>
+        <h1 className="text-2xl font-medium">Now let&apos;s add your team</h1>
       </div>
 
       <div className="flex flex-col gap-4">
         <div className="flex flex-1 flex-col gap-4">
           <div className="flex flex-col gap-12 ">
-            {[1, 2].map(() => (
-              <Skeleton className="h-20 w-full"></Skeleton>
+            {[1, 2].map((idx) => (
+              <Skeleton key={idx} className="h-20 w-full"></Skeleton>
             ))}
           </div>
         </div>

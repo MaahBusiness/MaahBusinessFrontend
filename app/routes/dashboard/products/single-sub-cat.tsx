@@ -16,8 +16,12 @@ import type {
   ProductFilters,
   Product,
 } from "types";
-import { parseSearchParams, productFilterParsers } from "utils";
-import { useEffect, useState } from "react";
+import {
+  genericErrorState,
+  parseSearchParams,
+  productFilterParsers,
+} from "utils";
+import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useOrganisation } from "@/hooks/use-organisation";
@@ -60,6 +64,7 @@ export async function action({ request, params }: Route.ActionArgs): Promise<
           description: desc,
         });
       }
+      break;
     }
     case "update-category": {
       const name = formData.get("name") as string | undefined;
@@ -83,12 +88,15 @@ export async function action({ request, params }: Route.ActionArgs): Promise<
           },
         );
       }
+      break;
     }
 
     // Handle Product Actions
     default:
       return await handleProductActions({ formData, id, session });
   }
+
+  return genericErrorState();
 }
 
 export default function SingleCatPage({ actionData }: Route.ComponentProps) {
@@ -98,7 +106,10 @@ export default function SingleCatPage({ actionData }: Route.ComponentProps) {
   const [searchParams] = useSearchParams();
   const navigation = useNavigation();
 
-  const [filters, setFilters] = useState<ProductFilters>();
+  const filters = parseSearchParams<ProductFilters>(
+    searchParams,
+    productFilterParsers,
+  );
 
   if (!catId) throw redirect("categories");
 
@@ -107,7 +118,7 @@ export default function SingleCatPage({ actionData }: Route.ComponentProps) {
 
   const intent = navigation.formData?.get("intent");
 
-  const { data: prodRes, isFetching } = fetchProducts({
+  const { data: prodRes } = fetchProducts({
     ...filters,
     // category_id: cat?.id,
     subcategory_id: sub?.id,
@@ -135,17 +146,17 @@ export default function SingleCatPage({ actionData }: Route.ComponentProps) {
     }
   }, [actionData]);
 
-  useEffect(() => {
-    const _filters = parseSearchParams<ProductFilters>(
-      searchParams,
-      productFilterParsers,
-    );
-    setFilters({
-      ..._filters,
-      // category_id: cat?.id,
-      subcategory_id: sub?.id,
-    });
-  }, [searchParams]);
+  // useEffect(() => {
+  //   const _filters = parseSearchParams<ProductFilters>(
+  //     searchParams,
+  //     productFilterParsers,
+  //   );
+  //   setFilters({
+  //     ..._filters,
+  //     // category_id: cat?.id,
+  //     subcategory_id: sub?.id,
+  //   });
+  // }, [searchParams]);
 
   if (isLoading) return <DataTableSkeleton />;
   if (!res?.success) return <RequestFailed />;

@@ -26,6 +26,7 @@ export function TablePagination<TData>({
   table,
   meta,
 }: DataTablePaginationProps<TData>) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_, setSearchParams] = useSearchParams();
 
   return (

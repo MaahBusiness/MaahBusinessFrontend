@@ -1,5 +1,6 @@
 import type { Locale } from "date-fns";
 import type {
+  InvoiceFilters,
   OTPSessionData,
   Product,
   ProductFilters,
@@ -189,7 +190,7 @@ export function cleanPayload<T extends Record<string, any>>(
 export function removeUndefined<T extends Record<string, any>>(
   obj: T,
 ): Partial<T> {
-  return Object.entries(obj).reduce((acc, [key, value]) => {
+  return Object.entries(obj).reduce((acc, [, value]) => {
     // Skip undefined values
     if ([undefined, null, ""].includes(value)) {
       return acc;
@@ -245,6 +246,7 @@ export function buildQueryParams<T extends Record<string, QueryValue>>(
   );
 }
 
+/**For parsing search params back into a usable object */
 export const productFilterParsers = {
   category_id: (v: string | null) => v || undefined,
   subcategory_id: (v: string | null) => v || undefined,
@@ -262,6 +264,17 @@ export const productFilterParsers = {
   name: (v: string | null) => v as keyof Product | undefined,
 } satisfies Record<keyof ProductFilters, (v: string | null) => any>;
 
+export const invoiceFilterParsers = {
+  status: (v: string | null) => v || undefined,
+  search: (v: string | null) => v || undefined,
+  start_date: (v: string | null) => v || undefined,
+  end_date: (v: string | null) => v || undefined,
+  order_by: (v: string | null) => v as keyof Product | undefined,
+  page: (v: string | null) => (v ? Number(v) : undefined),
+  page_size: (v: string | null) => (v ? Number(v) : undefined),
+} satisfies Record<keyof InvoiceFilters, (v: string | null) => any>;
+
+/**Parses only defined search params. Much like `cleanPayload` */
 export function parseSearchParams<T>(
   searchParams: URLSearchParams,
   parsers: Record<keyof T, (value: string | null) => any>,

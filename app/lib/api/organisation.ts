@@ -5,6 +5,8 @@
 import { apiClient } from "@/lib/api-client";
 import type {
   Category,
+  Invoice,
+  InvoiceFilters,
   OrganisationCore,
   OrganisationMember,
   Product,
@@ -22,6 +24,7 @@ import {
   EDIT_MEMBERS_URL,
   INVENTORY_CO_URL,
   INVENTORY_URL,
+  INVOICE_URL,
   LIST_BUSINESS_URL,
   LIST_MEMBERS_URL,
   MEMBERS_URL,
@@ -201,6 +204,20 @@ export const organisationsApi = {
     return apiClient.delete<Product>(PRODUCTS_URL + id, token);
   },
 
+  // Sales & invoices
+
+  getInvoices: (token: string, id: string) =>
+    apiClient.get<Invoice[]>(INVOICE_URL + "?business_id=" + id, token),
+
+  getFilteredInvoices: (
+    token: string,
+    id: string,
+    filters?: InvoiceFilters,
+  ) => {
+    const query = buildQueryParams({ business_id: id, ...filters });
+    return apiClient.get<Invoice[]>(`${INVOICE_URL}${query}`, token);
+  },
+
   getCustomers: (token: string, id: string) =>
     apiClient.get<OrganisationMember[]>(
       CUSTOMERS_URL + "?business_id=" + id,
@@ -229,16 +246,19 @@ export const organisationKeys = {
   // Organisation modules (specific data)
   core: (id: string) => [...organisationKeys.detail(id), "core"] as const,
   members: (id: string) => [...organisationKeys.detail(id), "members"] as const,
+
   products: (id: string) =>
     [...organisationKeys.detail(id), "products"] as const,
   product: (id: string) => ["product", id] as const,
   prodlist: (id: string, filters?: ProductFilters) =>
     [...organisationKeys.detail(id), "products", { filters }] as const,
+
   invoices: (id: string) =>
     [...organisationKeys.detail(id), "invoices"] as const,
   invoice: (id: string) => ["invoice", id] as const,
-  // invoiceList: (id: string, filters?: invoiceFilters) =>
-  //   [...organisationKeys.detail(id), "products", { filters }] as const,
+  invoiceList: (id: string, filters?: InvoiceFilters) =>
+    [...organisationKeys.detail(id), "invoices", { filters }] as const,
+
   customers: (id: string) =>
     [...organisationKeys.detail(id), "customers"] as const,
   inventory: (id: string) =>

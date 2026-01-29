@@ -132,10 +132,10 @@ export async function signUpWithEmail(formData: FormData) {
       { status: res.status },
     );
   } catch (err) {
-    console.log("LOG::SIGN_UP_ERROR", (err as any).message);
+    console.log("LOG::SIGN_UP_ERROR", (err as Error).message);
     return data<SignUpActionType>(
       {
-        ...(genericNetworkError((err as any).message) || genericErrorState()),
+        ...(genericNetworkError((err as Error).message) || genericErrorState()),
         step: "EMAIL",
       },
       { status: 500 },
@@ -237,10 +237,10 @@ export async function verifyOTP(
       },
     });
   } catch (err) {
-    console.error("LOG::VERIFY_OTP_FAILED", (err as any).message);
+    console.error("LOG::VERIFY_OTP_FAILED", (err as Error).message);
     return data<SignUpActionType>(
       {
-        ...(genericNetworkError((err as any).message) || genericErrorState()),
+        ...(genericNetworkError((err as Error).message) || genericErrorState()),
         step: "OTP",
         otpSession,
       },
@@ -253,7 +253,7 @@ export async function verifyOTP(
 // Resend OTP
 // -------------------------------------
 export async function resendOTP(otpSession: OTPSessionData) {
-  const { email, otpExpiresAt, resendCount, resendAvailableAt } = otpSession;
+  const { email, resendCount, resendAvailableAt } = otpSession;
 
   // Check if still in cooldown period
   if (resendAvailableAt && Date.now() < resendAvailableAt) {
@@ -366,10 +366,10 @@ export async function resendOTP(otpSession: OTPSessionData) {
       },
     });
   } catch (err) {
-    console.log("LOG::RESEND_OTP_ERROR", (err as any).message);
+    console.log("LOG::RESEND_OTP_ERROR", (err as Error).message);
     return data<SignUpActionType>(
       {
-        ...(genericNetworkError((err as any).message) || genericErrorState()),
+        ...(genericNetworkError((err as Error).message) || genericErrorState()),
         step: "OTP",
         otpSession,
       },
@@ -421,11 +421,11 @@ export async function getGoogleAuthUrl() {
 
     // Redirect to Google OAuth
     return redirect(authUrl);
-  } catch (error) {
-    console.log("LOG::GOOGLE_AUTH_ERROR", (error as any).message);
+  } catch (err) {
+    console.log("LOG::GOOGLE_AUTH_ERROR", (err as Error).message);
     return data<SignUpActionType>(
       {
-        ...(genericNetworkError((error as any).message) || genericErrorState()),
+        ...(genericNetworkError((err as Error).message) || genericErrorState()),
         step: "EMAIL",
       },
       { status: 500 },
@@ -526,10 +526,10 @@ export async function signInWithEmail(formData: FormData) {
       },
     });
   } catch (err) {
-    console.log("LOG::SIGN_IN_ERROR", (err as any).message);
+    console.log("LOG::SIGN_IN_ERROR", (err as Error).message);
     return data<SignUpActionType>(
       {
-        ...(genericNetworkError((err as any).message) || genericErrorState()),
+        ...(genericNetworkError((err as Error).message) || genericErrorState()),
       },
       { status: 500 },
     );
@@ -658,7 +658,7 @@ export async function sendPasswordResetLink(
       {
         success: true,
         otpSession: {
-          email: email || otpSession?.email!,
+          email: email || otpSession?.email || '',
           otpExpiresAt,
           resendCount: (otpSession?.resendCount || 0) + 1,
           resendAvailableAt: undefined, // Clear cooldown
@@ -667,10 +667,10 @@ export async function sendPasswordResetLink(
       { status: res.status },
     );
   } catch (err) {
-    console.log("LOG::PASS_RESET_LINK_ERROR", (err as any).message);
+    console.log("LOG::PASS_RESET_LINK_ERROR", (err as Error).message);
     return data<SignUpActionType>(
       {
-        ...(genericNetworkError((err as any).message) || genericErrorState()),
+        ...(genericNetworkError((err as Error).message) || genericErrorState()),
         otpSession,
       },
       { status: 500 },
@@ -753,10 +753,10 @@ export async function resetPassword(formData: FormData, token: string) {
     console.log("LOG::PASS_RESET_SUCCESS", raw);
     return redirect("/dashboard");
   } catch (err) {
-    console.log("LOG::PASS_RESET_LINK_ERROR", (err as any).message);
+    console.log("LOG::PASS_RESET_LINK_ERROR", (err as Error).message);
     return data<ServerActionState>(
       {
-        ...(genericNetworkError((err as any).message) || genericErrorState()),
+        ...(genericNetworkError((err as Error).message) || genericErrorState()),
       },
       { status: 500 },
     );
@@ -814,10 +814,10 @@ export async function signOut(accessToken: string) {
     // Always clear session cookie
     return redirect("/auth/signin", { headers: await destroySession() });
   } catch (err) {
-    console.log("LOG::SIGNOUT_ERROR", (err as any).message);
+    console.log("LOG::SIGNOUT_ERROR", (err as Error).message);
     return data<ServerActionState>(
       {
-        ...(genericNetworkError((err as any).message) || genericErrorState()),
+        ...(genericNetworkError((err as Error).message) || genericErrorState()),
       },
       { status: 500 },
     );

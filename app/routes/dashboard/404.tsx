@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 import { Link } from "react-router";
 import { Button } from "@/components/ui/button";
 import {

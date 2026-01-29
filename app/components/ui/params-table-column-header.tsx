@@ -18,13 +18,13 @@ interface DataTableColumnHeaderProps<
 > extends React.HTMLAttributes<HTMLDivElement> {
   column: Column<TData, TValue>;
   title: string;
-  accessorKey: string;
+  accessorKey?: string;
 }
 
 export function DataTableColumnHeader<TData, TValue>({
   column,
   title,
-  accessorKey,
+  accessorKey = "",
   className,
 }: DataTableColumnHeaderProps<TData, TValue>) {
   const [searchParams, setSearchParams] = useSearchParams();

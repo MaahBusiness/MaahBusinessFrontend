@@ -1,13 +1,11 @@
 import type { Route } from ".react-router/types/app/routes/dashboard/+types/layout";
 import { SiteHeader } from "@/components/site-header";
 import { signOut } from "@/lib/api/auth";
-import { organisationKeys } from "@/lib/api/organisation";
 import { getSession, requireUserSession } from "@/lib/session.server";
-import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { Outlet, redirect, data, useParams } from "react-router";
+import { Outlet, redirect, data } from "react-router";
 import { toast } from "sonner";
-import type { OrganisationCore, ServerActionState } from "types";
+import type { ServerActionState } from "types";
 import { genericErrorState } from "utils";
 
 // -------------------------------------
@@ -22,6 +20,7 @@ export async function action({ request }: Route.ActionArgs) {
   switch (intent) {
     case "signout":
       if (session?.accessToken) return signOut(session.accessToken); // Call backend logout endpoint if session exists
+      break;
 
     default:
       return data<ServerActionState>(genericErrorState(), { status: 400 });
@@ -54,15 +53,6 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 
 export default function AuthLayout({ actionData }: Route.ComponentProps) {
-  const queryClient = useQueryClient();
-  const { id } = useParams<{ id: string }>();
-
-  const init = (
-    queryClient.getQueryData(organisationKeys.lists()) as
-      | (ServerActionState & { data: OrganisationCore[] })
-      | undefined
-  )?.data?.find((o) => o.id === id);
-
   // Show toasts based on action results
   useEffect(() => {
     if (actionData?.message) {

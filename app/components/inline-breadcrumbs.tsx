@@ -2,17 +2,9 @@
 // INLINE BREADCRUMB COMPONENT
 // ============================================================================
 
-import {
-  ChevronRight,
-  GalleryVerticalEnd,
-  MoreHorizontal,
-  SlashIcon,
-} from "lucide-react";
+import { SlashIcon } from "lucide-react";
 import { Link, useLocation } from "react-router";
-import {
-  matchBreadcrumbConfig,
-  type BreadcrumbSegment,
-} from "@/lib/breadcrumbs-config";
+import { matchBreadcrumbConfig } from "@/lib/breadcrumbs-config";
 import { Fragment } from "react";
 import {
   Breadcrumb,

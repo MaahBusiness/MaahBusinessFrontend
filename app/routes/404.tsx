@@ -20,8 +20,8 @@ export default function NotFound() {
         </EmptyMedia>
         <EmptyTitle className="text-4xl">404</EmptyTitle>
         <EmptyDescription className="max-w-xs text-pretty">
-          The page you're looking for doesn't exist or has been moved to a new
-          location.
+          The page you&apos;re looking for doesn&apos;t exist or has been moved
+          to a new location.
         </EmptyDescription>
       </EmptyHeader>
       <EmptyContent>
@@ -39,7 +39,7 @@ export default function NotFound() {
 export function RequestFailed() {
   const navigate = useNavigate();
   return (
-    <Empty className="p-0">
+    <Empty className="p-0 !h-[calc(100svh-var(--header-height))]">
       <EmptyHeader>
         <EmptyMedia variant="icon">
           <CircleSlash />

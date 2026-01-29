@@ -59,8 +59,8 @@ export function DataTable<TData, TValue>({
   const [sorting, setSorting] = React.useState<SortingState>(initialSort);
 
   const initialVisibility = columns.reduce((acc, column) => {
-    if (column.meta?.hidden && (column as any)?.id) {
-      acc[(column as any).id as string] = false;
+    if (column.meta?.hidden && column?.id) {
+      acc[column.id as string] = false;
     }
     return acc;
   }, {} as VisibilityState);

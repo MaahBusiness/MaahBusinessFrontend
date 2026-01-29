@@ -8,7 +8,7 @@ import { organisationKeys, organisationsApi } from "@/lib/api/organisation";
 import { getSession } from "@/lib/session.server";
 import { RequestFailed } from "@/routes/404";
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import {
   redirect,
   useNavigation,
@@ -125,6 +125,7 @@ export async function handleProductActions({
           promotion_start_date: promoStart,
           subcategory_id: subcat,
         });
+      break;
     }
 
     case "update-product": {
@@ -145,11 +146,13 @@ export async function handleProductActions({
             subcategory_id: subcat,
           },
         );
+      break;
     }
 
     default:
       return genericErrorState();
   }
+  return genericErrorState();
 }
 
 export default function ProductsPage({ actionData }: Route.ComponentProps) {
@@ -160,7 +163,10 @@ export default function ProductsPage({ actionData }: Route.ComponentProps) {
   const [searchParams] = useSearchParams();
   const navigation = useNavigation();
 
-  const [filters, setFilters] = useState<ProductFilters>();
+  const filters = parseSearchParams<ProductFilters>(
+    searchParams,
+    productFilterParsers,
+  );
   const intent = navigation.formData?.get("intent");
 
   const { data: res, isLoading } = fetchProducts(filters);
@@ -188,13 +194,13 @@ export default function ProductsPage({ actionData }: Route.ComponentProps) {
     }
   }, [actionData]);
 
-  useEffect(() => {
-    const _filters = parseSearchParams<ProductFilters>(
-      searchParams,
-      productFilterParsers,
-    );
-    setFilters(_filters);
-  }, [searchParams]);
+  // useEffect(() => {
+  // const _filters = parseSearchParams<ProductFilters>(
+  //   searchParams,
+  //   productFilterParsers,
+  // );
+  // setFilters(_filters);
+  // }, [searchParams]);
 
   if (isLoading) return <DataTableSkeleton />;
   if (!res?.success) return <RequestFailed />;

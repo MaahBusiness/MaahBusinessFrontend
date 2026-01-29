@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 import { PasswordInput } from "@/components/forms/password-input";
 import RoleSelector from "@/components/role-selector";
 import {
@@ -44,7 +45,6 @@ import { useOrganisation } from "@/hooks/use-organisation";
 import { cn } from "@/lib/utils";
 import type { Row } from "@tanstack/react-table";
 import { ChevronDown, SearchIcon, UserPlus, Trash2Icon } from "lucide-react";
-import React, { useEffect, useState } from "react";
 import {
   useActionData,
   useNavigation,
@@ -52,7 +52,6 @@ import {
   useLocation,
   redirect,
 } from "react-router";
-import { toast } from "sonner";
 import type { ServerActionState, OrganisationMember } from "types";
 
 // ? NOTE: Would've loved to use `useOrganisations`'s handy methods here, but React Router 8 and forms are just built different. The easiest/safest way is just using actions and handling toasting/invalidation manually

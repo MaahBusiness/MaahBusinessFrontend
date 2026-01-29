@@ -17,7 +17,7 @@ import type {
   Product,
 } from "types";
 import { parseSearchParams, productFilterParsers } from "utils";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Route } from ".react-router/types/app/routes/dashboard/products/+types/single-category";
 import { toast } from "sonner";
@@ -62,6 +62,7 @@ export async function action({ request, params }: Route.ActionArgs): Promise<
           description: desc,
         });
       }
+      break;
     }
     case "update-category": {
       const name = formData.get("name") as string | undefined;
@@ -85,12 +86,14 @@ export async function action({ request, params }: Route.ActionArgs): Promise<
           },
         );
       }
+      break;
     }
 
     // Handle Product Actions
     default:
       return await handleProductActions({ formData, id, session });
   }
+  return await handleProductActions({ formData, id, session });
 }
 
 export default function SingleCatPage({ actionData }: Route.ComponentProps) {
@@ -100,7 +103,10 @@ export default function SingleCatPage({ actionData }: Route.ComponentProps) {
   const [searchParams] = useSearchParams();
   const navigation = useNavigation();
 
-  const [filters, setFilters] = useState<ProductFilters>();
+  const filters = parseSearchParams<ProductFilters>(
+    searchParams,
+    productFilterParsers,
+  );
 
   if (!catId) throw redirect("categories");
 
@@ -108,7 +114,7 @@ export default function SingleCatPage({ actionData }: Route.ComponentProps) {
   const subs = cat?.subcategories;
   const intent = navigation.formData?.get("intent");
 
-  const { data: prodRes, isFetching } = fetchProducts({
+  const { data: prodRes } = fetchProducts({
     ...filters,
     category_id: cat?.id,
   });
@@ -151,13 +157,13 @@ export default function SingleCatPage({ actionData }: Route.ComponentProps) {
     }
   }, [actionData]);
 
-  useEffect(() => {
-    const _filters = parseSearchParams<ProductFilters>(
-      searchParams,
-      productFilterParsers,
-    );
-    setFilters({ ..._filters, category_id: cat?.id });
-  }, [searchParams]);
+  // useEffect(() => {
+  //   const _filters = parseSearchParams<ProductFilters>(
+  //     searchParams,
+  //     productFilterParsers,
+  //   );
+  //   setFilters({ ..._filters, category_id: cat?.id });
+  // }, [searchParams]);
 
   if (isLoading)
     return (
@@ -201,7 +207,9 @@ export default function SingleCatPage({ actionData }: Route.ComponentProps) {
 
       <div className="w-full flex flex-col gap-8 items-stretch max-w-[1200px] lg:px-6 px-4 mx-auto py-12">
         <div className="w-full flex items-center gap-2">
-          <h2 className="text-lg tracking-tight">{cat?.name}'s Products</h2>
+          <h2 className="text-lg tracking-tight">
+            {cat?.name}&apos;s Products
+          </h2>
         </div>
 
         <DataTable

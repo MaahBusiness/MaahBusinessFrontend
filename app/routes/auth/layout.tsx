@@ -4,11 +4,9 @@ import {
   BreadcrumbItem,
   BreadcrumbLink,
   BreadcrumbSeparator,
-  BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
-import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/utils/mode-toggle";
-import { ArrowUpRightIcon, GalleryVerticalEnd, SlashIcon } from "lucide-react";
+import { GalleryVerticalEnd, SlashIcon } from "lucide-react";
 import { Outlet, Link } from "react-router";
 
 export default function AuthLayout() {

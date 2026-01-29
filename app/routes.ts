@@ -53,7 +53,7 @@ export default [
       ),
 
       // Sales
-      // route("sales", "routes/dashboard/sales/index.tsx"),
+      route("invoices", "routes/dashboard/sales/index.tsx"),
     ]),
     route("*", "routes/dashboard/404.tsx"),
   ]),

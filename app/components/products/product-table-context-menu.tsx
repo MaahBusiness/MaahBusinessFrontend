@@ -24,32 +24,29 @@ import { Spinner } from "@/components/ui/spinner";
 import { useOrganisation } from "@/hooks/use-organisation";
 import { useClipboard } from "@/hooks/useClipboard";
 import { cn } from "@/lib/utils";
-import { visibles } from "@/routes/dashboard/products/data";
-import type { Cell, Row } from "@tanstack/react-table";
+import type { Cell } from "@tanstack/react-table";
 import { Copy, Edit, Trash2, Trash2Icon } from "lucide-react";
-import { useState } from "react";
 import { toast } from "sonner";
 import type { Product } from "types";
 import { hasPermission } from "utils/permissions";
 
-interface DataTableContextMenuProps<TData, TValue> {
+interface DataTableContextMenuProps<TValue> {
   cell: Cell<Product, TValue>;
   className?: string;
   children?: React.ReactNode;
   title?: string;
 }
 
-export function ProductTableContextMenu<TData, TValue>({
+export function ProductTableContextMenu<TValue>({
   cell,
   className,
   children,
   title,
-}: DataTableContextMenuProps<TData, TValue>) {
+}: DataTableContextMenuProps<TValue>) {
   const { businessMember, removeProduct, isRemovingProduct } =
     useOrganisation();
 
   const val = cell.getValue() as string | number | undefined;
-  const label = visibles?.find((o) => o.value === cell.column.id)?.label;
 
   const clipboard = useClipboard({
     resetDelay: 3000,

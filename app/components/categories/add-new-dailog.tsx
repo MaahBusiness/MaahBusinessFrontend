@@ -16,7 +16,6 @@ import { Form, redirect, useActionData, useNavigation } from "react-router";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import type { Category, ServerActionState } from "types";
 import { Spinner } from "@/components/ui/spinner";
-import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -32,7 +31,6 @@ import {
   CommandEmpty,
   CommandGroup,
   CommandInput,
-  CommandItem,
   CommandList,
 } from "@/components/ui/command";
 import {
@@ -41,7 +39,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { ChevronDown, Check } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 
 export default function AddNewDialog() {
@@ -138,7 +136,6 @@ export default function AddNewDialog() {
 }
 
 export function CategorySelector({
-  value,
   disabled,
   className,
 }: {
@@ -147,7 +144,7 @@ export function CategorySelector({
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
-  const [cat, setCat] = useState<Category>();
+  const [cat] = useState<Category>();
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

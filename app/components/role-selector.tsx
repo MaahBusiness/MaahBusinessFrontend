@@ -54,7 +54,8 @@ export default function RoleSelector({
                   key={r.id}
                   id={r.id}
                   onSelect={() => {
-                    (setRole(r), setOpen(false));
+                    setRole(r);
+                    setOpen(false);
                   }}
                   disabled={isOwner || r.id == "owner"}
                   // value={r.id}

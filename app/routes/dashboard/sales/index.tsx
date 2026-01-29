@@ -1,26 +1,13 @@
-import DataTableSkeleton from "@/components/data-table-skeleton";
-import { productCols } from "@/components/products/product-columns";
+import type { Route } from ".react-router/types/app/routes/dashboard/sales/+types";
 import { ProductTableToolbar } from "@/components/products/product-table-toolbar";
+import { invoiceCols } from "@/components/sales/invoice-columns";
 import { DataTable } from "@/components/ui/data-table";
-import { useOrganisation } from "@/hooks/use-organisation";
-import { organisationKeys, organisationsApi } from "@/lib/api/organisation";
+import { organisationsApi } from "@/lib/api/organisation";
 import { getSession } from "@/lib/session.server";
-import { RequestFailed } from "@/routes/404";
-import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
-import {
-  redirect,
-  useParams,
-  useSearchParams,
-  type SessionData,
-} from "react-router";
-import { toast } from "sonner";
-import type { Product, ProductFilters, ServerActionState } from "types";
-import {
-  genericErrorState,
-  parseSearchParams,
-  productFilterParsers,
-} from "utils";
+import { mockInvoices } from "@/routes/dashboard/sales/data";
+import { redirect, type SessionData } from "react-router";
+import type { Product, ServerActionState } from "types";
+import { genericErrorState } from "utils";
 
 export async function action({ request, params }: Route.ActionArgs): Promise<
   ServerActionState & {
@@ -124,6 +111,7 @@ export async function handleProductActions({
           promotion_start_date: promoStart,
           subcategory_id: subcat,
         });
+      break;
     }
 
     case "update-product": {
@@ -144,61 +132,64 @@ export async function handleProductActions({
             subcategory_id: subcat,
           },
         );
+      break;
     }
 
     default:
       return genericErrorState();
   }
+  return genericErrorState();
 }
 
-export default function ProductsPage({ actionData }: Route.ComponentProps) {
-  const { organisation: orgRes, fetchProducts } = useOrganisation();
-  const queryClient = useQueryClient();
-  const { id } = useParams();
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export default function InvoicesPage({ actionData }: Route.ComponentProps) {
+  // const { organisation: orgRes, fetchInvoices } = useOrganisation();
+  // const queryClient = useQueryClient();
+  // const { id } = useParams();
 
-  const [searchParams] = useSearchParams();
-  const [filters, setFilters] = useState<ProductFilters>();
+  // const [searchParams] = useSearchParams();
+  // const [filters, setFilters] = useState<InvoiceFilters>();
 
-  const { data: res, isLoading } = fetchProducts(filters);
-  const cols = productCols({ cats: orgRes?.data?.categories });
+  // const { data: res, isLoading } = fetchInvoices(filters);
+  const cols = invoiceCols();
 
   // Show toasts based on action results
-  useEffect(() => {
-    if (actionData?.message) {
-      if (!actionData.success) toast.error(actionData.message);
-      else toast.success(actionData.message);
-    }
+  // useEffect(() => {
+  //   if (actionData?.message) {
+  //     if (!actionData.success) toast.error(actionData.message);
+  //     else toast.success(actionData.message);
+  //   }
 
-    if (actionData?.success) {
-      if (id)
-        // Automatically refetch products
-        queryClient.invalidateQueries({
-          queryKey: organisationKeys.prodlist(id, filters),
-        });
-    }
-  }, [actionData]);
+  //   if (actionData?.success) {
+  //     if (id)
+  //       // Automatically refetch products
+  //       queryClient.invalidateQueries({
+  //         queryKey: organisationKeys.invoiceList(id, filters),
+  //       });
+  //   }
+  // }, [actionData]);
 
-  useEffect(() => {
-    const _filters = parseSearchParams<ProductFilters>(
-      searchParams,
-      productFilterParsers,
-    );
-    setFilters(_filters);
-  }, [searchParams]);
+  // useEffect(() => {
+  //   const _filters = parseSearchParams<InvoiceFilters>(
+  //     searchParams,
+  //     invoiceFilterParsers,
+  //   );
+  //   setFilters(_filters);
+  // }, [searchParams]);
 
-  if (isLoading) return <DataTableSkeleton />;
-  if (!res?.success) return <RequestFailed />;
+  // if (isLoading) return <DataTableSkeleton />;
+  // if (!res?.success) return <RequestFailed />;
 
   return (
     <div className="w-full min-h-full flex flex-col gap-8 items-stretch max-w-[1200px] lg:px-6 px-4 mx-auto py-12">
       <div className="w-full flex items-center gap-2">
-        <h2 className="text-lg tracking-tight">Products</h2>
+        <h2 className="text-lg tracking-tight">Invoices</h2>
       </div>
 
       <DataTable
-        data={res.data ?? []}
-        // data={productData}
-        meta={res.meta}
+        // data={res.data ?? []}
+        data={mockInvoices}
+        // meta={res.meta}
         columns={cols}
         DataTableToolbar={ProductTableToolbar}
       />

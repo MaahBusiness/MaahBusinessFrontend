@@ -38,6 +38,7 @@ export async function action({ request, params }: Route.ActionArgs): Promise<
           id,
           userId,
         );
+      break;
     }
 
     case "add-member": {
@@ -71,6 +72,7 @@ export async function action({ request, params }: Route.ActionArgs): Promise<
             role: role!,
           },
         );
+      break;
     }
 
     case "update-member": {
@@ -86,14 +88,17 @@ export async function action({ request, params }: Route.ActionArgs): Promise<
           memberId,
           {
             role,
+            // eslint-disable-next-line no-extra-boolean-cast
             is_active: isChecked ? (Boolean(status) ? false : true) : undefined,
           },
         );
+      break;
     }
 
     default:
       return genericErrorState();
   }
+  return genericErrorState();
 }
 
 export default function TeamPage({ actionData }: Route.ComponentProps) {

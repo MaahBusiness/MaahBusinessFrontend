@@ -1,12 +1,5 @@
 import { type Row } from "@tanstack/react-table";
-import {
-  Copy,
-  Edit,
-  MoreHorizontal,
-  MoreVertical,
-  Trash2,
-  Trash2Icon,
-} from "lucide-react";
+import { Copy, Edit, MoreVertical, Trash2, Trash2Icon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {

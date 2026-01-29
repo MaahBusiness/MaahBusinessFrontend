@@ -1,13 +1,5 @@
-import { type Row } from "@tanstack/react-table";
-import {
-  Copy,
-  Edit,
-  Edit3,
-  MoreHorizontal,
-  MoreVertical,
-  Trash2,
-  Trash2Icon,
-} from "lucide-react";
+/* eslint-disable react/no-unescaped-entities */
+import { Copy, Edit, MoreVertical, Trash2, Trash2Icon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -45,13 +37,11 @@ import { Spinner } from "@/components/ui/spinner";
 import { useClipboard } from "@/hooks/useClipboard";
 import { toast } from "sonner";
 
-interface DataTableRowActionsProps<TData> {
+interface DataTableRowActionsProps {
   data: Category | Subcategory;
 }
 
-export function SingleCatActions<TData>({
-  data,
-}: DataTableRowActionsProps<TData>) {
+export function SingleCatActions({ data }: DataTableRowActionsProps) {
   const { user } = useAuth();
   const { pathname } = useLocation();
   const { removeCategory, isRemovingCategory, businessMember } =

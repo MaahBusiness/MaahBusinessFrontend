@@ -31,7 +31,6 @@ import { useOrganisation } from "@/hooks/use-organisation";
 import React from "react";
 import { useState } from "react";
 import { Form, useActionData, useNavigation } from "react-router";
-import { toast } from "sonner";
 import type { Product, ServerActionState } from "types";
 import { formatAmount } from "utils";
 
@@ -71,7 +70,7 @@ export function EditProductDrawer({ data }: { data: Product }) {
       >
         <DrawerHeader className="px-6 py-4 border-b border-border">
           <DrawerTitle className="text-base font-normal truncate">
-            Update '{data.name}'
+            Update &apos;{data.name}&apos;
           </DrawerTitle>
         </DrawerHeader>
 

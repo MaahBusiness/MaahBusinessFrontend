@@ -145,8 +145,8 @@ function OrganisationsSkeleton() {
 
         {/* Orgs */}
         <div className="grid auto-rows-min gap-4  md:grid-cols-3">
-          {Array.from({ length: 3 }).map((_) => (
-            <div className="flex flex-col gap-4">
+          {Array.from({ length: 3 }).map((_, idx) => (
+            <div key={idx} className="flex flex-col gap-4">
               <Skeleton className="h-20" />
             </div>
           ))}

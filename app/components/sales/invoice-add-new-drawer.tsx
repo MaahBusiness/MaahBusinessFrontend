@@ -32,13 +32,13 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useOrganisation } from "@/hooks/use-organisation";
 import { Plus } from "lucide-react";
+import React from "react";
 import { useState } from "react";
 import { Form, useActionData, useNavigation } from "react-router";
-
 import type { Category, Product, ServerActionState } from "types";
 import { formatAmount } from "utils";
 
-export function AddProductDrawer() {
+export function CreateInvoiceDrawer() {
   const { organisation: res } = useOrganisation();
   const actionData = useActionData<ServerActionState & { data?: Product }>();
   const navigation = useNavigation();
@@ -71,7 +71,7 @@ export function AddProductDrawer() {
         <DrawerTrigger asChild>
           <Button size={"sm"} className="h-8 px-2 lg:px-3 text-xs">
             {isAdding ? <Spinner className="size-4" /> : <Plus size={4} />}
-            Add new
+            Create invoice
           </Button>
         </DrawerTrigger>
 
@@ -84,7 +84,7 @@ export function AddProductDrawer() {
           >
             <DrawerHeader className="px-6 py-4 border-b border-border">
               <DrawerTitle className="text-base font-normal">
-                Add a new product
+                Create a new invoice
               </DrawerTitle>
             </DrawerHeader>
 

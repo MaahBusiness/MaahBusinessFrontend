@@ -4,7 +4,6 @@ import type { BackendResponse, GenericResponse, SessionData } from "types";
 import { BASE_URL, REFRESH_TOKEN_URL } from "utils/endpoints";
 
 const REFRESH_THRESHOLD_MS = 2 * 60 * 1000; // 2 minutes
-let isRefreshing = false;
 
 // ------------------------------
 // Cookie configuration

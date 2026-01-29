@@ -11,11 +11,7 @@ import { requireUserSession } from "@/lib/session.server";
 import { useEffect } from "react";
 import { data, redirect } from "react-router";
 import { toast } from "sonner";
-import type {
-  OTPSessionData,
-  ServerActionState,
-  SignUpActionType,
-} from "types";
+import type { OTPSessionData, SignUpActionType } from "types";
 import { genericErrorState } from "utils";
 
 // -------------------------------------

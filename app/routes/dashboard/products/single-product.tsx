@@ -561,8 +561,6 @@ export default function SingleproductPage({
 
                     <span className="text-right">
                       {new Date(res.data.expiry_date).toLocaleDateString("en", {
-                        hour: "2-digit",
-                        minute: "2-digit",
                         day: "2-digit",
                         month: "short",
                         year: "numeric",

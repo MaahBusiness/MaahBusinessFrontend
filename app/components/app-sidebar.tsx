@@ -42,11 +42,11 @@ const schema: { [key: string]: SideItem[] } = {
         },
       ],
     },
-    // {
-    //   title: "Sales",
-    //   url: "team",
-    //   icon: BadgePercent,
-    // },
+    {
+      title: "Sales",
+      url: "invoices",
+      icon: BadgePercent,
+    },
   ],
   secondary: [
     {

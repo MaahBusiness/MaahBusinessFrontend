@@ -39,6 +39,7 @@ export function ProductTableToolbar<TData>({
   const [filter, setFilter] = useState(searchFilters[0].value);
   const [search, setSearch] = useState("");
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const flatCats =
     res?.data?.categories?.flatMap((c) => {
       const categoryOption = {
@@ -140,7 +141,7 @@ export function ProductTableToolbar<TData>({
             variant="ghost"
             onClick={() =>
               setSearchParams((_params) => {
-                let record: Record<string, string> = {};
+                const record: Record<string, string> = {};
 
                 Array.from(_params.entries())
                   .filter(([key]) => key === "page_size" || key === "page")

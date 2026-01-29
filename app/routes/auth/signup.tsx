@@ -15,7 +15,8 @@ import { toast } from "sonner";
 import type { OTPSessionData, SignUpActionType } from "types";
 import { genericErrorState } from "utils";
 
-export function meta({}: Route.MetaArgs) {
+// export function meta({}: Route.MetaArgs) {
+export function meta() {
   return [
     { title: "Sign up | RetailPulse" },
     { name: "description", content: "Create your account" },

@@ -151,6 +151,19 @@ export const breadcrumbsConfig: BreadcrumbConfig = {
     },
   ],
 
+  // ALL products routes (top-level + nested)
+  "/dashboard/org/:id/invoices/*": [
+    { label: "Dashboard", icon: Home, href: "/dashboard", hidden: true },
+    {
+      label: (params) => params.id, // Will be replaced by org name
+      href: (params) => `/dashboard/org/${params.id}`,
+      isOrgSwitcher: true, // Renders as dropdown
+    },
+    {
+      label: "Sales & Invoices",
+    },
+  ],
+
   // Auth routes (simple)
   "/auth/signin": [{ label: "Sign In" }],
 

@@ -8,7 +8,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { toast } from "sonner";
 import { organisationKeys, organisationsApi } from "@/lib/api/organisation";
 import { useEffect } from "react";
-import type { ProductFilters } from "types";
+import type { InvoiceFilters, ProductFilters } from "types";
 
 export function useOrganisation() {
   const { id: orgId } = useParams<{ id: string }>();
@@ -68,6 +68,21 @@ export function useOrganisation() {
         return await organisationsApi.getProduct(accessToken, id);
       },
       enabled: !!accessToken,
+      // staleTime: 2 * 60 * 1000, // 2 minutes (more dynamic data)
+    });
+
+  const invoicesQuery = (filters?: InvoiceFilters) =>
+    useQuery({
+      queryKey: organisationKeys.invoiceList(orgId, filters),
+      queryFn: async () => {
+        if (!accessToken) throw rdr;
+        return await organisationsApi.getFilteredInvoices(
+          accessToken,
+          orgId,
+          filters,
+        );
+      },
+      enabled: !!accessToken && !!coreQuery.data,
       // staleTime: 2 * 60 * 1000, // 2 minutes (more dynamic data)
     });
 
@@ -206,6 +221,8 @@ export function useOrganisation() {
 
     fetchProducts: productsQuery,
     fetchSingleProduct: productQuery,
+
+    fetchInvoices: invoicesQuery,
 
     // Loading states
     isLoading: coreQuery.isLoading,

@@ -1,11 +1,10 @@
-import { redirect } from "react-router";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { BackendResponse, Pagination, ServerActionState } from "types";
 import {
   cleanPayload,
   genericErrorState,
   genericNetworkError,
   getRateLimitMessage,
-  removeUndefined,
 } from "utils";
 import { BASE_URL } from "utils/endpoints";
 

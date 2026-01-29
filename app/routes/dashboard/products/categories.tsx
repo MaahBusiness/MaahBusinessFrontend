@@ -46,6 +46,7 @@ export async function action({ request, params }: Route.ActionArgs): Promise<
           description: desc,
         });
       }
+      break;
     }
     case "update-category": {
       const name = formData.get("name") as string | undefined;
@@ -69,11 +70,13 @@ export async function action({ request, params }: Route.ActionArgs): Promise<
           },
         );
       }
+      break;
     }
 
     default:
       return genericErrorState();
   }
+  return genericErrorState();
 }
 
 export default function CategoriesPage({ actionData }: Route.ComponentProps) {

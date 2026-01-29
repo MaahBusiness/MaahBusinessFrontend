@@ -27,3 +27,4 @@ export const INVENTORY_CO_URL = "/inventory";
 export const INVENTORY_URL = "/inventory/";
 export const CATEGORY_URL = "/categories/";
 export const SUBCATEGORY_URL = "/subcategories/";
+export const INVOICE_URL = "/sales/";
