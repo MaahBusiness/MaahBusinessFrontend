@@ -31,14 +31,31 @@ export async function getSession(
   return session;
 }
 
+let _tokens: { accessToken: string; refreshToken: string } | undefined;
+
 // ------------------------------
 // Refresh access token safely
 // ------------------------------
 async function refreshAccessToken(
   refreshToken: string,
 ): Promise<SessionData | null> {
-  console.log("REFRESHING REFRESH TOKEN", refreshToken);
-  console.log("ENDPOINT::", `${BASE_URL}${REFRESH_TOKEN_URL}`);
+  console.log("REFRESHING REFRESH TOKEN", {
+    refreshToken,
+    _tokens,
+    time: new Date(Date.now()).toLocaleString(),
+  });
+  console.log("ENDPOINT::", `${BASE_URL}${REFRESH_TOKEN_URL}`, {
+    time: new Date(Date.now()).toLocaleString(),
+  });
+
+  if (_tokens) return _tokens;
+
+  console.log(
+    "No _token, refreshing",
+    _tokens,
+    new Date(Date.now()).toLocaleString(),
+  );
+
   try {
     const res = await fetch(`${BASE_URL}${REFRESH_TOKEN_URL}`, {
       method: "POST",
@@ -47,8 +64,11 @@ async function refreshAccessToken(
     });
     const raw = await res.json();
 
-    if (!res.ok) {
-      console.log("REFRESH FAILED", raw);
+    if (!res.ok && !_tokens) {
+      console.log("REFRESH FAILED", raw, {
+        time: new Date(Date.now()).toLocaleString(),
+      });
+      _tokens = undefined;
       return null;
     }
 
@@ -59,19 +79,24 @@ async function refreshAccessToken(
     // const user = data.data?.user;
 
     if (!accessToken || !newRefreshToken) {
-      console.log("No tokens returned");
+      console.log("No tokens returned", {
+        time: new Date(Date.now()).toLocaleString(),
+      });
+      _tokens = undefined;
       return null;
     }
 
-    console.log("token refresh success");
-    console.log({ newRefreshToken });
-
-    return {
-      accessToken,
-      refreshToken: newRefreshToken,
-    };
+    _tokens = { accessToken, refreshToken: newRefreshToken };
+    console.log("token refresh success", {
+      newRefreshToken,
+      time: new Date(Date.now()).toLocaleString(),
+    });
+    return _tokens;
   } catch (error) {
-    console.error("Token refresh failed:", error);
+    console.error("Token refresh failed:", error, {
+      time: new Date(Date.now()).toLocaleString(),
+    });
+    _tokens = undefined;
     throw redirect("/auth/signin");
   }
 }
@@ -145,17 +170,45 @@ export async function requireUserSession(request: Request) {
   const status = getTokenStatus(session.accessToken);
 
   // ✅ Token is healthy
-  if (status === "valid") return { session, headers: undefined };
+  if (status === "valid") {
+    _tokens = undefined;
+    return { session, headers: undefined };
+  }
 
   // 🔄 Token is near expiry OR expired → refresh
   const refreshed = await refreshAccessToken(session.refreshToken);
 
-  if (!refreshed && status === "expired") {
-    // ❌ Refresh token invalid → sign out
-    return {
-      headers: await destroySession(),
-    };
+  if (!refreshed) {
+    if (_tokens) {
+      console.log("Existing _token found, comitting", {
+        _tokens,
+        time: new Date(Date.now()).toLocaleString(),
+      });
+      return {
+        session: { ...session, ..._tokens },
+        headers: {
+          "Set-Cookie": await commitSession({
+            ...session,
+            ..._tokens,
+          }),
+        },
+      };
+    } else {
+      // ❌ Refresh token invalid → sign out
+      console.log("No token found, destroying", {
+        time: new Date(Date.now()).toLocaleString(),
+      });
+
+      return {
+        headers: await destroySession(),
+      };
+    }
   }
+
+  console.log("Refresh success, comitting session", {
+    refreshed,
+    time: new Date(Date.now()).toLocaleString(),
+  });
 
   // ✅ Refresh succeeded
   return {
@@ -177,6 +230,7 @@ export async function commitSession(session: SessionData) {
 // Destroy session (for logout)
 // ------------------------------
 export async function destroySession() {
+  console.log("Destroying session");
   return {
     "Set-Cookie": await sessionCookie.serialize("", {
       maxAge: 0,

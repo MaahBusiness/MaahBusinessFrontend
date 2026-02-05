@@ -62,7 +62,8 @@ export function AddProductDrawer() {
   ) => {
     const rawInput = e.target.value; // What the user typed
     // const rawNumber = parseInt(rawInput.replace(/\D/g, ""), 10) || 0; // Raw numeric value
-    setter(formatAmount(rawInput)); // Update the input display value
+    // setter(formatAmount(rawInput)); // Update the input display value
+    setter(rawInput); // Update the input display value
   };
 
   return (
@@ -225,7 +226,7 @@ export function AddProductDrawer() {
                   <div className="flex flex-col flex-grow">
                     <Input
                       id="purchase"
-                      type="text"
+                      type="number"
                       name="purchase"
                       value={purchase}
                       onChange={(e) => handleInputChange(e, setPurchase)}
@@ -245,7 +246,7 @@ export function AddProductDrawer() {
                   <div className="flex flex-col flex-grow">
                     <Input
                       id="unit"
-                      type="text"
+                      type="number"
                       name="unit"
                       value={unit}
                       onChange={(e) => handleInputChange(e, setUnit)}
@@ -395,13 +396,13 @@ export function AddProductDrawer() {
                           Promotional price
                         </FieldLabel>
                         <FieldDescription className="text-xs">
-                          Must be lower than the regular selling price{" "}
+                          Must be lower than the regular selling price
                         </FieldDescription>
                       </div>
                       <div className="flex flex-col flex-grow">
                         <Input
                           id="promo"
-                          type="text"
+                          type="number"
                           name="promo"
                           value={promo}
                           onChange={(e) => handleInputChange(e, setPromo)}

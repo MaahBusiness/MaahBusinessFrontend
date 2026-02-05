@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { getServerErrorMessage } from "@/lib/auth-error-state";
 import type { BackendResponse, Pagination, ServerActionState } from "types";
 import {
   cleanPayload,
@@ -10,6 +11,7 @@ import { BASE_URL } from "utils/endpoints";
 
 interface FetchOptions extends RequestInit {
   token?: string; // Pass token explicitly
+  blob?: boolean; //special prop to hanndle files (invoice receipt)
 }
 
 class ApiClient {
@@ -22,8 +24,8 @@ class ApiClient {
   async fetch<T>(
     endpoint: string,
     options: FetchOptions = {},
-  ): Promise<ServerActionState & { data?: T; meta?: Pagination }> {
-    const { token, ...fetchOptions } = options;
+  ): Promise<ServerActionState & { data?: T; meta?: Pagination; blob?: Blob }> {
+    const { token, blob, ...fetchOptions } = options;
 
     if (!token) {
       // throw redirect(`/auth/signin`);
@@ -41,6 +43,12 @@ class ApiClient {
           ...fetchOptions.headers,
         },
       });
+
+      // console.log(res.blob());
+      if (blob) {
+        const blob = await res.blob();
+        return { success: true, blob };
+      }
 
       const raw = await res.json();
       const result = raw as BackendResponse;
@@ -60,15 +68,30 @@ class ApiClient {
           return { success: false, message: error.message };
         }
 
-        return genericErrorState();
+        return {
+          success: false,
+          message: getServerErrorMessage(error?.code ?? ""),
+        };
       }
+
+      console.log(
+        "LOG::",
+        endpoint,
+        fetchOptions.method,
+        result.data,
+        result.pagination,
+      );
+
+      // if (blob) return { success: true, blob: res.blob() };
 
       const resData = result.data as T;
       const resMeta = result.pagination as Pagination | undefined;
 
-      console.log("LOG::", endpoint, fetchOptions.method, resData, resMeta);
-
-      return { success: true, data: resData, meta: resMeta };
+      return {
+        success: true,
+        data: resData,
+        meta: resMeta,
+      };
     } catch (err) {
       console.log(
         "LOG::CATCH",

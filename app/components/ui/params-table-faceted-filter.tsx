@@ -21,7 +21,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { useSearchParams } from "react-router";
 
-interface DataTableFacetedFilterProps<TData, TValue> {
+interface ParamsFacetedFilterProps<TData, TValue> {
   title?: string;
   options: {
     label: string;
@@ -31,10 +31,10 @@ interface DataTableFacetedFilterProps<TData, TValue> {
   }[];
 }
 
-export function DataTableFacetedFilter<TData, TValue>({
+export function ParamsFacetedFilter<TData, TValue>({
   title,
   options,
-}: DataTableFacetedFilterProps<TData, TValue>) {
+}: ParamsFacetedFilterProps<TData, TValue>) {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const paramPairs = React.useMemo(() => {

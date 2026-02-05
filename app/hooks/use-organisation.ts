@@ -8,7 +8,13 @@ import { useAuth } from "@/contexts/auth-context";
 import { toast } from "sonner";
 import { organisationKeys, organisationsApi } from "@/lib/api/organisation";
 import { useEffect } from "react";
-import type { InvoiceFilters, ProductFilters } from "types";
+import type {
+  Barcode,
+  ClientFilters,
+  InvoiceFilters,
+  PaymentFilters,
+  ProductFilters,
+} from "types";
 
 export function useOrganisation() {
   const { id: orgId } = useParams<{ id: string }>();
@@ -35,15 +41,16 @@ export function useOrganisation() {
   });
 
   // Fetch members
-  const membersQuery = useQuery({
-    queryKey: organisationKeys.members(orgId),
-    queryFn: async () => {
-      if (!accessToken) throw rdr;
-      return await organisationsApi.getMembers(accessToken, orgId);
-    },
-    enabled: !!accessToken && !!coreQuery.data,
-    // staleTime: 2 * 60 * 1000, // 2 minutes (more dynamic data)
-  });
+  const membersQuery = () =>
+    useQuery({
+      queryKey: organisationKeys.members(orgId),
+      queryFn: async () => {
+        if (!accessToken) throw rdr;
+        return await organisationsApi.getMembers(accessToken, orgId);
+      },
+      enabled: !!accessToken && !!coreQuery.data,
+      // staleTime: 2 * 60 * 1000, // 2 minutes (more dynamic data)
+    });
 
   const productsQuery = (filters?: ProductFilters) =>
     useQuery({
@@ -84,6 +91,115 @@ export function useOrganisation() {
       },
       enabled: !!accessToken && !!coreQuery.data,
       // staleTime: 2 * 60 * 1000, // 2 minutes (more dynamic data)
+    });
+
+  const invoiceArchivesQuery = (filters?: InvoiceFilters) =>
+    useQuery({
+      queryKey: organisationKeys.invoiceList(orgId + "archive", filters),
+      queryFn: async () => {
+        if (!accessToken) throw rdr;
+        return await organisationsApi.getFilteredArchivedInvoices(
+          accessToken,
+          orgId,
+          filters,
+        );
+      },
+      enabled: !!accessToken && !!coreQuery.data,
+      // staleTime: 2 * 60 * 1000, // 2 minutes (more dynamic data)
+    });
+
+  const paymentsQuery = (filters?: PaymentFilters) =>
+    useQuery({
+      queryKey: organisationKeys.paymentList(orgId, filters),
+      queryFn: async () => {
+        if (!accessToken) throw rdr;
+        return await organisationsApi.getFilteredPayments(
+          accessToken,
+          orgId,
+          filters,
+        );
+      },
+      enabled: !!accessToken && !!coreQuery.data,
+      // staleTime: 2 * 60 * 1000, // 2 minutes (more dynamic data)
+    });
+
+  const clientsQuery = (filters?: ClientFilters) =>
+    useQuery({
+      queryKey: organisationKeys.clientList(orgId, filters),
+      queryFn: async () => {
+        if (!accessToken) throw rdr;
+        return await organisationsApi.getFilteredClients(
+          accessToken,
+          orgId,
+          filters,
+        );
+      },
+      enabled: !!accessToken && !!coreQuery.data,
+      // staleTime: 2 * 60 * 1000, // 2 minutes (more dynamic data)
+    });
+
+  const invoiceQuery = (id: string) =>
+    useQuery({
+      queryKey: organisationKeys.invoice(id),
+      queryFn: async () => {
+        if (!accessToken) throw rdr;
+        return await organisationsApi.getSingleInvoice(accessToken, id);
+      },
+      enabled: !!accessToken && !!coreQuery.data,
+      // staleTime: 2 * 60 * 1000, // 2 minutes (more dynamic data)
+    });
+
+  const paymentQuery = (id: string) =>
+    useQuery({
+      queryKey: organisationKeys.payment(id),
+      queryFn: async () => {
+        if (!accessToken) throw rdr;
+        return await organisationsApi.getPayments(accessToken, id);
+      },
+      enabled: !!accessToken && !!coreQuery.data,
+      // staleTime: 2 * 60 * 1000, // 2 minutes (more dynamic data)
+    });
+
+  const invoicePaymentsQuery = (id: string) =>
+    useQuery({
+      queryKey: organisationKeys.paymentList(orgId, { invoice: id }),
+      queryFn: async () => {
+        if (!accessToken) throw rdr;
+        return await organisationsApi.getInvoicePayments(accessToken, id);
+      },
+      enabled: !!accessToken && !!coreQuery.data,
+      // staleTime: 2 * 60 * 1000, // 2 minutes (more dynamic data)
+    });
+
+  // const receiptQuery = (id: string, format: "inline" | "attachment") =>
+  //   useQuery({
+  //     queryKey: organisationKeys.receipt(id),
+  //     queryFn: async () => {
+  //       if (!accessToken) throw rdr;
+  //       return await organisationsApi.generateReceipt(accessToken, id, format);
+  //     },
+  //     enabled: !!accessToken && !!coreQuery.data,
+  //     // staleTime: 2 * 60 * 1000, // 2 minutes (more dynamic data)
+  //   });
+
+  const barcodeQuery = (code: string) =>
+    useQuery({
+      queryKey: organisationKeys.scanned(orgId, code),
+      queryFn: async () => {
+        if (!accessToken) throw rdr;
+        return await organisationsApi.scanBarcode(accessToken, orgId, code);
+      },
+      enabled: false,
+    });
+
+  const printQuery = (id: string, format: "inline" | "attachment" = "inline") =>
+    useQuery({
+      queryKey: organisationKeys.print(id),
+      queryFn: async () => {
+        if (!accessToken) throw rdr;
+        return await organisationsApi.generateReceipt(accessToken, id, format);
+      },
+      enabled: false,
     });
 
   // Update organisation mutation
@@ -184,10 +300,119 @@ export function useOrganisation() {
           queryKey: organisationKeys.prodlist(orgId),
         });
         queryClient.invalidateQueries({
-          queryKey: organisationKeys.product(res.data?.id!),
+          queryKey: organisationKeys.product(res.data?.id ?? ""),
         });
         toast.success("The product has been removed successfully!");
       } else toast.error(res.message);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const removeinvoice = useMutation({
+    mutationFn: async (id: string) => {
+      if (!accessToken) throw rdr;
+      return organisationsApi.deleteInvoice(accessToken, id);
+    },
+    onSuccess: (res) => {
+      if (res.success) {
+        // Automatically refetch product
+        queryClient.invalidateQueries({
+          queryKey: organisationKeys.invoiceList(orgId),
+        });
+        queryClient.invalidateQueries({
+          queryKey: organisationKeys.invoice(res.data?.id ?? ""),
+        });
+        toast.success("The invoice has been removed successfully!");
+      } else toast.error(res.message);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const archiveInvoice = useMutation({
+    mutationFn: async (id: string) => {
+      if (!accessToken) throw rdr;
+      return organisationsApi.archiveInvoice(accessToken, id);
+    },
+    onSuccess: (res) => {
+      if (res.success) {
+        // Automatically refetch product
+        queryClient.invalidateQueries({ queryKey: ["invoice"] });
+        toast.success("The invoice has been archived successfully!");
+      } else toast.error(res.message);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const unArchiveInvoice = useMutation({
+    mutationFn: async (id: string) => {
+      if (!accessToken) throw rdr;
+      return organisationsApi.updateInvoice(accessToken, id, {
+        is_archived: false,
+      });
+    },
+    onSuccess: (res) => {
+      if (res.success) {
+        // Automatically refetch product
+        queryClient.invalidateQueries({
+          queryKey: organisationKeys.invoiceList(orgId),
+        });
+        queryClient.invalidateQueries({
+          queryKey: organisationKeys.invoice(res.data?.id ?? ""),
+        });
+        toast.success("The invoice has been removed from archives!");
+      } else toast.error(res.message);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const cancelInvoice = useMutation({
+    mutationFn: async (id: string) => {
+      if (!accessToken) throw rdr;
+      return organisationsApi.cancelInvoice(accessToken, id);
+    },
+    onSuccess: (res) => {
+      if (res.success) {
+        // Automatically refetch product
+        queryClient.invalidateQueries({
+          queryKey: organisationKeys.invoiceList(orgId),
+        });
+        queryClient.invalidateQueries({
+          queryKey: organisationKeys.invoice(res.data?.id ?? ""),
+        });
+        toast.success("The invoice has been canceled successfully!");
+      } else toast.error(res.message);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  // Remove organisation mutation
+  const removeOrganisation = useMutation({
+    mutationFn: async () => {
+      if (!accessToken) throw rdr;
+      return organisationsApi.delete(accessToken, orgId);
+    },
+    onSuccess: (response) => {
+      // Update cache with new data
+      if (response.success) {
+        queryClient.invalidateQueries({
+          queryKey: organisationKeys.core(orgId),
+        });
+        queryClient.invalidateQueries({
+          queryKey: organisationKeys.lists(),
+        });
+        toast.success("Organisation has been permanently deleted.");
+        redirect("/dashboard/organisations");
+      } else toast.error(response.message);
     },
     onError: (error: Error) => {
       toast.error(error.message);
@@ -203,30 +428,28 @@ export function useOrganisation() {
     }
   }, [coreQuery.data]);
 
-  useEffect(() => {
-    if (membersQuery.data?.message) {
-      if (!membersQuery.data?.success) toast.error(membersQuery.data?.message);
-      // else toast.success(membersQuery.data?.message);
-    }
-  }, [membersQuery.data]);
-
   return {
     // Data
     organisation: coreQuery.data,
-    members: membersQuery.data,
     /**Special usage: User relative to current organisation     */
     businessMember: coreQuery.data?.data?.members?.find(
       (m) => m.user?.id === user?.id,
     ),
 
+    fetchMembers: membersQuery,
     fetchProducts: productsQuery,
     fetchSingleProduct: productQuery,
 
     fetchInvoices: invoicesQuery,
+    fetchSingleInvoice: invoiceQuery,
+    fetchArchivedInvoices: invoiceArchivesQuery,
+    fetchPayments: paymentsQuery,
+    fetchInvoicePayments: invoicePaymentsQuery,
+    fetchSinglePayment: paymentQuery,
+    fetchClients: clientsQuery,
 
     // Loading states
     isLoading: coreQuery.isLoading,
-    isLoadingMembers: membersQuery.isLoading,
 
     // Error states
     error: coreQuery.error,
@@ -251,8 +474,30 @@ export function useOrganisation() {
     isRemovingProduct: removeProduct.isPending,
     removeProductState: removeProduct.data,
 
+    scanCode: barcodeQuery,
+    generateReceipt: printQuery,
+
+    removeinvoice: removeinvoice.mutate,
+    isRemovinginvoice: removeinvoice.isPending,
+    removeinvoiceState: removeinvoice.data,
+
+    archiveInvoice: archiveInvoice.mutate,
+    isArchivingInvoice: archiveInvoice.isPending,
+    archiveInvoiceState: archiveInvoice.data,
+
+    unArchiveInvoice: unArchiveInvoice.mutate,
+    isunArchivingInvoice: unArchiveInvoice.isPending,
+    unArchiveInvoiceState: unArchiveInvoice.data,
+
+    cancelInvoice: cancelInvoice.mutate,
+    isCancellingInvoice: cancelInvoice.isPending,
+    cancelInvoiceState: cancelInvoice.data,
+
     // Refetch functions
     refetchCore: coreQuery.refetch,
-    refetchMembers: membersQuery.refetch,
+
+    // Destructive
+    remove: removeOrganisation.mutate,
+    isRemoving: removeOrganisation.isPending,
   };
 }

@@ -52,10 +52,12 @@ export async function loader({ request }: Route.LoaderArgs) {
   );
 }
 
-export default function AuthLayout({ actionData }: Route.ComponentProps) {
+export default function DashboardLayout({ actionData }: Route.ComponentProps) {
   // Show toasts based on action results
   useEffect(() => {
     if (actionData?.message) {
+      console.log("Here 133311");
+
       if (!actionData.success) toast.error(actionData.message);
       else toast.success(actionData.message);
     }

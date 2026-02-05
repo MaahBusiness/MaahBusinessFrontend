@@ -32,7 +32,7 @@ import React from "react";
 import { useState } from "react";
 import { Form, useActionData, useNavigation } from "react-router";
 import type { Product, ServerActionState } from "types";
-import { formatAmount } from "utils";
+import { formatDisplayAmount } from "utils";
 
 export function EditProductDrawer({ data }: { data: Product }) {
   const { organisation: res } = useOrganisation();
@@ -58,7 +58,8 @@ export function EditProductDrawer({ data }: { data: Product }) {
   ) => {
     const rawInput = e.target.value; // What the user typed
     // const rawNumber = parseInt(rawInput.replace(/\D/g, ""), 10) || 0; // Raw numeric value
-    setter(formatAmount(rawInput)); // Update the input display value
+    // setter(formatDisplayAmount(rawInput)); // Update the input display value
+    setter(rawInput);
   };
 
   return (
@@ -210,9 +211,9 @@ export function EditProductDrawer({ data }: { data: Product }) {
               <div className="flex flex-col flex-grow">
                 <Input
                   id="purchase"
-                  type="text"
+                  type="number"
                   name="purchase"
-                  defaultValue={formatAmount(`${data.purchase_price}`)}
+                  defaultValue={data.purchase_price}
                   value={purchase}
                   onChange={(e) => handleInputChange(e, setPurchase)}
                   placeholder="e.g. 1,200.00"
@@ -231,9 +232,9 @@ export function EditProductDrawer({ data }: { data: Product }) {
               <div className="flex flex-col flex-grow">
                 <Input
                   id="unit"
-                  type="text"
+                  type="number"
                   name="unit"
-                  defaultValue={formatAmount(`${data.unit_price}`)}
+                  defaultValue={data.unit_price}
                   value={unit}
                   onChange={(e) => handleInputChange(e, setUnit)}
                   placeholder="e.g. 1,200.00"

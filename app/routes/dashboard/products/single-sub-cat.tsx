@@ -29,7 +29,7 @@ import DataTableSkeleton from "@/components/data-table-skeleton";
 import { RequestFailed } from "@/routes/404";
 import { productCols } from "@/components/products/product-columns";
 import { ProductTableToolbar } from "@/components/products/product-table-toolbar";
-import { handleProductActions } from "@/routes/dashboard/products";
+import { handleProductActions } from "services/api";
 import type { Route } from ".react-router/types/app/routes/dashboard/products/+types/single-sub-cat";
 import { SingleCatActions } from "@/components/categories/single-cat-action";
 

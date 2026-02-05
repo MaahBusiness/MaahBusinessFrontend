@@ -548,4 +548,5 @@ export const visibles = [
   { value: "promo-end", label: "Promo End Date" },
   { value: "updated", label: "Date Updated" },
   { value: "subs", label: "Subcategories" },
+  { value: "created", label: "Date Created" },
 ];

@@ -150,7 +150,7 @@ export function CreateOrgForm({ ...props }: React.ComponentProps<typeof Card>) {
               <div className="flex flex-col flex-grow">
                 <Input
                   id="addr"
-                  type="tel"
+                  type="text"
                   name="address"
                   placeholder="123 Market Street, San Francisco, CA"
                 />

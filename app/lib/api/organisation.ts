@@ -4,31 +4,51 @@
 
 import { apiClient } from "@/lib/api-client";
 import type {
+  Barcode,
   Category,
+  Client,
+  ClientCreateParams,
+  ClientFilters,
+  ClientUpdateParams,
+  Credit,
+  CreditCreateParams,
   Invoice,
+  InvoiceCreateParams,
   InvoiceFilters,
+  InvoiceUpdateParams,
   OrganisationCore,
   OrganisationMember,
+  Payment,
+  PaymentFilters,
+  PaymentMethod,
   Product,
   ProductCreateParams,
   ProductFilters,
   ProductUpdateParams,
+  Refund,
   Role,
   Subcategory,
 } from "types";
-import { buildQueryParams } from "utils";
+import { buildQueryParams, cleanPayload } from "utils";
 import {
   BUSINESS_URL,
+  CANCEL_INVOICE_URL,
   CATEGORY_URL,
+  CLIENT_URL,
+  CREDIT_INVOICE_URL,
   CUSTOMERS_URL,
+  DELETE_INVOICE_URL,
   EDIT_MEMBERS_URL,
   INVENTORY_CO_URL,
   INVENTORY_URL,
+  INVOICE_ARCHIVES_URL,
   INVOICE_URL,
   LIST_BUSINESS_URL,
   LIST_MEMBERS_URL,
   MEMBERS_URL,
+  PAYMENTS_URL,
   PRODUCTS_URL,
+  SCAN_BARCODE_URL,
   SUBCATEGORY_URL,
 } from "utils/endpoints";
 
@@ -205,6 +225,7 @@ export const organisationsApi = {
   },
 
   // Sales & invoices
+  // TODO:  Product Search
 
   getInvoices: (token: string, id: string) =>
     apiClient.get<Invoice[]>(INVOICE_URL + "?business_id=" + id, token),
@@ -218,11 +239,135 @@ export const organisationsApi = {
     return apiClient.get<Invoice[]>(`${INVOICE_URL}${query}`, token);
   },
 
-  getCustomers: (token: string, id: string) =>
-    apiClient.get<OrganisationMember[]>(
-      CUSTOMERS_URL + "?business_id=" + id,
+  getArchivedInvoices: (token: string, id: string) =>
+    apiClient.get<Invoice[]>(
+      INVOICE_ARCHIVES_URL + "?business_id=" + id,
       token,
     ),
+
+  getFilteredArchivedInvoices: (
+    token: string,
+    id: string,
+    filters?: InvoiceFilters,
+  ) => {
+    const query = buildQueryParams({ business_id: id, ...filters });
+    return apiClient.get<Invoice[]>(`${INVOICE_ARCHIVES_URL}${query}`, token);
+  },
+
+  getSingleInvoice: (token: string, id: string) =>
+    apiClient.get<Invoice>(INVOICE_URL + id, token),
+
+  getPayments: (token: string, id: string) =>
+    apiClient.get<Payment[]>(PAYMENTS_URL + "?business_id=" + id, token),
+
+  getFilteredPayments: (
+    token: string,
+    id: string,
+    filters?: PaymentFilters,
+  ) => {
+    const query = buildQueryParams({ business_id: id, ...filters });
+    return apiClient.get<Payment[]>(`${PAYMENTS_URL}${query}`, token);
+  },
+
+  getInvoicePayments: (token: string, id: string) =>
+    apiClient.get<Payment[]>(INVOICE_URL + id + "/payments/", token),
+
+  generateReceipt: (
+    token: string,
+    id: string,
+    format: "inline" | "attachment",
+  ) =>
+    apiClient.get<any>(
+      INVOICE_URL + id + "/receipt/" + "?output_format=" + format,
+      token,
+      { blob: true },
+    ),
+
+  createInvoice: (token: string, data: InvoiceCreateParams) =>
+    apiClient.post<Invoice>(INVOICE_URL, token, cleanPayload(data)),
+
+  creditInvoice: (
+    token: string,
+    id: string,
+    data: { amount: number; payment_method: PaymentMethod },
+  ) =>
+    apiClient.post<Invoice>(
+      INVOICE_URL + id + CREDIT_INVOICE_URL,
+      token,
+      cleanPayload(data),
+    ),
+
+  scanBarcode: (token: string, id: string, barcode: string) =>
+    apiClient.post<Barcode>(
+      SCAN_BARCODE_URL,
+      token,
+      cleanPayload({ business_id: id, barcode }),
+    ),
+
+  processRefund: (
+    token: string,
+    id: string,
+    data: { amount: number; reason: string; restore_stock: boolean },
+  ) => apiClient.post<undefined>(INVOICE_URL + id + "/refunds/", token, data),
+
+  updateInvoice: (
+    token: string,
+    id: string,
+    data: Partial<InvoiceUpdateParams>,
+  ) => {
+    return apiClient.put<Invoice>(INVOICE_URL + id, token, cleanPayload(data));
+  },
+
+  cancelInvoice: (token: string, id: string) =>
+    apiClient.delete<Invoice>(INVOICE_URL + id + CANCEL_INVOICE_URL, token),
+
+  archiveInvoice: (token: string, id: string) =>
+    apiClient.delete<Invoice>(INVOICE_URL + id, token),
+
+  deleteInvoice: (token: string, id: string) =>
+    apiClient.delete<Invoice>(INVOICE_URL + id + DELETE_INVOICE_URL, token),
+
+  // Customers
+  getClients: (token: string, id: string) =>
+    apiClient.get<Client[]>(CLIENT_URL + "?business_id=" + id, token),
+
+  getFilteredClients: (token: string, id: string, filters?: ClientFilters) => {
+    const query = buildQueryParams({ business_id: id, ...filters });
+    return apiClient.get<Client[]>(`${CLIENT_URL}${query}`, token);
+  },
+
+  getSingleClient: (token: string, id: string) =>
+    apiClient.get<Client>(CLIENT_URL + id, token),
+
+  getCreditPayments: (token: string, id: string) =>
+    apiClient.get<Payment[]>("/customers/credit/" + id + "/payments/", token),
+
+  createClient: (token: string, data: ClientCreateParams) =>
+    apiClient.post<Client>(CLIENT_URL, token, cleanPayload(data)),
+
+  creditClient: (token: string, id: string, data: CreditCreateParams) =>
+    apiClient.post<Credit>(
+      CLIENT_URL + id + "credit",
+      token,
+      cleanPayload(data),
+    ),
+
+  payCredit: (
+    token: string,
+    id: string,
+    data: {
+      amount: number;
+      payment_method: PaymentMethod;
+      notes?: string;
+      payment_date?: string;
+    },
+  ) => apiClient.post<Payment[]>("/customers/credit/" + id + "/pay/", token),
+
+  updateClient: (token: string, id: string, data: ClientUpdateParams) =>
+    apiClient.put<Client>(CLIENT_URL + id, token, cleanPayload(data)),
+
+  removeClient: (token: string, id: string) =>
+    apiClient.delete<undefined>(CLIENT_URL + id, token),
 
   // Future: Other modules
   // getCustomers: (token: string, id: string) => ...
@@ -259,8 +404,22 @@ export const organisationKeys = {
   invoiceList: (id: string, filters?: InvoiceFilters) =>
     [...organisationKeys.detail(id), "invoices", { filters }] as const,
 
-  customers: (id: string) =>
-    [...organisationKeys.detail(id), "customers"] as const,
+  payments: (id: string) =>
+    [...organisationKeys.detail(id), "payments"] as const,
+  payment: (id: string) => ["payments", id] as const,
+  paymentList: (id: string, filters?: PaymentFilters & { invoice?: string }) =>
+    [...organisationKeys.detail(id), "payments", { filters }] as const,
+
+  receipt: (id: string) => ["receipt", id] as const,
+
+  scanned: (id: string, code: string) =>
+    [...organisationKeys.detail(id), code, "barcode"] as const,
+  print: (id: string) => ["invoice", "print", id] as const,
+
+  client: (id: string) => ["clients", id] as const,
+  clientList: (id: string, filters?: PaymentFilters) =>
+    [...organisationKeys.detail(id), "clients", { filters }] as const,
+
   inventory: (id: string) =>
     [...organisationKeys.detail(id), "inventory"] as const,
   sales: (id: string) => [...organisationKeys.detail(id), "sales"] as const,

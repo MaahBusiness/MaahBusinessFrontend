@@ -17,6 +17,14 @@ import {
 } from "@/components/ui/sidebar";
 import { Link, useParams } from "react-router";
 import type { SideItem } from "types";
+import {
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+} from "@/components/ui/dropdown-menu";
 
 export function NavMain({ data }: { data: { [key: string]: SideItem[] } }) {
   const { id: orgId } = useParams<{ id: string }>();
@@ -56,6 +64,17 @@ export function NavMain({ data }: { data: { [key: string]: SideItem[] } }) {
                       ))}
                     </SidebarMenuSub>
                   </CollapsibleContent>
+
+                  {/* <DropdownMenuContent>
+                    {item.items?.map((subItem) => (
+                      <DropdownMenuItem key={subItem.title} asChild>
+                        <Link to={subItem.url}>
+                          <span>{subItem.title}</span>
+                        <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent> */}
                 </SidebarMenuItem>
               </Collapsible>
             ) : (

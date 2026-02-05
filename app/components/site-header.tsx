@@ -8,7 +8,7 @@ export function SiteHeader() {
       <div className="flex h-(--header-height) w-full items-center justify-between gap-2 px-4">
         <Breadcrumbs />
         <div className="ml-auto flex items-center space-x-4">
-          <SearchForm className="w-full sm:ml-auto sm:w-auto" />
+          {/* <SearchForm className="w-full sm:ml-auto sm:w-auto" /> */}
           <UserNav />
         </div>
       </div>

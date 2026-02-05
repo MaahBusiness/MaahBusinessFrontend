@@ -28,7 +28,7 @@ import DataTableSkeleton from "@/components/data-table-skeleton";
 import { RequestFailed } from "@/routes/404";
 import { productCols } from "@/components/products/product-columns";
 import { ProductTableToolbar } from "@/components/products/product-table-toolbar";
-import { handleProductActions } from "@/routes/dashboard/products";
+import { handleProductActions } from "services/api";
 import { SingleCatActions } from "@/components/categories/single-cat-action";
 
 export async function action({ request, params }: Route.ActionArgs): Promise<
@@ -197,15 +197,21 @@ export default function SingleCatPage({ actionData }: Route.ComponentProps) {
           </div>
         </div>
 
-        <DataTable
-          data={subs || []}
-          columns={subCatCols}
-          meta={res.meta}
-          DataTableToolbar={CatTableToolbar}
-        />
+        {subs?.length ? (
+          <DataTable
+            data={subs}
+            columns={subCatCols}
+            meta={res.meta}
+            DataTableToolbar={CatTableToolbar}
+          />
+        ) : (
+          <></>
+        )}
       </div>
 
-      <div className="w-full flex flex-col gap-8 items-stretch max-w-[1200px] lg:px-6 px-4 mx-auto py-12">
+      <div
+        className={`w-full flex flex-col gap-8 items-stretch max-w-[1200px] lg:px-6 px-4 mx-auto ${subs?.length ? "py-12" : ""} `}
+      >
         <div className="w-full flex items-center gap-2">
           <h2 className="text-lg tracking-tight">
             {cat?.name}&apos;s Products

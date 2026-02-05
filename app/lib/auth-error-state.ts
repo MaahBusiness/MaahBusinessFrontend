@@ -1,8 +1,8 @@
 // auth-error-messages.ts
 
-import type { AuthErrorCode } from "@/lib/auth-error-codes";
+import type { ServerErrorCode } from "@/lib/auth-error-codes";
 
-export const AUTH_ERROR_MESSAGES: Record<AuthErrorCode, string> = {
+export const SERVER_ERROR_MESSAGES: Record<ServerErrorCode, string> = {
   // General
   UNKNOWN: "Oops! Something went wrong. Please try again later.",
   NETWORK_ERROR:
@@ -46,10 +46,18 @@ export const AUTH_ERROR_MESSAGES: Record<AuthErrorCode, string> = {
   // Session
   SESSION_EXPIRED: "Your session has expired. Please sign in again.",
   UNAUTHORIZED: "You need to sign in to continue.",
+  PRODUCT_NOT_FOUND:
+    "We couldn't find any product matching this barcode. Verify and try again",
 };
 
 // auth-error.ts
-export interface AuthError {
-  code: AuthErrorCode;
+export interface ServerError {
+  code: ServerErrorCode;
   message?: string; // optional override from backend
 }
+
+export const getServerErrorMessage = (code: string): string => {
+  return Object.prototype.hasOwnProperty.call(SERVER_ERROR_MESSAGES, code)
+    ? SERVER_ERROR_MESSAGES[code as ServerErrorCode]
+    : SERVER_ERROR_MESSAGES.UNKNOWN;
+};

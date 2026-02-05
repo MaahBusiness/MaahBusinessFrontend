@@ -54,7 +54,19 @@ export default [
 
       // Sales
       route("invoices", "routes/dashboard/sales/index.tsx"),
+      route("invoices/archived", "routes/dashboard/sales/archived.tsx"),
+      route("invoices/:invId", "routes/dashboard/sales/single-invoice.tsx"),
+
+      // Clients
+      route("clients", "routes/dashboard/clients/index.tsx"),
+
+      // Settings
+      route("settings", "routes/dashboard/settings/index.tsx"),
     ]),
+
+    // Profile
+    route("profile", "routes/dashboard/profile/index.tsx"),
+
     route("*", "routes/dashboard/404.tsx"),
   ]),
 

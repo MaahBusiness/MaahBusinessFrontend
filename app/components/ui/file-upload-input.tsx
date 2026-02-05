@@ -29,12 +29,18 @@ interface UploadedFile {
   preview?: string;
 }
 
-export default function FileUploadInput() {
-  const [mode, setMode] = useState<UploadMode>("file");
+export default function FileUploadInput({
+  value,
+  modes = ["file", "url"],
+}: {
+  value?: string;
+  modes?: UploadMode[];
+}) {
+  const [mode, setMode] = useState(modes[0]);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null);
-  const [url, setUrl] = useState("");
-  const [urlSubmitted, setUrlSubmitted] = useState(false);
+  const [url, setUrl] = useState(value ?? "");
+  const [urlSubmitted, setUrlSubmitted] = useState(!!value || false);
 
   const [urlLoading, setUrlLoading] = useState(false);
 
@@ -187,36 +193,40 @@ export default function FileUploadInput() {
     <div className="w-full max-w-2xl mx-auto flex flex-col gap-6">
       {/* Mode Toggle */}
       <div className="flex gap-2 p-1 bg-muted rounded-lg">
-        <Button
-          variant={"ghost"}
-          size={"icon-sm"}
-          type="button"
-          onClick={() => setMode("file")}
-          disabled={mode === "url" && urlSubmitted}
-          className={`flex-1 px-4 py-1 rounded-md text-sm font-medium transition-all  ${
-            mode === "file"
-              ? "bg-background text-foreground shadow-sm hover:bg-background dark:hover:bg-background"
-              : "text-muted-foreground hover:text-foreground "
-          }`}
-        >
-          <Upload />
-          Upload File
-        </Button>
-        <Button
-          variant={"ghost"}
-          type="button"
-          size={"icon-sm"}
-          disabled={mode === "file" && !!uploadedFile}
-          onClick={() => setMode("url")}
-          className={`flex-1 px-4 py-1 rounded-md text-sm font-medium transition-all ${
-            mode === "url"
-              ? "bg-background text-foreground shadow-sm hover:bg-background dark:hover:bg-background"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <Link2 />
-          From URL
-        </Button>
+        {modes.includes("file") && (
+          <Button
+            variant={"ghost"}
+            size={"icon-sm"}
+            type="button"
+            onClick={() => setMode("file")}
+            disabled={mode === "url" && urlSubmitted}
+            className={`flex-1 px-4 py-1 rounded-md text-sm font-medium transition-all  ${
+              mode === "file"
+                ? "bg-background text-foreground shadow-sm hover:bg-background dark:hover:bg-background"
+                : "text-muted-foreground hover:text-foreground "
+            }`}
+          >
+            <Upload />
+            Upload File
+          </Button>
+        )}
+        {modes.includes("url") && (
+          <Button
+            variant={"ghost"}
+            type="button"
+            size={"icon-sm"}
+            disabled={mode === "file" && !!uploadedFile}
+            onClick={() => setMode("url")}
+            className={`flex-1 px-4 py-1 rounded-md text-sm font-medium transition-all ${
+              mode === "url"
+                ? "bg-background text-foreground shadow-sm hover:bg-background dark:hover:bg-background"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Link2 />
+            From URL
+          </Button>
+        )}
       </div>
 
       <input

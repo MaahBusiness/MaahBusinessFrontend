@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
@@ -12,9 +13,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useTheme } from "@/contexts/theme-context";
-import { useNavigation, useSubmit } from "react-router";
+import { Link, useNavigation, useSubmit } from "react-router";
 import { useAuth } from "@/contexts/auth-context";
 import { Spinner } from "@/components/ui/spinner";
+import { extractImageUrl } from "utils";
+import { User } from "lucide-react";
 
 export function UserNav() {
   const { setTheme, theme } = useTheme();
@@ -40,7 +43,10 @@ export function UserNav() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
-            <AvatarImage src={user?.avatar_url} alt={user?.name} />
+            <AvatarImage
+              src={extractImageUrl(user?.avatar_url ?? "") ?? ""}
+              alt={user?.name}
+            />
             <BoringFallback name={user?.name} />
           </Avatar>
         </Button>
@@ -57,22 +63,17 @@ export function UserNav() {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        {/* <DropdownMenuGroup>
-          <DropdownMenuItem>
-            Profile
-            <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            Billing
-            <DropdownMenuShortcut>⌘B</DropdownMenuShortcut>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            Settings
-            <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
-          </DropdownMenuItem>
-          <DropdownMenuItem>New Team</DropdownMenuItem>
+        <DropdownMenuGroup>
+          <Link to={"profile"}>
+            <DropdownMenuItem>
+              Profile
+              <DropdownMenuShortcut>
+                <User />
+              </DropdownMenuShortcut>
+            </DropdownMenuItem>
+          </Link>
         </DropdownMenuGroup>
-        <DropdownMenuSeparator /> */}
+        <DropdownMenuSeparator />
         <DropdownMenuLabel className="text-xs text-muted-foreground">
           Theme
         </DropdownMenuLabel>

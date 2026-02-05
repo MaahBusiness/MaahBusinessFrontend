@@ -27,24 +27,19 @@ import { cn } from "@/lib/utils";
 import type { Cell } from "@tanstack/react-table";
 import { Copy, Edit, Trash2, Trash2Icon } from "lucide-react";
 import { toast } from "sonner";
-import type { Product } from "types";
+import type { Product, TableContextMenuProps } from "types";
 import { hasPermission } from "utils/permissions";
 
-interface DataTableContextMenuProps<TValue> {
-  cell: Cell<Product, TValue>;
-  className?: string;
-  children?: React.ReactNode;
-  title?: string;
-}
-
-export function ProductTableContextMenu<TValue>({
-  cell,
+export function ProductTableContextMenu({
+  cell: c,
   className,
   children,
   title,
-}: DataTableContextMenuProps<TValue>) {
+}: TableContextMenuProps<Product>) {
   const { businessMember, removeProduct, isRemovingProduct } =
     useOrganisation();
+
+  const cell = c as Cell<Product, any>;
 
   const val = cell.getValue() as string | number | undefined;
 

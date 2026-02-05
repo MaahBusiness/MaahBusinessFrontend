@@ -36,7 +36,7 @@ export default function NotFound() {
   );
 }
 
-export function RequestFailed() {
+export function RequestFailed({ refetch }: { refetch?: () => Promise<any> }) {
   const navigate = useNavigate();
   return (
     <Empty className="p-0 !h-[calc(100svh-var(--header-height))]">
@@ -52,7 +52,7 @@ export function RequestFailed() {
       <EmptyContent>
         <Button
           onClick={
-            () => navigate(0) // hard refresh current route
+            () => (refetch ? refetch() : navigate(0)) // hard refresh current route
           }
         >
           <RefreshCcwIcon />

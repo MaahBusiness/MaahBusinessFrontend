@@ -16,7 +16,7 @@ export type Role =
   | "partner"
   | "manager";
 
-export type Customer = "regular" | "wholesaler";
+export type Customer = "regular" | "wholesaler" | "REGULAR" | "WHOLESALER";
 export type PaymentMethod =
   | "cash"
   | "card"
@@ -25,7 +25,7 @@ export type PaymentMethod =
   | "paypal"
   | "credit";
 
-export type InvoiceStatus = "paid" | "partial" | "refunded" | "cancelled";
+export type InvoiceStatus = "COMPLETED" | "CREDIT" | "CANCELLED" | "REFUNDED";
 
 export interface User extends UserSnapshot {
   is_active: boolean;
@@ -40,14 +40,14 @@ export interface User extends UserSnapshot {
   avatar_url?: string;
 }
 
-interface UserSnapshot {
+export interface UserSnapshot {
   id: string;
   email: string;
   name?: string;
   role: Role;
 }
 
-interface ExtendedUser {
+export interface ExtendedUser {
   access_token: string;
   refresh_token: string;
   expires_in: number;
@@ -56,14 +56,14 @@ interface ExtendedUser {
 }
 
 /** User object in context of `OrganisationMember` */
-interface OrganisationMemberUser extends UserSnapshot {
+export interface OrganisationMemberUser extends UserSnapshot {
   phone_number?: string;
   avatar_url?: string;
   is_active: boolean;
 }
 
 /** Response data object for creating or retreiving business members (array) */
-interface OrganisationMember {
+export interface OrganisationMember {
   id: string;
   role: Role;
   is_active: boolean;
@@ -78,7 +78,7 @@ interface OrganisationMember {
  * Core business data \
  * The response data object for when a business is created or retreived (array)
  */
-interface OrganisationCore extends BusinessSnapshot {
+export interface OrganisationCore extends BusinessSnapshot {
   owner_id: string;
   description?: string;
   address?: string;
@@ -96,7 +96,7 @@ interface OrganisationCore extends BusinessSnapshot {
   categories?: Category[];
 }
 
-interface Pagination {
+export interface Pagination {
   count: number;
   next?: number;
   previous?: number;
@@ -105,7 +105,7 @@ interface Pagination {
   page_size: number;
 }
 
-interface BusinessSnapshot {
+export interface BusinessSnapshot {
   id: string;
   name: string;
   unique_name: string;
@@ -125,7 +125,7 @@ export interface OrganisationCustomers {
   updated_at: string;
 }
 
-export interface CreditCreate {
+export interface CreditCreateParams {
   customer_id: string;
   invoice_id: string;
   amount: number;
@@ -133,7 +133,7 @@ export interface CreditCreate {
   notes?: string;
 }
 
-interface Credit {
+export interface Credit {
   id: string;
   business_id: string;
   customer_id: string;
@@ -195,16 +195,13 @@ interface Product {
   updated_at: string;
 }
 
-interface ProductFilters {
+interface ProductFilters extends Filters {
   // business_id: string,
   category_id?: string;
   subcategory_id?: string;
   name?: keyof Product;
   low_stock_only?: boolean;
   expired_only?: boolean;
-  search?: string;
-  page?: number;
-  page_size?: number;
   order_by?: keyof Product;
 }
 
@@ -234,7 +231,7 @@ export type SessionData = {
   user?: User;
 };
 
-type BACKEND_ERROR_CODES =
+export type BACKEND_ERROR_CODES =
   | "GOOGLE_OAUTH_EXCHANGE_FAILED"
   | "VALIDATION_ERROR"
   | "RATE_LIMIT_EXCEEDED"
@@ -308,7 +305,7 @@ export interface SideItem {
   }[];
 }
 
-interface ProductCreateParams extends ProductUpdateParams {
+export interface ProductCreateParams extends ProductUpdateParams {
   business_id: string;
   on_promotion?: boolean;
   promotion_start_date?: string;
@@ -316,7 +313,7 @@ interface ProductCreateParams extends ProductUpdateParams {
   promo_price?: number;
 }
 
-interface ProductUpdateParams {
+export interface ProductUpdateParams {
   name: string;
   description?: string;
   barcode?: string;
@@ -327,6 +324,7 @@ interface ProductUpdateParams {
   quantity?: number;
   min_quantity?: number;
   expiry_date?: string;
+  image?: File;
 }
 
 export interface Invoice {
@@ -359,21 +357,30 @@ export interface Invoice {
   refund_amount: number; //
 }
 
-export interface InvoiceCreateParams {
+export interface InvoiceCreateParams extends Omit<
+  InvoiceUpdateParams,
+  "is_credit_settled" | "is_archived"
+> {
   business_id: string;
   customer_name?: string;
   customer_id?: string;
   customer_email?: string;
   customer_phone?: string;
   customer_address?: string;
-  customer_type?: "REGULAR" | "WHOLESALER";
+  customer_type?: Customer;
   lines: InvoiceLineCreateParams[];
+  is_credit: boolean; // If True, due_date and reason are required.
+}
+
+export interface InvoiceUpdateParams {
+  status: InvoiceStatus;
   tax?: number;
   advance_paid?: number;
   payment_method: PaymentMethod;
-  is_credit: boolean; // If True, due_date and reason are required.
+  is_credit_settled: boolean; // If True, due_date and reason are required.
   due_date?: string;
   reason?: string;
+  is_archived?: boolean;
 }
 
 export interface InvoiceLine {
@@ -390,27 +397,122 @@ export interface InvoiceLine {
 
 export interface InvoiceLineCreateParams {
   product_id: string;
-  quantity: string;
+  quantity: number;
   discount?: number;
 }
 
-export interface InvoiceFilters {
+export interface InvoiceFilters extends Filters {
   // business_id: string, //this is passed as route params, so not here
   status?: InvoiceStatus;
   start_date?: string;
   end_date?: string;
+  order_by?: keyof Invoice;
+}
+
+export interface Client {
+  id: string;
+  business_id: string;
+  name: string;
+  email?: string;
+  phone_number?: string;
+  address?: string;
+  customer_type: Customer;
+  loyalty_points: number;
+  total_purchases: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ClientCreateParams extends ClientUpdateParams {
+  business_id: string;
+}
+
+export interface ClientUpdateParams {
+  name: string;
+  email?: string;
+  address?: string;
+  phone_number?: string;
+  customer_type: Customer;
+}
+
+export interface ClientFilters extends Filters {
+  // business_id: string, //this is passed as route params, so not here
+  name?: string;
+  customer_type?: Customer;
+  order_by?: keyof Client;
+}
+
+interface Filters {
   search?: string;
   page?: number;
   page_size?: number;
-  order_by?: keyof Invoice;
+}
+
+/**Response from scanning a barcode */
+export interface Barcode {
+  id: string;
+  name: string;
+  barcode: string;
+  unit_price: number;
+  promo_price?: number;
+  quantity: number;
+  category_name?: string;
+  subcategory_name?: string;
+  is_available: boolean;
+}
+
+/**Utility for add invoice drawer */
+export interface AddedLine extends Barcode {
+  qty: number;
+  discount?: number;
+}
+
+export interface Payment {
+  id: string;
+  invoice_id: string;
+  amount: number;
+  payment_method: PaymentMethod;
+  change_amount: number;
+  refund_amount: number;
+  payment_date: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+  created_by_name?: string;
+}
+
+export interface PaymentFilters extends Omit<Filters, "search"> {
+  // business_id: string, //this is passed as route params, so not here
+  start_date?: string;
+  end_date?: string;
+}
+
+export interface Refund {
+  id: string;
+  invoice_id: string;
+  refund_amount: number;
+  new_paid_amount: number;
+  new_remaining_amount: number;
+  created_at: string;
 }
 
 export interface DataTableToolbarProps<TData> {
   table: Table<TData>;
+  hideCTA?: boolean;
+}
+
+interface TableContextMenuProps<T> {
+  cell: Cell<T, any>;
+  className?: string;
+  children?: React.ReactNode;
+  title?: string;
 }
 
 declare module "@tanstack/react-table" {
+  /**Addons for table columns */
   export interface ColumnMeta<TData extends RowData, TValue> {
+    /**If column should be hidden by default */
     hidden?: boolean;
     /**Use this for the default sort column. Used only once per table */
     sort?: boolean;

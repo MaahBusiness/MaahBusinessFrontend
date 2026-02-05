@@ -103,13 +103,14 @@ export async function action({ request, params }: Route.ActionArgs): Promise<
 
 export default function TeamPage({ actionData }: Route.ComponentProps) {
   const { user } = useAuth(); // Get token from context
-  const { members: res, isLoadingMembers } = useOrganisation();
+  const { fetchMembers } = useOrganisation();
   const queryClient = useQueryClient();
   const { id } = useParams();
 
   const navigation = useNavigation();
   const intent = navigation.formData?.get("intent");
 
+  const { data: res, isLoading } = fetchMembers();
   const cols = columns(user?.id || "");
 
   // Show toasts based on action results
@@ -136,7 +137,7 @@ export default function TeamPage({ actionData }: Route.ComponentProps) {
     }
   }, [actionData]);
 
-  if (isLoadingMembers) return <DataTableSkeleton />;
+  if (isLoading) return <DataTableSkeleton />;
   if (!res?.success) return <RequestFailed />;
 
   return (

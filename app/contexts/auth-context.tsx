@@ -1,7 +1,14 @@
 // contexts/auth-context.tsx
 import { organisationKeys } from "@/lib/api/organisation";
 import { useQueryClient } from "@tanstack/react-query";
-import { createContext, useContext, useEffect } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 import { toast } from "sonner";
 import type { User, SessionData } from "types";
 
@@ -9,6 +16,7 @@ type AuthContextType = {
   user?: User;
   accessToken?: string;
   isAuthenticated: boolean;
+  setUser: Dispatch<SetStateAction<User | undefined>>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,7 +29,7 @@ interface AuthProviderProps {
 export function AuthProvider({ session, children }: AuthProviderProps) {
   const queryClient = useQueryClient();
 
-  // const [sesh, setSesh] = useState(session);
+  const [user, setUser] = useState(session?.user);
 
   // Show toasts based on action results
   useEffect(() => {
@@ -39,6 +47,7 @@ export function AuthProvider({ session, children }: AuthProviderProps) {
     user: session?.user,
     isAuthenticated: !!session?.user && session?.user.email_verified,
     accessToken: session?.accessToken, // NEW: Exposing token for Tanstack Usage
+    setUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

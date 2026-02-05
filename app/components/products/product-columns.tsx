@@ -9,6 +9,7 @@ import { Check, TrendingDown, X } from "lucide-react";
 import { ProductTableContextMenu } from "@/components/products/product-table-context-menu";
 import { ProductTableRowActions } from "@/components/products/product-table-row-actions";
 import { Link } from "react-router";
+import { formatDisplayAmount } from "utils";
 
 export const productCols = ({
   cats,
@@ -194,18 +195,12 @@ export const productCols = ({
       />
     ),
     cell: ({ row, cell }) => {
-      const amount = parseFloat(row.getValue("purchase"));
-      const formatted = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-      }).format(amount);
-
       return (
         <ProductTableContextMenu
           {...{ cell }}
           className="text-right font-medium"
         >
-          <span>{formatted}</span>
+          <span>{formatDisplayAmount(row.getValue("purchase"))}</span>
         </ProductTableContextMenu>
       );
     },
@@ -224,18 +219,12 @@ export const productCols = ({
       />
     ),
     cell: ({ row, cell }) => {
-      const amount = parseFloat(row.getValue("unit"));
-      const formatted = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-      }).format(amount);
-
       return (
         <ProductTableContextMenu
           {...{ cell }}
           className="text-right font-medium"
         >
-          <span>{formatted}</span>
+          <span>{formatDisplayAmount(row.getValue("unit"))}</span>
         </ProductTableContextMenu>
       );
     },
@@ -252,18 +241,12 @@ export const productCols = ({
       />
     ),
     cell: ({ row, cell }) => {
-      const amount = parseFloat(row.getValue("current"));
-      const formatted = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-      }).format(amount);
-
       return (
         <ProductTableContextMenu
           {...{ cell }}
           className="justify-end font-medium"
         >
-          {formatted}
+          {formatDisplayAmount(row.getValue("current"))}
         </ProductTableContextMenu>
       );
     },
@@ -366,18 +349,14 @@ export const productCols = ({
       />
     ),
     cell: ({ row, cell }) => {
-      const amount = parseFloat(row.getValue("promo-price"));
-      const formatted = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-      }).format(amount);
-
       return (
         <ProductTableContextMenu
           {...{ cell }}
           className="text-right font-medium"
         >
-          {row.original.on_promotion ? formatted : "--"}
+          {row.original.on_promotion
+            ? formatDisplayAmount(row.getValue("promo-price"))
+            : "--"}
         </ProductTableContextMenu>
       );
     },

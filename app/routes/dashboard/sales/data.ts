@@ -1,4 +1,4 @@
-import type { Invoice } from "types";
+import type { Client, Invoice, Payment } from "types";
 import {
   CheckCircle,
   RotateCcw,
@@ -10,6 +10,7 @@ import {
   FileClock,
   CircleOff,
   Timer,
+  CheckCheck,
 } from "lucide-react";
 
 export const mockInvoices: Invoice[] = [
@@ -21,7 +22,7 @@ export const mockInvoices: Invoice[] = [
     cashier_id: "user_001",
     cashier_name: "Alice Johnson",
 
-    status: "paid",
+    status: "COMPLETED",
     total: 120,
     tax: 10,
     total_discount: 0,
@@ -62,7 +63,7 @@ export const mockInvoices: Invoice[] = [
     cashier_id: "user_002",
     cashier_name: "Mark Benson",
 
-    status: "partial",
+    status: "CREDIT",
     total: 300,
     tax: 25,
     total_discount: 20,
@@ -104,7 +105,7 @@ export const mockInvoices: Invoice[] = [
     cashier_id: "user_001",
     cashier_name: "Alice Johnson",
 
-    status: "cancelled",
+    status: "CANCELLED",
     total: 80,
     tax: 5,
     total_discount: 0,
@@ -143,7 +144,7 @@ export const mockInvoices: Invoice[] = [
     cashier_id: "user_003",
     cashier_name: "David Kim",
 
-    status: "refunded",
+    status: "REFUNDED",
     total: 150,
     tax: 12,
     total_discount: 0,
@@ -185,7 +186,7 @@ export const mockInvoices: Invoice[] = [
     cashier_id: "user_002",
     cashier_name: "Mark Benson",
 
-    status: "paid",
+    status: "COMPLETED",
     total: 60,
     tax: 4,
     total_discount: 5,
@@ -226,7 +227,7 @@ export const mockInvoices: Invoice[] = [
 
     cashier_id: "user_001",
 
-    status: "paid",
+    status: "COMPLETED",
     total: 0,
     tax: 0,
     total_discount: 100,
@@ -252,7 +253,7 @@ export const mockInvoices: Invoice[] = [
 
     cashier_id: "user_002",
 
-    status: "paid",
+    status: "COMPLETED",
     total: 100,
     tax: 5,
     total_discount: 0,
@@ -291,7 +292,7 @@ export const mockInvoices: Invoice[] = [
 
     cashier_id: "user_003",
 
-    status: "partial",
+    status: "CREDIT",
     total: 500,
     tax: 40,
     total_discount: 0,
@@ -333,7 +334,7 @@ export const mockInvoices: Invoice[] = [
 
     cashier_id: "user_001",
 
-    status: "cancelled",
+    status: "CANCELLED",
     total: 200,
     tax: 15,
     total_discount: 0,
@@ -372,7 +373,7 @@ export const mockInvoices: Invoice[] = [
 
     cashier_id: "user_004",
 
-    status: "paid",
+    status: "COMPLETED",
     total: 75,
     tax: 6,
     total_discount: 0,
@@ -405,6 +406,76 @@ export const mockInvoices: Invoice[] = [
   },
 ];
 
+export const mockPayments: Payment[] = [
+  {
+    id: "pay_001",
+    invoice_id: "inv_1001",
+    amount: 50000,
+    payment_method: "cash",
+    change_amount: 2000,
+    refund_amount: 0,
+    payment_date: "2026-01-28T10:15:00Z",
+    created_at: "2026-01-28T10:15:00Z",
+    updated_at: "2026-01-28T10:15:00Z",
+    created_by: "user_01",
+    created_by_name: "John Doe",
+  },
+  {
+    id: "pay_002",
+    invoice_id: "inv_1002",
+    amount: 125000,
+    payment_method: "card",
+    change_amount: 0,
+    refund_amount: 0,
+    payment_date: "2026-01-28T11:30:00Z",
+    created_at: "2026-01-28T11:30:00Z",
+    updated_at: "2026-01-28T11:30:00Z",
+    created_by: "user_02",
+    created_by_name: "Jane Smith",
+  },
+  {
+    id: "pay_003",
+    invoice_id: "inv_1003",
+    amount: 30000,
+    payment_method: "mobile_money",
+    change_amount: 0,
+    refund_amount: 5000, // partial refund
+    payment_date: "2026-01-27T16:45:00Z",
+    notes: "Customer returned one item",
+    created_at: "2026-01-27T16:45:00Z",
+    updated_at: "2026-01-27T17:00:00Z",
+    created_by: "user_01",
+    created_by_name: "John Doe",
+  },
+  {
+    id: "pay_004",
+    invoice_id: "inv_1004",
+    amount: 200000,
+    payment_method: "stripe",
+    change_amount: 0,
+    refund_amount: 0,
+    payment_date: "2026-01-26T09:10:00Z",
+    notes: "Online payment",
+    created_at: "2026-01-26T09:10:00Z",
+    updated_at: "2026-01-26T09:10:00Z",
+    created_by: "system",
+  },
+  {
+    id: "pay_005",
+    invoice_id: "inv_1005",
+    amount: 0,
+    payment_method: "credit",
+    change_amount: 0,
+    refund_amount: 0,
+    payment_date: "2026-01-25T14:20:00Z",
+    notes: "Invoice marked as credit (pay later)",
+    created_at: "2026-01-25T14:20:00Z",
+    updated_at: "2026-01-25T14:20:00Z",
+    created_by: "user_03",
+    created_by_name: "Cashier A",
+  },
+];
+
 export const STATUS_META = {
   paid: {
     icon: CheckCircle,
@@ -426,27 +497,21 @@ export const STATUS_META = {
 
 export const statuses = [
   {
-    value: "paid",
-    label: "Paid",
-    icon: CheckCircle,
+    value: "COMPLETED",
+    label: "Completed",
+    icon: CheckCheck,
     // className: "text-green-700 border-green-300",
   },
 
   {
-    value: "partial",
-    label: "Partial",
+    value: "CREDIT",
+    label: "Credit",
     icon: Timer,
     // className: "text-yellow-700 border-yellow-300",
   },
-  {
-    value: "refunded",
-    label: "Refunded",
-    icon: RotateCcw,
-    // className: "text-blue-700 border-blue-300",
-  },
 
   {
-    value: "cancelled",
+    value: "CANCELLED",
     label: "Cancelled",
     icon: CheckCircle,
     className: "text-destructive border-red-300",
@@ -484,4 +549,23 @@ export const methods = [
     label: "Credit",
     icon: FileClock,
   },
+];
+
+export const searchFilters = [
+  { value: "number", label: "Number" },
+  { value: "desc", label: "Description" },
+];
+
+export const visibles = [
+  { value: "id", label: "ID" },
+  { value: "total", label: "Total Amount" },
+  { value: "paid", label: "Amount Paid" },
+  { value: "method", label: "Payment Method" },
+  { value: "due", label: "Amount Due" },
+  { value: "due-date", label: "Due Date" },
+  { value: "refund", label: "To Be Refunded" },
+  { value: "stock", label: "No. of Items" },
+
+  { value: "updated", label: "Date Updated" },
+  { value: "created", label: "Date Created" },
 ];
