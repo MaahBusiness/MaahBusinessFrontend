@@ -66,7 +66,7 @@ export function Breadcrumbs() {
   return (
     <Breadcrumb>
       <BreadcrumbList className="gap-1 sm:gap-1.5">
-        <BreadcrumbItem>
+        <BreadcrumbItem className="hidden tablet:inline-flex">
           <BreadcrumbLink asChild>
             <Link to="/dashboard/organisations">
               <GalleryVerticalEnd className="size-4" />
@@ -75,7 +75,7 @@ export function Breadcrumbs() {
         </BreadcrumbItem>
 
         <BreadcrumbSeparator>
-          <SlashIcon />
+          <SlashIcon className="text-muted-foreground" />
         </BreadcrumbSeparator>
 
         {resolvedSegments.map((segment, index) => {
@@ -111,7 +111,7 @@ export function Breadcrumbs() {
               {/* Separator */}
               {!isLast && (
                 <BreadcrumbSeparator>
-                  <SlashIcon />
+                  <SlashIcon className="text-muted-foreground" />
                 </BreadcrumbSeparator>
               )}
             </Fragment>

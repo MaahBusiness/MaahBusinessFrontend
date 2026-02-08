@@ -64,7 +64,7 @@ export function EditInvoiceDrawer({ data }: { data: Invoice }) {
   };
 
   return (
-    <DrawerContent className=" data-[vaul-drawer-direction=right]:sm:max-w-xl data-[vaul-drawer-direction=bottom]:max-h-[90vh]">
+    <DrawerContent className=" data-[vaul-drawer-direction=right]:md:max-w-xl data-[vaul-drawer-direction=right]:w-full data-[vaul-drawer-direction=bottom]:max-h-[90vh]">
       <Form
         method="POST"
         encType="multipart/form-data"
@@ -83,7 +83,7 @@ export function EditInvoiceDrawer({ data }: { data: Invoice }) {
 
           {/* 💳 Invoice — Payment & Charges */}
           <FieldGroup className="flex flex-col border-b border-border py-6 px-6">
-            <Field className="flex-row gap-6 ">
+            <Field className="md:flex-row gap-6 ">
               <div className="flex flex-col flex-grow">
                 <FieldLabel htmlFor="method">Payment Method</FieldLabel>
                 <FieldDescription className="text-xs">
@@ -114,7 +114,7 @@ export function EditInvoiceDrawer({ data }: { data: Invoice }) {
               </div>
             </Field>
 
-            <Field className="flex-row gap-6 ">
+            <Field className="md:flex-row gap-6 ">
               <div className="flex flex-col flex-grow">
                 <FieldLabel htmlFor="tax">Tax Amount</FieldLabel>
                 <FieldDescription className="text-xs">
@@ -134,7 +134,7 @@ export function EditInvoiceDrawer({ data }: { data: Invoice }) {
               </div>
             </Field>
 
-            <Field className="flex-row gap-6 ">
+            <Field className="md:flex-row gap-6 ">
               <div className="flex flex-col flex-grow">
                 <FieldLabel htmlFor="advance">Amount Paid </FieldLabel>
                 <FieldDescription className="text-xs">
@@ -179,7 +179,7 @@ export function EditInvoiceDrawer({ data }: { data: Invoice }) {
               <FieldError errors={[{ message: errors?.credit }]} />
               {!onCredit && (
                 <>
-                  <Field className="flex-row gap-6 ">
+                  <Field className="md:flex-row gap-6 ">
                     <div className="flex flex-col flex-grow">
                       <FieldLabel htmlFor="due-date">Due Date</FieldLabel>
                       <FieldDescription className="text-xs">
@@ -201,7 +201,7 @@ export function EditInvoiceDrawer({ data }: { data: Invoice }) {
                     </div>
                   </Field>
 
-                  <Field className="flex-row gap-6 ">
+                  <Field className="md:flex-row gap-6 ">
                     <div className="flex flex-col flex-grow">
                       <FieldLabel htmlFor="reason">Credit Reason</FieldLabel>
                       <FieldDescription className="text-xs">
@@ -227,7 +227,7 @@ export function EditInvoiceDrawer({ data }: { data: Invoice }) {
 
           {/* Status */}
           <FieldGroup className="flex flex-col border-b border-border py-6 px-6">
-            <Field className="flex-row gap-6 ">
+            <Field className="md:flex-row gap-6 ">
               <div className="flex flex-col flex-grow">
                 <FieldLabel htmlFor="status">Invoice Status</FieldLabel>
                 <FieldDescription className="text-xs">
@@ -283,7 +283,7 @@ export function EditInvoiceDrawer({ data }: { data: Invoice }) {
           </FieldGroup>
         </div>
 
-        <DrawerFooter className="flex-row justify-end border-t border-border px-6 py-4 items-center">
+        <DrawerFooter className="flex-row justify-end border-t border-border px-6 py-6 md:py-4 items-center">
           <DrawerClose asChild>
             <Button variant="outline" size={"sm"}>
               Cancel

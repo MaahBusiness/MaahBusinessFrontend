@@ -140,23 +140,25 @@ export default function SingleproductPage({
   if (!res.data) return <ProductNotFound />;
 
   return (
-    <div className="w-full min-h-full flex flex-col gap-8 items-stretch max-w-[1200px] lg:px-6 px-4 mx-auto py-12">
-      <div className="w-full flex items-center gap-2">
-        <Link to="../products">
-          <h2 className="text-lg tracking-tight text-muted-foreground">
-            Products
-          </h2>
-        </Link>
-        <ChevronRight className="text-muted-foreground size-4" />
-        <h2 className="text-lg tracking-tight">{res.data.name}</h2>
+    <div className="w-full min-h-full flex flex-col gap-8 items-stretch max-w-[1200px] lg:px-6 px-6 mx-auto py-12">
+      <div className="w-full flex flex-col tablet:flex-row tablet:items-center gap-4">
+        <div className="w-full flex items-center gap-2">
+          <Link to="../products">
+            <h2 className="text-lg tracking-tight text-muted-foreground">
+              Products
+            </h2>
+          </Link>
+          <ChevronRight className="text-muted-foreground size-4" />
+          <h2 className="text-lg tracking-tight">{res.data.name}</h2>
+        </div>
 
-        <div className="ml-auto flex items-center justify-end">
+        <div className="tablet:ml-auto flex items-center tablet:justify-end">
           <SingleProductActions data={res.data} />
         </div>
       </div>
 
       {/* Meta */}
-      <div className="grid auto-rows-min gap-6  md:grid-cols-4">
+      <div className="grid auto-rows-min gap-6 grid-cols-2 md:grid-cols-4">
         <Item className="p-0">
           <ItemContent className="gap-3">
             <ItemDescription>QTY in stock</ItemDescription>
@@ -281,14 +283,14 @@ export default function SingleproductPage({
       <Separator className="h-px" />
 
       {/* Dual Cols */}
-      <div className="justify-between flex w-full gap-20 ">
+      <div className="justify-between flex-col laptop:flex-row flex w-full gap-8 laptop:gap-20 ">
         {/* Right Col */}
         <div className="flex items-stretch flex-initial flex-col gap-8 w-full">
           <div className="flex flex-col gap-4">
             <h4 className="scroll-m-20 text-lg tracking-tight">General</h4>
 
             <Card className="relative w-full p-0 ">
-              <CardContent className="flex px-0">
+              <CardContent className="flex flex-col tablet:flex-row px-0">
                 <div className="flex flex-col flex-1">
                   <div className="flex flex-col gap-1 p-4 border-b ">
                     <h5 className="scroll-m-20 tracking-tight">Product name</h5>
@@ -362,7 +364,10 @@ export default function SingleproductPage({
                   </div>
                 </div>
 
-                <Separator orientation="vertical" />
+                <Separator
+                  orientation="vertical"
+                  className="hidden tablet:block"
+                />
 
                 <div className="flex flex-col flex-1 p-4 items-start">
                   <img
@@ -472,7 +477,7 @@ export default function SingleproductPage({
                     </>
                   )}
 
-                <div className="flex gap-6 p-4">
+                <div className="flex flex-col tablet:flex-row gap-6 p-4">
                   <div className="flex flex-col flex-1 gap-4">
                     <div className="flex flex-col flex-1 gap-1">
                       <h5 className="scroll-m-20 tracking-tight">
@@ -513,7 +518,7 @@ export default function SingleproductPage({
             <HoverCard openDelay={100} closeDelay={100}>
               <Card className="relative w-full p-0 ">
                 <CardContent className="flex flex-col px-0">
-                  <div className="flex gap-6 p-4">
+                  <div className="flex flex-col tablet:flex-row gap-6 p-4">
                     <div className="flex flex-col flex-1 gap-4">
                       <div className="flex flex-col flex-1 gap-1">
                         <h5 className="scroll-m-20 tracking-tight">
@@ -580,6 +585,14 @@ export default function SingleproductPage({
                         </Button>
                       </div>
                     </div>
+
+                    <div className="tablet:hidden">
+                      <img
+                        src={res.data.barcode_image_url}
+                        alt="Barcode image"
+                        className="relative z-20 aspect-auto w-full object-cover brightness-60 grayscale dark:brightness-40 rounded-lg"
+                      />
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -588,7 +601,7 @@ export default function SingleproductPage({
         </div>
 
         {/* Right side  */}
-        <div className=" max-w-80 w-full  sticky top-4 self-start">
+        <div className=" laptop:max-w-80 w-full  sticky top-4 self-start">
           <div className="flex flex-col gap-4">
             <h4 className="scroll-m-20 text-lg tracking-tight">Timeline</h4>
 
@@ -669,7 +682,7 @@ function SingleSkeleton() {
       </div>
 
       {/* Meta */}
-      <div className="grid auto-rows-min gap-6  md:grid-cols-4">
+      <div className="grid auto-rows-min gap-6 grid-cols-2 md:grid-cols-4">
         {Array.from({ length: 6 }).map((_) => (
           <div className="flex flex-col gap-4">
             <Skeleton className="h-18" />
@@ -680,7 +693,7 @@ function SingleSkeleton() {
       <Separator className="h-px" />
 
       {/* Dual Cols */}
-      <div className="justify-between flex w-full gap-20 ">
+      <div className="justify-between flex  flex-col md:flex-row w-full gap-20 ">
         {/* Right Col */}
         <div className="flex items-stretch flex-initial flex-col gap-6 w-full">
           {Array.from({ length: 3 }).map((_) => (
@@ -692,7 +705,7 @@ function SingleSkeleton() {
         </div>
 
         {/* Right side  */}
-        <div className=" max-w-80 w-full  sticky top-4 self-start gap-8">
+        <div className=" laptop:max-w-80 w-full  sticky top-4 self-start gap-8">
           <div className="flex flex-col gap-8">
             {Array.from({ length: 2 }).map((_) => (
               <div className="flex flex-col gap-4">

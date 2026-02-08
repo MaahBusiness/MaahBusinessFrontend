@@ -1,5 +1,6 @@
 import type { Route } from ".react-router/types/app/routes/dashboard/+types/layout";
 import { SiteHeader } from "@/components/site-header";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { signOut } from "@/lib/api/auth";
 import { getSession, requireUserSession } from "@/lib/session.server";
 import { useEffect } from "react";
@@ -63,9 +64,9 @@ export default function DashboardLayout({ actionData }: Route.ComponentProps) {
     }
   }, [actionData]);
   return (
-    <div className="[--header-height:calc(theme(spacing.12))] flex flex-col min-h-screen ">
+    <SidebarProvider className="[--header-height:calc(theme(spacing.12))] [--mobile-header-height:calc(theme(spacing.14))] flex flex-col min-h-screen ">
       <SiteHeader />
       <Outlet />
-    </div>
+    </SidebarProvider>
   );
 }

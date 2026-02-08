@@ -66,7 +66,7 @@ export default function Organisations() {
   if (!res.data) return <OrgsNotFound />;
 
   return (
-    <div className="w-full min-h-full flex flex-col gap-8 items-stretch max-w-[1200px] lg:px-6 px-4 mx-auto pt-12">
+    <div className="w-full min-h-full flex flex-col gap-8 items-stretch max-w-[1200px] lg:px-6 px-6 mx-auto pt-12">
       <div className="w-full">
         <h1 className="text-2xl font-medium">Your organisations</h1>
       </div>

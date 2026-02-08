@@ -63,7 +63,7 @@ export function EditProductDrawer({ data }: { data: Product }) {
   };
 
   return (
-    <DrawerContent className="border-border data-[vaul-drawer-direction=right]:sm:max-w-xl data-[vaul-drawer-direction=bottom]:max-h-[90vh] focus-visible:outline-0">
+    <DrawerContent className="data-[vaul-drawer-direction=right]:tablet:max-w-xl data-[vaul-drawer-direction=right]:w-full data-[vaul-drawer-direction=bottom]:max-h-[90vh] focus-visible:outline-0">
       <Form
         method="POST"
         encType="multipart/form-data"
@@ -81,7 +81,7 @@ export function EditProductDrawer({ data }: { data: Product }) {
 
           {/* Basic info */}
           <FieldGroup className="flex flex-col border-b border-border py-6 px-6">
-            <Field className="flex-row gap-6 ">
+            <Field className="flex-col tablet:flex-row gap-6 ">
               <div className="flex flex-col flex-grow">
                 <FieldLabel htmlFor="name">Product name</FieldLabel>
                 <FieldDescription className="text-xs">
@@ -100,7 +100,7 @@ export function EditProductDrawer({ data }: { data: Product }) {
                 <FieldError errors={[{ message: errors?.name }]} />
               </div>
             </Field>
-            <Field className="flex-row gap-6 ">
+            <Field className="flex-col tablet:flex-row gap-6 ">
               <div className="flex flex-col flex-grow">
                 <FieldLabel htmlFor="desc">Description (optional)</FieldLabel>
                 <FieldDescription className="text-xs">
@@ -116,7 +116,7 @@ export function EditProductDrawer({ data }: { data: Product }) {
                 />
               </div>
             </Field>
-            <Field className="flex-row gap-6 ">
+            <Field className="flex-col tablet:flex-row gap-6 ">
               <div className="flex flex-col flex-grow">
                 <FieldLabel htmlFor="code">Barcode / SKU (optional)</FieldLabel>
                 <FieldDescription className="text-xs">
@@ -138,7 +138,7 @@ export function EditProductDrawer({ data }: { data: Product }) {
 
           {/* Category */}
           <FieldGroup className="flex flex-col border-b border-border py-6 px-6">
-            <Field className="flex-row gap-6 ">
+            <Field className="flex-col tablet:flex-row gap-6 ">
               <div className="flex flex-col flex-grow">
                 <FieldLabel htmlFor="cat">Category</FieldLabel>
                 <FieldDescription className="text-xs">
@@ -170,7 +170,7 @@ export function EditProductDrawer({ data }: { data: Product }) {
               </div>
             </Field>
             {cat?.subcategories?.length ? (
-              <Field className="flex-row gap-6 ">
+              <Field className="flex-col tablet:flex-row gap-6 ">
                 <div className="flex flex-col flex-grow">
                   <FieldLabel htmlFor="subcat">
                     Subategory (optional)
@@ -201,7 +201,7 @@ export function EditProductDrawer({ data }: { data: Product }) {
 
           {/* Pricing */}
           <FieldGroup className="flex flex-col border-b border-border py-6 px-6">
-            <Field className="flex-row gap-6 ">
+            <Field className="flex-col tablet:flex-row gap-6 ">
               <div className="flex flex-col flex-grow">
                 <FieldLabel htmlFor="purchase">Purchase price</FieldLabel>
                 <FieldDescription className="text-xs">
@@ -222,7 +222,7 @@ export function EditProductDrawer({ data }: { data: Product }) {
                 <FieldError errors={[{ message: errors?.purchase }]} />
               </div>
             </Field>
-            <Field className="flex-row gap-6 ">
+            <Field className="flex-col tablet:flex-row gap-6 ">
               <div className="flex flex-col flex-grow">
                 <FieldLabel htmlFor="unit">Selling price</FieldLabel>
                 <FieldDescription className="text-xs">
@@ -247,7 +247,7 @@ export function EditProductDrawer({ data }: { data: Product }) {
 
           {/* Inventory */}
           <FieldGroup className="flex flex-col border-b border-border py-6 px-6">
-            <Field className="flex-row gap-6 ">
+            <Field className="flex-col tablet:flex-row gap-6 ">
               <div className="flex flex-col flex-grow">
                 <FieldLabel htmlFor="qty">
                   Initial stock quantity (optional)
@@ -266,7 +266,7 @@ export function EditProductDrawer({ data }: { data: Product }) {
                 />
               </div>
             </Field>
-            <Field className="flex-row gap-6 ">
+            <Field className="flex-col tablet:flex-row gap-6 ">
               <div className="flex flex-col flex-grow">
                 <FieldLabel htmlFor="min">
                   Low stock alert threshold (optional)
@@ -307,7 +307,7 @@ export function EditProductDrawer({ data }: { data: Product }) {
               </Field>
             </FieldLabel>
             {canExpire && (
-              <Field className="flex-row gap-6 ">
+              <Field className="flex-col tablet:flex-row gap-6 ">
                 <div className="flex flex-col flex-grow">
                   <FieldLabel htmlFor="exp">Expiry date</FieldLabel>
                   <FieldDescription className="text-xs">

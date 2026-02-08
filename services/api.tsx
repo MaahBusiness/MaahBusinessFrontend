@@ -362,6 +362,7 @@ export async function handleProductActions({
   const promoEnd = formData.get("promo-end") as string | undefined;
   const _promo = formData.get("promo") as string | undefined;
   const pfp = formData.get("pfp") as File | undefined;
+  const url = formData.get("url") as string | undefined;
 
   // Converting formatted amounts back to numbers
   const purchase = parseInt(`${_purchase}`.replace(/\D/g, ""), 10) || 0;
@@ -393,6 +394,11 @@ export async function handleProductActions({
     if (promo <= 0) errors.promo = "Please provide the promotional price.";
     else if (promo >= unit)
       errors.promo = "Promotional price must be lower than selling price";
+
+    if (!promoStart || !promoEnd) {
+      errors.promo_end = "Provide a duartion for the promotion";
+      errors.promo_start = "Provide a duartion for the promotion";
+    }
     if (!isEarlier(promoStart, promoEnd)) {
       errors.promo_end =
         "The promotion end date should be after the start date.";
@@ -422,6 +428,7 @@ export async function handleProductActions({
           promotion_start_date: promoStart,
           subcategory_id: subcat,
           image: pfp || undefined,
+          image_url: url,
         });
       break;
     }

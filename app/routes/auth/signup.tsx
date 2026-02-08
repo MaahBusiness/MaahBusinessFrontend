@@ -101,7 +101,7 @@ export default function SignupPage({ actionData }: Route.ComponentProps) {
   }, [actionData]);
 
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-6 p-6">
+    <div className="flex h-full flex-col items-center justify-center gap-6 p-8 tablet:p-10">
       <div className="w-full max-w-sm">
         {showOtpForm && actionData.otpSession ? <OTPForm /> : <SignupForm />}
       </div>

@@ -88,7 +88,7 @@ export async function action({
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export default function SettingsPage({ actionData }: Route.ComponentProps) {
+export default function ProfilePage({ actionData }: Route.ComponentProps) {
   const { user, isAuthenticated, setUser } = useAuth();
   const navigation = useNavigation();
   const { setTheme, theme } = useTheme();
@@ -121,7 +121,7 @@ export default function SettingsPage({ actionData }: Route.ComponentProps) {
   if (!isAuthenticated) return <RequestFailed />;
 
   return (
-    <div className="w-full min-h-full flex flex-col gap-12 items-stretch max-w-3xl lg:px-6 px-4 mx-auto py-12">
+    <div className="w-full min-h-full flex flex-col gap-12 items-stretch max-w-3xl lg:px-6 px-6 mx-auto py-12">
       <div className="w-full">
         <h1 className="text-lg font-medium">Preferences</h1>
         <h2 className="text-muted-foreground text-sm font-medium">
@@ -137,7 +137,7 @@ export default function SettingsPage({ actionData }: Route.ComponentProps) {
             <h2 className="text-xl">Profile information</h2>
 
             <FieldGroup className="gap-0 bg-card text-card-foreground flex flex-col rounded-xl border  py-0 pt-2 shadow-sm">
-              <Field className="flex-row gap-6 p-6 border-b ">
+              <Field className="flex-col tablet:flex-row gap-6 p-6 border-b ">
                 <div className="flex flex-col flex-grow">
                   <FieldLabel htmlFor="name">Full name</FieldLabel>
                   <FieldDescription className="text-xs">
@@ -156,7 +156,7 @@ export default function SettingsPage({ actionData }: Route.ComponentProps) {
                   <FieldError errors={[{ message: errors?.name }]} />
                 </div>
               </Field>
-              <Field className="flex-row gap-6 p-6 border-b ">
+              <Field className="flex-col tablet:flex-row gap-6 p-6 border-b ">
                 <div className="flex flex-col flex-grow">
                   <FieldLabel htmlFor="email">Primary email</FieldLabel>
 
@@ -181,7 +181,7 @@ export default function SettingsPage({ actionData }: Route.ComponentProps) {
                 </div>
               </Field>
 
-              <Field className="flex-row gap-6 p-6 border-b ">
+              <Field className="flex-col tablet:flex-row gap-6 p-6 border-b ">
                 <div className="flex flex-col flex-grow">
                   <FieldLabel htmlFor="phone">Phone number</FieldLabel>
                 </div>
@@ -195,7 +195,7 @@ export default function SettingsPage({ actionData }: Route.ComponentProps) {
                   />
                 </div>
               </Field>
-              <Field className="flex-row gap-6 p-6 border-b">
+              <Field className="flex-col tablet:flex-row gap-6 p-6 border-b">
                 <div className="flex flex-col flex-grow">
                   <FieldLabel htmlFor="name">Address</FieldLabel>
                 </div>
@@ -222,7 +222,7 @@ export default function SettingsPage({ actionData }: Route.ComponentProps) {
                   value={extractImageUrl(user?.avatar_url ?? "") ?? undefined}
                 />
               </Field>
-              <Field className="flex-row justify-end border-t px-6 py-4">
+              <Field className="flex-col tablet:flex-row justify-end border-t px-6 py-4">
                 <div className="flex justify-end">
                   <Button
                     type="submit"
@@ -244,7 +244,7 @@ export default function SettingsPage({ actionData }: Route.ComponentProps) {
           <h2 className="text-xl">Appearance</h2>
 
           <FieldGroup className="gap-0 bg-card text-card-foreground flex flex-col rounded-xl border  py-0 pt-2 shadow-sm">
-            <Field className="flex-row gap-2 p-6 ">
+            <Field className="flex-col tablet:flex-row gap-2 p-6 ">
               <div className="flex flex-col grow-0">
                 <FieldLabel htmlFor="name">Theme</FieldLabel>
                 <FieldDescription className="text-xs">

@@ -9,7 +9,7 @@ import { Check, TrendingDown, X } from "lucide-react";
 import { ProductTableContextMenu } from "@/components/products/product-table-context-menu";
 import { ProductTableRowActions } from "@/components/products/product-table-row-actions";
 import { Link } from "react-router";
-import { formatDisplayAmount } from "utils";
+import { extractImageUrl, formatDisplayAmount } from "utils";
 
 export const productCols = ({
   cats,
@@ -40,7 +40,7 @@ export const productCols = ({
             className="translate-y-[2px]"
           />
           <Avatar className="size-10 rounded-sm">
-            <AvatarImage src={entry.image_url} />
+            <AvatarImage src={extractImageUrl(entry.image_url)} />
             <BoringFallback name={entry.id} square variant="marble" />
           </Avatar>
         </div>
@@ -122,7 +122,7 @@ export const productCols = ({
     cell: ({ row, cell }) => (
       <ProductTableContextMenu {...{ cell }}>
         <Avatar className="size-10 rounded-sm">
-          <AvatarImage src={row.original.barcode_image_url} />
+          <AvatarImage src={extractImageUrl(row.original.barcode_image_url)} />
           <BoringFallback name={row.original.id} square variant="bauhaus" />
         </Avatar>
       </ProductTableContextMenu>

@@ -171,7 +171,10 @@ export async function requireUserSession(request: Request) {
 
   // ✅ Token is healthy
   if (status === "valid") {
-    _tokens = undefined;
+    if (_tokens) {
+      console.log("Token valid: resetting temp _tokens");
+      _tokens = undefined;
+    }
     return { session, headers: undefined };
   }
 

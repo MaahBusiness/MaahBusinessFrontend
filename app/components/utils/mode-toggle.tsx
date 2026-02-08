@@ -5,12 +5,15 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useTheme } from "@/contexts/theme-context";
 
 export function ModeToggle() {
-  const { setTheme } = useTheme();
+  const { setTheme, theme } = useTheme();
+  const themes = ["Dark", "Light", "System"];
 
   return (
     <DropdownMenu>
@@ -25,16 +28,21 @@ export function ModeToggle() {
           <span className="sr-only">Toggle theme</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => setTheme("light")}>
-          Light
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("dark")}>
-          Dark
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("system")}>
-          System
-        </DropdownMenuItem>
+      <DropdownMenuContent align="end" className="w-56 text-xs">
+        <DropdownMenuRadioGroup
+          value={theme}
+          onValueChange={(e) => setTheme(e as "dark" | "light" | "system")}
+        >
+          {themes.map((theme, id) => (
+            <DropdownMenuRadioItem
+              className="outline-0 text-xs"
+              key={theme + id}
+              value={theme.toLocaleLowerCase()}
+            >
+              {theme}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   );

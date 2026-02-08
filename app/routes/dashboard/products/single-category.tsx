@@ -176,36 +176,36 @@ export default function SingleCatPage({ actionData }: Route.ComponentProps) {
 
   return (
     <>
-      <div className="w-full flex flex-col gap-8 items-stretch max-w-[1200px] lg:px-6 px-4 mx-auto py-12">
-        <div className="w-full flex items-center gap-2">
-          <Link to="../products">
-            <h2 className="text-lg tracking-tight text-muted-foreground">
-              Products
-            </h2>
-          </Link>
-          <ChevronRight className="text-muted-foreground size-4" />
-          <Link to="../products/categories">
-            <h2 className="text-lg tracking-tight text-muted-foreground">
-              Categories
-            </h2>
-          </Link>
-          <ChevronRight className="text-muted-foreground size-4" />
-          <h2 className="text-lg tracking-tight">{cat?.name}</h2>
+      <div className="w-full flex flex-col  gap-8 items-stretch max-w-[1200px] lg:px-6 px-4 mx-auto py-12">
+        <div className="w-full flex flex-col tablet:flex-row tablet:items-center gap-4">
+          <div className="w-full flex items-center gap-2">
+            <Link to="../products">
+              <h2 className="text-lg tracking-tight text-muted-foreground">
+                Products
+              </h2>
+            </Link>
+            <ChevronRight className="text-muted-foreground size-4" />
+            <Link to="../products/categories">
+              <h2 className="text-lg tracking-tight text-muted-foreground">
+                Categories
+              </h2>
+            </Link>
+            <ChevronRight className="text-muted-foreground size-4" />
+            <h2 className="text-lg tracking-tight">{cat?.name}</h2>
+          </div>
 
-          <div className="ml-auto flex items-center justify-end">
+          <div className="tablet:ml-auto flex items-center tablet:justify-end">
             {cat && <SingleCatActions data={cat} />}
           </div>
         </div>
 
-        {subs?.length ? (
+        {!!subs?.length && (
           <DataTable
             data={subs}
             columns={subCatCols}
             meta={res.meta}
             DataTableToolbar={CatTableToolbar}
           />
-        ) : (
-          <></>
         )}
       </div>
 

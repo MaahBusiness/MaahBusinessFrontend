@@ -7,12 +7,12 @@ import {
   signInWithEmail,
   verifyOTP,
 } from "@/lib/api/auth";
-import { requireUserSession } from "@/lib/session.server";
 import { useEffect } from "react";
 import { data, redirect } from "react-router";
 import { toast } from "sonner";
 import type { OTPSessionData, SignUpActionType } from "types";
 import { genericErrorState } from "utils";
+import { requireUserSession } from "@/lib/session.server";
 
 // -------------------------------------
 // ACTION ROUTER
@@ -71,7 +71,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 
   if (session) return redirect(redirectTo);
 
-  return data({ redirectTo });
+  return data({ redirectTo: "" });
 }
 
 export default function LoginPage({ actionData }: Route.ComponentProps) {
@@ -85,7 +85,7 @@ export default function LoginPage({ actionData }: Route.ComponentProps) {
     }
   }, [actionData]);
   return (
-    <div className=" flex h-full flex-col items-center justify-center gap-6 p-6 md:p-10">
+    <div className=" flex h-full flex-col items-center justify-center gap-6 p-8 tablet:p-10 ">
       <div className="flex w-full max-w-sm flex-col gap-6">
         {showOtpForm && actionData.otpSession ? (
           <OTPForm login />

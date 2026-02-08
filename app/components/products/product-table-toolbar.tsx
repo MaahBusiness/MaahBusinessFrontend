@@ -76,7 +76,7 @@ export function ProductTableToolbar<TData>({
   const defaultSubCat = defaultCat?.subcategories?.find((c) => c.id === subId);
 
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex items-center justify-between overflow-x-scroll no-scrollbar">
       <div className="flex flex-1 items-center space-x-2">
         <InputGroup className="h-8 w-[200px] lg:w-[250px]">
           <InputGroupInput

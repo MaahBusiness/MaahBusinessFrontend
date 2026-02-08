@@ -31,24 +31,24 @@ import { ChevronDown } from "lucide-react";
 import {
   Form,
   Link,
+  redirect,
   useActionData,
   useNavigate,
   useNavigation,
 } from "react-router";
 import type { ServerActionState } from "types";
+import { extractImageUrl } from "utils";
 
 export function CreateOrgForm({ ...props }: React.ComponentProps<typeof Card>) {
   const { user } = useAuth();
   const actionData = useActionData<ServerActionState>();
   const navigation = useNavigation();
-  let navigate = useNavigate();
 
   const errors = actionData?.errors;
   const isSubmitting = navigation.state === "submitting";
 
   const handleBack = () => {
-    if (window.history.length > 1) navigate(-1);
-    else navigate("/dashboard");
+    redirect("/dashboard");
   };
 
   return (
@@ -60,7 +60,7 @@ export function CreateOrgForm({ ...props }: React.ComponentProps<typeof Card>) {
           <h2 className="text-xl">Organisation details</h2>
 
           <FieldGroup className="gap-0 bg-card text-card-foreground flex flex-col rounded-xl border border-border py-2 shadow-sm">
-            <Field className="flex-row gap-6 p-6 border-b border-border">
+            <Field className="flex-col tablet:flex-row gap-6 p-6 border-b border-border">
               <div className="flex flex-col flex-grow">
                 <FieldLabel htmlFor="name">Organisation name</FieldLabel>
                 <FieldDescription className="text-xs">
@@ -79,7 +79,7 @@ export function CreateOrgForm({ ...props }: React.ComponentProps<typeof Card>) {
                 <FieldError errors={[{ message: errors?.name }]} />
               </div>
             </Field>
-            <Field className="flex-row gap-6 p-6">
+            <Field className="flex-col tablet:flex-row gap-6 p-6">
               <div className="flex flex-col flex-grow">
                 <FieldLabel htmlFor="name">Description</FieldLabel>
                 <FieldDescription className="text-xs">
@@ -104,7 +104,7 @@ export function CreateOrgForm({ ...props }: React.ComponentProps<typeof Card>) {
           <h2 className="text-xl">Contact details</h2>
 
           <FieldGroup className="gap-0 bg-card text-card-foreground flex flex-col rounded-xl border border-border py-2 shadow-sm">
-            <Field className="flex-row gap-6 p-6 border-b border-border">
+            <Field className="flex-col tablet:flex-row gap-6 p-6 border-b border-border">
               <div className="flex flex-col flex-grow">
                 <FieldLabel htmlFor="name">Contact email</FieldLabel>
                 <FieldDescription className="text-xs">
@@ -122,7 +122,7 @@ export function CreateOrgForm({ ...props }: React.ComponentProps<typeof Card>) {
                 <FieldError errors={[{ message: errors?.email }]} />
               </div>
             </Field>
-            <Field className="flex-row gap-6 p-6 border-b border-border">
+            <Field className="flex-col tablet:flex-row gap-6 p-6 border-b border-border">
               <div className="flex flex-col flex-grow">
                 <FieldLabel htmlFor="name">Phone number (optional)</FieldLabel>
                 <FieldDescription className="text-xs">
@@ -138,7 +138,7 @@ export function CreateOrgForm({ ...props }: React.ComponentProps<typeof Card>) {
                 />
               </div>
             </Field>
-            <Field className="flex-row gap-6 p-6">
+            <Field className="flex-col tablet:flex-row gap-6 p-6">
               <div className="flex flex-col flex-grow">
                 <FieldLabel htmlFor="name">
                   Business address (optional)
@@ -164,7 +164,7 @@ export function CreateOrgForm({ ...props }: React.ComponentProps<typeof Card>) {
 
           <FieldGroup className="gap-0 bg-card text-card-foreground flex flex-col rounded-xl border border-border py-2 shadow-sm">
             <Field className="gap-6 p-6 ">
-              <div className="flex flex-row gap-6">
+              <div className="flex flex-col tablet:flex-row gap-6">
                 <div className="flex flex-col flex-grow">
                   <FieldLabel htmlFor="name">
                     Organisation logo (optional)
@@ -194,19 +194,19 @@ export function CreateOrgForm({ ...props }: React.ComponentProps<typeof Card>) {
           <Card>
             <CardContent>
               <div className="flex items-center justify-between space-x-4">
-                <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-4 ">
                   <Avatar className="size-10">
-                    <AvatarImage src={user?.avatar_url} />
+                    <AvatarImage src={extractImageUrl(user?.avatar_url)} />
                     <BoringFallback name={user?.name} />
                   </Avatar>
 
-                  <div>
-                    <p className="text-sm font-medium leading-none">
+                  <div className="max-w-40 truncate">
+                    <p className="text-sm font-medium leading-none truncate">
                       {user?.name}
                     </p>
-                    <p className="text-sm text-muted-foreground">
+                    <span className="text-sm text-muted-foreground truncate">
                       {user?.email}
-                    </p>
+                    </span>
                   </div>
                 </div>
                 <Popover>

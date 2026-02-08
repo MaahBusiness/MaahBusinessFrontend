@@ -126,7 +126,7 @@ export default function ClientSelector({
             <Item variant="outline" size={"sm"}>
               <ItemMedia>
                 <Avatar>
-                  {/* <AvatarImage src={person.avatar} className="grayscale" /> */}
+                  {/* <AvatarImage src={extractImageUrl(person.avatar)} className="grayscale" /> */}
                   <BoringFallback name={client?.name} />
                 </Avatar>
               </ItemMedia>

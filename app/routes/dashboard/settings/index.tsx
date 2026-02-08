@@ -149,7 +149,7 @@ export default function SettingsPage({ actionData }: Route.ComponentProps) {
   const { data } = res;
 
   return (
-    <div className="w-full min-h-full flex flex-col gap-8 items-stretch max-w-3xl lg:px-6 px-4 mx-auto py-12">
+    <div className="w-full min-h-full flex flex-col gap-8 items-stretch max-w-3xl lg:px-6 px-6 mx-auto py-12">
       <div className="w-full">
         <h1 className="text-lg font-medium">Organisation Settings</h1>
         {/* <h2 className="text-muted-foreground text-sm font-medium">
@@ -171,7 +171,10 @@ export default function SettingsPage({ actionData }: Route.ComponentProps) {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="general" className="flex flex-col gap-20 pt-8">
+        <TabsContent
+          value="general"
+          className="flex flex-col gap-12 tablet:gap-20 pt-8"
+        >
           <Form method="POST" encType="multipart/form-data">
             <input type="hidden" name="intent" value="update-org" />
 
@@ -180,7 +183,7 @@ export default function SettingsPage({ actionData }: Route.ComponentProps) {
                 <h2 className="text-xl">General settings</h2>
 
                 <FieldGroup className="gap-0 bg-card text-card-foreground flex flex-col rounded-xl border  py-0 pt-2 shadow-sm">
-                  <Field className="flex-row gap-6 p-6 border-b ">
+                  <Field className="flex-col tablet:flex-row gap-6 p-6 border-b ">
                     <div className="flex flex-col flex-grow">
                       <FieldLabel htmlFor="name">Organisation name</FieldLabel>
                       <FieldDescription className="text-xs">
@@ -199,7 +202,7 @@ export default function SettingsPage({ actionData }: Route.ComponentProps) {
                       <FieldError errors={[{ message: errors?.name }]} />
                     </div>
                   </Field>
-                  <Field className="flex-row gap-6 p-6">
+                  <Field className="flex-col tablet:flex-row gap-6 p-6">
                     <div className="flex flex-col flex-grow">
                       <FieldLabel htmlFor="desc">About</FieldLabel>
                       <FieldDescription className="text-xs">
@@ -217,7 +220,7 @@ export default function SettingsPage({ actionData }: Route.ComponentProps) {
                     </div>
                     <FieldError errors={[{ message: errors?.desc }]} />
                   </Field>
-                  <Field className="flex-row justify-end border-t px-6 py-4">
+                  <Field className="flex-col tablet:flex-row justify-end border-t px-6 py-4">
                     <div className="flex justify-end">
                       <Button
                         type="submit"
@@ -236,7 +239,7 @@ export default function SettingsPage({ actionData }: Route.ComponentProps) {
                 <h2 className="text-xl">Contact details</h2>
 
                 <FieldGroup className="gap-0 bg-card text-card-foreground flex flex-col rounded-xl border  py-0 pt-2 shadow-sm">
-                  <Field className="flex-row gap-6 p-6 border-b ">
+                  <Field className="flex-col tablet:flex-row gap-6 p-6 border-b ">
                     <div className="flex flex-col flex-grow">
                       <FieldLabel htmlFor="email">Contact email</FieldLabel>
                       <FieldDescription className="text-xs">
@@ -254,7 +257,7 @@ export default function SettingsPage({ actionData }: Route.ComponentProps) {
                       <FieldError errors={[{ message: errors?.email }]} />
                     </div>
                   </Field>
-                  <Field className="flex-row gap-6 p-6 border-b ">
+                  <Field className="flex-col tablet:flex-row gap-6 p-6 border-b ">
                     <div className="flex flex-col flex-grow">
                       <FieldLabel htmlFor="phone">Phone number</FieldLabel>
                       <FieldDescription className="text-xs">
@@ -271,7 +274,7 @@ export default function SettingsPage({ actionData }: Route.ComponentProps) {
                       />
                     </div>
                   </Field>
-                  <Field className="flex-row gap-6 p-6">
+                  <Field className="flex-col tablet:flex-row gap-6 p-6">
                     <div className="flex flex-col flex-grow">
                       <FieldLabel htmlFor="addr">Business address</FieldLabel>
                       <FieldDescription className="text-xs">
@@ -288,7 +291,7 @@ export default function SettingsPage({ actionData }: Route.ComponentProps) {
                       />
                     </div>
                   </Field>
-                  <Field className="flex-row justify-end border-t px-6 py-4">
+                  <Field className="flex-col tablet:flex-row justify-end border-t px-6 py-4">
                     <div className="flex justify-end">
                       <Button
                         type="submit"
@@ -317,14 +320,6 @@ export default function SettingsPage({ actionData }: Route.ComponentProps) {
                           Used for official communications and notifications.
                         </FieldDescription>
                       </div>
-                      <div className="flex flex-col flex-grow">
-                        <FieldDescription className="text-xs">
-                          Upload a file from your device or provide a URL
-                        </FieldDescription>
-                        <FieldDescription className="text-xs">
-                          For images: PNG, JPG, or SVG · Max 2MB{" "}
-                        </FieldDescription>
-                      </div>
                     </div>
 
                     <FileUploadInput
@@ -332,7 +327,7 @@ export default function SettingsPage({ actionData }: Route.ComponentProps) {
                       value={extractImageUrl(data?.logo_url ?? "") ?? undefined}
                     />
                   </Field>
-                  <Field className="flex-row justify-end border-t px-6 py-4">
+                  <Field className="flex-col tablet:flex-row justify-end border-t px-6 py-4">
                     <div className="flex justify-end">
                       <Button
                         type="submit"

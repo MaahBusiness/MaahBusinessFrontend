@@ -77,7 +77,7 @@ export function AddProductDrawer() {
         </DrawerTrigger>
 
         {/* Form */}
-        <DrawerContent className="border-border data-[vaul-drawer-direction=right]:sm:max-w-xl data-[vaul-drawer-direction=bottom]:max-h-[90vh]">
+        <DrawerContent className="data-[vaul-drawer-direction=right]:tablet:max-w-xl data-[vaul-drawer-direction=right]:w-full data-[vaul-drawer-direction=bottom]:max-h-[90vh]">
           <Form
             method="POST"
             encType="multipart/form-data"
@@ -94,7 +94,7 @@ export function AddProductDrawer() {
 
               {/* Basic info */}
               <FieldGroup className="flex flex-col border-b border-border py-6 px-6">
-                <Field className="flex-row gap-6 ">
+                <Field className="flex-col tablet:flex-row gap-6 ">
                   <div className="flex flex-col flex-grow">
                     <FieldLabel htmlFor="name">Product name</FieldLabel>
                     <FieldDescription className="text-xs">
@@ -112,7 +112,7 @@ export function AddProductDrawer() {
                     <FieldError errors={[{ message: errors?.name }]} />
                   </div>
                 </Field>
-                <Field className="flex-row gap-6 ">
+                <Field className="flex-col tablet:flex-row gap-6 ">
                   <div className="flex flex-col flex-grow">
                     <FieldLabel htmlFor="desc">
                       Description (optional)
@@ -129,7 +129,7 @@ export function AddProductDrawer() {
                     />
                   </div>
                 </Field>
-                <Field className="flex-row gap-6 ">
+                <Field className="flex-col tablet:flex-row gap-6 ">
                   <div className="flex flex-col flex-grow">
                     <FieldLabel htmlFor="code">
                       Barcode / SKU (optional)
@@ -152,7 +152,7 @@ export function AddProductDrawer() {
 
               {/* Category */}
               <FieldGroup className="flex flex-col border-b border-border py-6 px-6">
-                <Field className="flex-row gap-6 ">
+                <Field className="flex-col tablet:flex-row gap-6 ">
                   <div className="flex flex-col flex-grow">
                     <FieldLabel htmlFor="cat">Category</FieldLabel>
                     <FieldDescription className="text-xs">
@@ -173,7 +173,7 @@ export function AddProductDrawer() {
                         <SelectValue placeholder="Select a category" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value={" "}>Select a category</SelectItem>
+                        {/* <SelectItem value={" "}>Select a category</SelectItem> */}
                         {res?.data?.categories?.map((cat) => (
                           <SelectItem key={cat.id} value={cat.id}>
                             {cat.name}
@@ -185,7 +185,7 @@ export function AddProductDrawer() {
                   </div>
                 </Field>
                 {cat?.subcategories?.length ? (
-                  <Field className="flex-row gap-6 ">
+                  <Field className="flex-col tablet:flex-row gap-6 ">
                     <div className="flex flex-col flex-grow">
                       <FieldLabel htmlFor="subcat">
                         Subategory (optional)
@@ -216,7 +216,7 @@ export function AddProductDrawer() {
 
               {/* Pricing */}
               <FieldGroup className="flex flex-col border-b border-border py-6 px-6">
-                <Field className="flex-row gap-6 ">
+                <Field className="flex-col tablet:flex-row gap-6 ">
                   <div className="flex flex-col flex-grow">
                     <FieldLabel htmlFor="purchase">Purchase price</FieldLabel>
                     <FieldDescription className="text-xs">
@@ -236,7 +236,7 @@ export function AddProductDrawer() {
                     <FieldError errors={[{ message: errors?.purchase }]} />
                   </div>
                 </Field>
-                <Field className="flex-row gap-6 ">
+                <Field className="flex-col tablet:flex-row gap-6 ">
                   <div className="flex flex-col flex-grow">
                     <FieldLabel htmlFor="unit">Selling price</FieldLabel>
                     <FieldDescription className="text-xs">
@@ -260,7 +260,7 @@ export function AddProductDrawer() {
 
               {/* Inventory */}
               <FieldGroup className="flex flex-col border-b border-border py-6 px-6">
-                <Field className="flex-row gap-6 ">
+                <Field className="flex-col tablet:flex-row gap-6 ">
                   <div className="flex flex-col flex-grow">
                     <FieldLabel htmlFor="qty">
                       Initial stock quantity (optional)
@@ -278,7 +278,7 @@ export function AddProductDrawer() {
                     />
                   </div>
                 </Field>
-                <Field className="flex-row gap-6 ">
+                <Field className="flex-col tablet:flex-row gap-6 ">
                   <div className="flex flex-col flex-grow">
                     <FieldLabel htmlFor="min">
                       Low stock alert threshold (optional)
@@ -317,7 +317,7 @@ export function AddProductDrawer() {
                   </Field>
                 </FieldLabel>
                 {canExpire && (
-                  <Field className="flex-row gap-6 ">
+                  <Field className="flex-col tablet:flex-row gap-6 ">
                     <div className="flex flex-col flex-grow">
                       <FieldLabel htmlFor="exp">Expiry date</FieldLabel>
                       <FieldDescription className="text-xs">
@@ -356,7 +356,7 @@ export function AddProductDrawer() {
                 </FieldLabel>
                 {onPromo && (
                   <>
-                    <Field className="flex-row gap-6 ">
+                    <Field className="flex-col tablet:flex-row gap-6 ">
                       <div className="flex flex-col flex-grow">
                         <FieldLabel htmlFor="promo-start">
                           Promotion start date
@@ -371,8 +371,9 @@ export function AddProductDrawer() {
                           required
                         />
                       </div>
+                      <FieldError errors={[{ message: errors?.promo_start }]} />
                     </Field>
-                    <Field className="flex-row gap-6 ">
+                    <Field className="flex-col tablet:flex-row gap-6 ">
                       <div className="flex flex-col flex-grow">
                         <FieldLabel htmlFor="promo-end">
                           Promotion end date
@@ -388,9 +389,9 @@ export function AddProductDrawer() {
                           error={errors?.promo_end}
                         />
                       </div>
-                      {/* <FieldError errors={[{ message: errors?.promo_end }]} /> */}
+                      <FieldError errors={[{ message: errors?.promo_end }]} />
                     </Field>
-                    <Field className="flex-row gap-6 ">
+                    <Field className="flex-col tablet:flex-row gap-6 ">
                       <div className="flex flex-col flex-grow">
                         <FieldLabel htmlFor="promo">
                           Promotional price
@@ -419,19 +420,13 @@ export function AddProductDrawer() {
               {/* Image */}
               <FieldGroup className="flex flex-col  py-6 px-6">
                 <Field className="gap-6">
-                  <div className="flex flex-row gap-6">
+                  <div className="flex flex-col tablet:flex-row gap-6">
                     <div className="flex flex-col flex-grow">
                       <FieldLabel htmlFor="pfp">
                         Product image (optional)
                       </FieldLabel>
                       <FieldDescription className="text-xs">
                         Used for official communications and notifications.
-                      </FieldDescription>
-                    </div>
-                    <div className="flex flex-col flex-grow w-1/2">
-                      <FieldDescription className="text-xs ">
-                        Upload an image from your device or provide a URL. For
-                        images: PNG, JPG, or SVG · Max 2MB
                       </FieldDescription>
                     </div>
                   </div>

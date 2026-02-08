@@ -283,7 +283,7 @@ export default function SingleInvoicepage({
       <Separator className="h-px" />
 
       {/* Dual Cols */}
-      <div className="justify-between flex w-full overflow-hidden gap-20 ">
+      <div className="justify-between flex flex-col laptop:flex-row w-full overflow-hidden gap-8 laptop:gap-20 ">
         {/* Right Col */}
         <div className="flex items-stretch flex-initial flex-col gap-20 w-full">
           <div className="flex flex-col gap-8">
@@ -365,7 +365,7 @@ export default function SingleInvoicepage({
         </div>
 
         {/* Left side  */}
-        <div className=" max-w-80 w-full shrink-0  sticky  self-start">
+        <div className=" laptop:max-w-80  w-full shrink-0  sticky  self-start">
           <div className="flex flex-col gap-4">
             {/* <h4 className="scroll-m-20 text-lg tracking-tight">Timeline</h4> */}
 
@@ -627,7 +627,7 @@ function SingleSkeleton() {
       <Separator className="h-px" />
 
       {/* Meta */}
-      <div className="grid auto-rows-min gap-6  md:grid-cols-4">
+      <div className="grid auto-rows-min gap-6 grid-cols-2  md:grid-cols-4">
         {Array.from({ length: 4 }).map((_, id) => (
           <div className="flex flex-col gap-4">
             <Skeleton key={id} className="h-18" />
@@ -638,7 +638,7 @@ function SingleSkeleton() {
       <Separator className="h-px" />
 
       {/* Dual Cols */}
-      <div className="justify-between flex w-full gap-20 ">
+      <div className="justify-between flex flex-col md:flex-row w-full gap-20 ">
         {/* Right Col */}
         <div className="flex items-stretch flex-initial flex-col gap-20 w-full">
           {Array.from({ length: 2 }).map((_) => (

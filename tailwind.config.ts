@@ -222,6 +222,16 @@ export default {
           "100%": { opacity: "0" },
         },
       },
+      screens: {
+        tablet: "640px",
+        // => @media (min-width: 640px) { ... }
+
+        laptop: "1024px",
+        // => @media (min-width: 1024px) { ... }
+
+        desktop: "1280px",
+        // => @media (min-width: 1280px) { ... }
+      },
 
       // scrollbar: {
       //   rounded: true, // Tailwind Scrollbar plugin now uses this inside `extend`

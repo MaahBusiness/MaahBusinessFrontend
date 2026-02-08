@@ -21,7 +21,7 @@ export function CatTableToolbar<TData>({
   const { businessMember } = useOrganisation();
 
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex items-center justify-between ">
       <div className="flex flex-1 items-center space-x-2">
         <Input
           placeholder="Filter categories..."
@@ -29,7 +29,7 @@ export function CatTableToolbar<TData>({
           onChange={(event) =>
             table.getColumn("name")?.setFilterValue(event.target.value)
           }
-          className="h-8 w-[500px] lg:w-[600px]"
+          className="h-8 w-[250px] lg:w-[600px]"
         />
 
         {isFiltered && (

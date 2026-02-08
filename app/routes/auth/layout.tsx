@@ -11,7 +11,7 @@ import { Outlet, Link } from "react-router";
 
 export default function AuthLayout() {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col [--header-height:calc(theme(spacing.12))]">
       <header className="bg-background sticky top-0 z-50 flex w-full items-center border-b border-border h-12 flex-shrink-0 font-medium">
         <div className="flex h-(--header-height) w-full items-center justify-between gap-2 px-4">
           <Breadcrumb>
@@ -40,7 +40,7 @@ export default function AuthLayout() {
         </div>
       </header>
 
-      <main className="min-w-full h-full">
+      <main className="min-w-full !h-[calc(100svh-var(--header-height))]">
         <Outlet />
       </main>
     </div>

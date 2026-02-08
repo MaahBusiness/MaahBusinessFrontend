@@ -325,6 +325,7 @@ export interface ProductUpdateParams {
   min_quantity?: number;
   expiry_date?: string;
   image?: File;
+  image_url?: string;
 }
 
 export interface Invoice {

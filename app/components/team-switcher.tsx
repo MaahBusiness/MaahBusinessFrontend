@@ -88,8 +88,8 @@ export default function TeamSwitcher({ currentId }: TeamSwitcherProps) {
             />
             <BoringFallback name={selected?.unique_name} />
           </Avatar>
-          <span>{selected?.name} </span>
-          <Badge variant="secondary" className="text-xxs">
+          <span className="text-xxs tablet:text-sm">{selected?.name} </span>
+          <Badge variant="secondary" className="text-[10px] tablet:text-xxs">
             {businessUser?.role && capitalizeFirstChar(businessUser?.role)}
           </Badge>
         </Link>
@@ -101,7 +101,7 @@ export default function TeamSwitcher({ currentId }: TeamSwitcherProps) {
             <ChevronsUpDown className="opacity-75 size-4" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[200px] p-0" align="start">
+        <PopoverContent className="w-[200px] p-0" align="center">
           <Command>
             <CommandInput placeholder="Search orgs..." />
             <CommandList>

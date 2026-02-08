@@ -420,12 +420,32 @@ export const isLater = (a?: string, b?: string) => {
   return new Date(a).getTime() > new Date(b).getTime();
 };
 
-/**Handy function to extract actual image URLs since from what the API returns, the actual image URL is URL-encoded inside the S3 object key. */
-export const extractImageUrl = (s3Url?: string) => {
-  if (!s3Url) return undefined;
-  const withoutDomain = s3Url.split(".amazonaws.com/")[1];
-  if (!withoutDomain) return undefined;
+/**Handy function to extract actual image URLs since from what the API returns, the actual image URL is URL-encoded inside the S3 object key. 
+ * | Case                           | Object key                         | Result                  |
+| ------------------------------ | ---------------------------------- | ----------------------- |
+| External image attached by URL | `https%3A//i.pinimg.com/...jpg`    | ✅ decoded to public URL |
+| Uploaded image                 | `barcodes/product-barcode-....png` | ✅ original S3 URL       |
+| Generated image                | `products/generated-....png`       | ✅ original S3 URL       |
+| Non-S3 URL                     | `https://example.com/img.png`      | ✅ returned as-is        |
 
-  const encodedPath = withoutDomain.split("?")[0];
-  return decodeURIComponent(encodedPath);
+*/
+
+export const extractImageUrl = (url?: string) => {
+  if (!url) return undefined;
+
+  // Not an S3 URL → return as-is
+  if (!url.includes(".amazonaws.com/")) {
+    return url;
+  }
+
+  const objectKey = url.split(".amazonaws.com/")[1]?.split("?")[0];
+  if (!objectKey) return url;
+
+  // If the object key itself is an encoded URL, decode it
+  if (objectKey.startsWith("https%3A") || objectKey.startsWith("http%3A")) {
+    return decodeURIComponent(objectKey);
+  }
+
+  // Otherwise it's a normal uploaded/generated S3 object
+  return url;
 };
