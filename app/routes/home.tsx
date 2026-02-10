@@ -1,10 +1,11 @@
 import { Navigate } from "react-router";
+import { SITE_NAME } from "types/consts";
 
 // export function meta({}: Route.MetaArgs) {
 export function meta() {
   return [
-    { title: "New React Router App" },
-    { name: "description", content: "Welcome to React Router!" },
+    { title: `${SITE_NAME}` },
+    { name: `description`, content: `Welcome to ${SITE_NAME}!` },
   ];
 }
 

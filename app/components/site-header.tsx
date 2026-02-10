@@ -18,6 +18,7 @@ import { Link, useParams } from "react-router";
 import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/components/ui/sidebar";
 import { MobileDrawerMenu } from "@/components/app-sidebar";
+import { SITE_NAME } from "types/consts";
 
 export function SiteHeader() {
   const { id } = useParams();
@@ -51,7 +52,7 @@ export function SiteHeader() {
 
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
-                <Link to="organisations">Acme Inc.</Link>
+                <Link to="organisations">{SITE_NAME}</Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
           </BreadcrumbList>

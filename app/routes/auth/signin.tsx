@@ -13,6 +13,14 @@ import { toast } from "sonner";
 import type { OTPSessionData, SignUpActionType } from "types";
 import { genericErrorState } from "utils";
 import { requireUserSession } from "@/lib/session.server";
+import { SITE_NAME } from "types/consts";
+
+export function meta() {
+  return [
+    { title: `${SITE_NAME} | Sign in` },
+    { name: `description`, content: `Sign in to ${SITE_NAME}!` },
+  ];
+}
 
 // -------------------------------------
 // ACTION ROUTER

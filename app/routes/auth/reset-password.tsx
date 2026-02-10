@@ -5,6 +5,11 @@ import { toast } from "sonner";
 import { requireUserSession } from "@/lib/session.server";
 import { redirect } from "react-router";
 import { resetPassword } from "@/lib/api/auth";
+import { SITE_NAME } from "types/consts";
+
+export function meta() {
+  return [{ title: `${SITE_NAME} | Reset Password` }];
+}
 
 export async function action({ request }: Route.ActionArgs) {
   const url = new URL(request.url);

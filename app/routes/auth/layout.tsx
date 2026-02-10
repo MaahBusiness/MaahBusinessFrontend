@@ -8,6 +8,7 @@ import {
 import { ModeToggle } from "@/components/utils/mode-toggle";
 import { GalleryVerticalEnd, SlashIcon } from "lucide-react";
 import { Outlet, Link } from "react-router";
+import { SITE_NAME } from "types/consts";
 
 export default function AuthLayout() {
   return (
@@ -29,7 +30,7 @@ export default function AuthLayout() {
 
               <BreadcrumbItem>
                 <BreadcrumbLink asChild>
-                  <Link to="/">Acme Inc.</Link>
+                  <Link to="/">{SITE_NAME}</Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>
             </BreadcrumbList>
@@ -40,7 +41,7 @@ export default function AuthLayout() {
         </div>
       </header>
 
-      <main className="min-w-full !h-[calc(100svh-var(--header-height))]">
+      <main className="min-w-full !min-h-[calc(100svh-var(--header-height))]">
         <Outlet />
       </main>
     </div>

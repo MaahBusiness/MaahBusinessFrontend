@@ -20,6 +20,7 @@ import { GalleryVerticalEnd } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import GoogleAuthButton from "@/components/google-button";
 import type { ServerActionState } from "types";
+import { SITE_NAME } from "types/consts";
 
 export function LoginForm({
   className,
@@ -51,9 +52,9 @@ export function LoginForm({
               <div className="flex size-8 items-center justify-center rounded-md">
                 <GalleryVerticalEnd className="size-6" />
               </div>
-              <span className="sr-only">Acme Inc.</span>
+              <span className="sr-only">{SITE_NAME}</span>
             </a>
-            <h1 className="text-xl font-bold">Sign in to Acme Inc.</h1>
+            <h1 className="text-xl font-bold">Sign in to {SITE_NAME}</h1>
             <FieldDescription>
               Enter your email below to login to your account
             </FieldDescription>
@@ -111,10 +112,10 @@ export function LoginForm({
         </FieldGroup>
       </Form>
 
-      <FieldDescription className="px-6 text-center">
+      {/* <FieldDescription className="px-6 text-center">
         By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
         and <a href="#">Privacy Policy</a>.
-      </FieldDescription>
+      </FieldDescription> */}
     </div>
   );
 }

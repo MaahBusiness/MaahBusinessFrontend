@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/auth-context";
 import {
   Form,
   Link,
+  redirect,
   useNavigate,
   useNavigation,
   useSearchParams,
@@ -74,7 +75,7 @@ export default function AddTeam({ actionData }: Route.ComponentProps) {
   const isSubmitting = navigation.state === "submitting";
 
   if (!orgId) {
-    navigate("organisations");
+    redirect("organisations");
     return;
   }
 
