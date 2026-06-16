@@ -43,48 +43,47 @@ export default function SingleproductPage({
 }: Route.ComponentProps) {
   const { organisation: orgRes, fetchSingleProduct } = useOrganisation();
   const { prodId, id } = useParams();
-  const [copiedField, setCopiedField] = useState<"id" | "barcode" | null>(null);
+  const [copiedBarcode, setCopiedBarcode] = useState(false);
 
   const clipboard = useClipboard({
     resetDelay: 3000,
     onCopy: () => {
       toast.success("Copied to clipboard");
-      setTimeout(() => setCopiedField(null), 2000);
+      setTimeout(() => setCopiedBarcode(false), 2000);
     },
     onError: () => toast.error("Could not copy to clipboard"),
   });
 
-  if (!prodId) return;
-
-  const { data: res, isLoading, refetch } = fetchSingleProduct(prodId);
-
-  const cat = orgRes?.data?.categories?.find(
-    (c) => c.id === res?.data?.category_id,
-  );
-  const sub = cat?.subcategories?.find(
-    (s) => s.id === res?.data?.subcategory_id,
-  );
-
-  const handleCopy = (text: string, field: "id" | "barcode") => {
-    if (clipboard.isCopying) return;
-    setCopiedField(field);
-    clipboard.copy(text);
-  };
-
+  const { data: res, isLoading, refetch } = fetchSingleProduct(prodId ?? "");
   useProductActionFeedback(actionData, id);
+
+  if (!prodId) return null;
 
   if (isLoading) return <SingleSkeleton />;
   if (!res?.success) return <RequestFailed refetch={refetch} />;
   if (!res.data) return <ProductNotFound />;
+
+  const cat = orgRes?.data?.categories?.find(
+    (c) => c.id === res.data.category_id,
+  );
+  const sub = cat?.subcategories?.find(
+    (s) => s.id === res.data.subcategory_id,
+  );
+
+  const handleCopy = (text: string) => {
+    if (clipboard.isCopying) return;
+    setCopiedBarcode(true);
+    clipboard.copy(text);
+  };
 
   return (
     <div className="dashboard-page relative min-h-full overflow-x-hidden">
       <div aria-hidden className="dashboard-orb dashboard-orb-violet" />
       <div aria-hidden className="dashboard-orb dashboard-orb-blue" />
 
-      <div className="relative z-10 mx-auto w-full max-w-5xl px-3 py-4 sm:px-5 sm:py-8 lg:px-6 lg:py-10">
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0">
+      <div className="relative z-10 mx-auto w-full min-w-0 max-w-5xl px-3 py-4 sm:px-5 sm:py-8 lg:px-6 lg:py-10">
+        <div className="mb-6 flex min-w-0 flex-col gap-4 tablet:flex-row tablet:flex-wrap tablet:items-start tablet:justify-between">
+          <div className="min-w-0 flex-1">
             <Link
               to="../products"
               className="mb-2 inline-flex items-center gap-1 text-xs text-muted-foreground transition hover:text-violet-600"
@@ -102,7 +101,7 @@ export default function SingleproductPage({
             )}
           </div>
 
-          <div className="shrink-0">
+          <div className="flex w-full shrink-0 flex-wrap gap-2 tablet:w-auto tablet:justify-end">
             <SingleProductActions data={res.data} />
           </div>
         </div>
@@ -112,7 +111,7 @@ export default function SingleproductPage({
           category={cat}
           subcategory={sub}
           onCopy={handleCopy}
-          copiedField={copiedField}
+          copiedField={copiedBarcode ? "barcode" : null}
         />
       </div>
     </div>
@@ -123,16 +122,16 @@ function SingleSkeleton() {
   return (
     <div className="dashboard-page relative min-h-full overflow-x-hidden">
       <div aria-hidden className="dashboard-orb dashboard-orb-violet" />
-      <div className="relative z-10 mx-auto w-full max-w-5xl px-3 py-8 sm:px-5 lg:px-6">
+      <div className="relative z-10 mx-auto w-full min-w-0 max-w-5xl px-3 py-8 sm:px-5 lg:px-6">
         <Skeleton className="mb-4 h-4 w-28" />
-        <Skeleton className="mb-6 h-9 w-64" />
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+        <Skeleton className="mb-6 h-9 w-64 max-w-full" />
+        <div className="grid grid-cols-1 gap-2 min-[480px]:grid-cols-2 laptop:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} className="h-20 rounded-xl" />
           ))}
         </div>
         <Separator className="my-6" />
-        <div className="grid gap-5 lg:grid-cols-2">
+        <div className="grid min-w-0 gap-5 desktop:grid-cols-2">
           <Skeleton className="h-64 rounded-xl" />
           <Skeleton className="h-48 rounded-xl" />
         </div>

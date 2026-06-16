@@ -36,8 +36,15 @@ export default function NotFound() {
   );
 }
 
-export function RequestFailed({ refetch }: { refetch?: () => Promise<any> }) {
+export function RequestFailed({
+  refetch,
+  message,
+}: {
+  refetch?: () => Promise<unknown>;
+  message?: string;
+}) {
   const navigate = useNavigate();
+  const displayMessage = message ?? genericErrorState().message;
   return (
     <Empty className="p-0 !h-[calc(100svh-var(--header-height))]">
       <EmptyHeader>
@@ -46,7 +53,7 @@ export function RequestFailed({ refetch }: { refetch?: () => Promise<any> }) {
         </EmptyMedia>
         <EmptyTitle>Something went wrong</EmptyTitle>
         <EmptyDescription className="max-w-xs text-pretty">
-          {genericErrorState().message}
+          {displayMessage}
         </EmptyDescription>
       </EmptyHeader>
       <EmptyContent>

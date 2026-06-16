@@ -14,6 +14,8 @@ export const FORGOT_PASSWORD_URL = `/auth/forgot-password/`;
 export const RESET_PASSWORD_URL = `/auth/reset-password/`;
 
 // BUSINESS ENDPOINTS
+export const LIST_BUSINESS_URL = `/businesses/`;
+export const CREATE_BUSINESS_URL = `/businesses/`;
 export const BUSINESS_URL = `/businesses/`;
 // MEMBERS
 export const LIST_MEMBERS_URL = `/members/list/`;
@@ -21,12 +23,23 @@ export const MEMBERS_URL = `/members/`;
 export const EDIT_MEMBERS_URL = `/edit-member-role/`;
 
 export const CUSTOMERS_URL = "/customers/";
+/** Alias used by customers API module */
+export const CLIENT_URL = CUSTOMERS_URL;
+
 export const PRODUCTS_URL = "/products/";
 export const INVENTORY_CO_URL = "/inventory";
 export const INVENTORY_URL = "/inventory/";
 export const CATEGORY_URL = "/categories/";
 export const SUBCATEGORY_URL = "/subcategories/";
+
 export const INVOICE_URL = "/sales/";
+export const INVOICE_ARCHIVES_URL = "/sales/archives";
+export const CANCEL_INVOICE_URL = "/cancel/";
+export const DELETE_INVOICE_URL = "/delete/";
+export const CREDIT_INVOICE_URL = "/apply-credit/";
+export const PAYMENTS_URL = "/sales/payments/history";
+export const SCAN_BARCODE_URL = "/sales/products/scan";
+
 export const FINANCE_URL = "/finance/";
 export const DASHBOARD_URL = "/dashboard/";
 export const REPORTS_URL = "/reports/";

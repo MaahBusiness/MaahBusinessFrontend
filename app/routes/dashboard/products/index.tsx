@@ -11,9 +11,10 @@ import { redirect, useParams, useSearchParams } from "react-router";
 import { handleProductActions } from "services/api";
 import type { Product, ProductFilters, ServerActionState } from "types";
 import { genericErrorState, parseSearchParams, productFilterParsers } from "utils";
-import { Package, TrendingDown, Boxes } from "lucide-react";
+import { Package, TrendingDown, Boxes, Barcode } from "lucide-react";
 import { useMemo } from "react";
 import { formatDisplayAmount } from "utils";
+import { ProductStatsGrid } from "@/components/products/product-stats-grid";
 
 export async function action({ request, params }: Route.ActionArgs): Promise<
   ServerActionState & {
@@ -58,65 +59,70 @@ export default function ProductsPage({ actionData }: Route.ComponentProps) {
     return { lowStock, onPromo, totalValue };
   }, [products]);
 
+  const statItems = useMemo(
+    () => [
+      {
+        label: "Products",
+        value: products.length,
+        accent: "violet" as const,
+        icon: Package,
+      },
+      {
+        label: "Low stock",
+        value: stats.lowStock,
+        accent: "orange" as const,
+        icon: Boxes,
+      },
+      {
+        label: "On promo",
+        value: stats.onPromo,
+        accent: "rose" as const,
+        icon: TrendingDown,
+      },
+      {
+        label: "Stock value",
+        value: formatDisplayAmount(stats.totalValue),
+        accent: "emerald" as const,
+        icon: Barcode,
+      },
+    ],
+    [products.length, stats],
+  );
+
   if (isLoading) return <DataTableSkeleton />;
-  if (!res?.success) return <RequestFailed refetch={refetch} />;
+  if (!res?.success)
+    return (
+      <RequestFailed
+        refetch={refetch}
+        message={res?.message ?? genericErrorState().message}
+      />
+    );
 
   return (
     <div className="dashboard-page relative min-h-full overflow-x-hidden">
       <div aria-hidden className="dashboard-orb dashboard-orb-violet" />
       <div aria-hidden className="dashboard-orb dashboard-orb-blue" />
 
-      <div className="relative z-10 mx-auto w-full max-w-6xl px-3 py-4 sm:px-5 sm:py-8 lg:px-6 lg:py-10">
-        <div className="mb-5 space-y-4 sm:mb-6">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h1 className="text-xl font-bold tracking-tight sm:text-2xl">
-                Product catalog
-              </h1>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Manage inventory, pricing, and promotions for your store.
-              </p>
-            </div>
+      <div className="relative z-10 mx-auto w-full min-w-0 max-w-6xl px-3 py-4 sm:px-5 sm:py-8 lg:px-6 lg:py-10">
+        <div className="mb-5 min-w-0 space-y-4 sm:mb-6">
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold tracking-tight sm:text-2xl">
+              Product catalog
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Manage inventory, pricing, and promotions for your store.
+            </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
-            <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 p-3">
-              <div className="flex items-center gap-2 text-violet-600">
-                <Package className="size-4" />
-                <span className="text-[10px] font-semibold uppercase">Products</span>
-              </div>
-              <p className="mt-1 text-xl font-bold tabular-nums">{products.length}</p>
-            </div>
-            <div className="rounded-xl border border-orange-500/20 bg-orange-500/5 p-3">
-              <div className="flex items-center gap-2 text-orange-600">
-                <Boxes className="size-4" />
-                <span className="text-[10px] font-semibold uppercase">Low stock</span>
-              </div>
-              <p className="mt-1 text-xl font-bold tabular-nums">{stats.lowStock}</p>
-            </div>
-            <div className="rounded-xl border border-rose-500/20 bg-rose-500/5 p-3">
-              <div className="flex items-center gap-2 text-rose-600">
-                <TrendingDown className="size-4" />
-                <span className="text-[10px] font-semibold uppercase">On promo</span>
-              </div>
-              <p className="mt-1 text-xl font-bold tabular-nums">{stats.onPromo}</p>
-            </div>
-            <div className="col-span-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 sm:col-span-1">
-              <p className="text-[10px] font-semibold uppercase text-emerald-600">
-                Stock value
-              </p>
-              <p className="mt-1 text-lg font-bold sm:text-xl">
-                {formatDisplayAmount(stats.totalValue)}
-              </p>
-            </div>
-          </div>
+          <ProductStatsGrid items={statItems} />
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-violet-500/15 bg-card/80 shadow-sm backdrop-blur-sm">
+        <div className="min-w-0 overflow-hidden rounded-xl border border-violet-500/15 bg-card/80 shadow-sm backdrop-blur-sm">
           <DataTable
             data={products}
             meta={res.meta}
             columns={cols}
+            density="compact"
             DataTableToolbar={ProductTableToolbar}
           />
         </div>
