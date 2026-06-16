@@ -21,7 +21,7 @@ export const mockInvoices: Invoice[] = [
     cashier_id: "user_001",
     cashier_name: "Alice Johnson",
 
-    status: "paid",
+    status: "COMPLETED",
     total: 120,
     tax: 10,
     total_discount: 0,
@@ -62,7 +62,7 @@ export const mockInvoices: Invoice[] = [
     cashier_id: "user_002",
     cashier_name: "Mark Benson",
 
-    status: "partial",
+    status: "CREDIT",
     total: 300,
     tax: 25,
     total_discount: 20,
@@ -104,7 +104,7 @@ export const mockInvoices: Invoice[] = [
     cashier_id: "user_001",
     cashier_name: "Alice Johnson",
 
-    status: "cancelled",
+    status: "CANCELLED",
     total: 80,
     tax: 5,
     total_discount: 0,
@@ -143,7 +143,7 @@ export const mockInvoices: Invoice[] = [
     cashier_id: "user_003",
     cashier_name: "David Kim",
 
-    status: "refunded",
+    status: "COMPLETED",
     total: 150,
     tax: 12,
     total_discount: 0,
@@ -185,7 +185,7 @@ export const mockInvoices: Invoice[] = [
     cashier_id: "user_002",
     cashier_name: "Mark Benson",
 
-    status: "paid",
+    status: "COMPLETED",
     total: 60,
     tax: 4,
     total_discount: 5,
@@ -226,7 +226,7 @@ export const mockInvoices: Invoice[] = [
 
     cashier_id: "user_001",
 
-    status: "paid",
+    status: "COMPLETED",
     total: 0,
     tax: 0,
     total_discount: 100,
@@ -252,7 +252,7 @@ export const mockInvoices: Invoice[] = [
 
     cashier_id: "user_002",
 
-    status: "paid",
+    status: "COMPLETED",
     total: 100,
     tax: 5,
     total_discount: 0,
@@ -291,7 +291,7 @@ export const mockInvoices: Invoice[] = [
 
     cashier_id: "user_003",
 
-    status: "partial",
+    status: "CREDIT",
     total: 500,
     tax: 40,
     total_discount: 0,
@@ -333,7 +333,7 @@ export const mockInvoices: Invoice[] = [
 
     cashier_id: "user_001",
 
-    status: "cancelled",
+    status: "CANCELLED",
     total: 200,
     tax: 15,
     total_discount: 0,
@@ -372,7 +372,7 @@ export const mockInvoices: Invoice[] = [
 
     cashier_id: "user_004",
 
-    status: "paid",
+    status: "COMPLETED",
     total: 75,
     tax: 6,
     total_discount: 0,

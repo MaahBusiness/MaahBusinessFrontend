@@ -26,6 +26,7 @@ import {
   BASE_URL,
   FORGOT_PASSWORD_URL,
   GOOGLE_AUTH_URL,
+  GOOGLE_CALLBACK_URL,
   RESEND_OTP_URL,
   RESET_PASSWORD_URL,
   SIGNIN_URL,
@@ -81,7 +82,6 @@ export async function signUpWithEmail(formData: FormData) {
     const result = raw as BackendResponse;
 
     if (!res.ok) {
-      console.log("LOG::SIGN_UP_FAILED", raw);
       const error = result.error;
 
       if (error?.code === "RATE_LIMIT_EXCEEDED") {
@@ -112,12 +112,6 @@ export async function signUpWithEmail(formData: FormData) {
       ),
     );
 
-    console.log("LOG::SIGN_UP_SUCCESS", raw, "otpSession", {
-      email: email!,
-      otpExpiresAt,
-      resendCount: 0,
-    });
-
     return data<SignUpActionType>(
       {
         success: true,
@@ -132,7 +126,6 @@ export async function signUpWithEmail(formData: FormData) {
       { status: res.status },
     );
   } catch (err) {
-    console.log("LOG::SIGN_UP_ERROR", (err as Error).message);
     return data<SignUpActionType>(
       {
         ...(genericNetworkError((err as Error).message) || genericErrorState()),
@@ -175,7 +168,6 @@ export async function verifyOTP(
     const result = raw as BackendResponse;
 
     if (!res.ok) {
-      console.log("LOG::VERIFY_OTP_FAILED", raw);
       const error = result.error;
 
       if (error?.code === "RATE_LIMIT_EXCEEDED") {
@@ -213,7 +205,6 @@ export async function verifyOTP(
     const user = resData.user;
 
     if (!accessToken || !refreshToken || !user) {
-      console.log("LOG::VERIFY_OTP_FAILED", "No access tokens", raw);
       return data<SignUpActionType>(
         {
           success: false,
@@ -225,8 +216,6 @@ export async function verifyOTP(
       );
     }
 
-    console.info("LOG::VERIFY_OTP_SUCCESS", raw);
-
     return redirect(otpSession.redirectTo || "/dashboard", {
       headers: {
         "Set-Cookie": await sessionCookie.serialize({
@@ -237,7 +226,6 @@ export async function verifyOTP(
       },
     });
   } catch (err) {
-    console.error("LOG::VERIFY_OTP_FAILED", (err as Error).message);
     return data<SignUpActionType>(
       {
         ...(genericNetworkError((err as Error).message) || genericErrorState()),
@@ -303,7 +291,6 @@ export async function resendOTP(otpSession: OTPSessionData) {
     const result = raw as BackendResponse;
 
     if (!res.ok) {
-      console.error("LOG::RESEND_OTP_FAILED", raw);
       const error = result.error;
 
       // Backend hard rate limit - enforce API cooldown
@@ -346,13 +333,6 @@ export async function resendOTP(otpSession: OTPSessionData) {
       ),
     );
 
-    console.info("LOG::RESEND_OTP_SUCCESS", raw, "OTP_SESSION", {
-      email,
-      otpExpiresAt: newOtpExpiresAt,
-      resendCount: resendCount + 1,
-      resendAvailableAt: undefined, // Clear cooldown
-    });
-
     // Reset cooldown after successful resend, increment count
     return data<SignUpActionType>({
       success: true,
@@ -366,7 +346,6 @@ export async function resendOTP(otpSession: OTPSessionData) {
       },
     });
   } catch (err) {
-    console.log("LOG::RESEND_OTP_ERROR", (err as Error).message);
     return data<SignUpActionType>(
       {
         ...(genericNetworkError((err as Error).message) || genericErrorState()),
@@ -392,7 +371,6 @@ export async function getGoogleAuthUrl() {
     const result = raw as BackendResponse;
 
     if (!res.ok) {
-      console.error("LOG::GOOGLE_AUTH_FAILED", raw);
       const error = result.error;
 
       if (error?.code === "RATE_LIMIT_EXCEEDED") {
@@ -410,19 +388,77 @@ export async function getGoogleAuthUrl() {
 
     const authUrl = (result.data as GenericResponse)?.auth_url;
     if (!authUrl) {
-      console.error("LOG::GOOGLE_AUTH_FAILED :: No AUTH_URL detected", raw);
       return data<SignUpActionType>(
         { ...genericErrorState(), step: "EMAIL" },
         { status: 500 },
       );
     }
 
-    console.log("LOG::GOOGLE_AUTH_SUCCESS ::", authUrl, raw);
-
     // Redirect to Google OAuth
     return redirect(authUrl);
   } catch (err) {
-    console.log("LOG::GOOGLE_AUTH_ERROR", (err as Error).message);
+    return data<SignUpActionType>(
+      {
+        ...(genericNetworkError((err as Error).message) || genericErrorState()),
+        step: "EMAIL",
+      },
+      { status: 500 },
+    );
+  }
+}
+
+export async function handleGoogleOAuthCallback(code: string, redirectTo?: string) {
+  try {
+    const res = await fetch(BASE_URL + GOOGLE_CALLBACK_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code }),
+    });
+
+    const raw = await res.json();
+    const result = raw as BackendResponse;
+
+    if (!res.ok) {
+      const error = result.error;
+      if (error?.code === "RATE_LIMIT_EXCEEDED") {
+        return data<SignUpActionType>(
+          handleRateLimitError("EMAIL", error.details?.retry_after),
+          { status: res.status },
+        );
+      }
+
+      return data<SignUpActionType>(
+        {
+          success: false,
+          message: AUTH_ERROR_MESSAGES[error?.code || "UNKNOWN"],
+          step: "EMAIL",
+        },
+        { status: res.status },
+      );
+    }
+
+    const resData = result.data as ExtendedUser;
+    const accessToken = resData.access_token;
+    const refreshToken = resData.refresh_token;
+    const user = resData.user;
+
+    if (!accessToken || !refreshToken || !user) {
+      return data<SignUpActionType>(
+        { ...genericErrorState(), step: "EMAIL" },
+        { status: 500 },
+      );
+    }
+
+    return redirect(redirectTo || "/dashboard", {
+      headers: {
+        "Set-Cookie": await sessionCookie.serialize({
+          accessToken,
+          refreshToken,
+          user,
+        }),
+      },
+    });
+  } catch (err) {
     return data<SignUpActionType>(
       {
         ...(genericNetworkError((err as Error).message) || genericErrorState()),
@@ -472,7 +508,6 @@ export async function signInWithEmail(formData: FormData) {
     const result = raw as BackendResponse;
 
     if (!res.ok) {
-      console.log("LOG::SIGN_IN_FAILED", raw);
       const error = result.error;
 
       if (error?.code === "RATE_LIMIT_EXCEEDED") {
@@ -509,12 +544,6 @@ export async function signInWithEmail(formData: FormData) {
       ),
     );
 
-    console.log("LOG::SIGN_IN_SUCCESS", raw, "otpSession", {
-      email: email!,
-      otpExpiresAt,
-      resendCount: 0,
-    });
-
     return data<SignUpActionType>({
       success: true,
       step: "OTP",
@@ -526,7 +555,6 @@ export async function signInWithEmail(formData: FormData) {
       },
     });
   } catch (err) {
-    console.log("LOG::SIGN_IN_ERROR", (err as Error).message);
     return data<SignUpActionType>(
       {
         ...(genericNetworkError((err as Error).message) || genericErrorState()),
@@ -603,7 +631,6 @@ export async function sendPasswordResetLink(
     const result = raw as BackendResponse;
 
     if (!res.ok) {
-      console.log("LOG::PASS_RESET_LINK_FAILED", raw);
       const error = result.error;
 
       if (error?.code === "RATE_LIMIT_EXCEEDED") {
@@ -647,13 +674,6 @@ export async function sendPasswordResetLink(
       ),
     );
 
-    console.info("LOG::PASSWORD_LINK_SUCCESS", raw, "otpSession", {
-      email: email!,
-      otpExpiresAt,
-      resendCount: (otpSession?.resendCount || 0) + 1,
-      resendAvailableAt: undefined, // Clear cooldown
-    });
-
     return data<SignUpActionType>(
       {
         success: true,
@@ -667,7 +687,6 @@ export async function sendPasswordResetLink(
       { status: res.status },
     );
   } catch (err) {
-    console.log("LOG::PASS_RESET_LINK_ERROR", (err as Error).message);
     return data<SignUpActionType>(
       {
         ...(genericNetworkError((err as Error).message) || genericErrorState()),
@@ -719,7 +738,6 @@ export async function resetPassword(formData: FormData, token: string) {
     const result = raw as BackendResponse;
 
     if (!res.ok) {
-      console.log("LOG::PASS_RESET_FAILED", raw);
       const error = result.error;
 
       if (error?.code === "RATE_LIMIT_EXCEEDED") {
@@ -750,10 +768,8 @@ export async function resetPassword(formData: FormData, token: string) {
       );
     }
 
-    console.log("LOG::PASS_RESET_SUCCESS", raw);
-    return redirect("/dashboard");
+    return redirect("/auth/signin");
   } catch (err) {
-    console.log("LOG::PASS_RESET_LINK_ERROR", (err as Error).message);
     return data<ServerActionState>(
       {
         ...(genericNetworkError((err as Error).message) || genericErrorState()),
@@ -764,7 +780,6 @@ export async function resetPassword(formData: FormData, token: string) {
 }
 
 // -------------------------------------
-// TODO: SIGNOUT
 // -------------------------------------
 export async function signOut(accessToken: string) {
   try {
@@ -780,7 +795,6 @@ export async function signOut(accessToken: string) {
     const result = raw as BackendResponse;
 
     if (!res.ok) {
-      console.log("LOG::SIGNOUT_FAILED", raw);
       const error = result.error;
 
       if (error?.code === "RATE_LIMIT_EXCEEDED") {
@@ -814,7 +828,6 @@ export async function signOut(accessToken: string) {
     // Always clear session cookie
     return redirect("/auth/signin", { headers: await destroySession() });
   } catch (err) {
-    console.log("LOG::SIGNOUT_ERROR", (err as Error).message);
     return data<ServerActionState>(
       {
         ...(genericNetworkError((err as Error).message) || genericErrorState()),

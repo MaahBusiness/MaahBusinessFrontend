@@ -15,6 +15,7 @@ export default [
       route("signin", "./routes/auth/signin.tsx"),
       route("forgot-password", "./routes/auth/forgot-password.tsx"),
       route("signup", "./routes/auth/signup.tsx"),
+      route("google/callback", "./routes/auth/google-callback.tsx"),
     ]),
     route("reset-password", "./routes/auth/reset-password.tsx"),
   ]),
@@ -54,6 +55,7 @@ export default [
 
       // Sales
       route("invoices", "routes/dashboard/sales/index.tsx"),
+      route("inventory", "routes/dashboard/inventory/index.tsx"),
     ]),
     route("*", "routes/dashboard/404.tsx"),
   ]),

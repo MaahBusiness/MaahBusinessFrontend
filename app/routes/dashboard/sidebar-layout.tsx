@@ -1,11 +1,14 @@
 import { AppSidebar } from "@/components/app-sidebar";
+import { useOrganisation } from "@/hooks/use-organisation";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { Outlet } from "react-router";
+import { Navigate, Outlet } from "react-router";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  // const { businessMember } = useOrganisation();
+  const { businessMember } = useOrganisation();
 
-  // if (businessMember?.user?.is_active === false) redirect("");
+  if (businessMember?.is_active === false) {
+    return <Navigate to="/dashboard/organisations" replace />;
+  }
 
   return (
     <SidebarProvider className="flex flex-col">

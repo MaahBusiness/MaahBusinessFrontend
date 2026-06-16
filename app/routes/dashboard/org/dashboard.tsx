@@ -1,7 +1,7 @@
 // Page for a single organisation/business
 import { CardsStats } from "@/components/dashboard/cards/revenue";
 import { CalendarDateRangePicker } from "@/components/date-range-picker";
-import { Overview } from "@/components/overview";
+import { OverviewChart } from "@/components/overview";
 import { RecentSales } from "@/components/recent-sales";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,10 +13,29 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/contexts/auth-context";
 import { useOrganisation } from "@/hooks/use-organisation";
+import { dashboardApi } from "@/lib/api/dashboard";
+import { useQuery } from "@tanstack/react-query";
 
 export default function OrganisationDashboard() {
-  const { organisation: res, isLoading, error } = useOrganisation();
+  const { organisation: res, isLoading, error, fetchInvoices } = useOrganisation();
+  const { accessToken } = useAuth();
+  const orgId = res?.data?.id;
+
+  const summaryQuery = useQuery({
+    queryKey: ["dashboard", orgId, "summary"],
+    queryFn: async () => dashboardApi.getSummary(accessToken!, orgId!),
+    enabled: !!orgId && !!accessToken,
+  });
+  const insightsQuery = useQuery({
+    queryKey: ["dashboard", orgId, "insights"],
+    queryFn: async () => dashboardApi.getInsights(accessToken!, orgId!),
+    enabled: !!orgId && !!accessToken,
+  });
+  const invoicesQuery = fetchInvoices();
+  const summaryData = (summaryQuery.data?.data ?? {}) as any;
+  const insightsData = (insightsQuery.data?.data ?? {}) as any;
 
   if (isLoading || error || !res?.success) {
     return (
@@ -53,7 +72,16 @@ export default function OrganisationDashboard() {
         </TabsList>
         <TabsContent value="overview" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <CardsStats />
+            <CardsStats
+              totalRevenue={Number(summaryData.revenue?.total_revenue || 0)}
+              totalOrders={Number(summaryData.revenue?.total_orders || 0)}
+              chartData={
+                (insightsData.daily_data || []).map((item: any) => ({
+                  revenue: Number(item.total_revenue || 0),
+                  subscription: Number(item.total_sales || 0),
+                })) || []
+              }
+            />
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -98,9 +126,13 @@ export default function OrganisationDashboard() {
                 </svg>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">+573</div>
+                <div className="text-2xl font-bold">
+                  {Number(
+                    summaryData.inventory?.low_stock_products || 0,
+                  )}
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  +201 since last hour
+                  Low stock products
                 </p>
               </CardContent>
             </Card>
@@ -111,18 +143,18 @@ export default function OrganisationDashboard() {
                 <CardTitle>Overview</CardTitle>
               </CardHeader>
               <CardContent className="pl-2">
-                <Overview />
+                <OverviewChart chartData={insightsData.daily_data || []} />
               </CardContent>
             </Card>
             <Card className="col-span-3">
               <CardHeader>
                 <CardTitle>Recent Sales</CardTitle>
                 <CardDescription>
-                  You made 265 sales this month.
+                  Latest invoices in your business.
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <RecentSales />
+                <RecentSales sales={invoicesQuery.data?.data || []} />
               </CardContent>
             </Card>
           </div>

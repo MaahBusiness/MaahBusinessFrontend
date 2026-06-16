@@ -3,41 +3,6 @@ import { Bar, BarChart, Line, LineChart } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { type ChartConfig, ChartContainer } from "@/components/ui/chart";
 
-const data = [
-  {
-    revenue: 10400,
-    subscription: 240,
-  },
-  {
-    revenue: 14405,
-    subscription: 300,
-  },
-  {
-    revenue: 9400,
-    subscription: 200,
-  },
-  {
-    revenue: 8200,
-    subscription: 278,
-  },
-  {
-    revenue: 7000,
-    subscription: 189,
-  },
-  {
-    revenue: 9600,
-    subscription: 239,
-  },
-  {
-    revenue: 11244,
-    subscription: 278,
-  },
-  {
-    revenue: 26475,
-    subscription: 189,
-  },
-];
-
 const chartConfig = {
   revenue: {
     label: "Revenue",
@@ -49,22 +14,29 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-export function CardsStats() {
+type RevenuePoint = { revenue: number; subscription: number };
+
+export function CardsStats({
+  totalRevenue,
+  totalOrders,
+  chartData,
+}: {
+  totalRevenue: number;
+  totalOrders: number;
+  chartData: RevenuePoint[];
+}) {
   return (
-    // <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-2">
     <>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-normal">Total Revenue</CardTitle>
         </CardHeader>
         <CardContent className="pb-0">
-          <div className="text-2xl font-bold">$15,231.89</div>
-          <p className="text-xs text-muted-foreground">
-            +20.1% from last month
-          </p>
+          <div className="text-2xl font-bold">${totalRevenue.toLocaleString()}</div>
+          <p className="text-xs text-muted-foreground">Current period revenue</p>
           <ChartContainer config={chartConfig} className="h-[80px] w-full">
             <LineChart
-              data={data}
+              data={chartData}
               margin={{
                 top: 5,
                 right: 10,
@@ -87,15 +59,13 @@ export function CardsStats() {
       </Card>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-normal">Subscriptions</CardTitle>
+          <CardTitle className="text-sm font-normal">Orders</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">+2350</div>
-          <p className="text-xs text-muted-foreground">
-            +180.1% from last month
-          </p>
+          <div className="text-2xl font-bold">{totalOrders.toLocaleString()}</div>
+          <p className="text-xs text-muted-foreground">Current period orders</p>
           <ChartContainer config={chartConfig} className="mt-2 h-[80px] w-full">
-            <BarChart data={data}>
+            <BarChart data={chartData}>
               <Bar
                 dataKey="subscription"
                 fill="var(--color-subscription)"
@@ -106,6 +76,5 @@ export function CardsStats() {
         </CardContent>
       </Card>
     </>
-    // </div>
   );
 }

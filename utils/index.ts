@@ -81,12 +81,6 @@ export function handleRateLimitError(
   retryAfterSeconds?: number,
   otpSession?: OTPSessionData,
 ): SignUpActionType {
-  if (retryAfterSeconds) {
-    console.log(retryAfterSeconds);
-    console.log(microsecondsToSeconds(retryAfterSeconds));
-    console.log(expiryFromNowSeconds(microsecondsToSeconds(retryAfterSeconds)));
-    console.log(expiryFromNowSeconds(60));
-  }
   // const resendAvailableAt = retryAfterSeconds
   //   ? expiryFromNowSeconds(microsecondsToSeconds(retryAfterSeconds))
   //   : undefined;

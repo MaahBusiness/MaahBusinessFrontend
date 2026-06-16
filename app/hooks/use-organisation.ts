@@ -155,8 +155,8 @@ export function useOrganisation() {
     mutationFn: async (data: { id: string; sub?: boolean }) => {
       if (!accessToken) throw rdr;
       return data.sub
-        ? organisationsApi.deleteSubcategory(accessToken, orgId)
-        : organisationsApi.deleteCategory(accessToken, orgId);
+        ? organisationsApi.deleteSubcategory(accessToken, data.id)
+        : organisationsApi.deleteCategory(accessToken, data.id);
     },
     onSuccess: (res) => {
       if (res.success) {

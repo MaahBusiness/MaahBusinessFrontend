@@ -30,8 +30,6 @@ class ApiClient {
       throw new Error("Access token required for API requests");
     }
 
-    console.log(`URL::${this.baseUrl}${endpoint}`, fetchOptions);
-
     try {
       const res = await fetch(`${this.baseUrl}${endpoint}`, {
         ...fetchOptions,
@@ -46,7 +44,6 @@ class ApiClient {
       const result = raw as BackendResponse;
 
       if (!res.ok) {
-        console.log("LOG::", endpoint, fetchOptions.method, raw);
         const error = result.error;
 
         if (error?.code === "RATE_LIMIT_EXCEEDED") {
@@ -60,22 +57,18 @@ class ApiClient {
           return { success: false, message: error.message };
         }
 
+        if (error?.code === "INVALID_CREDENTIALS") {
+          return { success: false, message: error.message || "Invalid credentials." };
+        }
+
         return genericErrorState();
       }
 
       const resData = result.data as T;
       const resMeta = result.pagination as Pagination | undefined;
 
-      console.log("LOG::", endpoint, fetchOptions.method, resData, resMeta);
-
       return { success: true, data: resData, meta: resMeta };
     } catch (err) {
-      console.log(
-        "LOG::CATCH",
-        endpoint,
-        fetchOptions.method,
-        (err as any).message,
-      );
       return genericNetworkError((err as any).message) || genericErrorState();
     }
   }

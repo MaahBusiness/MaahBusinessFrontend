@@ -3,6 +3,7 @@ import {
   BadgePercent,
   Database,
   Gauge,
+  PackageSearch,
   SidebarIcon,
   Users,
 } from "lucide-react";
@@ -46,6 +47,11 @@ const schema: { [key: string]: SideItem[] } = {
       title: "Sales",
       url: "invoices",
       icon: BadgePercent,
+    },
+    {
+      title: "Inventory",
+      url: "inventory",
+      icon: PackageSearch,
     },
   ],
   secondary: [

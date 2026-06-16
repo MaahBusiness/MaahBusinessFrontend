@@ -37,8 +37,6 @@ export async function getSession(
 async function refreshAccessToken(
   refreshToken: string,
 ): Promise<SessionData | null> {
-  console.log("REFRESHING REFRESH TOKEN", refreshToken);
-  console.log("ENDPOINT::", `${BASE_URL}${REFRESH_TOKEN_URL}`);
   try {
     const res = await fetch(`${BASE_URL}${REFRESH_TOKEN_URL}`, {
       method: "POST",
@@ -48,7 +46,6 @@ async function refreshAccessToken(
     const raw = await res.json();
 
     if (!res.ok) {
-      console.log("REFRESH FAILED", raw);
       return null;
     }
 
@@ -59,41 +56,15 @@ async function refreshAccessToken(
     // const user = data.data?.user;
 
     if (!accessToken || !newRefreshToken) {
-      console.log("No tokens returned");
       return null;
     }
-
-    console.log("token refresh success");
-    console.log({ newRefreshToken });
 
     return {
       accessToken,
       refreshToken: newRefreshToken,
     };
   } catch (error) {
-    console.error("Token refresh failed:", error);
     throw redirect("/auth/signin");
-  }
-}
-
-// ------------------------------
-// Token validation (cheap check)
-// ------------------------------
-async function validateAccessToken(token: string): Promise<boolean> {
-  // console.log("VALIDATING ACCESS TOKEN");
-  try {
-    const [, payload] = token.split(".");
-    if (!payload) return false;
-
-    const decoded = JSON.parse(
-      Buffer.from(payload, "base64").toString("utf-8"),
-    );
-
-    // console.log(payload, decoded);
-    // Check if token is expired (with 30 second buffer)
-    return decoded.exp * 1000 > Date.now() + 30000;
-  } catch {
-    return false;
   }
 }
 
@@ -121,16 +92,16 @@ function getTokenStatus(token: string): "valid" | "refresh" | "expired" {
   }
 }
 
-// let refreshPromise: Promise<any> | null = null;
+let refreshPromise: Promise<SessionData | null> | null = null;
 
-// async function safeRefresh(refreshToken: string) {
-//   if (!refreshPromise) {
-//     refreshPromise = refreshAccessToken(refreshToken).finally(() => {
-//       refreshPromise = null;
-//     });
-//   }
-//   return refreshPromise;
-// }
+async function safeRefresh(refreshToken: string) {
+  if (!refreshPromise) {
+    refreshPromise = refreshAccessToken(refreshToken).finally(() => {
+      refreshPromise = null;
+    });
+  }
+  return refreshPromise;
+}
 
 // ------------------------------
 // Main auth helper (used by loaders)
@@ -148,7 +119,7 @@ export async function requireUserSession(request: Request) {
   if (status === "valid") return { session, headers: undefined };
 
   // 🔄 Token is near expiry OR expired → refresh
-  const refreshed = await refreshAccessToken(session.refreshToken);
+  const refreshed = await safeRefresh(session.refreshToken);
 
   if (!refreshed && status === "expired") {
     // ❌ Refresh token invalid → sign out

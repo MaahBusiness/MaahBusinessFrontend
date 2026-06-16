@@ -25,7 +25,7 @@ export type PaymentMethod =
   | "paypal"
   | "credit";
 
-export type InvoiceStatus = "paid" | "partial" | "refunded" | "cancelled";
+export type InvoiceStatus = "COMPLETED" | "CREDIT" | "CANCELLED";
 
 export interface User extends UserSnapshot {
   is_active: boolean;
@@ -47,7 +47,7 @@ interface UserSnapshot {
   role: Role;
 }
 
-interface ExtendedUser {
+export interface ExtendedUser {
   access_token: string;
   refresh_token: string;
   expires_in: number;
@@ -63,7 +63,7 @@ interface OrganisationMemberUser extends UserSnapshot {
 }
 
 /** Response data object for creating or retreiving business members (array) */
-interface OrganisationMember {
+export interface OrganisationMember {
   id: string;
   role: Role;
   is_active: boolean;
@@ -78,7 +78,7 @@ interface OrganisationMember {
  * Core business data \
  * The response data object for when a business is created or retreived (array)
  */
-interface OrganisationCore extends BusinessSnapshot {
+export interface OrganisationCore extends BusinessSnapshot {
   owner_id: string;
   description?: string;
   address?: string;
@@ -96,7 +96,7 @@ interface OrganisationCore extends BusinessSnapshot {
   categories?: Category[];
 }
 
-interface Pagination {
+export interface Pagination {
   count: number;
   next?: number;
   previous?: number;
@@ -169,7 +169,7 @@ export interface Subcategory {
   updated_at: string;
 }
 
-interface Product {
+export interface Product {
   id: string;
   business_id: string;
   name: string;
@@ -195,7 +195,7 @@ interface Product {
   updated_at: string;
 }
 
-interface ProductFilters {
+export interface ProductFilters {
   // business_id: string,
   category_id?: string;
   subcategory_id?: string;
@@ -208,20 +208,24 @@ interface ProductFilters {
   order_by?: keyof Product;
 }
 
-// Future: Other modules (fetched separately)
-// export interface OrganisationInventory {
-//   // Will be added later
-// }
+export interface OrganisationInventory {
+  total_products?: number;
+  low_stock_products?: number;
+  expired_products?: number;
+  total_inventory_value?: number;
+}
 
-// export interface OrganisationSales {
-//   // Will be added later
-// }
+export interface OrganisationSales {
+  total_invoices?: number;
+  total_revenue?: number;
+  average_invoice_value?: number;
+}
 
 // Combined organisation data (all modules)
 export interface Organisation {
   core: OrganisationCore;
   members?: OrganisationMember[];
-  customers?: OrganisationCustomers;
+  customers?: OrganisationCustomers[];
   inventory?: OrganisationInventory;
   sales?: OrganisationSales;
 }
@@ -308,7 +312,7 @@ export interface SideItem {
   }[];
 }
 
-interface ProductCreateParams extends ProductUpdateParams {
+export interface ProductCreateParams extends ProductUpdateParams {
   business_id: string;
   on_promotion?: boolean;
   promotion_start_date?: string;
@@ -316,7 +320,7 @@ interface ProductCreateParams extends ProductUpdateParams {
   promo_price?: number;
 }
 
-interface ProductUpdateParams {
+export interface ProductUpdateParams {
   name: string;
   description?: string;
   barcode?: string;

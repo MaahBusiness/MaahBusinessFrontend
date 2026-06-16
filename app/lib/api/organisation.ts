@@ -1,233 +1,45 @@
-// ============================================================================
-// API CLIENT - Modular Endpoints
-// ============================================================================
-
 import { apiClient } from "@/lib/api-client";
-import type {
-  Category,
-  Invoice,
-  InvoiceFilters,
-  OrganisationCore,
-  OrganisationMember,
-  Product,
-  ProductCreateParams,
-  ProductFilters,
-  ProductUpdateParams,
-  Role,
-  Subcategory,
-} from "types";
-import { buildQueryParams } from "utils";
-import {
-  BUSINESS_URL,
-  CATEGORY_URL,
-  CUSTOMERS_URL,
-  EDIT_MEMBERS_URL,
-  INVENTORY_CO_URL,
-  INVENTORY_URL,
-  INVOICE_URL,
-  LIST_BUSINESS_URL,
-  LIST_MEMBERS_URL,
-  MEMBERS_URL,
-  PRODUCTS_URL,
-  SUBCATEGORY_URL,
-} from "utils/endpoints";
+import { businessesApi } from "@/lib/api/businesses";
+import { customersApi } from "@/lib/api/customers";
+import { productsApi } from "@/lib/api/products";
+import { salesApi } from "@/lib/api/sales";
+import type { InvoiceFilters, ProductFilters, ProductUpdateParams } from "types";
+import { BUSINESS_URL, MEMBERS_URL } from "utils/endpoints";
 
 export const organisationsApi = {
-  // Core data
-  getAll: (token: string) =>
-    apiClient.get<OrganisationCore[]>(BUSINESS_URL, token),
-
-  getById: (token: string, id: string) =>
-    apiClient.get<OrganisationCore>(BUSINESS_URL + id, token),
-
-  create: (
-    token: string,
-    data: {
-      name: string;
-      email: string;
-      description: string;
-      address?: string;
-      phone_number?: string;
-      logo?: File | undefined;
-      logo_url?: string;
-    },
-  ) => apiClient.post<OrganisationCore>(BUSINESS_URL, token, data),
-
-  // TODO::This one
-  update: (
-    token: string,
-    id: string,
-    data: {
-      name: string;
-      email: string;
-      description: string;
-      address?: string;
-      phone_number?: string;
-      logo_url?: string;
-    },
-  ) => apiClient.put<OrganisationCore>(BUSINESS_URL + id, token, data),
-
-  delete: (token: string, id: string) =>
-    apiClient.delete<undefined>(BUSINESS_URL + id, token),
-
-  // Members data
-  getMembers: (token: string, id: string) =>
-    apiClient.get<OrganisationMember[]>(
-      BUSINESS_URL + id + LIST_MEMBERS_URL,
-      token,
-    ),
-
-  // TODO::ENDPOINT NOT RESOLVED YET
+  getAll: businessesApi.getAll,
+  getById: businessesApi.getById,
+  create: businessesApi.create,
+  update: businessesApi.update,
+  delete: businessesApi.delete,
+  getMembers: businessesApi.getMembers,
+  addMemberByEmail: businessesApi.addMember,
   addMember: (
     token: string,
     id: string,
     data: { user_id: string; role: string },
   ) =>
-    apiClient.post<OrganisationMember>(
-      BUSINESS_URL + id + MEMBERS_URL,
-      token,
-      data,
-    ),
-
-  addMemberByEmail: (
-    token: string,
-    id: string,
-    data: {
-      name?: string;
-      email: string;
-      password?: string;
-      role: Role;
-    },
-  ) =>
-    apiClient.post<OrganisationMember>(
-      BUSINESS_URL + id + MEMBERS_URL,
-      token,
-      data,
-    ),
-
-  updateMember: (
-    token: string,
-    id: string,
-    memberId: string,
-    data: {
-      is_active?: boolean;
-      role?: Role;
-    },
-  ) =>
-    apiClient.post<OrganisationMember>(
-      BUSINESS_URL + id + MEMBERS_URL + memberId + EDIT_MEMBERS_URL,
-      token,
-      data,
-    ),
-
-  removeMember: (token: string, id: string, memberId: string) =>
-    apiClient.delete<undefined>(
-      LIST_BUSINESS_URL + id + MEMBERS_URL + memberId,
-      token,
-    ),
-
-  // Categories data
-  addCategory: (
-    token: string,
-    id: string,
-    data: { name: string; description?: string },
-  ) =>
-    apiClient.post<Category>(
-      INVENTORY_CO_URL + BUSINESS_URL + id + CATEGORY_URL,
-      token,
-      data,
-    ),
-
-  addSubCategory: (
-    token: string,
-    id: string,
-    data: { name: string; description?: string; category_id: string },
-  ) =>
-    apiClient.post<Subcategory>(
-      INVENTORY_CO_URL + BUSINESS_URL + id + SUBCATEGORY_URL,
-      token,
-      data,
-    ),
-
-  updateCategory: (
-    token: string,
-    id: string,
-    data: { name: string; description?: string },
-  ) => apiClient.put<Category>(CATEGORY_URL + id, token, data),
-
-  updateSubcategory: (
-    token: string,
-    id: string,
-    data: { name: string; description?: string },
-  ) => apiClient.put<Category>(SUBCATEGORY_URL + id, token, data),
-
-  deleteCategory: (token: string, id: string) =>
-    apiClient.delete<Category>(CATEGORY_URL + id, token),
-
-  deleteSubcategory: (token: string, id: string) =>
-    apiClient.delete<Category>(SUBCATEGORY_URL + id, token),
-
-  // PRODUCTS
-  getProducts: (token: string, id: string) =>
-    apiClient.get<Product[]>(PRODUCTS_URL + "?business_id=" + id, token),
-
-  getFilteredProducts: (
-    token: string,
-    id: string,
-    filters?: ProductFilters,
-  ) => {
-    const query = buildQueryParams({ business_id: id, ...filters });
-    return apiClient.get<Product[]>(`${PRODUCTS_URL}${query}`, token);
-  },
-
-  getProduct: (token: string, id: string) => {
-    return apiClient.get<Product>(PRODUCTS_URL + id, token);
-  },
-
-  addProduct: (token: string, id: string, data: ProductCreateParams) => {
-    return apiClient.post<Product>(
-      PRODUCTS_URL + "?business_id=" + id,
-      token,
-      data,
-    );
-  },
-
-  updateProduct: (
-    token: string,
-    id: string,
-    data: Partial<ProductUpdateParams>,
-  ) => {
-    return apiClient.put<Product>(PRODUCTS_URL + id, token, data);
-  },
-
-  removeProduct: (token: string, id: string) => {
-    return apiClient.delete<Product>(PRODUCTS_URL + id, token);
-  },
-
-  // Sales & invoices
-
-  getInvoices: (token: string, id: string) =>
-    apiClient.get<Invoice[]>(INVOICE_URL + "?business_id=" + id, token),
-
-  getFilteredInvoices: (
-    token: string,
-    id: string,
-    filters?: InvoiceFilters,
-  ) => {
-    const query = buildQueryParams({ business_id: id, ...filters });
-    return apiClient.get<Invoice[]>(`${INVOICE_URL}${query}`, token);
-  },
-
-  getCustomers: (token: string, id: string) =>
-    apiClient.get<OrganisationMember[]>(
-      CUSTOMERS_URL + "?business_id=" + id,
-      token,
-    ),
-
-  // Future: Other modules
-  // getCustomers: (token: string, id: string) => ...
-  // getInventory: (token: string, id: string) => ...
-  // getSales: (token: string, id: string) => ...
+    apiClient.post(BUSINESS_URL + id + MEMBERS_URL, token, data),
+  updateMember: businessesApi.updateMember,
+  removeMember: businessesApi.removeMember,
+  addCategory: productsApi.addCategory,
+  addSubCategory: productsApi.addSubcategory,
+  updateCategory: productsApi.updateCategory,
+  updateSubcategory: productsApi.updateSubcategory,
+  deleteCategory: productsApi.deleteCategory,
+  deleteSubcategory: productsApi.deleteSubcategory,
+  getProducts: (token: string, id: string) => productsApi.getFiltered(token, id),
+  getFilteredProducts: (token: string, id: string, filters?: ProductFilters) =>
+    productsApi.getFiltered(token, id, filters),
+  getProduct: productsApi.getById,
+  addProduct: productsApi.create,
+  updateProduct: (token: string, id: string, data: Partial<ProductUpdateParams>) =>
+    productsApi.update(token, id, data),
+  removeProduct: productsApi.remove,
+  getInvoices: (token: string, id: string) => salesApi.list(token, id),
+  getFilteredInvoices: (token: string, id: string, filters?: InvoiceFilters) =>
+    salesApi.list(token, id, filters),
+  getCustomers: customersApi.list,
 };
 
 export const organisationKeys = {
