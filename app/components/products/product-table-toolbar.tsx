@@ -76,9 +76,9 @@ export function ProductTableToolbar<TData>({
   const defaultSubCat = defaultCat?.subcategories?.find((c) => c.id === subId);
 
   return (
-    <div className="flex items-center justify-between overflow-x-scroll no-scrollbar">
-      <div className="flex flex-1 items-center space-x-2">
-        <InputGroup className="h-8 w-[200px] lg:w-[250px]">
+    <div className="flex flex-col gap-3 p-4">
+      <div className="flex min-w-0 flex-col gap-2 tablet:flex-row tablet:flex-wrap tablet:items-center">
+        <InputGroup className="h-8 min-w-0 w-full tablet:w-auto tablet:min-w-[180px] tablet:max-w-[240px] tablet:flex-1">
           <InputGroupInput
             placeholder="Search products…"
             value={search}
@@ -129,6 +129,7 @@ export function ProductTableToolbar<TData>({
           </InputGroupAddon>
         </InputGroup>
 
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
         {!defaultCat && (
           <ParamsFacetedFilter title="Categories" options={cats} />
         )}
@@ -151,14 +152,15 @@ export function ProductTableToolbar<TData>({
                 return new URLSearchParams(record);
               })
             }
-            className="h-8 px-2 lg:px-3"
+            className="h-8 shrink-0 px-2 lg:px-3"
           >
             Reset
             <X />
           </Button>
         )}
+        </div>
       </div>
-      <div className="flex items-center space-x-2">
+      <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
         <DataTableViewOptions table={table} options={visibles} />
 
         {isLoading ? (

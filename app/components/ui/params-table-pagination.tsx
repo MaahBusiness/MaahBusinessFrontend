@@ -30,13 +30,13 @@ export function TablePagination<TData>({
   const [_, setSearchParams] = useSearchParams();
 
   return (
-    <div className="flex items-center justify-between px-2 overflow-x-scroll no-scrollbar gap-4 tablet:gap-0">
-      <div className="tablet:flex-1 shrink-0 tablet:shrink text-sm text-muted-foreground ">
-        {meta.current_page} of {meta.count} row(s) selected.
+    <div className="flex flex-wrap items-center justify-between gap-2 px-2 py-1">
+      <div className="text-xs text-muted-foreground tablet:text-sm">
+        {meta.count} total · Page {meta.current_page} of {meta.total_pages}
       </div>
-      <div className="flex items-center space-x-6 lg:space-x-8">
-        <div className="flex items-center space-x-2">
-          <p className="text-sm font-medium shrink-0">Rows per page</p>
+      <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+        <div className="flex items-center gap-2">
+          <p className="shrink-0 text-xs font-medium sm:text-sm">Rows</p>
           <Select
             value={`${meta.page_size}`}
             onValueChange={(value) => {
@@ -59,10 +59,7 @@ export function TablePagination<TData>({
             </SelectContent>
           </Select>
         </div>
-        <div className="flex w-[100px] items-center justify-center text-sm font-medium">
-          Page {meta.current_page} of {meta.total_pages}
-        </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-1">
           <Button
             variant="outline"
             className="hidden h-8 w-8 p-0 lg:flex"

@@ -32,14 +32,14 @@ export const productCols = ({
     cell: ({ row }) => {
       const entry = row.original;
       return (
-        <div className="flex flex-row items-center gap-2 px-4">
+        <div className="flex flex-row items-center gap-1 px-2 py-0 h-9">
           <Checkbox
             checked={row.getIsSelected()}
             onCheckedChange={(value) => row.toggleSelected(!!value)}
             aria-label="Select row"
-            className="translate-y-[2px]"
+            className="size-3.5 shrink-0"
           />
-          <Avatar className="size-10 rounded-sm">
+          <Avatar className="size-7 shrink-0 rounded-sm">
             <AvatarImage src={extractImageUrl(entry.image_url)} />
             <BoringFallback name={entry.id} square variant="marble" />
           </Avatar>
@@ -56,7 +56,7 @@ export const productCols = ({
       <DataTableColumnHeader accessorKey="id" column={column} title="ID" />
     ),
     cell: ({ row, cell }) => (
-      <ProductTableContextMenu className="w-[80px]" {...{ cell }}>
+      <ProductTableContextMenu compact className="w-[80px]" {...{ cell }}>
         <span className="truncate">{row.getValue("id")}</span>
       </ProductTableContextMenu>
     ),
@@ -72,7 +72,7 @@ export const productCols = ({
       <DataTableColumnHeader accessorKey="name" column={column} title="Name" />
     ),
     cell: ({ row, cell }) => (
-      <ProductTableContextMenu
+      <ProductTableContextMenu compact
         className="w-[200px] truncate"
         title={row.getValue("name")}
         {...{ cell }}
@@ -96,7 +96,7 @@ export const productCols = ({
     ),
     cell: ({ row, cell }) =>
       row.getValue("desc") ? (
-        <ProductTableContextMenu className="gap-2" {...{ cell }}>
+        <ProductTableContextMenu compact className="gap-2" {...{ cell }}>
           <span
             title={row.getValue("desc")}
             className="max-w-[400px] truncate "
@@ -120,8 +120,8 @@ export const productCols = ({
       />
     ),
     cell: ({ row, cell }) => (
-      <ProductTableContextMenu {...{ cell }}>
-        <Avatar className="size-10 rounded-sm">
+      <ProductTableContextMenu compact {...{ cell }}>
+        <Avatar className="size-7 shrink-0 rounded-sm">
           <AvatarImage src={extractImageUrl(row.original.barcode_image_url)} />
           <BoringFallback name={row.original.id} square variant="bauhaus" />
         </Avatar>
@@ -143,7 +143,7 @@ export const productCols = ({
       const id = row.getValue("cat");
       const cat = cats?.find((c) => c.id === id);
       return (
-        <ProductTableContextMenu {...{ cell }}>
+        <ProductTableContextMenu compact {...{ cell }}>
           <Link
             to={`../products/categories/${cat?.id}`}
             className="hover:underline"
@@ -171,7 +171,7 @@ export const productCols = ({
         ?.find((c) => c.id === data.category_id)
         ?.subcategories?.find((s) => s.id === data.subcategory_id);
       return (
-        <ProductTableContextMenu {...{ cell }}>
+        <ProductTableContextMenu compact {...{ cell }}>
           <Link
             to={`../product/categories/${data.category_id}/${data.subcategory_id}`}
             className="hover:underline"
@@ -196,7 +196,7 @@ export const productCols = ({
     ),
     cell: ({ row, cell }) => {
       return (
-        <ProductTableContextMenu
+        <ProductTableContextMenu compact
           {...{ cell }}
           className="text-right font-medium"
         >
@@ -220,7 +220,7 @@ export const productCols = ({
     ),
     cell: ({ row, cell }) => {
       return (
-        <ProductTableContextMenu
+        <ProductTableContextMenu compact
           {...{ cell }}
           className="text-right font-medium"
         >
@@ -242,7 +242,7 @@ export const productCols = ({
     ),
     cell: ({ row, cell }) => {
       return (
-        <ProductTableContextMenu
+        <ProductTableContextMenu compact
           {...{ cell }}
           className="justify-end font-medium"
         >
@@ -267,7 +267,7 @@ export const productCols = ({
       const item = row.original;
 
       return (
-        <ProductTableContextMenu {...{ cell }}>
+        <ProductTableContextMenu compact {...{ cell }}>
           <span className="max-w-[500px] truncate ">{item?.quantity}</span>
           {item.is_low_stock && (
             <TrendingDown className="h-3.5 w-3.5 text-destructive" />
@@ -290,7 +290,7 @@ export const productCols = ({
     cell: ({ row, cell }) => {
       const item = row.original;
       return (
-        <ProductTableContextMenu
+        <ProductTableContextMenu compact
           {...{ cell }}
           title={new Date(item.expiry_date ?? "").toLocaleString("en", {
             hour: "2-digit",
@@ -326,7 +326,7 @@ export const productCols = ({
     cell: ({ row, cell }) => {
       const item = row.original;
       return (
-        <ProductTableContextMenu {...{ cell }} className="justify-center">
+        <ProductTableContextMenu compact {...{ cell }} className="justify-center">
           {item.on_promotion ? (
             <Check className="size-4 text-muted-foreground" />
           ) : (
@@ -350,7 +350,7 @@ export const productCols = ({
     ),
     cell: ({ row, cell }) => {
       return (
-        <ProductTableContextMenu
+        <ProductTableContextMenu compact
           {...{ cell }}
           className="text-right font-medium"
         >
@@ -377,7 +377,7 @@ export const productCols = ({
       const item = row.original;
       if (item.promotion_start_date)
         return (
-          <ProductTableContextMenu
+          <ProductTableContextMenu compact
             {...{ cell }}
             title={new Date(item.promotion_start_date).toLocaleString("en", {
               hour: "2-digit",
@@ -409,7 +409,7 @@ export const productCols = ({
       const item = row.original;
       if (item.promotion_end_date)
         return (
-          <ProductTableContextMenu
+          <ProductTableContextMenu compact
             {...{ cell }}
             title={new Date(item.promotion_end_date).toLocaleString("en", {
               hour: "2-digit",
@@ -441,7 +441,7 @@ export const productCols = ({
       const item = row.original;
       if (item.updated_at)
         return (
-          <ProductTableContextMenu
+          <ProductTableContextMenu compact
             {...{ cell }}
             title={new Date(item.updated_at).toLocaleString("en", {
               hour: "2-digit",
