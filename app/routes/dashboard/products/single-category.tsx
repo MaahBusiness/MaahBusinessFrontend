@@ -1,0 +1,231 @@
+import { DataTable } from "@/components/ui/data-table";
+import {
+  Link,
+  redirect,
+  useNavigation,
+  useParams,
+  useSearchParams,
+} from "react-router";
+import { ChevronRight } from "lucide-react";
+import { organisationKeys, organisationsApi } from "@/lib/api/organisation";
+import { getSession } from "@/lib/session.server";
+import type {
+  ServerActionState,
+  Category,
+  Subcategory,
+  ProductFilters,
+  Product,
+} from "types";
+import { parseSearchParams, productFilterParsers } from "utils";
+import { useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import type { Route } from ".react-router/types/app/routes/dashboard/products/+types/single-category";
+import { toast } from "sonner";
+import { useOrganisation } from "@/hooks/use-organisation";
+import { CatTableToolbar } from "@/components/categories/cat-table-toolbar";
+import { subCatCols } from "@/components/categories/sub-columns";
+import DataTableSkeleton from "@/components/data-table-skeleton";
+import { RequestFailed } from "@/routes/404";
+import { productCols } from "@/components/products/product-columns";
+import { ProductTableToolbar } from "@/components/products/product-table-toolbar";
+import { handleProductActions } from "services/api";
+import { SingleCatActions } from "@/components/categories/single-cat-action";
+
+export async function action({ request, params }: Route.ActionArgs): Promise<
+  ServerActionState & {
+    data?: Category | Subcategory | Product;
+  }
+> {
+  const { id } = params;
+  if (!id) throw redirect("organisations");
+
+  const formData = await request.formData();
+  const session = await getSession(request);
+
+  const intent = formData.get("intent");
+
+  switch (intent) {
+    case "add-category": {
+      const name = formData.get("name") as string | undefined;
+      const desc = formData.get("desc") as string | undefined;
+      const parent = formData.get("parent") as string | undefined;
+
+      if (session?.accessToken) {
+        if (parent)
+          return await organisationsApi.addSubCategory(
+            session.accessToken,
+            id,
+            { name: name!, description: desc, category_id: parent },
+          );
+        return await organisationsApi.addCategory(session.accessToken, id, {
+          name: name!,
+          description: desc,
+        });
+      }
+      break;
+    }
+    case "update-category": {
+      const name = formData.get("name") as string | undefined;
+      const desc = formData.get("desc") as string | undefined;
+      const cat_id = formData.get("cat_id") as string | undefined;
+      const parent = formData.get("parent") as string | undefined;
+
+      if (session?.accessToken) {
+        if (parent)
+          return await organisationsApi.updateSubcategory(
+            session.accessToken,
+            cat_id!,
+            { name: name!, description: desc },
+          );
+        return await organisationsApi.updateCategory(
+          session.accessToken,
+          cat_id!,
+          {
+            name: name!,
+            description: desc,
+          },
+        );
+      }
+      break;
+    }
+
+    // Handle Product Actions
+    default:
+      return await handleProductActions({ formData, id, session });
+  }
+  return await handleProductActions({ formData, id, session });
+}
+
+export default function SingleCatPage({ actionData }: Route.ComponentProps) {
+  const { catId, id } = useParams();
+  const { organisation: res, isLoading, fetchProducts } = useOrganisation();
+  const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
+  const navigation = useNavigation();
+
+  const filters = parseSearchParams<ProductFilters>(
+    searchParams,
+    productFilterParsers,
+  );
+
+  if (!catId) throw redirect("categories");
+
+  const cat = res?.data?.categories?.find((cat) => cat.id === catId);
+  const subs = cat?.subcategories;
+  const intent = navigation.formData?.get("intent");
+
+  const { data: prodRes } = fetchProducts({
+    ...filters,
+    category_id: cat?.id,
+  });
+  const cols = productCols({ cats: res?.data?.categories });
+
+  // Show toasts based on action results
+  useEffect(() => {
+    if (actionData?.message) {
+      if (!actionData.success) toast.error(actionData.message);
+      else toast.success(actionData.message);
+    }
+
+    if (actionData?.success) {
+      if (id) {
+        if (intent === "add-product" || intent === "update-product")
+          queryClient.invalidateQueries({
+            queryKey: organisationKeys.prodlist(id, filters),
+          });
+        // Automatically refetch core since categories come attached to the core
+        queryClient.invalidateQueries({
+          queryKey: organisationKeys.core(id),
+        });
+
+        if (intent === "update-category")
+          toast.success(
+            actionData?.data?.name + " " + " has been updated succesfully!",
+          );
+
+        if (intent === "add-category")
+          toast.success(`New category has been added succesfully!`);
+
+        if (intent === "add-product")
+          toast.success(`${actionData.data?.name} has been added succesfully!`);
+
+        if (intent === "update-product")
+          toast.success(
+            `${actionData.data?.name} has been updated succesfully!`,
+          );
+      }
+    }
+  }, [actionData]);
+
+  // useEffect(() => {
+  //   const _filters = parseSearchParams<ProductFilters>(
+  //     searchParams,
+  //     productFilterParsers,
+  //   );
+  //   setFilters({ ..._filters, category_id: cat?.id });
+  // }, [searchParams]);
+
+  if (isLoading)
+    return (
+      <div className="flex flex-col ">
+        <DataTableSkeleton classname="" rows={5} />
+        <DataTableSkeleton classname="" rows={5} />
+      </div>
+    );
+  if (!res?.success) return <RequestFailed />;
+
+  return (
+    <>
+      <div className="w-full flex flex-col  gap-8 items-stretch max-w-[1200px] lg:px-6 px-4 mx-auto py-12">
+        <div className="w-full flex flex-col tablet:flex-row tablet:items-center gap-4">
+          <div className="w-full flex items-center gap-2">
+            <Link to="../products">
+              <h2 className="text-lg tracking-tight text-muted-foreground">
+                Products
+              </h2>
+            </Link>
+            <ChevronRight className="text-muted-foreground size-4" />
+            <Link to="../products/categories">
+              <h2 className="text-lg tracking-tight text-muted-foreground">
+                Categories
+              </h2>
+            </Link>
+            <ChevronRight className="text-muted-foreground size-4" />
+            <h2 className="text-lg tracking-tight">{cat?.name}</h2>
+          </div>
+
+          <div className="tablet:ml-auto flex items-center tablet:justify-end">
+            {cat && <SingleCatActions data={cat} />}
+          </div>
+        </div>
+
+        {!!subs?.length && (
+          <DataTable
+            data={subs}
+            columns={subCatCols}
+            meta={res.meta}
+            DataTableToolbar={CatTableToolbar}
+          />
+        )}
+      </div>
+
+      <div
+        className={`w-full flex flex-col gap-8 items-stretch max-w-[1200px] lg:px-6 px-4 mx-auto ${subs?.length ? "py-12" : ""} `}
+      >
+        <div className="w-full flex items-center gap-2">
+          <h2 className="text-lg tracking-tight">
+            {cat?.name}&apos;s Products
+          </h2>
+        </div>
+
+        <DataTable
+          data={prodRes?.data ?? []}
+          // data={productData}
+          meta={res.meta}
+          columns={cols}
+          DataTableToolbar={ProductTableToolbar}
+        />
+      </div>
+    </>
+  );
+}
