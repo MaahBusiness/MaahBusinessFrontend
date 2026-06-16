@@ -138,6 +138,33 @@ export const breadcrumbsConfig: BreadcrumbConfig = {
     },
   ],
 
+  "/dashboard/org/:id/products/categories": [
+    { label: "Dashboard", icon: Home, href: "/dashboard", hidden: true },
+    {
+      label: (params) => params.id,
+      href: (params) => `/dashboard/org/${params.id}`,
+      isOrgSwitcher: true,
+    },
+  ],
+
+  "/dashboard/org/:id/products/categories/:catId": [
+    { label: "Dashboard", icon: Home, href: "/dashboard", hidden: true },
+    {
+      label: (params) => params.id,
+      href: (params) => `/dashboard/org/${params.id}`,
+      isOrgSwitcher: true,
+    },
+  ],
+
+  "/dashboard/org/:id/products/categories/:catId/:subId": [
+    { label: "Dashboard", icon: Home, href: "/dashboard", hidden: true },
+    {
+      label: (params) => params.id,
+      href: (params) => `/dashboard/org/${params.id}`,
+      isOrgSwitcher: true,
+    },
+  ],
+
   // ALL products routes (top-level + nested)
   "/dashboard/org/:id/products/*": [
     { label: "Dashboard", icon: Home, href: "/dashboard", hidden: true },

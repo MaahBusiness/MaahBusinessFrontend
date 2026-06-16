@@ -21,12 +21,14 @@ export const productsApi = {
     const query = buildQueryParams({ business_id: businessId, ...filters });
     return apiClient.get<Product[]>(`${PRODUCTS_URL}${query}`, token);
   },
-  getById: (token: string, id: string) => apiClient.get<Product>(PRODUCTS_URL + id, token),
+  getById: (token: string, id: string) =>
+    apiClient.get<Product>(`${PRODUCTS_URL}${id}/`, token),
   create: (token: string, businessId: string, data: ProductCreateParams) =>
     apiClient.post<Product>(PRODUCTS_URL + "?business_id=" + businessId, token, data),
   update: (token: string, id: string, data: Partial<ProductUpdateParams>) =>
-    apiClient.put<Product>(PRODUCTS_URL + id, token, data),
-  remove: (token: string, id: string) => apiClient.delete<Product>(PRODUCTS_URL + id, token),
+    apiClient.put<Product>(`${PRODUCTS_URL}${id}/`, token, data),
+  remove: (token: string, id: string) =>
+    apiClient.delete<Product>(`${PRODUCTS_URL}${id}/`, token),
   addCategory: (
     token: string,
     businessId: string,
@@ -48,10 +50,11 @@ export const productsApi = {
       data,
     ),
   updateCategory: (token: string, id: string, data: { name: string; description?: string }) =>
-    apiClient.put<Category>(CATEGORY_URL + id, token, data),
+    apiClient.put<Category>(`${CATEGORY_URL}${id}/`, token, data),
   updateSubcategory: (token: string, id: string, data: { name: string; description?: string }) =>
-    apiClient.put<Subcategory>(SUBCATEGORY_URL + id, token, data),
-  deleteCategory: (token: string, id: string) => apiClient.delete<Category>(CATEGORY_URL + id, token),
+    apiClient.put<Subcategory>(`${SUBCATEGORY_URL}${id}/`, token, data),
+  deleteCategory: (token: string, id: string) =>
+    apiClient.delete<Category>(`${CATEGORY_URL}${id}/`, token),
   deleteSubcategory: (token: string, id: string) =>
-    apiClient.delete<Subcategory>(SUBCATEGORY_URL + id, token),
+    apiClient.delete<Subcategory>(`${SUBCATEGORY_URL}${id}/`, token),
 };

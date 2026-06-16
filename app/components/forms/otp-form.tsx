@@ -1,6 +1,5 @@
-// otp-form.tsx
-import { GalleryVerticalEnd } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AuthSubmitButton } from "@/components/auth/auth-submit-button";
 import { Button } from "@/components/ui/button";
 import {
   Field,
@@ -8,7 +7,6 @@ import {
   FieldError,
   FieldGroup,
   FieldLabel,
-  FieldSeparator,
 } from "@/components/ui/field";
 import {
   InputOTP,
@@ -18,7 +16,6 @@ import {
 } from "@/components/ui/input-otp";
 import {
   Form,
-  Link,
   useActionData,
   useLoaderData,
   useNavigation,
@@ -28,8 +25,13 @@ import GoogleAuthButton from "@/components/google-button";
 import { Spinner } from "@/components/ui/spinner";
 import { useCountdown } from "@/hooks/useCountdown";
 import { formatSeconds, getInboxUrl } from "utils";
+import {
+  AuthFormCard,
+  AuthFormFooterLink,
+  AuthLink,
+} from "@/components/auth/auth-form-card";
 import type { SignUpActionType } from "types";
-import { SITE_NAME } from "types/consts";
+import { ShieldCheck } from "lucide-react";
 
 interface OTPFormProps extends React.ComponentProps<"div"> {
   login?: boolean;
@@ -46,7 +48,7 @@ export function OTPForm({ className, login, ...props }: OTPFormProps) {
   const errors = actionData?.errors;
   const redirectTo = loaderData.redirectTo;
   const { email, otpExpiresAt, resendAvailableAt, resendCount } =
-    actionData?.otpSession!; // otpSession exists here since it has been checked before displaying this UI
+    actionData?.otpSession!;
 
   const otpRemaining = useCountdown(otpExpiresAt);
   const resendRemaining = useCountdown(resendAvailableAt);
@@ -71,155 +73,134 @@ export function OTPForm({ className, login, ...props }: OTPFormProps) {
   };
 
   return (
-    <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Form method="post">
-        <FieldGroup>
-          <input type="hidden" name="intent" value="verify-otp" />
-          <input
-            type="hidden"
-            name="otpSession"
-            value={JSON.stringify(actionData?.otpSession)}
-          />
-
-          <div className="flex flex-col items-center gap-2 text-center">
-            <a
-              href="#"
-              className="flex flex-col items-center gap-2 font-medium"
-            >
-              <div className="flex size-8 items-center justify-center rounded-md">
-                <GalleryVerticalEnd className="size-6" />
-              </div>
-              <span className="sr-only">{SITE_NAME}</span>
-            </a>
-            <h1 className="text-xl font-bold">Enter verification code</h1>
-            <FieldDescription className="text-xs">
-              We sent a 6-digit code to{" "}
-              <Link to={getInboxUrl(email)} className="font-medium underline">
-                {email}
-              </Link>
-              .
-              <br />
-              {otpRemaining > 0 ? (
-                <>
-                  The code expires in{" "}
-                  <strong className="text-foreground">
-                    {formatSeconds(otpRemaining)}
-                  </strong>
-                </>
-              ) : (
-                <span className="text-destructive font-medium">
-                  This code has expired. Please request a new one.
-                </span>
-              )}
-            </FieldDescription>
-          </div>
-
-          <Field>
-            <FieldLabel htmlFor="otp" className="sr-only">
-              Verification code
-            </FieldLabel>
-            <InputOTP
-              maxLength={6}
-              id="otp"
-              name="otp"
-              required
-              containerClassName="gap-4 justify-center"
-            >
-              <InputOTPGroup>
-                <InputOTPSlot index={0} />
-                <InputOTPSlot index={1} />
-              </InputOTPGroup>
-              <InputOTPSeparator />
-              <InputOTPGroup>
-                <InputOTPSlot index={2} />
-                <InputOTPSlot index={3} />
-              </InputOTPGroup>
-              <InputOTPSeparator />
-              <InputOTPGroup>
-                <InputOTPSlot index={4} />
-                <InputOTPSlot index={5} />
-              </InputOTPGroup>
-            </InputOTP>
-            <FieldError errors={[{ message: errors?.otp }]} />
-          </Field>
-
-          <Field>
-            <Button
-              type="submit"
-              disabled={isOtpSubmitting || otpRemaining === 0}
-            >
-              {isOtpSubmitting && <Spinner />}
-              Verify
-            </Button>
-          </Field>
-
-          <FieldDescription className="text-center text-sm">
-            Didn&apos;t receive the code?{" "}
-            <Button
-              type="button"
-              onClick={handleResend}
-              variant="link"
-              className="p-0 h-auto font-normal"
-              disabled={isOtpResending || !canResend}
-            >
-              {isOtpResending && <Spinner className="size-3" />}
-              {resendRemaining > 0
-                ? `Resend available in ${formatSeconds(resendRemaining)}`
-                : resendCount >= MAX_RESEND_ATTEMPTS
-                  ? "Request new code"
-                  : `Resend code${attemptsLeft < MAX_RESEND_ATTEMPTS ? ` (${attemptsLeft} left)` : ""}`}
-            </Button>
-          </FieldDescription>
-
-          <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
-            Or continue with
-          </FieldSeparator>
-
-          <Field>
-            <GoogleAuthButton otpSession={actionData?.otpSession} />
-          </Field>
-
-          {login ? (
-            <FieldDescription className="text-center">
-              Don't have an account yet?{" "}
-              <Link
+    <div className={cn(className)} {...props}>
+      <AuthFormCard
+        title="Verify your email"
+        step={2}
+        description={
+          <>
+            We sent a 6-digit code to{" "}
+            <AuthLink to={getInboxUrl(email)}>{email}</AuthLink>
+            . Enter it below to continue.
+          </>
+        }
+        footer={
+          login ? (
+            <AuthFormFooterLink>
+              Don&apos;t have an account?{" "}
+              <AuthLink
                 to={{
                   pathname: "/auth/signup",
                   search: `?redirectTo=${redirectTo}`,
                 }}
-                className="font-medium underline"
               >
                 Sign up
-              </Link>
-            </FieldDescription>
+              </AuthLink>
+            </AuthFormFooterLink>
           ) : (
-            <FieldDescription className="text-center">
+            <AuthFormFooterLink>
               Already have an account?{" "}
-              <Link
+              <AuthLink
                 to={{
                   pathname: "/auth/signin",
                   search: `?redirectTo=${redirectTo}`,
                 }}
-                className="font-medium underline"
               >
                 Sign in
-              </Link>
-            </FieldDescription>
-          )}
-        </FieldGroup>
-      </Form>
+              </AuthLink>
+            </AuthFormFooterLink>
+          )
+        }
+      >
+        <Form method="post" className="auth-form">
+          <FieldGroup className="auth-form-fields">
+            <input type="hidden" name="intent" value="verify-otp" />
+            <input
+              type="hidden"
+              name="otpSession"
+              value={JSON.stringify(actionData?.otpSession)}
+            />
 
-      {/* <FieldDescription className="px-6 text-center text-xs">
-        By clicking continue, you agree to our{" "}
-        <a href="#" className="underline">
-          Terms of Service
-        </a>{" "}
-        and{" "}
-        <a href="#" className="underline">
-          Privacy Policy
-        </a>
-        .
-      </FieldDescription> */}
+            <div className="auth-info-banner">
+              <ShieldCheck className="mt-0.5 size-5 shrink-0 text-violet-600 dark:text-violet-400" />
+              <FieldDescription className="text-sm leading-relaxed">
+                {otpRemaining > 0 ? (
+                  <>
+                    Code expires in{" "}
+                    <strong className="font-semibold text-foreground">
+                      {formatSeconds(otpRemaining)}
+                    </strong>
+                  </>
+                ) : (
+                  <span className="font-semibold text-destructive">
+                    This code has expired. Request a new one below.
+                  </span>
+                )}
+              </FieldDescription>
+            </div>
+
+            <Field>
+              <FieldLabel htmlFor="otp" className="sr-only">
+                Verification code
+              </FieldLabel>
+              <InputOTP
+                maxLength={6}
+                id="otp"
+                name="otp"
+                required
+                containerClassName="justify-center gap-3"
+              >
+                <InputOTPGroup className="gap-2">
+                  <InputOTPSlot index={0} className="auth-otp-slot" />
+                  <InputOTPSlot index={1} className="auth-otp-slot" />
+                </InputOTPGroup>
+                <InputOTPSeparator className="text-muted-foreground/40" />
+                <InputOTPGroup className="gap-2">
+                  <InputOTPSlot index={2} className="auth-otp-slot" />
+                  <InputOTPSlot index={3} className="auth-otp-slot" />
+                </InputOTPGroup>
+                <InputOTPSeparator className="text-muted-foreground/40" />
+                <InputOTPGroup className="gap-2">
+                  <InputOTPSlot index={4} className="auth-otp-slot" />
+                  <InputOTPSlot index={5} className="auth-otp-slot" />
+                </InputOTPGroup>
+              </InputOTP>
+              <FieldError errors={[{ message: errors?.otp }]} />
+            </Field>
+
+            <Field>
+              <AuthSubmitButton
+                loading={isOtpSubmitting}
+                disabled={otpRemaining === 0}
+              >
+                Verify email
+              </AuthSubmitButton>
+            </Field>
+
+            <FieldDescription className="text-center text-sm">
+              Didn&apos;t receive the code?{" "}
+              <Button
+                type="button"
+                onClick={handleResend}
+                variant="link"
+                className="h-auto p-0 font-semibold text-violet-600 dark:text-violet-400"
+                disabled={isOtpResending || !canResend}
+              >
+                {isOtpResending && <Spinner className="size-3" />}
+                {resendRemaining > 0
+                  ? `Resend in ${formatSeconds(resendRemaining)}`
+                  : resendCount >= MAX_RESEND_ATTEMPTS
+                    ? "Request new code"
+                    : `Resend code${attemptsLeft < MAX_RESEND_ATTEMPTS ? ` (${attemptsLeft} left)` : ""}`}
+              </Button>
+            </FieldDescription>
+
+            <Field className="!gap-0">
+              <GoogleAuthButton otpSession={actionData?.otpSession} />
+            </Field>
+          </FieldGroup>
+        </Form>
+      </AuthFormCard>
     </div>
   );
 }

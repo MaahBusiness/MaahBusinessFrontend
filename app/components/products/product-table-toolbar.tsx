@@ -80,7 +80,7 @@ export function ProductTableToolbar<TData>({
       <div className="flex flex-1 items-center space-x-2">
         <InputGroup className="h-8 w-[200px] lg:w-[250px]">
           <InputGroupInput
-            placeholder="Search team..."
+            placeholder="Search products…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => {

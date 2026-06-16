@@ -1,5 +1,6 @@
 /* eslint-disable react/no-unescaped-entities */
-import EditDialog from "@/components/categories/edit-dialog";
+import { useState } from "react";
+import { CategoryEditDialog } from "@/components/categories/category-edit-dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,7 +21,6 @@ import {
   ContextMenuShortcut,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
 import { useOrganisation } from "@/hooks/use-organisation";
 import { useClipboard } from "@/hooks/useClipboard";
@@ -37,6 +37,8 @@ export function CatTableContextMenu({
   children,
   title,
 }: TableContextMenuProps<Category | Subcategory>) {
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const { businessMember, removeCategory, isRemovingCategory } =
     useOrganisation();
 
@@ -68,105 +70,105 @@ export function CatTableContextMenu({
 
   return (
     <ContextMenu>
-      <Dialog>
-        <AlertDialog>
-          <ContextMenuTrigger
-            title={title}
-            className={cn(
-              "flex h-full w-full max-w-xs items-center justify-start gap-2 px-4",
-              className,
-            )}
-          >
-            {children}
-          </ContextMenuTrigger>
+      <ContextMenuTrigger
+        title={title}
+        className={cn(
+          "flex h-full w-full max-w-xs items-center justify-start gap-2 px-4",
+          className,
+        )}
+      >
+        {children}
+      </ContextMenuTrigger>
 
-          {/* Context Menu */}
-          <ContextMenuContent>
+      <ContextMenuContent>
+        <ContextMenuGroup>
+          <ContextMenuItem
+            className="text-xs px-1.5 py-1"
+            onClick={handleCopyCell}
+          >
+            Copy cell
+            <ContextMenuShortcut>
+              <Copy className="size-3" />
+            </ContextMenuShortcut>
+          </ContextMenuItem>
+          <ContextMenuItem
+            className="text-xs px-1.5 py-1"
+            onClick={handleCopyRow}
+          >
+            Copy row
+            <ContextMenuShortcut>
+              <Copy className="size-3" />
+            </ContextMenuShortcut>
+          </ContextMenuItem>
+        </ContextMenuGroup>
+        {hasPermission(businessMember?.role, "products:crud") && (
+          <>
+            <ContextMenuSeparator />
             <ContextMenuGroup>
               <ContextMenuItem
                 className="text-xs px-1.5 py-1"
-                onClick={handleCopyCell}
+                onClick={() => setEditOpen(true)}
               >
-                Copy cell
+                Edit row
                 <ContextMenuShortcut>
-                  <Copy className="size-3" />
-                </ContextMenuShortcut>
-              </ContextMenuItem>
-              <ContextMenuItem
-                className="text-xs px-1.5 py-1"
-                onClick={handleCopyRow}
-              >
-                Copy row
-                <ContextMenuShortcut>
-                  <Copy className="size-3" />
+                  <Edit className="size-3" />
                 </ContextMenuShortcut>
               </ContextMenuItem>
             </ContextMenuGroup>
-            {hasPermission(businessMember?.role, "products:crud") && (
-              <>
-                <ContextMenuSeparator />
-                <ContextMenuGroup>
-                  <DialogTrigger asChild>
-                    <ContextMenuItem className="text-xs px-1.5 py-1">
-                      Edit row
-                      <ContextMenuShortcut>
-                        <Edit className="size-3" />
-                      </ContextMenuShortcut>
-                    </ContextMenuItem>
-                  </DialogTrigger>
-                </ContextMenuGroup>
-                <ContextMenuSeparator />
-                <ContextMenuGroup>
-                  <ContextMenuItem
-                    className="text-xs px-1.5 py-1"
-                    variant="destructive"
-                  >
-                    Delete row
-                    <ContextMenuShortcut>
-                      <Trash2 className="size-3 text-destructive" />
-                    </ContextMenuShortcut>
-                  </ContextMenuItem>
-                </ContextMenuGroup>
-              </>
-            )}
-          </ContextMenuContent>
-
-          {/* Drawer Content */}
-          <EditDialog data={cell.row.original} />
-
-          {/* Alert Dialog */}
-          <AlertDialogContent size="sm">
-            <AlertDialogHeader>
-              <AlertDialogMedia className="bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive">
-                <Trash2Icon />
-              </AlertDialogMedia>
-              <AlertDialogTitle>
-                Remove '{cell.row.original.name}'?
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                This will permanently remove '{cell.row.original.name}' from all
-                inventory controls.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel variant="outline">Cancel</AlertDialogCancel>
-
-              <AlertDialogAction
+            <ContextMenuSeparator />
+            <ContextMenuGroup>
+              <ContextMenuItem
+                className="text-xs px-1.5 py-1"
                 variant="destructive"
-                disabled={isRemovingCategory}
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleDeleteCategory();
-                }}
-                // type="button"
+                onClick={() => setDeleteOpen(true)}
               >
-                {isRemovingCategory && <Spinner className="size-4" />}
-                Remove
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </Dialog>
+                Delete row
+                <ContextMenuShortcut>
+                  <Trash2 className="size-3 text-destructive" />
+                </ContextMenuShortcut>
+              </ContextMenuItem>
+            </ContextMenuGroup>
+          </>
+        )}
+      </ContextMenuContent>
+
+      <CategoryEditDialog
+        data={cell.row.original}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+      />
+
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent size="sm">
+          <AlertDialogHeader>
+            <AlertDialogMedia className="bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive">
+              <Trash2Icon />
+            </AlertDialogMedia>
+            <AlertDialogTitle>
+              Remove '{cell.row.original.name}'?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove '{cell.row.original.name}' from all
+              inventory controls.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel variant="outline">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={isRemovingCategory}
+              onClick={(e) => {
+                e.preventDefault();
+                handleDeleteCategory();
+                setDeleteOpen(false);
+              }}
+            >
+              {isRemovingCategory && <Spinner className="size-4" />}
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </ContextMenu>
   );
 }

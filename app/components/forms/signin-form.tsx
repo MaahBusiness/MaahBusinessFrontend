@@ -1,14 +1,10 @@
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { AuthSubmitButton } from "@/components/auth/auth-submit-button";
 import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-  FieldSeparator,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
+  AuthField,
+  AuthPasswordField,
+} from "@/components/auth/auth-field";
+import { Field, FieldGroup } from "@/components/ui/field";
 import {
   Form,
   Link,
@@ -16,11 +12,14 @@ import {
   useLoaderData,
   useNavigation,
 } from "react-router";
-import { GalleryVerticalEnd } from "lucide-react";
-import { Spinner } from "@/components/ui/spinner";
 import GoogleAuthButton from "@/components/google-button";
+import {
+  AuthFormCard,
+  AuthFormFooterLink,
+  AuthLegalFooter,
+  AuthLink,
+} from "@/components/auth/auth-form-card";
 import type { ServerActionState } from "types";
-import { SITE_NAME } from "types/consts";
 
 export function LoginForm({
   className,
@@ -38,84 +37,64 @@ export function LoginForm({
   const isSigninIn = isSubmitting && intent === "email-signin";
 
   return (
-    <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Form method="post">
-        <input type="hidden" name="intent" value="email-signin" />
-        <input type="hidden" name="redirectTo" value={redirectTo} />
-
-        <FieldGroup>
-          <div className="flex flex-col items-center gap-2 text-center">
-            <a
-              href="#"
-              className="flex flex-col items-center gap-2 font-medium"
-            >
-              <div className="flex size-8 items-center justify-center rounded-md">
-                <GalleryVerticalEnd className="size-6" />
-              </div>
-              <span className="sr-only">{SITE_NAME}</span>
-            </a>
-            <h1 className="text-xl font-bold">Sign in to {SITE_NAME}</h1>
-            <FieldDescription>
-              Enter your email below to login to your account
-            </FieldDescription>
-          </div>
-
-          <Field>
-            <FieldLabel htmlFor="email">Email</FieldLabel>
-            <Input
-              id="email"
-              type="text"
-              name="email"
-              placeholder="m@example.com"
-              required
-            />
-            <FieldError errors={[{ message: errors?.email }]} />
-          </Field>
-          <Field>
-            <div className="flex items-center ">
-              <FieldLabel htmlFor="password">Password</FieldLabel>
-              <Link
-                to="/auth/forgot-password"
-                className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
-              >
-                Forgot your password?
-              </Link>
-            </div>
-            <Input id="password" type="password" name="password" required />
-            <FieldError errors={[{ message: errors?.password }]} />
-          </Field>
-          <Field>
-            <Button type="submit" disabled={isSigninIn}>
-              {isSigninIn && <Spinner />}Sign in
-            </Button>
-          </Field>
-
-          <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
-            Or continue with
-          </FieldSeparator>
-
-          <Field>
-            <GoogleAuthButton />
-          </Field>
-
-          <FieldDescription className="text-center">
+    <div className={cn(className)} {...props}>
+      <AuthFormCard
+        title="Sign in"
+        description="Access your retail space."
+        footer={
+          <AuthFormFooterLink>
             Don&apos;t have an account?{" "}
-            <Link
+            <AuthLink
               to={{
                 pathname: "/auth/signup",
                 search: `?redirectTo=${redirectTo}`,
               }}
             >
               Sign up
-            </Link>
-          </FieldDescription>
-        </FieldGroup>
-      </Form>
+            </AuthLink>
+          </AuthFormFooterLink>
+        }
+      >
+        <Form method="post" className="auth-form">
+          <input type="hidden" name="intent" value="email-signin" />
+          <input type="hidden" name="redirectTo" value={redirectTo} />
 
-      {/* <FieldDescription className="px-6 text-center">
-        By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
-        and <a href="#">Privacy Policy</a>.
-      </FieldDescription> */}
+          <FieldGroup className="auth-form-fields">
+            <AuthField
+              id="email"
+              name="email"
+              label="Email"
+              type="email"
+              placeholder="Email address"
+              autoComplete="email"
+              error={errors?.email}
+              required
+            />
+
+            <div className="auth-field-stack">
+              <AuthPasswordField error={errors?.password} />
+              <div className="flex justify-end pt-0.5">
+                <AuthLink
+                  to="/auth/forgot-password"
+                  className="text-sm font-medium"
+                >
+                  Forgot password?
+                </AuthLink>
+              </div>
+            </div>
+
+            <Field className="!gap-0 pt-1">
+              <AuthSubmitButton loading={isSigninIn}>Sign in</AuthSubmitButton>
+            </Field>
+
+            <Field className="!gap-0">
+              <GoogleAuthButton />
+            </Field>
+          </FieldGroup>
+        </Form>
+      </AuthFormCard>
+
+      <AuthLegalFooter />
     </div>
   );
 }

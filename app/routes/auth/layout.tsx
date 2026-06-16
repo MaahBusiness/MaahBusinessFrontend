@@ -1,49 +1,29 @@
-import {
-  Breadcrumb,
-  BreadcrumbList,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
+import { AuthBrandPanel } from "@/components/auth/auth-brand-panel";
 import { ModeToggle } from "@/components/utils/mode-toggle";
-import { GalleryVerticalEnd, SlashIcon } from "lucide-react";
-import { Outlet, Link } from "react-router";
-import { SITE_NAME } from "types/consts";
+import { Outlet } from "react-router";
 
 export default function AuthLayout() {
   return (
-    <div className="min-h-screen flex flex-col [--header-height:calc(theme(spacing.12))]">
-      <header className="bg-background sticky top-0 z-50 flex w-full items-center border-b border-border h-12 flex-shrink-0 font-medium">
-        <div className="flex h-(--header-height) w-full items-center justify-between gap-2 px-4">
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbLink asChild>
-                  <Link to="/">
-                    <GalleryVerticalEnd className="size-4" />
-                  </Link>
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator>
-                <SlashIcon />
-              </BreadcrumbSeparator>
+    <div className="auth-layout min-h-svh grid lg:grid-cols-2">
+      <AuthBrandPanel />
 
-              <BreadcrumbItem>
-                <BreadcrumbLink asChild>
-                  <Link to="/">{SITE_NAME}</Link>
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-          <div className="ml-auto flex items-center space-x-4">
-            <ModeToggle />
+      <div className="auth-form-panel relative flex min-h-svh flex-col overflow-hidden">
+        {/* Ambient background orbs */}
+        <div aria-hidden className="auth-orb auth-orb-violet" />
+        <div aria-hidden className="auth-orb auth-orb-blue" />
+        <div aria-hidden className="auth-orb auth-orb-emerald" />
+        <div aria-hidden className="auth-orb auth-orb-orange" />
+
+        <header className="absolute right-0 top-0 z-10 p-4 sm:p-6">
+          <ModeToggle />
+        </header>
+
+        <main className="relative z-[1] flex flex-1 flex-col items-center justify-center px-4 py-16 sm:px-8">
+          <div className="w-full max-w-[460px]">
+            <Outlet />
           </div>
-        </div>
-      </header>
-
-      <main className="min-w-full !min-h-[calc(100svh-var(--header-height))]">
-        <Outlet />
-      </main>
+        </main>
+      </div>
     </div>
   );
 }

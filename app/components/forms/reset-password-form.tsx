@@ -1,20 +1,21 @@
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { AuthSubmitButton } from "@/components/auth/auth-submit-button";
 import {
   Field,
-  FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Form, useActionData, useNavigation } from "react-router";
-import { GalleryVerticalEnd } from "lucide-react";
 import { PasswordInput } from "@/components/forms/password-input";
 import { useState } from "react";
 import type { ServerActionState } from "types";
-import { Spinner } from "@/components/ui/spinner";
-import { SITE_NAME } from "types/consts";
+import {
+  AuthFormCard,
+  AuthFormFooterLink,
+  AuthLink,
+} from "@/components/auth/auth-form-card";
 
 export function ResetPasswordForm({
   className,
@@ -25,56 +26,58 @@ export function ResetPasswordForm({
   const navigation = useNavigation();
 
   const errors = actionData?.errors;
-
   const isSubmitting = navigation.state === "submitting";
+
   return (
-    <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Form method="POST">
-        <FieldGroup>
-          <div className="flex flex-col items-center gap-2 text-center">
-            <a
-              href="#"
-              className="flex flex-col items-center gap-2 font-medium"
-            >
-              <div className="flex size-8 items-center justify-center rounded-md">
-                <GalleryVerticalEnd className="size-6" />
-              </div>
-              <span className="sr-only">{SITE_NAME}</span>
-            </a>
-            <h1 className="text-xl font-bold">Change your password</h1>
-            <FieldDescription>
-              Welcome back! Choose a new strong password and save it to proceed
-            </FieldDescription>
-          </div>
+    <div className={cn(className)} {...props}>
+      <AuthFormCard
+        title="New password"
+        description="Choose a strong password to secure your account."
+        footer={
+          <AuthFormFooterLink>
+            <AuthLink to="/auth/signin">Return to sign in</AuthLink>
+          </AuthFormFooterLink>
+        }
+      >
+        <Form method="POST" className="auth-form">
+          <FieldGroup className="auth-form-fields">
+            <div className="auth-field-stack">
+              <FieldLabel htmlFor="password" className="sr-only">
+                New password
+              </FieldLabel>
+              <PasswordInput
+                error={errors?.password}
+                onValidityChange={setPasswordValid}
+              />
+            </div>
 
-          <Field>
-            <FieldLabel htmlFor="password">Password</FieldLabel>
-            <PasswordInput
-              error={errors?.password}
-              onValidityChange={setPasswordValid}
-            />
-          </Field>
+            <div className="auth-field-stack">
+              <FieldLabel htmlFor="confirm-password" className="sr-only">
+                Confirm password
+              </FieldLabel>
+              <Input
+                id="confirm-password"
+                name="confirm-password"
+                type="password"
+                placeholder="Confirm password"
+                autoComplete="new-password"
+                className="auth-input"
+                required
+              />
+              <FieldError errors={[{ message: errors?.confirm }]} />
+            </div>
 
-          <Field>
-            <FieldLabel htmlFor="confirm-password">Confirm Password</FieldLabel>
-            <Input
-              id="confirm-password"
-              name="confirm-password"
-              type="password"
-              placeholder="Please confirm your password."
-              required
-            />
-            <FieldError errors={[{ message: errors?.confirm }]} />
-          </Field>
-
-          <Field>
-            <Button type="submit" disabled={isSubmitting || !passwordValid}>
-              {isSubmitting && <Spinner />}
-              Save new password
-            </Button>
-          </Field>
-        </FieldGroup>
-      </Form>
+            <Field className="!gap-0 pt-1">
+              <AuthSubmitButton
+                loading={isSubmitting}
+                disabled={!passwordValid}
+              >
+                Save new password
+              </AuthSubmitButton>
+            </Field>
+          </FieldGroup>
+        </Form>
+      </AuthFormCard>
     </div>
   );
 }

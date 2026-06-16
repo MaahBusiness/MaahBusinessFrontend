@@ -274,13 +274,16 @@ export function useOrganisation() {
         ? organisationsApi.deleteSubcategory(accessToken, data.id)
         : organisationsApi.deleteCategory(accessToken, data.id);
     },
-    onSuccess: (res) => {
+    onSuccess: (res, variables) => {
       if (res.success) {
-        // Automatically refetch members
         queryClient.invalidateQueries({
           queryKey: organisationKeys.core(orgId),
         });
-        toast.success("The category has been removed!");
+        toast.success(
+          variables.sub
+            ? "Subcategory deleted successfully!"
+            : "Category deleted successfully!",
+        );
       } else toast.error(res.message);
     },
     onError: (error: Error) => {
@@ -295,15 +298,14 @@ export function useOrganisation() {
     },
     onSuccess: (res) => {
       if (res.success) {
-        // Automatically refetch product
         queryClient.invalidateQueries({
           queryKey: organisationKeys.prodlist(orgId),
         });
         queryClient.invalidateQueries({
           queryKey: organisationKeys.product(res.data?.id ?? ""),
         });
-        toast.success("The product has been removed successfully!");
-      } else toast.error(res.message);
+        toast.success(res.message ?? "Product removed successfully.");
+      } else toast.error(res.message ?? "Could not remove product.");
     },
     onError: (error: Error) => {
       toast.error(error.message);

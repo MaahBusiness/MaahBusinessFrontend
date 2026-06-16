@@ -3,7 +3,7 @@ import { X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
-import AddNewDialog from "@/components/categories/add-new-dailog";
+import { CategoryFormDialog } from "@/components/categories/category-form-dialog";
 import { hasPermission } from "utils/permissions";
 import { useOrganisation } from "@/hooks/use-organisation";
 import { Input } from "@/components/ui/input";
@@ -46,7 +46,7 @@ export function CatTableToolbar<TData>({
       <div className="flex items-center space-x-2">
         <DataTableViewOptions table={table} options={visibles} />
         {hasPermission(businessMember?.role, "products:crud") && (
-          <AddNewDialog />
+          <CategoryFormDialog variant="outline" />
         )}
       </div>
     </div>

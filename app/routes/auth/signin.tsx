@@ -92,15 +92,9 @@ export default function LoginPage({ actionData }: Route.ComponentProps) {
       else toast.success(actionData.message);
     }
   }, [actionData]);
-  return (
-    <div className=" flex h-full flex-col items-center justify-center gap-6 p-8 tablet:p-10 ">
-      <div className="flex w-full max-w-sm flex-col gap-6">
-        {showOtpForm && actionData.otpSession ? (
-          <OTPForm login />
-        ) : (
-          <LoginForm />
-        )}
-      </div>
-    </div>
+  return showOtpForm && actionData.otpSession ? (
+    <OTPForm login />
+  ) : (
+    <LoginForm />
   );
 }

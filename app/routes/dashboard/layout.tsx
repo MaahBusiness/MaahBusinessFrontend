@@ -64,7 +64,10 @@ export default function DashboardLayout({ actionData }: Route.ComponentProps) {
     }
   }, [actionData]);
   return (
-    <SidebarProvider className="[--header-height:calc(theme(spacing.12))] [--mobile-header-height:calc(theme(spacing.14))] flex flex-col min-h-screen ">
+    <SidebarProvider
+      defaultOpen={true}
+      className="[--header-height:calc(theme(spacing.12))] [--mobile-header-height:calc(theme(spacing.14))] flex min-h-screen flex-col"
+    >
       <SiteHeader />
       <Outlet />
     </SidebarProvider>

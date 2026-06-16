@@ -89,7 +89,6 @@ export async function loader({ request }: Route.LoaderArgs) {
 export default function SignupPage({ actionData }: Route.ComponentProps) {
   const showOtpForm = actionData?.step === "OTP";
 
-  // Show toasts based on action results
   useEffect(() => {
     if (actionData?.message) {
       if (!actionData.success) {
@@ -100,11 +99,5 @@ export default function SignupPage({ actionData }: Route.ComponentProps) {
     }
   }, [actionData]);
 
-  return (
-    <div className="flex h-full flex-col items-center justify-center gap-6 p-8 tablet:p-10">
-      <div className="w-full max-w-sm">
-        {showOtpForm && actionData.otpSession ? <OTPForm /> : <SignupForm />}
-      </div>
-    </div>
-  );
+  return showOtpForm && actionData.otpSession ? <OTPForm /> : <SignupForm />;
 }

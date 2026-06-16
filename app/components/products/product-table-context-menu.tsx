@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { EditProductDrawer } from "@/components/products/product-edit-row-drawer";
 import {
   AlertDialog,
@@ -19,7 +20,6 @@ import {
   ContextMenuShortcut,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import { Drawer, DrawerTrigger } from "@/components/ui/drawer";
 import { Spinner } from "@/components/ui/spinner";
 import { useOrganisation } from "@/hooks/use-organisation";
 import { useClipboard } from "@/hooks/useClipboard";
@@ -36,11 +36,12 @@ export function ProductTableContextMenu({
   children,
   title,
 }: TableContextMenuProps<Product>) {
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const { businessMember, removeProduct, isRemovingProduct } =
     useOrganisation();
 
-  const cell = c as Cell<Product, any>;
-
+  const cell = c as Cell<Product, unknown>;
   const val = cell.getValue() as string | number | undefined;
 
   const clipboard = useClipboard({
@@ -49,119 +50,116 @@ export function ProductTableContextMenu({
     onError: () => toast.error("Copy was unsuccessful"),
   });
 
-  const handleCopyCell = () => {
-    if (clipboard.isCopying) return;
-    clipboard.copy(`${val}`);
-  };
-  const handleCopyRow = () => {
-    if (clipboard.isCopying) return;
-    clipboard.copy(JSON.stringify(cell.row.original));
-  };
-
   const handleDeleteProduct = () => {
-    removeProduct(cell.row.original.id);
+    removeProduct(cell.row.original.id, {
+      onSuccess: (res) => {
+        if (res.success) setDeleteOpen(false);
+      },
+    });
   };
 
   return (
     <ContextMenu>
-      <Drawer direction="right">
-        <AlertDialog>
-          <ContextMenuTrigger
-            title={title}
-            className={cn(
-              "flex h-full w-full max-w-xs items-center justify-start gap-2 px-4",
-              className,
-            )}
-          >
-            {children}
-          </ContextMenuTrigger>
+      <ContextMenuTrigger
+        title={title}
+        className={cn(
+          "flex h-full w-full max-w-xs items-center justify-start gap-2 px-4",
+          className,
+        )}
+      >
+        {children}
+      </ContextMenuTrigger>
 
-          {/* Context Menu */}
-          <ContextMenuContent>
+      <ContextMenuContent>
+        <ContextMenuGroup>
+          <ContextMenuItem
+            className="text-xs px-1.5 py-1"
+            onClick={() => {
+              if (!clipboard.isCopying) clipboard.copy(`${val}`);
+            }}
+          >
+            Copy cell
+            <ContextMenuShortcut>
+              <Copy className="size-3" />
+            </ContextMenuShortcut>
+          </ContextMenuItem>
+          <ContextMenuItem
+            className="text-xs px-1.5 py-1"
+            onClick={() => {
+              if (!clipboard.isCopying)
+                clipboard.copy(JSON.stringify(cell.row.original));
+            }}
+          >
+            Copy row
+            <ContextMenuShortcut>
+              <Copy className="size-3" />
+            </ContextMenuShortcut>
+          </ContextMenuItem>
+        </ContextMenuGroup>
+        {hasPermission(businessMember?.role, "products:crud") && (
+          <>
+            <ContextMenuSeparator />
             <ContextMenuGroup>
               <ContextMenuItem
                 className="text-xs px-1.5 py-1"
-                onClick={handleCopyCell}
+                onClick={() => setEditOpen(true)}
               >
-                Copy cell
+                Edit
                 <ContextMenuShortcut>
-                  <Copy className="size-3" />
-                </ContextMenuShortcut>
-              </ContextMenuItem>
-              <ContextMenuItem
-                className="text-xs px-1.5 py-1"
-                onClick={handleCopyRow}
-              >
-                Copy row
-                <ContextMenuShortcut>
-                  <Copy className="size-3" />
+                  <Edit className="size-3" />
                 </ContextMenuShortcut>
               </ContextMenuItem>
             </ContextMenuGroup>
-            {hasPermission(businessMember?.role, "products:crud") && (
-              <>
-                <ContextMenuSeparator />
-                <ContextMenuGroup>
-                  <DrawerTrigger asChild>
-                    <ContextMenuItem className="text-xs px-1.5 py-1">
-                      Edit row
-                      <ContextMenuShortcut>
-                        <Edit className="size-3" />
-                      </ContextMenuShortcut>
-                    </ContextMenuItem>
-                  </DrawerTrigger>
-                </ContextMenuGroup>
-                <ContextMenuSeparator />
-                <ContextMenuGroup>
-                  <ContextMenuItem
-                    className="text-xs px-1.5 py-1"
-                    variant="destructive"
-                  >
-                    Delete row
-                    <ContextMenuShortcut>
-                      <Trash2 className="size-3 text-destructive" />
-                    </ContextMenuShortcut>
-                  </ContextMenuItem>
-                </ContextMenuGroup>
-              </>
-            )}
-          </ContextMenuContent>
-
-          {/* Drawer Content */}
-          <EditProductDrawer data={cell.row.original} />
-
-          {/* Alert Dialog */}
-          <AlertDialogContent size="sm">
-            <AlertDialogHeader>
-              <AlertDialogMedia className="bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive">
-                <Trash2Icon />
-              </AlertDialogMedia>
-              <AlertDialogTitle>
-                Remove {cell.row.original.name}?
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                This will permanently remove {cell.row.original.name} from your
-                products. Are you sure you want to continue?
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel variant="outline">Cancel</AlertDialogCancel>
-              <AlertDialogAction
+            <ContextMenuSeparator />
+            <ContextMenuGroup>
+              <ContextMenuItem
+                className="text-xs px-1.5 py-1"
                 variant="destructive"
-                disabled={isRemovingProduct}
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleDeleteProduct();
-                  // return true;
-                }}
+                onClick={() => setDeleteOpen(true)}
               >
-                {isRemovingProduct && <Spinner />}
-                Remove
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </Drawer>
+                Delete
+                <ContextMenuShortcut>
+                  <Trash2 className="size-3 text-destructive" />
+                </ContextMenuShortcut>
+              </ContextMenuItem>
+            </ContextMenuGroup>
+          </>
+        )}
+      </ContextMenuContent>
+
+      <EditProductDrawer
+        data={cell.row.original}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+      />
+
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent size="sm">
+          <AlertDialogHeader>
+            <AlertDialogMedia className="bg-destructive/10 text-destructive">
+              <Trash2Icon />
+            </AlertDialogMedia>
+            <AlertDialogTitle>Remove {cell.row.original.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove this product from your catalog.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel variant="outline">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={isRemovingProduct}
+              onClick={(e) => {
+                e.preventDefault();
+                handleDeleteProduct();
+              }}
+            >
+              {isRemovingProduct && <Spinner className="size-4" />}
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </ContextMenu>
   );
 }

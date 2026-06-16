@@ -430,7 +430,7 @@ export async function handleGoogleOAuthCallback(code: string, redirectTo?: strin
       return data<SignUpActionType>(
         {
           success: false,
-          message: AUTH_ERROR_MESSAGES[error?.code || "UNKNOWN"],
+          message: SERVER_ERROR_MESSAGES[error?.code as keyof typeof SERVER_ERROR_MESSAGES] ?? SERVER_ERROR_MESSAGES.UNKNOWN,
           step: "EMAIL",
         },
         { status: res.status },

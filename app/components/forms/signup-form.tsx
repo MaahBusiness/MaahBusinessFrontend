@@ -1,33 +1,27 @@
-// signup-form.tsx
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { AuthSubmitButton } from "@/components/auth/auth-submit-button";
+import { AuthField } from "@/components/auth/auth-field";
 import {
   Field,
-  FieldDescription,
-  FieldError,
   FieldGroup,
   FieldLabel,
-  FieldSeparator,
 } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import {
   Form,
-  Link,
   useActionData,
   useLoaderData,
   useNavigation,
 } from "react-router";
-import { GalleryVerticalEnd } from "lucide-react";
 import { PasswordInput } from "@/components/forms/password-input";
 import { useState } from "react";
-import { Spinner } from "@/components/ui/spinner";
 import GoogleAuthButton from "@/components/google-button";
+import {
+  AuthFormCard,
+  AuthFormFooterLink,
+  AuthLegalFooter,
+  AuthLink,
+} from "@/components/auth/auth-form-card";
 import type { ServerActionState } from "types";
-import { SITE_NAME } from "types/consts";
-
-// interface SignupFormProps extends React.ComponentProps<"div"> {
-//   errors?: Record<string, string>;
-// }
 
 export function SignupForm({
   className,
@@ -46,116 +40,78 @@ export function SignupForm({
   const isEmailSubmitting = isSubmitting && intent === "email-signup";
 
   return (
-    <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Form method="post">
-        <input type="hidden" name="intent" value="email-signup" />
-        <input type="hidden" name="redirectTo" value={redirectTo} />
-
-        <FieldGroup>
-          <div className="flex flex-col items-center gap-2 text-center">
-            <a
-              href="#"
-              className="flex flex-col items-center gap-2 font-medium"
-            >
-              <div className="flex size-8 items-center justify-center rounded-md">
-                <GalleryVerticalEnd className="size-6" />
-              </div>
-              <span className="sr-only">{SITE_NAME}</span>
-            </a>
-            <h1 className="text-xl font-bold">Create your account</h1>
-            <FieldDescription>
-              Fill in the form below to create your account
-            </FieldDescription>
-          </div>
-
-          <Field>
-            <FieldLabel htmlFor="name">Full Name</FieldLabel>
-            <Input
-              id="name"
-              name="name"
-              type="text"
-              placeholder="John Doe"
-              required
-            />
-            <FieldError errors={[{ message: errors?.name }]} />
-          </Field>
-
-          <Field>
-            <FieldLabel htmlFor="email">Email</FieldLabel>
-            <Input
-              id="email"
-              type="email"
-              name="email"
-              placeholder="m@example.com"
-              required
-            />
-            <FieldError errors={[{ message: errors?.email }]} />
-          </Field>
-
-          <Field>
-            <FieldLabel htmlFor="password">Password</FieldLabel>
-            <PasswordInput
-              error={errors?.password}
-              onValidityChange={setPasswordValid}
-            />
-          </Field>
-
-          <Field>
-            <Button
-              type="submit"
-              disabled={isEmailSubmitting || !passwordValid}
-            >
-              {isEmailSubmitting && <Spinner />}
-              Create account
-            </Button>
-          </Field>
-
-          <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
-            Or continue with
-          </FieldSeparator>
-
-          <Field>
-            <GoogleAuthButton />
-          </Field>
-
-          <FieldDescription className="text-center">
+    <div className={cn(className)} {...props}>
+      <AuthFormCard
+        title="Create account"
+        description="Start managing inventory, sales, and your team."
+        footer={
+          <AuthFormFooterLink>
             Already have an account?{" "}
-            <Link
+            <AuthLink
               to={{
                 pathname: "/auth/signin",
                 search: `?redirectTo=${redirectTo}`,
               }}
-              className="font-medium underline"
             >
               Sign in
-            </Link>
-          </FieldDescription>
-        </FieldGroup>
-      </Form>
+            </AuthLink>
+          </AuthFormFooterLink>
+        }
+      >
+        <Form method="post" className="auth-form">
+          <input type="hidden" name="intent" value="email-signup" />
+          <input type="hidden" name="redirectTo" value={redirectTo} />
 
-      <FieldDescription className="px-0 tablet:px-6 text-center">
-        If you refreshed the OTP screen by mistake, please head to{" "}
-        <Link
-          to={{
-            pathname: "/auth/signin",
-            search: `?redirectTo=${redirectTo}`,
-          }}
-        >
-          Sign in
-        </Link>
-      </FieldDescription>
+          <FieldGroup className="auth-form-fields">
+            <AuthField
+              id="name"
+              name="name"
+              label="Full name"
+              type="text"
+              placeholder="Full name"
+              autoComplete="name"
+              error={errors?.name}
+              required
+            />
 
-      {/* <FieldDescription className="px-0 tablet:px-6 text-center text-xs">
-        By clicking continue, you agree to our{" "}
-        <a href="#" className="underline">
-          Terms of Service
-        </a>{" "}
-        and{" "}
-        <a href="#" className="underline">
-          Privacy Policy
-        </a>
-        .
-      </FieldDescription> */}
+            <AuthField
+              id="email"
+              name="email"
+              label="Work email"
+              type="email"
+              placeholder="Work email"
+              autoComplete="email"
+              error={errors?.email}
+              required
+            />
+
+            <div className="auth-field-stack">
+              <FieldLabel htmlFor="password" className="sr-only">
+                Password
+              </FieldLabel>
+              <PasswordInput
+                error={errors?.password}
+                onValidityChange={setPasswordValid}
+              />
+            </div>
+
+            <Field className="!gap-0 pt-1">
+              <AuthSubmitButton
+                loading={isEmailSubmitting}
+                disabled={!passwordValid}
+              >
+                Create account
+              </AuthSubmitButton>
+            </Field>
+
+            <Field className="!gap-0">
+              <GoogleAuthButton />
+            </Field>
+          </FieldGroup>
+        </Form>
+      </AuthFormCard>
+
+      <AuthLegalFooter />
     </div>
   );
 }
