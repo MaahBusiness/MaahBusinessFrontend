@@ -2,7 +2,7 @@
  * FOR AUTH server actions
  */
 
-import { AUTH_ERROR_MESSAGES } from "@/lib/auth-error-state";
+import { SERVER_ERROR_MESSAGES } from "@/lib/auth-error-state";
 import { destroySession, sessionCookie } from "@/lib/session.server";
 import { minutesToSeconds } from "date-fns";
 import { data, redirect } from "react-router";
@@ -192,7 +192,7 @@ export async function verifyOTP(
       return data<SignUpActionType>(
         {
           success: false,
-          message: AUTH_ERROR_MESSAGES[error?.code || "UNKNOWN"],
+          message: SERVER_ERROR_MESSAGES[error?.code || "UNKNOWN"],
           step: "OTP",
           otpSession,
         },
@@ -208,7 +208,7 @@ export async function verifyOTP(
       return data<SignUpActionType>(
         {
           success: false,
-          message: AUTH_ERROR_MESSAGES["UNKNOWN"],
+          message: SERVER_ERROR_MESSAGES["UNKNOWN"],
           step: "OTP",
           otpSession,
         },
@@ -319,7 +319,7 @@ export async function resendOTP(otpSession: OTPSessionData) {
       return data<SignUpActionType>(
         {
           success: false,
-          message: AUTH_ERROR_MESSAGES[error?.code || "UNKNOWN"],
+          message: SERVER_ERROR_MESSAGES[error?.code || "UNKNOWN"],
           step: "OTP",
           otpSession,
         },
@@ -529,7 +529,7 @@ export async function signInWithEmail(formData: FormData) {
       return data<SignUpActionType>(
         {
           success: false,
-          message: AUTH_ERROR_MESSAGES[error?.code || "UNKNOWN"],
+          message: SERVER_ERROR_MESSAGES[error?.code || "UNKNOWN"],
           step: "EMAIL",
         },
         {
@@ -659,7 +659,7 @@ export async function sendPasswordResetLink(
       return data<SignUpActionType>(
         {
           success: false,
-          message: AUTH_ERROR_MESSAGES[error?.code || "UNKNOWN"],
+          message: SERVER_ERROR_MESSAGES[error?.code || "UNKNOWN"],
           otpSession,
         },
         {
@@ -678,7 +678,7 @@ export async function sendPasswordResetLink(
       {
         success: true,
         otpSession: {
-          email: email || otpSession?.email || '',
+          email: email || otpSession?.email || "",
           otpExpiresAt,
           resendCount: (otpSession?.resendCount || 0) + 1,
           resendAvailableAt: undefined, // Clear cooldown
@@ -760,7 +760,7 @@ export async function resetPassword(formData: FormData, token: string) {
       return data<ServerActionState>(
         {
           success: false,
-          message: AUTH_ERROR_MESSAGES[error?.code || "UNKNOWN"],
+          message: SERVER_ERROR_MESSAGES[error?.code || "UNKNOWN"],
         },
         {
           status: res.status,
@@ -817,7 +817,7 @@ export async function signOut(accessToken: string) {
       return data<ServerActionState>(
         {
           success: false,
-          message: AUTH_ERROR_MESSAGES[error?.code || "UNKNOWN"],
+          message: SERVER_ERROR_MESSAGES[error?.code || "UNKNOWN"],
         },
         {
           status: res.status,

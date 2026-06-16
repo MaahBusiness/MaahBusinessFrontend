@@ -188,6 +188,7 @@ export default {
         accent: "var(--accent)",
         "accent-foreground": "var(--accent-foreground)",
         destructive: "var(--destructive)",
+        "destructive-muted": "var(--destructive-muted)",
         border: "var(--border)",
         input: "var(--input)",
         ring: "var(--ring)",
@@ -220,6 +221,16 @@ export default {
           "0%": { opacity: "1" },
           "100%": { opacity: "0" },
         },
+      },
+      screens: {
+        tablet: "640px",
+        // => @media (min-width: 640px) { ... }
+
+        laptop: "1024px",
+        // => @media (min-width: 1024px) { ... }
+
+        desktop: "1280px",
+        // => @media (min-width: 1280px) { ... }
       },
 
       // scrollbar: {

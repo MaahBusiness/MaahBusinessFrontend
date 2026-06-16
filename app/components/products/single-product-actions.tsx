@@ -1,4 +1,11 @@
-import { Copy, Edit, MoreVertical, Trash2, Trash2Icon } from "lucide-react";
+import {
+  Copy,
+  Edit,
+  Edit3,
+  MoreVertical,
+  Trash2,
+  Trash2Icon,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -67,8 +74,8 @@ export function SingleProductActions({ data }: SingleProductActionsProps) {
           <div className="flex items-center gap-2">
             {hasPermission(businessMember?.role, "products:crud") && (
               <DrawerTrigger asChild>
-                <Button size="sm" variant={"outline"}>
-                  <Edit className="size-3" />
+                <Button variant={"outline"}>
+                  <Edit3 className="size-4" />
                   Update product
                 </Button>
               </DrawerTrigger>
@@ -77,7 +84,7 @@ export function SingleProductActions({ data }: SingleProductActionsProps) {
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
-                size={"icon-sm"}
+                size={"icon"}
                 className="flex w-7 rounded-sm data-[state=open]:bg-muted"
               >
                 <MoreVertical />
@@ -93,7 +100,7 @@ export function SingleProductActions({ data }: SingleProductActionsProps) {
                 className="text-xs px-1.5 py-1"
                 onClick={handleCopyRow}
               >
-                Copy product
+                Copy data
                 <DropdownMenuShortcut>
                   <Copy className="size-3" />
                 </DropdownMenuShortcut>

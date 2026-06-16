@@ -5,6 +5,11 @@ import { toast } from "sonner";
 import { requireUserSession } from "@/lib/session.server";
 import { redirect } from "react-router";
 import { resetPassword } from "@/lib/api/auth";
+import { SITE_NAME } from "types/consts";
+
+export function meta() {
+  return [{ title: `${SITE_NAME} | Reset Password` }];
+}
 
 export async function action({ request }: Route.ActionArgs) {
   const url = new URL(request.url);
@@ -42,7 +47,7 @@ export default function ResetPassword({ actionData }: Route.ComponentProps) {
     }
   }, [actionData]);
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-6 p-6 md:p-10">
+    <div className="flex h-full flex-col items-center justify-center gap-6 p-8 tablet:p-10">
       <div className="flex w-full max-w-sm flex-col gap-6">
         <ResetPasswordForm />
       </div>

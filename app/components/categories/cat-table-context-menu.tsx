@@ -28,24 +28,19 @@ import { cn } from "@/lib/utils";
 import type { Cell } from "@tanstack/react-table";
 import { Copy, Edit, Trash2, Trash2Icon } from "lucide-react";
 import { toast } from "sonner";
-import type { Category, Subcategory } from "types";
+import type { Category, Subcategory, TableContextMenuProps } from "types";
 import { hasPermission } from "utils/permissions";
 
-interface DataTableContextMenuProps<TValue> {
-  cell: Cell<Category | Subcategory, TValue>;
-  className?: string;
-  children?: React.ReactNode;
-  title?: string;
-}
-
-export function CatTableContextMenu<TValue>({
-  cell,
+export function CatTableContextMenu({
+  cell: c,
   className,
   children,
   title,
-}: DataTableContextMenuProps<TValue>) {
+}: TableContextMenuProps<Category | Subcategory>) {
   const { businessMember, removeCategory, isRemovingCategory } =
     useOrganisation();
+
+  const cell = c as Cell<Category | Subcategory, any>;
 
   const val = cell.getValue() as string | number | undefined;
 

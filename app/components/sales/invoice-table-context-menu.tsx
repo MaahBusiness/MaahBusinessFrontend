@@ -1,3 +1,4 @@
+import { EditInvoiceDrawer } from "@/components/sales/invoice-edit-drawer";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,24 +27,19 @@ import { cn } from "@/lib/utils";
 import type { Cell } from "@tanstack/react-table";
 import { Copy, Edit, Trash2, Trash2Icon } from "lucide-react";
 import { toast } from "sonner";
-import type { Invoice } from "types";
+import type { Invoice, TableContextMenuProps } from "types";
 import { hasPermission } from "utils/permissions";
 
-interface InvoiceContextMenuProps {
-  cell: Cell<Invoice, any>;
-  className?: string;
-  children?: React.ReactNode;
-  title?: string;
-}
-
 export function InvoiceTableContextMenu({
-  cell,
+  cell: c,
   className,
   children,
   title,
-}: InvoiceContextMenuProps) {
-  const { businessMember, removeProduct, isRemovingProduct } =
+}: TableContextMenuProps<Invoice>) {
+  const { businessMember, archiveInvoice, isArchivingInvoice } =
     useOrganisation();
+
+  const cell = c as Cell<Invoice, any>;
 
   const val = cell.getValue() as string | number | undefined;
 
@@ -62,9 +58,7 @@ export function InvoiceTableContextMenu({
     clipboard.copy(JSON.stringify(cell.row.original));
   };
 
-  const handleDeleteProduct = () => {
-    removeProduct(cell.row.original.id);
-  };
+  const handleArchiveInvoice = () => archiveInvoice(cell.row.original.id);
 
   return (
     <ContextMenu>
@@ -121,7 +115,7 @@ export function InvoiceTableContextMenu({
                     className="text-xs px-1.5 py-1"
                     variant="destructive"
                   >
-                    Delete row
+                    Archive row
                     <ContextMenuShortcut>
                       <Trash2 className="size-3 text-destructive" />
                     </ContextMenuShortcut>
@@ -132,7 +126,7 @@ export function InvoiceTableContextMenu({
           </ContextMenuContent>
 
           {/* Drawer Content */}
-          {/* <EditProductDrawer data={cell.row.original} /> */}
+          <EditInvoiceDrawer data={cell.row.original} />
 
           {/* Alert Dialog */}
           <AlertDialogContent size="sm">
@@ -141,26 +135,26 @@ export function InvoiceTableContextMenu({
                 <Trash2Icon />
               </AlertDialogMedia>
               <AlertDialogTitle>
-                Remove {cell.row.original.number}?
+                Archive Invoice #{cell.row.original.number}?
               </AlertDialogTitle>
               <AlertDialogDescription>
-                This will permanently remove {cell.row.original.number} from
-                your invoices. Are you sure you want to continue?
+                This invoice will be moved to archives and hidden from active
+                lists. You can restore it later.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel variant="outline">Cancel</AlertDialogCancel>
               <AlertDialogAction
                 variant="destructive"
-                disabled={isRemovingProduct}
+                disabled={isArchivingInvoice}
                 onClick={(e) => {
                   e.preventDefault();
-                  handleDeleteProduct();
+                  handleArchiveInvoice();
                   // return true;
                 }}
               >
-                {isRemovingProduct && <Spinner />}
-                Remove
+                {isArchivingInvoice && <Spinner />}
+                Archive
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

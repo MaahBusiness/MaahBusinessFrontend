@@ -10,6 +10,7 @@ import { TeamTableRowActions } from "@/components/team/team-table-row-actions";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import { roles } from "@/routes/dashboard/team/data";
 import { TeamTableContextMenu } from "@/components/team/team-table-context-menu";
+import { extractImageUrl } from "utils";
 
 export const columns = (user_id: string): ColumnDef<OrganisationMember>[] => [
   {
@@ -38,7 +39,7 @@ export const columns = (user_id: string): ColumnDef<OrganisationMember>[] => [
           />
 
           <Avatar className="size-6">
-            <AvatarImage src={user?.avatar_url} />
+            <AvatarImage src={extractImageUrl(user?.avatar_url)} />
             <BoringFallback name={user?.name} />
           </Avatar>
         </div>

@@ -29,6 +29,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { useCountdown } from "@/hooks/useCountdown";
 import { formatSeconds, getInboxUrl } from "utils";
 import type { SignUpActionType } from "types";
+import { SITE_NAME } from "types/consts";
 
 interface OTPFormProps extends React.ComponentProps<"div"> {
   login?: boolean;
@@ -88,7 +89,7 @@ export function OTPForm({ className, login, ...props }: OTPFormProps) {
               <div className="flex size-8 items-center justify-center rounded-md">
                 <GalleryVerticalEnd className="size-6" />
               </div>
-              <span className="sr-only">Acme Inc.</span>
+              <span className="sr-only">{SITE_NAME}</span>
             </a>
             <h1 className="text-xl font-bold">Enter verification code</h1>
             <FieldDescription className="text-xs">
@@ -208,7 +209,7 @@ export function OTPForm({ className, login, ...props }: OTPFormProps) {
         </FieldGroup>
       </Form>
 
-      <FieldDescription className="px-6 text-center text-xs">
+      {/* <FieldDescription className="px-6 text-center text-xs">
         By clicking continue, you agree to our{" "}
         <a href="#" className="underline">
           Terms of Service
@@ -218,7 +219,7 @@ export function OTPForm({ className, login, ...props }: OTPFormProps) {
           Privacy Policy
         </a>
         .
-      </FieldDescription>
+      </FieldDescription> */}
     </div>
   );
 }

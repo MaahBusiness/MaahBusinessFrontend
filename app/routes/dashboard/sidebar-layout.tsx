@@ -11,13 +11,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <SidebarProvider className="flex flex-col">
+    <div className="flex flex-col">
       <div className="flex flex-1">
         <AppSidebar />
         <SidebarInset className="overflow-x-hidden">
           <Outlet />
         </SidebarInset>
       </div>
-    </SidebarProvider>
+    </div>
   );
 }

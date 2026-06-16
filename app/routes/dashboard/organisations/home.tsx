@@ -1,4 +1,3 @@
-import type { Route } from ".react-router/types/app/routes/dashboard/organisations/+types/home";
 import { Avatar, AvatarImage, BoringFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,30 +23,30 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/auth-context";
 import { organisationKeys, organisationsApi } from "@/lib/api/organisation";
-import { requireUserSession } from "@/lib/session.server";
 import { RequestFailed } from "@/routes/404";
 import { useQuery } from "@tanstack/react-query";
 import { Library, Plus, PlusIcon, SearchIcon } from "lucide-react";
 import { Link, redirect } from "react-router";
+import { extractImageUrl } from "utils";
 
 // ------------------------------
 // Loader - only handles auth now since Tanstack added
 // ------------------------------
-export async function loader({ request }: Route.LoaderArgs) {
-  const { session, headers } = await requireUserSession(request);
+// export async function loader({ request }: Route.LoaderArgs) {
+//   const { session, headers } = await requireUserSession(request);
 
-  if (!session) {
-    const url = new URL(request.url);
-    const redirectTo = url.pathname + url.search;
+//   if (!session) {
+//     const url = new URL(request.url);
+//     const redirectTo = url.pathname + url.search;
 
-    return redirect(
-      `/auth/signin?redirectTo=${encodeURIComponent(redirectTo)}`,
-      { headers },
-    );
-  }
+//     return redirect(
+//       `/auth/signin?redirectTo=${encodeURIComponent(redirectTo)}`,
+//       { headers },
+//     );
+//   }
 
-  return { session, headers };
-}
+//   return { session, headers };
+// }
 
 export default function Organisations() {
   const { accessToken } = useAuth(); // Get token from context
@@ -67,7 +66,7 @@ export default function Organisations() {
   if (!res.data) return <OrgsNotFound />;
 
   return (
-    <div className="w-full min-h-full flex flex-col gap-8 items-stretch max-w-[1200px] lg:px-6 px-4 mx-auto pt-12">
+    <div className="w-full min-h-full flex flex-col gap-8 items-stretch max-w-[1200px] lg:px-6 px-6 mx-auto pt-12">
       <div className="w-full">
         <h1 className="text-2xl font-medium">Your organisations</h1>
       </div>
@@ -100,7 +99,9 @@ export default function Organisations() {
                 <Link to={`/dashboard/org/${org.id}`}>
                   <ItemMedia>
                     <Avatar className="size-10">
-                      <AvatarImage src={org.logo_url} />
+                      <AvatarImage
+                        src={extractImageUrl(org.logo_url ?? "") ?? undefined}
+                      />
                       <BoringFallback name={org?.name} />
                     </Avatar>
                   </ItemMedia>

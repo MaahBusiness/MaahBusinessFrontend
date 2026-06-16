@@ -20,6 +20,7 @@ import type { SignUpActionType } from "types";
 import { Spinner } from "@/components/ui/spinner";
 import { useCountdown } from "@/hooks/useCountdown";
 import { formatSeconds, getInboxUrl } from "utils";
+import { SITE_NAME } from "types/consts";
 
 const MAX_RESEND_ATTEMPTS = 3;
 
@@ -60,7 +61,7 @@ export function ForgotPasswordForm({
               <div className="flex size-8 items-center justify-center rounded-md">
                 <GalleryVerticalEnd className="size-6" />
               </div>
-              <span className="sr-only">Acme Inc.</span>
+              <span className="sr-only">{SITE_NAME}</span>
             </a>
             <h1 className="text-xl font-bold">Forgot your password?</h1>
             <FieldDescription>

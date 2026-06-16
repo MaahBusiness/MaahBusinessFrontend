@@ -1,6 +1,6 @@
 // auth-error-codes.ts
 
-export type AuthErrorCode =
+export type ServerErrorCode =
   // General
   | "UNKNOWN"
   | "NETWORK_ERROR"
@@ -41,4 +41,5 @@ export type AuthErrorCode =
 
   // Session
   | "SESSION_EXPIRED"
-  | "UNAUTHORIZED";
+  | "UNAUTHORIZED"
+  | "PRODUCT_NOT_FOUND";

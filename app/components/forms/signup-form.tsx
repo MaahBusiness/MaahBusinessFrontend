@@ -23,6 +23,7 @@ import { useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import GoogleAuthButton from "@/components/google-button";
 import type { ServerActionState } from "types";
+import { SITE_NAME } from "types/consts";
 
 // interface SignupFormProps extends React.ComponentProps<"div"> {
 //   errors?: Record<string, string>;
@@ -59,7 +60,7 @@ export function SignupForm({
               <div className="flex size-8 items-center justify-center rounded-md">
                 <GalleryVerticalEnd className="size-6" />
               </div>
-              <span className="sr-only">Acme Inc.</span>
+              <span className="sr-only">{SITE_NAME}</span>
             </a>
             <h1 className="text-xl font-bold">Create your account</h1>
             <FieldDescription>
@@ -132,7 +133,7 @@ export function SignupForm({
         </FieldGroup>
       </Form>
 
-      <FieldDescription className="px-6 text-center">
+      <FieldDescription className="px-0 tablet:px-6 text-center">
         If you refreshed the OTP screen by mistake, please head to{" "}
         <Link
           to={{
@@ -144,7 +145,7 @@ export function SignupForm({
         </Link>
       </FieldDescription>
 
-      <FieldDescription className="px-6 text-center text-xs">
+      {/* <FieldDescription className="px-0 tablet:px-6 text-center text-xs">
         By clicking continue, you agree to our{" "}
         <a href="#" className="underline">
           Terms of Service
@@ -154,7 +155,7 @@ export function SignupForm({
           Privacy Policy
         </a>
         .
-      </FieldDescription>
+      </FieldDescription> */}
     </div>
   );
 }

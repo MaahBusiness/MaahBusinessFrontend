@@ -14,12 +14,22 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { Link, useParams } from "react-router";
 import type { SideItem } from "types";
+import {
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+} from "@/components/ui/dropdown-menu";
 
 export function NavMain({ data }: { data: { [key: string]: SideItem[] } }) {
   const { id: orgId } = useParams<{ id: string }>();
+  const { setOpen } = useSidebar();
 
   return Object.entries(data)
     .filter(([, items]) => items.length > 0)
@@ -37,7 +47,10 @@ export function NavMain({ data }: { data: { [key: string]: SideItem[] } }) {
               >
                 <SidebarMenuItem>
                   <CollapsibleTrigger asChild>
-                    <SidebarMenuButton tooltip={item.title}>
+                    <SidebarMenuButton
+                      tooltip={item.title}
+                      onClick={() => setOpen(true)}
+                    >
                       {item.icon && <item.icon />}
                       <span>{item.title}</span>
                       <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
@@ -56,6 +69,17 @@ export function NavMain({ data }: { data: { [key: string]: SideItem[] } }) {
                       ))}
                     </SidebarMenuSub>
                   </CollapsibleContent>
+
+                  {/* <DropdownMenuContent>
+                    {item.items?.map((subItem) => (
+                      <DropdownMenuItem key={subItem.title} asChild>
+                        <Link to={subItem.url}>
+                          <span>{subItem.title}</span>
+                        <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent> */}
                 </SidebarMenuItem>
               </Collapsible>
             ) : (

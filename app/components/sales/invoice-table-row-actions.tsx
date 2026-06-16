@@ -31,13 +31,16 @@ import { hasPermission } from "utils/permissions";
 import { Drawer, DrawerTrigger } from "@/components/ui/drawer";
 import { toast } from "sonner";
 import { useClipboard } from "@/hooks/useClipboard";
+import { Spinner } from "@/components/ui/spinner";
+import { EditInvoiceDrawer } from "@/components/sales/invoice-edit-drawer";
 
 interface InvoiceTableRowActionsProps {
   row: Row<Invoice>;
 }
 
 export function InvoiceTableRowActions({ row }: InvoiceTableRowActionsProps) {
-  const { businessMember } = useOrganisation();
+  const { businessMember, archiveInvoice, isArchivingInvoice } =
+    useOrganisation();
 
   if (!businessMember) throw redirect("/dashboard/organisations/");
 
@@ -52,9 +55,7 @@ export function InvoiceTableRowActions({ row }: InvoiceTableRowActionsProps) {
     clipboard.copy(JSON.stringify(row.original));
   };
 
-  // const handleDeleteProduct = () => {
-  //   removeProduct(row.original.id);
-  // };
+  const handleArchiveInvoice = () => archiveInvoice(row.original.id);
 
   return (
     <Drawer direction="right">
@@ -120,32 +121,34 @@ export function InvoiceTableRowActions({ row }: InvoiceTableRowActionsProps) {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* <EditProductDrawer data={row.original} /> */}
+        <EditInvoiceDrawer data={row.original} />
 
         <AlertDialogContent size="sm">
           <AlertDialogHeader>
             <AlertDialogMedia className="bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive">
               <Trash2Icon />
             </AlertDialogMedia>
-            <AlertDialogTitle>Remove {row.original.number}?</AlertDialogTitle>
+            <AlertDialogTitle>
+              Archive Invoice #{row.original.number}?
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently remove {row.original.number} from your
-              invoices. Are you sure you want to continue?
+              This invoice will be moved to archives and hidden from active
+              lists. You can restore it later.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel variant="outline">Cancel</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
-              // disabled={isRemovingProduct}
+              disabled={isArchivingInvoice}
               onClick={(e) => {
                 e.preventDefault();
-                // handleDeleteProduct();
+                handleArchiveInvoice();
                 // return true;
               }}
             >
-              {/* {isRemovingProduct && <Spinner />} */}
-              Remove
+              {isArchivingInvoice && <Spinner />}
+              Archive
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

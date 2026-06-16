@@ -8,8 +8,11 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { InvoiceTableContextMenu } from "@/components/sales/invoice-table-context-menu";
 import { cn } from "@/lib/utils";
 import { methods, statuses } from "@/routes/dashboard/sales/data";
+import { extractImageUrl, formatDisplayAmount } from "utils";
+import { InvoiceTableRowActions } from "@/components/sales/invoice-table-row-actions";
+import { Link } from "react-router";
 
-export const invoiceCols = (): ColumnDef<Invoice>[] => [
+export const invoiceCols: ColumnDef<Invoice>[] = [
   {
     id: "select",
     accessorKey: "number",
@@ -37,7 +40,12 @@ export const invoiceCols = (): ColumnDef<Invoice>[] => [
             aria-label="Select row"
           />
 
-          <span className="truncate">{row.original.number}</span>
+          <Link
+            to={`../invoices/${row.original.id}`}
+            className="hover:underline"
+          >
+            <span className="truncate">{row.original.number}</span>
+          </Link>
         </InvoiceTableContextMenu>
       );
     },
@@ -51,8 +59,14 @@ export const invoiceCols = (): ColumnDef<Invoice>[] => [
       <DataTableColumnHeader column={column} title="ID" />
     ),
     cell: ({ row, cell }) => (
-      <InvoiceTableContextMenu className="w-[80px]" {...{ cell }}>
-        <span className="truncate">{row.getValue("id")}</span>
+      <InvoiceTableContextMenu
+        className="w-[100px]"
+        {...{ cell }}
+        title={row.getValue("id")}
+      >
+        <Link to={`../invoices/${row.original.id}`} className="hover:underline">
+          <span className="truncate">{row.getValue("id")}</span>
+        </Link>
       </InvoiceTableContextMenu>
     ),
     enableSorting: false,
@@ -100,17 +114,10 @@ export const invoiceCols = (): ColumnDef<Invoice>[] => [
     ),
     cell: ({ row, cell }) => {
       const amount = parseFloat(row.getValue("total"));
-      const formatted = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-      }).format(amount);
 
       return (
-        <InvoiceTableContextMenu
-          {...{ cell }}
-          className="text-right font-medium"
-        >
-          <span>{formatted}</span>
+        <InvoiceTableContextMenu {...{ cell }} className=" font-medium">
+          <span>{formatDisplayAmount(row.getValue("total"))}</span>
         </InvoiceTableContextMenu>
       );
     },
@@ -141,23 +148,16 @@ export const invoiceCols = (): ColumnDef<Invoice>[] => [
     header: ({ column }) => (
       <DataTableColumnHeader
         column={column}
-        className="justify-end "
+        className=" "
         title="Amount Paid"
       />
     ),
     cell: ({ row, cell }) => {
       const amount = parseFloat(row.getValue("paid"));
-      const formatted = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-      }).format(amount);
 
       return (
-        <InvoiceTableContextMenu
-          {...{ cell }}
-          className="justify-end font-medium"
-        >
-          <span>{formatted}</span>
+        <InvoiceTableContextMenu {...{ cell }} className=" font-medium">
+          <span>{formatDisplayAmount(row.getValue("paid"))}</span>
         </InvoiceTableContextMenu>
       );
     },
@@ -190,29 +190,21 @@ export const invoiceCols = (): ColumnDef<Invoice>[] => [
     id: "due",
     accessorKey: "remaining_amount",
     header: ({ column }) => (
-      <DataTableColumnHeader
-        column={column}
-        className="text-right"
-        title="Amount Due"
-      />
+      <DataTableColumnHeader column={column} title="Amount Due" />
     ),
     cell: ({ row, cell }) => {
       const amount = parseFloat(row.getValue("due"));
-      const formatted = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-      }).format(amount);
 
       return (
         <InvoiceTableContextMenu
           {...{ cell }}
           className={cn(
-            "justify-end font-medium",
+            " font-medium",
             amount && amount < 0 && "text-destructive",
           )}
         >
           {amount ? (
-            formatted
+            formatDisplayAmount(row.getValue("due"))
           ) : (
             <span className="text-muted-foreground text-normal">--</span>
           )}
@@ -259,26 +251,15 @@ export const invoiceCols = (): ColumnDef<Invoice>[] => [
     id: "refund",
     accessorKey: "refund_amount",
     header: ({ column }) => (
-      <DataTableColumnHeader
-        column={column}
-        className="text-right"
-        title="To be refunded"
-      />
+      <DataTableColumnHeader column={column} title="To be refunded" />
     ),
     cell: ({ row, cell }) => {
       const amount = parseFloat(row.getValue("refund"));
-      const formatted = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-      }).format(amount);
 
       return (
-        <InvoiceTableContextMenu
-          {...{ cell }}
-          className="justify-end font-medium"
-        >
+        <InvoiceTableContextMenu {...{ cell }} className=" font-medium">
           {amount ? (
-            formatted
+            formatDisplayAmount(row.getValue("refund"))
           ) : (
             <span className="text-muted-foreground text-normal">--</span>
           )}
@@ -291,26 +272,15 @@ export const invoiceCols = (): ColumnDef<Invoice>[] => [
     id: "discount",
     accessorKey: "total_discount",
     header: ({ column }) => (
-      <DataTableColumnHeader
-        column={column}
-        className="text-right"
-        title="Discount"
-      />
+      <DataTableColumnHeader column={column} title="Discount" />
     ),
     cell: ({ row, cell }) => {
       const amount = parseFloat(row.getValue("discount"));
-      const formatted = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-      }).format(amount);
 
       return (
-        <InvoiceTableContextMenu
-          {...{ cell }}
-          className="justify-end font-medium"
-        >
+        <InvoiceTableContextMenu {...{ cell }} className=" font-medium">
           {amount ? (
-            formatted
+            formatDisplayAmount(row.getValue("discount"))
           ) : (
             <span className="text-muted-foreground text-normal">--</span>
           )}
@@ -324,26 +294,15 @@ export const invoiceCols = (): ColumnDef<Invoice>[] => [
     id: "tax",
     accessorKey: "tax",
     header: ({ column }) => (
-      <DataTableColumnHeader
-        column={column}
-        className="text-right"
-        title="Tax"
-      />
+      <DataTableColumnHeader column={column} title="Tax" />
     ),
     cell: ({ row, cell }) => {
       const amount = parseFloat(row.getValue("tax"));
-      const formatted = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-      }).format(amount);
 
       return (
-        <InvoiceTableContextMenu
-          {...{ cell }}
-          className="justify-end font-medium"
-        >
+        <InvoiceTableContextMenu {...{ cell }} className=" font-medium">
           {amount ? (
-            formatted
+            formatDisplayAmount(row.getValue("tax"))
           ) : (
             <span className="text-muted-foreground text-normal">--</span>
           )}
@@ -385,11 +344,15 @@ export const invoiceCols = (): ColumnDef<Invoice>[] => [
         <InvoiceTableContextMenu className="w-[200px] truncate" {...{ cell }}>
           {val && (
             <Avatar className="size-5">
-              <AvatarImage src={val} />
+              <AvatarImage src={extractImageUrl(val)} />
               <BoringFallback name={val} />
             </Avatar>
           )}
-          {val ?? <span className="text-muted-foreground text-normal">--</span>}
+          {val ? (
+            <span className="truncate">{val}</span>
+          ) : (
+            <span className="text-muted-foreground text-normal">--</span>
+          )}
         </InvoiceTableContextMenu>
       );
     },
@@ -408,11 +371,15 @@ export const invoiceCols = (): ColumnDef<Invoice>[] => [
         <InvoiceTableContextMenu className="w-[200px] truncate" {...{ cell }}>
           {val && (
             <Avatar className="size-5">
-              <AvatarImage src={val} />
+              <AvatarImage src={extractImageUrl(val)} />
               <BoringFallback name={val} />
             </Avatar>
           )}
-          {val ?? <span className="text-muted-foreground text-normal">--</span>}
+          {val ? (
+            <span className="truncate">{val}</span>
+          ) : (
+            <span className="text-muted-foreground text-normal">--</span>
+          )}
         </InvoiceTableContextMenu>
       );
     },
@@ -469,8 +436,8 @@ export const invoiceCols = (): ColumnDef<Invoice>[] => [
     },
     meta: { hidden: true },
   },
-  // {
-  //   id: "actions",
-  //   cell: ({ row }) => <InvoiceTableRowActions row={row} />,
-  // },
+  {
+    id: "actions",
+    cell: ({ row }) => <InvoiceTableRowActions row={row} />,
+  },
 ];

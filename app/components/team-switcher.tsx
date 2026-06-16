@@ -24,7 +24,7 @@ import { BreadcrumbLink } from "@/components/ui/breadcrumb";
 import { useAuth } from "@/contexts/auth-context";
 import { useQuery } from "@tanstack/react-query";
 import { organisationKeys, organisationsApi } from "@/lib/api/organisation";
-import { capitalizeFirstChar, genericErrorState } from "utils";
+import { capitalizeFirstChar, extractImageUrl, genericErrorState } from "utils";
 import { Spinner } from "@/components/ui/spinner";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -82,14 +82,14 @@ export default function TeamSwitcher({ currentId }: TeamSwitcherProps) {
         <Link to={`org/${selected?.id}`} className="flex items-center gap-2">
           <Avatar className="h-5 w-5">
             <AvatarImage
-              src={selected?.logo_url}
+              src={extractImageUrl(selected?.logo_url ?? "") ?? undefined}
               alt={selected?.unique_name}
-              className="grayscale"
+              // className="grayscale"
             />
             <BoringFallback name={selected?.unique_name} />
           </Avatar>
-          <span>{selected?.name} </span>
-          <Badge variant="secondary" className="text-xxs">
+          <span className="text-xxs tablet:text-sm">{selected?.name} </span>
+          <Badge variant="secondary" className="text-[10px] tablet:text-xxs">
             {businessUser?.role && capitalizeFirstChar(businessUser?.role)}
           </Badge>
         </Link>
@@ -101,7 +101,7 @@ export default function TeamSwitcher({ currentId }: TeamSwitcherProps) {
             <ChevronsUpDown className="opacity-75 size-4" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[200px] p-0" align="start">
+        <PopoverContent className="w-[200px] p-0" align="center">
           <Command>
             <CommandInput placeholder="Search orgs..." />
             <CommandList>
@@ -126,9 +126,12 @@ export default function TeamSwitcher({ currentId }: TeamSwitcherProps) {
                     >
                       <Avatar className="mr-1 h-5 w-5">
                         <AvatarImage
-                          src={team.logo_url}
+                          // src={team.logo_url}
+                          src={
+                            extractImageUrl(team?.logo_url ?? "") ?? undefined
+                          }
                           alt={team.unique_name}
-                          className="grayscale"
+                          // className="grayscale"
                         />
                         <BoringFallback name={team.unique_name} />
                       </Avatar>

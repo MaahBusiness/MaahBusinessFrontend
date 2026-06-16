@@ -5,6 +5,14 @@ import { requireUserSession } from "@/lib/session.server";
 import { useEffect } from "react";
 import { data, redirect } from "react-router";
 import { toast } from "sonner";
+import { SITE_NAME } from "types/consts";
+
+export function meta() {
+  return [
+    { title: `${SITE_NAME} | Forgot Password` },
+    { name: `description`, content: `Request a password reset link` },
+  ];
+}
 
 export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
@@ -34,7 +42,7 @@ export default function ForgotPassword({ actionData }: Route.ComponentProps) {
     }
   }, [actionData]);
   return (
-    <div className="flex h-full  flex-col items-center justify-center gap-6 p-6 md:p-10">
+    <div className="flex h-full  flex-col items-center justify-center gap-6 p-8 tablet:p-10">
       <div className="flex w-full max-w-sm flex-col gap-6">
         <ForgotPasswordForm />
       </div>

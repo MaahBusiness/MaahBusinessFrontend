@@ -14,6 +14,7 @@ import { PasswordInput } from "@/components/forms/password-input";
 import { useState } from "react";
 import type { ServerActionState } from "types";
 import { Spinner } from "@/components/ui/spinner";
+import { SITE_NAME } from "types/consts";
 
 export function ResetPasswordForm({
   className,
@@ -38,7 +39,7 @@ export function ResetPasswordForm({
               <div className="flex size-8 items-center justify-center rounded-md">
                 <GalleryVerticalEnd className="size-6" />
               </div>
-              <span className="sr-only">Acme Inc.</span>
+              <span className="sr-only">{SITE_NAME}</span>
             </a>
             <h1 className="text-xl font-bold">Change your password</h1>
             <FieldDescription>

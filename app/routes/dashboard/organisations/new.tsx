@@ -81,7 +81,7 @@ export default function NewOrgPage({ actionData }: Route.ComponentProps) {
   }, [actionData]);
 
   return (
-    <div className="w-full min-h-full flex flex-col gap-8 items-stretch max-w-3xl lg:px-6 px-0 mx-auto pt-12 pb-12">
+    <div className="w-full min-h-full flex flex-col gap-8 items-stretch max-w-3xl lg:px-6 px-6 mx-auto py-12">
       <div className="w-full">
         <h1 className="text-2xl font-medium">Create a new organisation</h1>
         <h2 className="text-muted-foreground text-sm font-medium">

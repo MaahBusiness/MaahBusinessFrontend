@@ -35,7 +35,6 @@ import { useClipboard } from "@/hooks/useClipboard";
 import { organisationKeys, organisationsApi } from "@/lib/api/organisation";
 import { getSession } from "@/lib/session.server";
 import { RequestFailed } from "@/routes/404";
-import { handleProductActions } from "@/routes/dashboard/products";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   BadgeCheckIcon,
@@ -51,9 +50,16 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, redirect, useNavigation, useParams } from "react-router";
+import { handleProductActions } from "services/api";
 import { toast } from "sonner";
 import type { ServerActionState, Product } from "types";
-import { formatAmount, genericErrorState, getTimeUntilOrSince } from "utils";
+import {
+  formatDisplayAmount,
+  genericErrorState,
+  getTimeUntilOrSince,
+  isEarlier,
+  isLater,
+} from "utils";
 
 export async function action({ request, params }: Route.ActionArgs): Promise<
   ServerActionState & {
@@ -91,7 +97,7 @@ export default function SingleproductPage({
 
   if (!prodId) return;
 
-  const { data: res, isLoading } = fetchSingleProduct(prodId);
+  const { data: res, isLoading, refetch } = fetchSingleProduct(prodId);
 
   const [copiedBarcode, setCopiedBarcode] = useState(false);
 
@@ -130,32 +136,34 @@ export default function SingleproductPage({
   }, [actionData]);
 
   if (isLoading) return <SingleSkeleton />;
-  if (!res?.success) return <RequestFailed />;
+  if (!res?.success) return <RequestFailed refetch={refetch} />;
   if (!res.data) return <ProductNotFound />;
 
   return (
-    <div className="w-full min-h-full flex flex-col gap-8 items-stretch max-w-[1200px] lg:px-6 px-4 mx-auto py-12">
-      <div className="w-full flex items-center gap-2">
-        <Link to="../products">
-          <h2 className="text-lg tracking-tight text-muted-foreground">
-            Products
-          </h2>
-        </Link>
-        <ChevronRight className="text-muted-foreground size-4" />
-        <h2 className="text-lg tracking-tight">{res.data.name}</h2>
+    <div className="w-full min-h-full flex flex-col gap-8 items-stretch max-w-[1200px] lg:px-6 px-6 mx-auto py-12">
+      <div className="w-full flex flex-col tablet:flex-row tablet:items-center gap-4">
+        <div className="w-full flex items-center gap-2">
+          <Link to="../products">
+            <h2 className="text-lg tracking-tight text-muted-foreground">
+              Products
+            </h2>
+          </Link>
+          <ChevronRight className="text-muted-foreground size-4" />
+          <h2 className="text-lg tracking-tight">{res.data.name}</h2>
+        </div>
 
-        <div className="ml-auto flex items-center justify-end">
+        <div className="tablet:ml-auto flex items-center tablet:justify-end">
           <SingleProductActions data={res.data} />
         </div>
       </div>
 
       {/* Meta */}
-      <div className="grid auto-rows-min gap-6  md:grid-cols-4">
+      <div className="grid auto-rows-min gap-6 grid-cols-2 md:grid-cols-4">
         <Item className="p-0">
           <ItemContent className="gap-3">
             <ItemDescription>QTY in stock</ItemDescription>
             <ItemTitle>
-              {formatAmount(`${res.data.quantity}`)}
+              {formatDisplayAmount(`${res.data.quantity}`)}
               {res.data.is_low_stock && (
                 <TrendingDown className="h-3.5 w-3.5 text-destructive" />
               )}
@@ -165,14 +173,16 @@ export default function SingleproductPage({
         <Item className="p-0">
           <ItemContent className="gap-3">
             <ItemDescription>Unit price</ItemDescription>
-            <ItemTitle>XAF {formatAmount(`${res.data.unit_price}`)}</ItemTitle>
+            <ItemTitle>
+              XAF {formatDisplayAmount(`${res.data.unit_price}`)}
+            </ItemTitle>
           </ItemContent>
         </Item>
         <Item className="p-0">
           <ItemContent className="gap-3">
             <ItemDescription>Purchase price</ItemDescription>
             <ItemTitle>
-              XAF {formatAmount(`${res.data.purchase_price}`)}
+              XAF {formatDisplayAmount(`${res.data.purchase_price}`)}
             </ItemTitle>
           </ItemContent>
         </Item>
@@ -196,8 +206,26 @@ export default function SingleproductPage({
           <ItemContent className="gap-3">
             <ItemDescription>On promotion?</ItemDescription>
             <ItemTitle>
-              {res.data.is_expired ? (
-                <Check className="size-4 " />
+              {res.data.on_promotion &&
+              !isLater(
+                new Date(Date.now()).toDateString(),
+                res.data.promotion_end_date,
+              ) ? (
+                !isEarlier(
+                  new Date(Date.now()).toDateString(),
+                  res.data.promotion_start_date,
+                ) ? (
+                  <Check className="size-4 " />
+                ) : (
+                  new Date(res.data?.promotion_start_date!).toLocaleDateString(
+                    "en",
+                    {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    },
+                  )
+                )
               ) : (
                 <X className="size-4 " />
               )}
@@ -216,16 +244,18 @@ export default function SingleproductPage({
                 year: "numeric",
               })}
             >
-              {res.data.is_expired ? (
-                <span className="text-destructive">Expired</span>
+              {res.data.expiry_date ? (
+                res.data.is_expired ? (
+                  <span className="text-destructive">Expired</span>
+                ) : (
+                  new Date(res.data?.expiry_date!).toLocaleDateString("en", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                  })
+                )
               ) : (
-                new Date(res.data?.expiry_date!).toLocaleDateString("en", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  day: "2-digit",
-                  month: "short",
-                  year: "numeric",
-                })
+                <span className="text-muted-foreground">--</span>
               )}
             </ItemTitle>
           </ItemContent>
@@ -253,14 +283,14 @@ export default function SingleproductPage({
       <Separator className="h-px" />
 
       {/* Dual Cols */}
-      <div className="justify-between flex w-full gap-20 ">
+      <div className="justify-between flex-col laptop:flex-row flex w-full gap-8 laptop:gap-20 ">
         {/* Right Col */}
         <div className="flex items-stretch flex-initial flex-col gap-8 w-full">
           <div className="flex flex-col gap-4">
             <h4 className="scroll-m-20 text-lg tracking-tight">General</h4>
 
             <Card className="relative w-full p-0 ">
-              <CardContent className="flex px-0">
+              <CardContent className="flex flex-col tablet:flex-row px-0">
                 <div className="flex flex-col flex-1">
                   <div className="flex flex-col gap-1 p-4 border-b ">
                     <h5 className="scroll-m-20 tracking-tight">Product name</h5>
@@ -334,7 +364,10 @@ export default function SingleproductPage({
                   </div>
                 </div>
 
-                <Separator orientation="vertical" />
+                <Separator
+                  orientation="vertical"
+                  className="hidden tablet:block"
+                />
 
                 <div className="flex flex-col flex-1 p-4 items-start">
                   <img
@@ -352,86 +385,99 @@ export default function SingleproductPage({
 
             <Card className="relative w-full p-0 ">
               <CardContent className="flex flex-col px-0">
-                {res.data.on_promotion && (
-                  <>
-                    <div className="p-4">
-                      <Item
-                        variant="outline"
-                        className="bg-muted text-foreground"
-                      >
-                        <ItemContent className="gap-3">
-                          <ItemTitle className="flex items-center gap-2">
-                            <BadgeCheckIcon className="size-4" />
-                            <span>On Promotion</span>
-                            <span className=" text-xs text-muted-foreground  ">
-                              (
-                              {getTimeUntilOrSince(
-                                res.data.promotion_end_date!,
-                              )}
-                              )
-                            </span>
-                          </ItemTitle>
-                          <ItemDescription className="text-foreground flex justify-between">
-                            <div className="flex flex-col gap-1 flex-1">
-                              <span className=" text-xs flex items-center gap-2">
-                                <span className=" text-xs text-muted-foreground line-through">
-                                  XAF {formatAmount(`${res.data.unit_price}`)}
-                                </span>
-                                {(
-                                  ((res?.data?.unit_price -
-                                    res.data?.promo_price!) /
-                                    res.data?.unit_price) *
-                                  100
-                                ).toFixed(0)}
-                                % OFF
-                              </span>
-                              <h4 className="scroll-m-20 text-base font-medium tracking-tight">
-                                XAF{" "}
-                                {formatAmount(`${res.data.promo_price}`)}{" "}
-                              </h4>
-                            </div>
-                            <div className="flex flex-col gap-1 flex-1">
-                              <span className=" text-xs text-muted-foreground">
-                                Started on
-                              </span>
-                              <span>
-                                {new Date(
-                                  res.data.promotion_start_date!,
-                                ).toLocaleDateString("en", {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                  day: "2-digit",
-                                  month: "short",
-                                  year: "numeric",
-                                })}
-                              </span>
-                            </div>
-                            <div className="flex flex-col gap-1 flex-1">
-                              <span className=" text-xs text-muted-foreground">
-                                Ending on
-                              </span>
-                              <span>
-                                {new Date(
+                {res.data.on_promotion &&
+                  !isEarlier(
+                    new Date(Date.now()).toDateString(),
+                    res.data.promotion_start_date,
+                  ) &&
+                  !isLater(
+                    new Date(Date.now()).toDateString(),
+                    res.data.promotion_end_date,
+                  ) && (
+                    <>
+                      <div className="p-4">
+                        <Item
+                          variant="outline"
+                          className="bg-muted text-foreground"
+                        >
+                          <ItemContent className="gap-3">
+                            <ItemTitle className="flex items-center gap-2">
+                              <BadgeCheckIcon className="size-4" />
+                              <span>On Promotion</span>
+                              <span className=" text-xs text-muted-foreground  ">
+                                (
+                                {getTimeUntilOrSince(
                                   res.data.promotion_end_date!,
-                                ).toLocaleDateString("en", {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                  day: "2-digit",
-                                  month: "short",
-                                  year: "numeric",
-                                })}
+                                )}
+                                )
                               </span>
-                            </div>
-                          </ItemDescription>
-                        </ItemContent>
-                      </Item>
-                    </div>
+                            </ItemTitle>
+                            <ItemDescription className="text-foreground flex justify-between">
+                              <div className="flex flex-col gap-1 flex-1">
+                                <span className=" text-xs flex items-center gap-2">
+                                  <span className=" text-xs text-muted-foreground line-through">
+                                    XAF{" "}
+                                    {formatDisplayAmount(
+                                      `${res.data.unit_price}`,
+                                    )}
+                                  </span>
+                                  {(
+                                    ((res?.data?.unit_price -
+                                      res.data?.promo_price!) /
+                                      res.data?.unit_price) *
+                                    100
+                                  ).toFixed(0)}
+                                  % OFF
+                                </span>
+                                <h4 className="scroll-m-20 text-base font-medium tracking-tight">
+                                  XAF{" "}
+                                  {formatDisplayAmount(
+                                    `${res.data.promo_price}`,
+                                  )}{" "}
+                                </h4>
+                              </div>
+                              <div className="flex flex-col gap-1 flex-1">
+                                <span className=" text-xs text-muted-foreground">
+                                  Started on
+                                </span>
+                                <span>
+                                  {new Date(
+                                    res.data.promotion_start_date!,
+                                  ).toLocaleDateString("en", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "numeric",
+                                  })}
+                                </span>
+                              </div>
+                              <div className="flex flex-col gap-1 flex-1">
+                                <span className=" text-xs text-muted-foreground">
+                                  Ending on
+                                </span>
+                                <span>
+                                  {new Date(
+                                    res.data.promotion_end_date!,
+                                  ).toLocaleDateString("en", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "numeric",
+                                  })}
+                                </span>
+                              </div>
+                            </ItemDescription>
+                          </ItemContent>
+                        </Item>
+                      </div>
 
-                    <Separator />
-                  </>
-                )}
+                      <Separator />
+                    </>
+                  )}
 
-                <div className="flex gap-6 p-4">
+                <div className="flex flex-col tablet:flex-row gap-6 p-4">
                   <div className="flex flex-col flex-1 gap-4">
                     <div className="flex flex-col flex-1 gap-1">
                       <h5 className="scroll-m-20 tracking-tight">
@@ -443,7 +489,7 @@ export default function SingleproductPage({
                     </div>
 
                     <code className="px-2 py-1.5 bg-muted rounded-sm font-mono flex-1 truncate">
-                      XAF {formatAmount(`${res.data.purchase_price}`)}
+                      XAF {formatDisplayAmount(`${res.data.purchase_price}`)}
                     </code>
                   </div>
 
@@ -458,7 +504,7 @@ export default function SingleproductPage({
                     </div>
 
                     <code className="px-2 py-1.5 bg-muted rounded-sm font-mono flex-1 truncate">
-                      XAF {formatAmount(`${res.data.unit_price}`)}
+                      XAF {formatDisplayAmount(`${res.data.unit_price}`)}
                     </code>
                   </div>
                 </div>
@@ -472,7 +518,7 @@ export default function SingleproductPage({
             <HoverCard openDelay={100} closeDelay={100}>
               <Card className="relative w-full p-0 ">
                 <CardContent className="flex flex-col px-0">
-                  <div className="flex gap-6 p-4">
+                  <div className="flex flex-col tablet:flex-row gap-6 p-4">
                     <div className="flex flex-col flex-1 gap-4">
                       <div className="flex flex-col flex-1 gap-1">
                         <h5 className="scroll-m-20 tracking-tight">
@@ -539,6 +585,14 @@ export default function SingleproductPage({
                         </Button>
                       </div>
                     </div>
+
+                    <div className="tablet:hidden">
+                      <img
+                        src={res.data.barcode_image_url}
+                        alt="Barcode image"
+                        className="relative z-20 aspect-auto w-full object-cover brightness-60 grayscale dark:brightness-40 rounded-lg"
+                      />
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -547,7 +601,7 @@ export default function SingleproductPage({
         </div>
 
         {/* Right side  */}
-        <div className=" max-w-80 w-full  sticky top-4 self-start">
+        <div className=" laptop:max-w-80 w-full  sticky top-4 self-start">
           <div className="flex flex-col gap-4">
             <h4 className="scroll-m-20 text-lg tracking-tight">Timeline</h4>
 
@@ -628,7 +682,7 @@ function SingleSkeleton() {
       </div>
 
       {/* Meta */}
-      <div className="grid auto-rows-min gap-6  md:grid-cols-4">
+      <div className="grid auto-rows-min gap-6 grid-cols-2 md:grid-cols-4">
         {Array.from({ length: 6 }).map((_) => (
           <div className="flex flex-col gap-4">
             <Skeleton className="h-18" />
@@ -639,7 +693,7 @@ function SingleSkeleton() {
       <Separator className="h-px" />
 
       {/* Dual Cols */}
-      <div className="justify-between flex w-full gap-20 ">
+      <div className="justify-between flex  flex-col md:flex-row w-full gap-20 ">
         {/* Right Col */}
         <div className="flex items-stretch flex-initial flex-col gap-6 w-full">
           {Array.from({ length: 3 }).map((_) => (
@@ -651,7 +705,7 @@ function SingleSkeleton() {
         </div>
 
         {/* Right side  */}
-        <div className=" max-w-80 w-full  sticky top-4 self-start gap-8">
+        <div className=" laptop:max-w-80 w-full  sticky top-4 self-start gap-8">
           <div className="flex flex-col gap-8">
             {Array.from({ length: 2 }).map((_) => (
               <div className="flex flex-col gap-4">
@@ -666,7 +720,7 @@ function SingleSkeleton() {
   );
 }
 
-export function ProductNotFound() {
+function ProductNotFound() {
   return (
     <Empty className="p-0 !h-[calc(100svh-var(--header-height))]">
       <EmptyHeader>

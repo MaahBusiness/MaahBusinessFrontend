@@ -7,12 +7,13 @@ import { useAuth } from "@/contexts/auth-context";
 import {
   Form,
   Link,
+  redirect,
   useNavigate,
   useNavigation,
   useSearchParams,
 } from "react-router";
 import type { OrganisationMember, Role, ServerActionState } from "types";
-import { capitalizeFirstChar, genericErrorState } from "utils";
+import { capitalizeFirstChar, extractImageUrl, genericErrorState } from "utils";
 import {
   Tooltip,
   TooltipContent,
@@ -73,7 +74,10 @@ export default function AddTeam({ actionData }: Route.ComponentProps) {
   const errors = actionData?.errors;
   const isSubmitting = navigation.state === "submitting";
 
-  if (!orgId) throw navigate("organisations");
+  if (!orgId) {
+    redirect("organisations");
+    return;
+  }
 
   //   Fetch organisation
   const { data: res, isLoading } = useQuery({
@@ -104,8 +108,8 @@ export default function AddTeam({ actionData }: Route.ComponentProps) {
   if (!res?.data) throw navigate("organisations");
 
   return (
-    <div className="w-full min-h-full flex flex-col gap-8 items-stretch max-w-3xl lg:px-6 px-0 mx-auto pt-12 pb-12">
-      <div className="w-full flex flex-row items-center justify-between gap-6">
+    <div className="w-full min-h-full flex flex-col gap-8 items-stretch max-w-3xl lg:px-6 px-6 mx-auto py-12">
+      <div className="w-full flex flex-col tablet:flex-row items-start tablet:items-center justify-between gap-6">
         <div className="">
           <h3 className="text-muted-foreground text-xs font-medium">
             Your organisation, {res.data?.name} has been created.
@@ -131,7 +135,7 @@ export default function AddTeam({ actionData }: Route.ComponentProps) {
           <input type="hidden" name="intent" value="add-team" />
           <input type="hidden" name="id" value={orgId} />
           <FieldGroup className="gap-0 bg-card text-card-foreground flex flex-col rounded-xl border border-border py-2 shadow-sm">
-            <Field className="flex-row gap-4 p-6">
+            <Field className="flex-col tablet:flex-row gap-4 p-6">
               <div className=" flex flex-col gap-1">
                 <Input
                   id="email"
@@ -166,7 +170,9 @@ export default function AddTeam({ actionData }: Route.ComponentProps) {
                   >
                     <div className="flex items-center space-x-4">
                       <Avatar className="size-6">
-                        <AvatarImage src={m?.user?.avatar_url} />
+                        <AvatarImage
+                          src={extractImageUrl(m?.user?.avatar_url)}
+                        />
                         <BoringFallback name={m?.user?.name} />
                       </Avatar>
 

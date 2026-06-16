@@ -15,8 +15,16 @@ import { Toaster } from "sonner";
 import { requireUserSession } from "@/lib/session.server";
 import { AuthProvider } from "@/contexts/auth-context";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { SITE_NAME } from "types/consts";
 
 // import "@fontsource/geist-mono/variable.css";
+
+export function meta() {
+  return [
+    { title: `${SITE_NAME}` },
+    // { name: `description`, content: `Welcome to ${SITE_NAME}!` },
+  ];
+}
 
 // export const links: Route.LinksFunction = () => [
 //   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -54,7 +62,7 @@ const queryClient = new QueryClient({
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />

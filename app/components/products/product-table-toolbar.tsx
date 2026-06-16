@@ -19,7 +19,6 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useOrganisation } from "@/hooks/use-organisation";
 import type { DataTableToolbarProps } from "types";
-import { DataTableFacetedFilter } from "@/components/products/data-table-faceted-filter";
 import {
   filters,
   searchFilters,
@@ -28,12 +27,14 @@ import {
 import { useParams, useSearchParams } from "react-router";
 import { AddProductDrawer } from "@/components/products/product-add-new-drawer";
 import { hasPermission } from "utils/permissions";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ParamsFacetedFilter } from "@/components/ui/params-table-faceted-filter";
 
 export function ProductTableToolbar<TData>({
   table,
 }: DataTableToolbarProps<TData>) {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { businessMember, organisation: res } = useOrganisation();
+  const { businessMember, organisation: res, isLoading } = useOrganisation();
   const { catId, subId } = useParams();
 
   const [filter, setFilter] = useState(searchFilters[0].value);
@@ -75,7 +76,7 @@ export function ProductTableToolbar<TData>({
   const defaultSubCat = defaultCat?.subcategories?.find((c) => c.id === subId);
 
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex items-center justify-between overflow-x-scroll no-scrollbar">
       <div className="flex flex-1 items-center space-x-2">
         <InputGroup className="h-8 w-[200px] lg:w-[250px]">
           <InputGroupInput
@@ -129,12 +130,12 @@ export function ProductTableToolbar<TData>({
         </InputGroup>
 
         {!defaultCat && (
-          <DataTableFacetedFilter title="Categories" options={cats} />
+          <ParamsFacetedFilter title="Categories" options={cats} />
         )}
         {subcats && !defaultSubCat && (
-          <DataTableFacetedFilter title="Subcategories" options={subcats} />
+          <ParamsFacetedFilter title="Subcategories" options={subcats} />
         )}
-        <DataTableFacetedFilter title="Filters" options={filters} />
+        <ParamsFacetedFilter title="Filters" options={filters} />
 
         {searchParams.size > 2 && (
           <Button
@@ -159,8 +160,15 @@ export function ProductTableToolbar<TData>({
       </div>
       <div className="flex items-center space-x-2">
         <DataTableViewOptions table={table} options={visibles} />
-        {hasPermission(businessMember?.role, "products:crud") && (
-          <AddProductDrawer />
+
+        {isLoading ? (
+          <Button size={"sm"}>
+            <Skeleton className="h-2 w-8" />
+          </Button>
+        ) : (
+          hasPermission(businessMember?.role, "products:crud") && (
+            <AddProductDrawer />
+          )
         )}
       </div>
     </div>

@@ -1,5 +1,6 @@
 import type { Locale } from "date-fns";
 import type {
+  ClientFilters,
   InvoiceFilters,
   OTPSessionData,
   Product,
@@ -240,33 +241,37 @@ export function buildQueryParams<T extends Record<string, QueryValue>>(
   );
 }
 
+const genericFiltersParsers = {
+  search: (v: string | null) => v || undefined,
+  order_by: (v: string | null) => v as keyof Product | undefined,
+  page: (v: string | null) => (v ? Number(v) : undefined),
+  page_size: (v: string | null) => (v ? Number(v) : undefined),
+};
+
 /**For parsing search params back into a usable object */
 export const productFilterParsers = {
   category_id: (v: string | null) => v || undefined,
   subcategory_id: (v: string | null) => v || undefined,
-  search: (v: string | null) => v || undefined,
-  order_by: (v: string | null) => v as keyof Product | undefined,
-
+  name: (v: string | null) => v as keyof Product | undefined,
   expired_only: (v: string | null) =>
     v === "true" ? true : v === "false" ? false : undefined,
-
   low_stock_only: (v: string | null) =>
     v === "true" ? true : v === "false" ? false : undefined,
-
-  page: (v: string | null) => (v ? Number(v) : undefined),
-  page_size: (v: string | null) => (v ? Number(v) : undefined),
-  name: (v: string | null) => v as keyof Product | undefined,
+  ...genericFiltersParsers,
 } satisfies Record<keyof ProductFilters, (v: string | null) => any>;
 
 export const invoiceFilterParsers = {
   status: (v: string | null) => v || undefined,
-  search: (v: string | null) => v || undefined,
   start_date: (v: string | null) => v || undefined,
   end_date: (v: string | null) => v || undefined,
-  order_by: (v: string | null) => v as keyof Product | undefined,
-  page: (v: string | null) => (v ? Number(v) : undefined),
-  page_size: (v: string | null) => (v ? Number(v) : undefined),
+  ...genericFiltersParsers,
 } satisfies Record<keyof InvoiceFilters, (v: string | null) => any>;
+
+export const clientFilterParsers = {
+  name: (v: string | null) => v || undefined,
+  customer_type: (v: string | null) => v || undefined,
+  ...genericFiltersParsers,
+} satisfies Record<keyof ClientFilters, (v: string | null) => any>;
 
 /**Parses only defined search params. Much like `cleanPayload` */
 export function parseSearchParams<T>(
@@ -288,7 +293,31 @@ export function parseSearchParams<T>(
 /**Formats amount into readable format, thousand with separators */
 export const formatAmount = (input: string): string => {
   const numericinput = input.replace(/\D/g, ""); // Strip non-numeric characters
-  return numericinput.replace(/\B(?=(\d{3})+(?!\d))/g, ","); // Thousand separators
+  const amount = parseFloat(numericinput || "0");
+  return new Intl.NumberFormat("en-CM", {
+    style: "currency",
+    currency: "XAF",
+    minimumFractionDigits: 0,
+  }).format(amount);
+  // return numericinput.replace(/\B(?=(\d{3})+(?!\d))/g, ","); // Thousand separators
+};
+export const formatDisplayAmount = (input: string | number): string => {
+  const numericinput =
+    `${input}`.trim() ?? "0".split(".")[0].replace(/\D/g, ""); // Strip non-numeric characters
+  const amount = parseFloat(numericinput);
+  return new Intl.NumberFormat("en-CM", {
+    style: "currency",
+    currency: "XAF",
+    minimumFractionDigits: 0,
+  }).format(amount);
+  // return formatted.replace(/\B(?=(\d{3})+(?!\d))/g, ","); // Thousand separators
+};
+
+export const percent = (value: number, total: number, decimals: number = 0) => {
+  if (total === 0) return 0;
+
+  const factor = 10 ** decimals;
+  return Math.round((value / total) * 100 * factor) / factor;
 };
 
 type FormatStyle = boolean | "verbose" | "date";
@@ -362,3 +391,55 @@ export function getTimeUntilOrSince(
     ? `${months} month${months !== 1 ? "s" : ""} left`
     : `${months} month${months !== 1 ? "s" : ""} ago`;
 }
+
+/**Quick safe parser for possibly undefined json */
+export const safeParseJSON = <T>(value?: string): T | undefined => {
+  if (!value) return undefined;
+
+  try {
+    return JSON.parse(value);
+  } catch {
+    return undefined;
+  }
+};
+
+/** Simple check if date is earlier than another*/
+export const isEarlier = (a?: string, b?: string) => {
+  if (!a || !b) return;
+  return new Date(a).getTime() < new Date(b).getTime();
+};
+/**Simple check if date is later than another*/
+export const isLater = (a?: string, b?: string) => {
+  if (!a || !b) return;
+  return new Date(a).getTime() > new Date(b).getTime();
+};
+
+/**Handy function to extract actual image URLs since from what the API returns, the actual image URL is URL-encoded inside the S3 object key. 
+ * | Case                           | Object key                         | Result                  |
+| ------------------------------ | ---------------------------------- | ----------------------- |
+| External image attached by URL | `https%3A//i.pinimg.com/...jpg`    | ✅ decoded to public URL |
+| Uploaded image                 | `barcodes/product-barcode-....png` | ✅ original S3 URL       |
+| Generated image                | `products/generated-....png`       | ✅ original S3 URL       |
+| Non-S3 URL                     | `https://example.com/img.png`      | ✅ returned as-is        |
+
+*/
+
+export const extractImageUrl = (url?: string) => {
+  if (!url) return undefined;
+
+  // Not an S3 URL → return as-is
+  if (!url.includes(".amazonaws.com/")) {
+    return url;
+  }
+
+  const objectKey = url.split(".amazonaws.com/")[1]?.split("?")[0];
+  if (!objectKey) return url;
+
+  // If the object key itself is an encoded URL, decode it
+  if (objectKey.startsWith("https%3A") || objectKey.startsWith("http%3A")) {
+    return decodeURIComponent(objectKey);
+  }
+
+  // Otherwise it's a normal uploaded/generated S3 object
+  return url;
+};
