@@ -3,7 +3,7 @@ import { businessesApi } from "@/lib/api/businesses";
 import { customersApi } from "@/lib/api/customers";
 import { productsApi } from "@/lib/api/products";
 import { salesApi } from "@/lib/api/sales";
-import type { InvoiceFilters, ProductFilters, ProductUpdateParams } from "types";
+import type { ClientFilters, InvoiceFilters, PaymentFilters, ProductFilters, ProductUpdateParams } from "types";
 import { BUSINESS_URL, MEMBERS_URL } from "utils/endpoints";
 
 export const organisationsApi = {
@@ -39,7 +39,33 @@ export const organisationsApi = {
   getInvoices: (token: string, id: string) => salesApi.list(token, id),
   getFilteredInvoices: (token: string, id: string, filters?: InvoiceFilters) =>
     salesApi.list(token, id, filters),
+  getFilteredArchivedInvoices: (
+    token: string,
+    id: string,
+    filters?: InvoiceFilters,
+  ) => salesApi.getArchived(token, id, filters),
+  getSingleInvoice: salesApi.getById,
+  createInvoice: salesApi.create,
+  updateInvoice: salesApi.update,
+  cancelInvoice: salesApi.cancel,
+  archiveInvoice: salesApi.archive,
+  deleteInvoice: salesApi.delete,
+  creditInvoice: salesApi.credit,
+  processRefund: salesApi.processRefund,
+  scanBarcode: salesApi.scanBarcode,
+  generateReceipt: salesApi.generateReceipt,
+  getPayments: salesApi.getPayments,
+  getFilteredPayments: salesApi.getPayments,
+  getInvoicePayments: salesApi.getInvoicePayments,
   getCustomers: customersApi.list,
+  getFilteredClients: customersApi.list,
+  getSingleClient: customersApi.getById,
+  createClient: customersApi.create,
+  updateClient: customersApi.update,
+  removeClient: customersApi.remove,
+  creditClient: customersApi.credit,
+  payCredit: customersApi.payCredit,
+  getCreditPayments: customersApi.getCreditPayments,
 };
 
 export const organisationKeys = {
@@ -70,6 +96,17 @@ export const organisationKeys = {
   invoice: (id: string) => ["invoice", id] as const,
   invoiceList: (id: string, filters?: InvoiceFilters) =>
     [...organisationKeys.detail(id), "invoices", { filters }] as const,
+
+  paymentList: (id: string, filters?: PaymentFilters) =>
+    [...organisationKeys.detail(id), "payments", { filters }] as const,
+  payment: (id: string) => ["payment", id] as const,
+  scanned: (orgId: string, code: string) =>
+    [...organisationKeys.detail(orgId), "scanned", code] as const,
+  print: (id: string) => ["print", id] as const,
+
+  clientList: (id: string, filters?: ClientFilters) =>
+    [...organisationKeys.detail(id), "clients", { filters }] as const,
+  client: (id: string) => ["client", id] as const,
 
   customers: (id: string) =>
     [...organisationKeys.detail(id), "customers"] as const,

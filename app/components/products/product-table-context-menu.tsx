@@ -35,7 +35,8 @@ export function ProductTableContextMenu({
   className,
   children,
   title,
-}: TableContextMenuProps<Product>) {
+  compact,
+}: TableContextMenuProps<Product> & { compact?: boolean }) {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const { businessMember, removeProduct, isRemovingProduct } =
@@ -63,7 +64,8 @@ export function ProductTableContextMenu({
       <ContextMenuTrigger
         title={title}
         className={cn(
-          "flex h-full w-full max-w-xs items-center justify-start gap-2 px-4",
+          "flex w-full max-w-xs items-center justify-start gap-1.5",
+          compact ? "h-9 min-h-9 px-2 py-0" : "h-full gap-2 px-4",
           className,
         )}
       >

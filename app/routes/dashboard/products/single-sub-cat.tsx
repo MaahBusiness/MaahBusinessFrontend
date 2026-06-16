@@ -197,6 +197,7 @@ export default function SingleCatPage({ actionData }: Route.ComponentProps) {
           // data={productData}
           meta={res.meta}
           columns={cols}
+          density="compact"
           DataTableToolbar={ProductTableToolbar}
         />
       </div>

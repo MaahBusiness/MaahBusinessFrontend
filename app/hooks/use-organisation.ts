@@ -74,8 +74,7 @@ export function useOrganisation() {
         if (!accessToken) throw rdr;
         return await organisationsApi.getProduct(accessToken, id);
       },
-      enabled: !!accessToken,
-      // staleTime: 2 * 60 * 1000, // 2 minutes (more dynamic data)
+      enabled: !!accessToken && !!id,
     });
 
   const invoicesQuery = (filters?: InvoiceFilters) =>

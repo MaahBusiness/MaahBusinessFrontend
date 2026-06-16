@@ -165,16 +165,13 @@ export const breadcrumbsConfig: BreadcrumbConfig = {
     },
   ],
 
-  // ALL products routes (top-level + nested)
+  // ALL products routes (top-level + nested) — org switcher only, no "Products" crumb
   "/dashboard/org/:id/products/*": [
     { label: "Dashboard", icon: Home, href: "/dashboard", hidden: true },
     {
-      label: (params) => params.id, // Will be replaced by org name
+      label: (params) => params.id,
       href: (params) => `/dashboard/org/${params.id}`,
-      isOrgSwitcher: true, // Renders as dropdown
-    },
-    {
-      label: "Products",
+      isOrgSwitcher: true,
     },
   ],
 

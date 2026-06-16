@@ -26,11 +26,13 @@ import {
 import { DataTablePagination } from "./data-table-pagination";
 import { TablePagination } from "./params-table-pagination";
 import type { DataTableToolbarProps, Pagination } from "types";
+import { cn } from "@/lib/utils";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   meta?: Pagination;
+  density?: "default" | "compact";
   DataTableToolbar<TData>({
     table,
   }: DataTableToolbarProps<TData>): React.JSX.Element;
@@ -40,8 +42,10 @@ export function DataTable<TData, TValue>({
   columns,
   data,
   meta,
+  density = "default",
   DataTableToolbar,
 }: DataTableProps<TData, TValue>) {
+  const compact = density === "compact";
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     [],
@@ -91,9 +95,9 @@ export function DataTable<TData, TValue>({
   });
 
   return (
-    <div className="space-y-4">
+    <div className={cn("min-w-0", compact ? "space-y-2" : "space-y-4")}>
       <DataTableToolbar table={table} />
-      <div className="overflow-hidden rounded-md border border-border">
+      <div className="overflow-x-auto rounded-md border border-border">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -101,7 +105,10 @@ export function DataTable<TData, TValue>({
                 {headerGroup.headers.map((header) => {
                   return (
                     <TableHead
-                      className="text-xs font-normal px-4 "
+                      className={cn(
+                        "text-xs font-normal",
+                        compact ? "h-8 px-2" : "h-10 px-4",
+                      )}
                       key={header.id}
                       colSpan={header.colSpan}
                     >
@@ -117,16 +124,22 @@ export function DataTable<TData, TValue>({
               </TableRow>
             ))}
           </TableHeader>
-          <TableBody className="py-2">
+          <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
-                  className="hover:bg-muted"
+                  className={cn("hover:bg-muted", compact && "h-9 max-h-9")}
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="text-sm p-0 h-12">
+                    <TableCell
+                      key={cell.id}
+                      className={cn(
+                        "p-0 text-sm",
+                        compact ? "h-9 max-h-9" : "h-12",
+                      )}
+                    >
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext(),
