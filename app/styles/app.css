@@ -1,0 +1,661 @@
+@import "../../node_modules/tw-animate-css/dist/tw-animate.css";
+/*---break---*/
+@custom-variant dark (&:is(.dark *));
+/*---break---*/
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --radius: 0.625rem;
+    --background: oklch(0.99 0.005 264);
+    --foreground: oklch(0.18 0.02 264);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.18 0.02 264);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.18 0.02 264);
+    --primary: oklch(0.48 0.2 264);
+    --primary-foreground: oklch(0.99 0 0);
+    --secondary: oklch(0.96 0.02 264);
+    --secondary-foreground: oklch(0.28 0.04 264);
+    --muted: oklch(0.965 0.01 264);
+    --muted-foreground: oklch(0.5 0.03 264);
+    --accent: oklch(0.94 0.03 280);
+    --accent-foreground: oklch(0.28 0.06 280);
+    --destructive: oklch(0.577 0.245 27.325);
+    --destructive-muted: rgb(254 242 242);
+    --border: oklch(0.922 0 0);
+    --input: oklch(0.922 0 0);
+    --ring: oklch(0.708 0 0);
+    --chart-1: oklch(0.646 0.222 41.116);
+    --chart-2: oklch(0.6 0.118 184.704);
+    --chart-3: oklch(0.398 0.07 227.392);
+    --chart-4: oklch(0.828 0.189 84.429);
+    --chart-5: oklch(0.769 0.188 70.08);
+    --sidebar: oklch(0.985 0 0);
+    --sidebar-foreground: oklch(0.145 0 0);
+    --sidebar-primary: oklch(0.205 0 0);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.97 0 0);
+    --sidebar-accent-foreground: oklch(0.205 0 0);
+    --sidebar-border: oklch(0.922 0 0);
+    --sidebar-ring: oklch(0.708 0 0);
+  }
+
+  .dark {
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.205 0 0);
+    --card-foreground: oklch(0.985 0 0);
+    --popover: oklch(0.205 0 0);
+    --popover-foreground: oklch(0.985 0 0);
+    --primary: oklch(0.922 0 0);
+    --primary-foreground: oklch(0.205 0 0);
+    --secondary: oklch(0.269 0 0);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.269 0 0);
+    --muted-foreground: oklch(0.708 0 0);
+    --accent: oklch(0.269 0 0);
+    --accent-foreground: oklch(0.985 0 0);
+    --destructive: oklch(0.704 0.191 22.216);
+    --destructive-muted: rgb(29 20 18);
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 15%);
+    --ring: oklch(0.556 0 0);
+    --chart-1: oklch(0.488 0.243 264.376);
+    --chart-2: oklch(0.696 0.17 162.48);
+    --chart-3: oklch(0.769 0.188 70.08);
+    --chart-4: oklch(0.627 0.265 303.9);
+    --chart-5: oklch(0.645 0.246 16.439);
+    --sidebar: oklch(0.205 0 0);
+    --sidebar-foreground: oklch(0.985 0 0);
+    --sidebar-primary: oklch(0.488 0.243 264.376);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.269 0 0);
+    --sidebar-accent-foreground: oklch(0.985 0 0);
+    --sidebar-border: oklch(1 0 0 / 10%);
+    --sidebar-ring: oklch(0.556 0 0);
+  }
+
+  /* * {
+    @apply border-border outline-ring/50;
+  } */
+  html {
+    @apply scroll-smooth;
+  }
+
+  html,
+  body {
+    @apply bg-white dark:bg-gray-950;
+
+    @media (prefers-color-scheme: dark) {
+      color-scheme: dark;
+    }
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+
+    color: var(--foreground);
+    background: var(--background);
+
+    /* Custom scrollbar styling. Thanks @pranathiperii. */
+    ::-webkit-scrollbar {
+      width: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 5px;
+    }
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+  }
+
+  code,
+  pre {
+    @apply font-mono;
+  }
+
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .no-scrollbar {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+
+  /* [data-sonner-toast] {
+    background: var(--toast-bg);
+    color: var(--toast-text);
+    border: 1px solid var(--toast-border);
+  } */
+
+  /* Success - Green */
+  [data-sonner-toast][data-type="success"] {
+    --normal-bg: rgb(236 253 245); /* emerald-50-ish */
+    --normal-border: rgb(52 211 153); /* emerald-400 */
+    --normal-text: rgb(6 78 59); /* emerald-900 */
+  }
+
+  .dark [data-sonner-toast][data-type="success"] {
+    --normal-bg: rgb(16 64 42); /* emerald-900-ish, softened */
+    --normal-border: rgb(74 222 128); /* emerald-400 */
+    --normal-text: rgb(209 250 229); /* emerald-100 */
+  }
+
+  /* Error - Red */
+  [data-sonner-toast][data-type="error"] {
+    --normal-bg: rgb(254 242 242); /* red-50 */
+    --normal-border: rgb(248 113 113); /* red-400 */
+    --normal-text: rgb(127 29 29); /* red-900 */
+  }
+
+  .dark [data-sonner-toast][data-type="error"] {
+    --normal-bg: rgb(29 20 18); /* red-900, toned down */
+    --normal-border: rgb(127 35 21);
+    --normal-text: rgb(254 226 226); /* red-100 */
+  }
+
+  /* Warning - Yellow/Orange */
+  [data-sonner-toast][data-type="warning"] {
+    --normal-bg: rgb(255 251 235); /* amber-50 */
+    --normal-border: rgb(251 191 36); /* amber-400 */
+    --normal-text: rgb(120 53 15); /* amber-900 */
+  }
+
+  .dark [data-sonner-toast][data-type="warning"] {
+    --normal-bg: rgb(92 45 18); /* amber-900, muted */
+    --normal-border: rgb(252 211 77); /* amber-300 */
+    --normal-text: rgb(254 243 199); /* amber-100 */
+  }
+
+  /* Info - Blue */
+  [data-sonner-toast][data-type="info"] {
+    --normal-bg: rgb(239 246 255); /* blue-50 */
+    --normal-border: rgb(96 165 250); /* blue-400 */
+    --normal-text: rgb(30 64 175); /* blue-900 */
+  }
+
+  .dark [data-sonner-toast][data-type="info"] {
+    --normal-bg: rgb(23 37 84); /* blue-950 / indigo-950 hybrid */
+    --normal-border: rgb(96 165 250);
+    --normal-text: rgb(219 234 254); /* blue-100 */
+  }
+
+  .border,
+  .border-b,
+  .border-t,
+  .border-l,
+  .border-r {
+    border-color: var(--border);
+  }
+
+  .auth-brand-panel {
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 10%, oklch(0.55 0.22 280 / 0.45), transparent),
+      radial-gradient(ellipse 60% 50% at 90% 80%, oklch(0.5 0.18 220 / 0.35), transparent),
+      radial-gradient(ellipse 50% 40% at 60% 30%, oklch(0.55 0.16 145 / 0.2), transparent),
+      linear-gradient(145deg, oklch(0.38 0.16 264) 0%, oklch(0.32 0.14 290) 45%, oklch(0.28 0.12 270) 100%);
+  }
+}
+
+@keyframes auth-float {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(8px, -14px) scale(1.04);
+  }
+  66% {
+    transform: translate(-6px, 8px) scale(0.98);
+  }
+}
+
+@keyframes auth-gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@layer components {
+  .auth-layout {
+    background: oklch(0.985 0.006 264);
+  }
+
+  .dark .auth-layout {
+    background: oklch(0.12 0.02 264);
+  }
+
+  .auth-form-panel {
+    background:
+      radial-gradient(ellipse 80% 60% at 10% 0%, oklch(0.72 0.14 280 / 0.12), transparent),
+      radial-gradient(ellipse 70% 50% at 95% 90%, oklch(0.68 0.12 264 / 0.1), transparent),
+      radial-gradient(ellipse 50% 40% at 80% 15%, oklch(0.75 0.1 145 / 0.08), transparent),
+      radial-gradient(ellipse 40% 30% at 20% 80%, oklch(0.78 0.12 55 / 0.06), transparent),
+      oklch(0.99 0.005 264);
+  }
+
+  .dark .auth-form-panel {
+    background:
+      radial-gradient(ellipse 80% 60% at 10% 0%, oklch(0.45 0.18 280 / 0.2), transparent),
+      radial-gradient(ellipse 70% 50% at 95% 90%, oklch(0.4 0.15 264 / 0.15), transparent),
+      oklch(0.14 0.025 264);
+  }
+
+  .auth-orb {
+    pointer-events: none;
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(60px);
+    animation: auth-float 12s ease-in-out infinite;
+  }
+
+  .auth-orb-violet {
+    width: 280px;
+    height: 280px;
+    top: -80px;
+    right: -60px;
+    background: oklch(0.65 0.2 280 / 0.25);
+    animation-delay: 0s;
+  }
+
+  .auth-orb-blue {
+    width: 220px;
+    height: 220px;
+    bottom: 10%;
+    left: -40px;
+    background: oklch(0.6 0.18 264 / 0.2);
+    animation-delay: -4s;
+  }
+
+  .auth-orb-emerald {
+    width: 160px;
+    height: 160px;
+    top: 40%;
+    right: 10%;
+    background: oklch(0.7 0.14 145 / 0.15);
+    animation-delay: -8s;
+  }
+
+  .auth-orb-orange {
+    width: 120px;
+    height: 120px;
+    bottom: 20%;
+    right: 25%;
+    background: oklch(0.75 0.16 55 / 0.12);
+    animation-delay: -2s;
+  }
+
+  .auth-brand-orb {
+    pointer-events: none;
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(80px);
+    animation: auth-float 16s ease-in-out infinite;
+  }
+
+  .auth-brand-orb-1 {
+    width: 400px;
+    height: 400px;
+    top: -120px;
+    right: -100px;
+    background: oklch(0.6 0.2 280 / 0.35);
+  }
+
+  .auth-brand-orb-2 {
+    width: 320px;
+    height: 320px;
+    bottom: -80px;
+    left: -60px;
+    background: oklch(0.55 0.18 264 / 0.3);
+    animation-delay: -6s;
+  }
+
+  .auth-brand-orb-3 {
+    width: 200px;
+    height: 200px;
+    top: 45%;
+    left: 55%;
+    background: oklch(0.65 0.15 55 / 0.2);
+    animation-delay: -10s;
+  }
+
+  .auth-brand-headline {
+    animation: animate-in fade-in slide-in-from-left-4 duration-700 fill-mode-both;
+  }
+
+  .auth-feature-item {
+    animation: animate-in fade-in slide-in-from-left-6 duration-600 fill-mode-both;
+  }
+
+  .auth-card-glow {
+    position: absolute;
+    inset: -2px;
+    border-radius: calc(var(--radius) + 6px);
+    background: linear-gradient(
+      135deg,
+      oklch(0.55 0.2 264),
+      oklch(0.58 0.2 280),
+      oklch(0.62 0.16 145),
+      oklch(0.68 0.16 55)
+    );
+    background-size: 300% 300%;
+    animation: auth-gradient-shift 10s ease infinite;
+    opacity: 0.45;
+    filter: blur(10px);
+    z-index: 0;
+  }
+
+  .dark .auth-card-glow {
+    opacity: 0.3;
+  }
+
+  .auth-card {
+    background: oklch(1 0 0 / 0.88);
+    backdrop-filter: blur(24px);
+    box-shadow:
+      0 1px 2px oklch(0.4 0.1 264 / 0.04),
+      0 8px 24px oklch(0.4 0.12 280 / 0.08),
+      0 24px 48px oklch(0.4 0.1 264 / 0.06);
+  }
+
+  .dark .auth-card {
+    background: oklch(0.17 0.025 264 / 0.92);
+    box-shadow:
+      0 1px 2px oklch(0 0 0 / 0.2),
+      0 12px 32px oklch(0 0 0 / 0.35);
+  }
+
+  .auth-card-accent {
+    background: linear-gradient(
+      90deg,
+      oklch(0.55 0.2 264),
+      oklch(0.58 0.2 280),
+      oklch(0.62 0.16 145),
+      oklch(0.68 0.16 55)
+    );
+    background-size: 200% 100%;
+    animation: auth-gradient-shift 6s ease infinite;
+  }
+
+  .auth-input {
+    height: 3rem;
+    width: 100%;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    font-size: 15px;
+    border: 1px solid var(--border);
+    border-radius: calc(var(--radius) + 2px);
+    background: oklch(1 0 0 / 0.8);
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .auth-input::placeholder {
+    color: var(--muted-foreground);
+    opacity: 0.6;
+  }
+
+  .auth-input:focus-visible {
+    border-color: oklch(0.7 0.18 280);
+    outline: none;
+    box-shadow:
+      0 0 0 2px oklch(0.55 0.2 280 / 0.2),
+      0 4px 12px oklch(0.55 0.2 280 / 0.1);
+  }
+
+  .dark .auth-input {
+    border-color: oklch(1 0 0 / 0.1);
+    background: oklch(1 0 0 / 0.05);
+  }
+
+  .dark .auth-input:focus-visible {
+    border-color: oklch(0.55 0.2 280 / 0.5);
+  }
+
+  .auth-field-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    width: 100%;
+  }
+
+  .auth-form-fields {
+    gap: 1rem !important;
+  }
+
+  .auth-form-separator {
+    margin-top: 0.25rem;
+    margin-bottom: 0.25rem;
+    color: var(--muted-foreground);
+    font-size: 0.75rem;
+  }
+
+  .auth-card-divider {
+    height: 1px;
+    background: var(--border);
+    opacity: 0.6;
+  }
+
+  .auth-card-brand {
+    border-bottom: none;
+  }
+
+  .auth-input-toggle {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted-foreground);
+    transition: color 0.2s ease;
+  }
+
+  .auth-input-toggle:hover {
+    color: var(--foreground);
+  }
+
+  .auth-inline-link {
+    font-weight: 500;
+    color: oklch(0.52 0.22 280);
+    text-underline-offset: 4px;
+    transition: color 0.2s ease;
+  }
+
+  .auth-inline-link:hover {
+    color: oklch(0.48 0.24 280);
+    text-decoration: underline;
+  }
+
+  .dark .auth-inline-link {
+    color: oklch(0.72 0.16 280);
+  }
+
+  .auth-submit-btn {
+    background: linear-gradient(
+      135deg,
+      oklch(0.5 0.2 264) 0%,
+      oklch(0.52 0.22 280) 50%,
+      oklch(0.48 0.18 290) 100%
+    );
+    background-size: 200% 200%;
+    color: white;
+    border: none;
+    animation: auth-gradient-shift 6s ease infinite;
+    box-shadow:
+      0 4px 14px oklch(0.5 0.2 280 / 0.35),
+      inset 0 1px 0 oklch(1 0 0 / 0.15);
+  }
+
+  .auth-submit-btn:hover:not(:disabled) {
+    box-shadow:
+      0 6px 20px oklch(0.5 0.2 280 / 0.45),
+      inset 0 1px 0 oklch(1 0 0 / 0.2);
+  }
+
+  .auth-submit-btn:disabled {
+    opacity: 0.55;
+    animation: none;
+  }
+
+  .auth-otp-slot {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 0.75rem;
+    border: 2px solid var(--border);
+    background: oklch(1 0 0 / 0.8);
+    font-size: 1.125rem;
+    font-weight: 600;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    transition: all 0.2s ease;
+  }
+
+  .auth-otp-slot:focus {
+    border-color: oklch(0.55 0.2 280);
+    outline: none;
+    box-shadow:
+      0 0 0 2px oklch(0.55 0.2 280 / 0.25),
+      0 4px 12px oklch(0.55 0.2 280 / 0.15);
+  }
+
+  .dark .auth-otp-slot {
+    border-color: oklch(1 0 0 / 0.15);
+    background: oklch(1 0 0 / 0.05);
+  }
+
+  .auth-info-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    border-radius: 0.75rem;
+    border: 1px solid oklch(0.85 0.08 280 / 0.6);
+    background: linear-gradient(
+      to right,
+      oklch(0.97 0.03 280 / 0.8),
+      oklch(0.97 0.02 264 / 0.6)
+    );
+    padding: 0.875rem 1rem;
+  }
+
+  .dark .auth-info-banner {
+    border-color: oklch(0.55 0.2 280 / 0.2);
+    background: linear-gradient(
+      to right,
+      oklch(0.25 0.06 280 / 0.4),
+      oklch(0.22 0.05 264 / 0.3)
+    );
+  }
+
+  /* ── Dashboard shell ── */
+  .dashboard-page {
+    position: relative;
+    min-height: 100%;
+    overflow: hidden;
+    background:
+      radial-gradient(ellipse 70% 50% at 0% 0%, oklch(0.65 0.18 280 / 0.08), transparent),
+      radial-gradient(ellipse 60% 40% at 100% 100%, oklch(0.6 0.16 264 / 0.07), transparent),
+      radial-gradient(ellipse 40% 30% at 80% 20%, oklch(0.7 0.12 145 / 0.05), transparent);
+  }
+
+  .dark .dashboard-page {
+    background:
+      radial-gradient(ellipse 70% 50% at 0% 0%, oklch(0.45 0.2 280 / 0.15), transparent),
+      radial-gradient(ellipse 60% 40% at 100% 80%, oklch(0.4 0.18 264 / 0.12), transparent),
+      oklch(0.12 0.02 264);
+  }
+
+  .dashboard-orb {
+    pointer-events: none;
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(80px);
+    animation: auth-float 14s ease-in-out infinite;
+  }
+
+  .dashboard-orb-violet {
+    width: 320px;
+    height: 320px;
+    top: -60px;
+    right: -40px;
+    background: oklch(0.6 0.22 280 / 0.18);
+  }
+
+  .dashboard-orb-blue {
+    width: 260px;
+    height: 260px;
+    bottom: 10%;
+    left: -30px;
+    background: oklch(0.55 0.18 264 / 0.14);
+    animation-delay: -5s;
+  }
+
+  .dashboard-orb-emerald {
+    width: 200px;
+    height: 200px;
+    top: 40%;
+    right: 15%;
+    background: oklch(0.65 0.14 145 / 0.12);
+    animation-delay: -9s;
+  }
+
+  .dashboard-hero-title {
+    background: linear-gradient(
+      135deg,
+      oklch(0.35 0.08 264),
+      oklch(0.45 0.18 280),
+      oklch(0.4 0.14 264)
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .dark .dashboard-hero-title {
+    background: linear-gradient(
+      135deg,
+      oklch(0.95 0.02 264),
+      oklch(0.8 0.12 280),
+      oklch(0.85 0.08 264)
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .dashboard-sidebar {
+    background: linear-gradient(
+      180deg,
+      oklch(0.99 0.008 280 / 0.95) 0%,
+      oklch(0.98 0.01 264 / 0.98) 100%
+    );
+  }
+
+  .dark .dashboard-sidebar {
+    background: linear-gradient(
+      180deg,
+      oklch(0.16 0.025 280 / 0.98) 0%,
+      oklch(0.13 0.02 264 / 0.99) 100%
+    );
+  }
+
+  .dashboard-shell-inset {
+    background: transparent;
+  }
+}
