@@ -37,7 +37,8 @@ export default [
     // route("new", "routes/dashboard/new.tsx"),
 
     route("org/:id", "routes/dashboard/sidebar-layout.tsx", [
-      index("routes/dashboard/org/dashboard.tsx"),
+      index("routes/dashboard/org/index.tsx"),
+      route("home", "routes/dashboard/org/dashboard.tsx"),
       route("team", "routes/dashboard/team/index.tsx"),
 
       // Products
@@ -55,6 +56,12 @@ export default [
 
       // Sales
       route("invoices", "routes/dashboard/sales/index.tsx"),
+      route("invoices/archived", "routes/dashboard/sales/archived.tsx"),
+      route("invoices/:invId", "routes/dashboard/sales/single-invoice.tsx"),
+
+      // Customers
+      route("clients", "routes/dashboard/clients/index.tsx"),
+
       route("inventory", "routes/dashboard/inventory/index.tsx"),
     ]),
     route("*", "routes/dashboard/404.tsx"),

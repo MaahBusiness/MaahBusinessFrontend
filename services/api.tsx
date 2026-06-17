@@ -99,7 +99,7 @@ export async function createOrg(formData: FormData, accessToken: string) {
 
     console.log("LOG::CREATE_ORG_SUCCESS", resData);
 
-    return redirect(`/dashboard/org/${resData.id}`);
+    return redirect(`/dashboard/org/${resData.id}/home`);
     // return redirect(`/dashboard/organisations`);
   } catch (err) {
     console.log("LOG::CREATE_ORG_ERROR", (err as Error).message);

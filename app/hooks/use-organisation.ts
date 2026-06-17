@@ -7,7 +7,7 @@ import { redirect, useLocation, useParams } from "react-router";
 import { useAuth } from "@/contexts/auth-context";
 import { toast } from "sonner";
 import { organisationKeys, organisationsApi } from "@/lib/api/organisation";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import type {
   Barcode,
   ClientFilters,
@@ -40,19 +40,21 @@ export function useOrganisation() {
     enabled: !!accessToken,
   });
 
+  type QueryOpts = { enabled?: boolean };
+
   // Fetch members
-  const membersQuery = () =>
+  const membersQuery = (opts?: QueryOpts) =>
     useQuery({
       queryKey: organisationKeys.members(orgId),
       queryFn: async () => {
         if (!accessToken) throw rdr;
         return await organisationsApi.getMembers(accessToken, orgId);
       },
-      enabled: !!accessToken && !!coreQuery.data,
+      enabled: (opts?.enabled ?? true) && !!accessToken && !!coreQuery.data,
       // staleTime: 2 * 60 * 1000, // 2 minutes (more dynamic data)
     });
 
-  const productsQuery = (filters?: ProductFilters) =>
+  const productsQuery = (filters?: ProductFilters, opts?: QueryOpts) =>
     useQuery({
       queryKey: organisationKeys.prodlist(orgId, filters),
       queryFn: async () => {
@@ -63,7 +65,7 @@ export function useOrganisation() {
           filters,
         );
       },
-      enabled: !!accessToken && !!coreQuery.data,
+      enabled: (opts?.enabled ?? true) && !!accessToken && !!coreQuery.data,
       // staleTime: 2 * 60 * 1000, // 2 minutes (more dynamic data)
     });
 
@@ -77,7 +79,7 @@ export function useOrganisation() {
       enabled: !!accessToken && !!id,
     });
 
-  const invoicesQuery = (filters?: InvoiceFilters) =>
+  const invoicesQuery = (filters?: InvoiceFilters, opts?: QueryOpts) =>
     useQuery({
       queryKey: organisationKeys.invoiceList(orgId, filters),
       queryFn: async () => {
@@ -88,7 +90,7 @@ export function useOrganisation() {
           filters,
         );
       },
-      enabled: !!accessToken && !!coreQuery.data,
+      enabled: (opts?.enabled ?? true) && !!accessToken && !!coreQuery.data,
       // staleTime: 2 * 60 * 1000, // 2 minutes (more dynamic data)
     });
 
@@ -422,6 +424,16 @@ export function useOrganisation() {
 
   // You can handle custom success toast messages for fetchers on individual components since no success message is returned from the API (intentionally)
 
+  const { data: membersListRes } = membersQuery();
+
+  const businessMember = useMemo(() => {
+    const embedded = coreQuery.data?.data?.members ?? [];
+    const listed = membersListRes?.data ?? [];
+    const pool = embedded.length ? embedded : listed;
+
+    return pool.find((m) => m.user?.id === user?.id);
+  }, [coreQuery.data?.data?.members, membersListRes?.data, user?.id]);
+
   useEffect(() => {
     if (coreQuery.data?.message) {
       if (!coreQuery.data?.success) toast.error(coreQuery.data?.message);
@@ -432,10 +444,8 @@ export function useOrganisation() {
   return {
     // Data
     organisation: coreQuery.data,
-    /**Special usage: User relative to current organisation     */
-    businessMember: coreQuery.data?.data?.members?.find(
-      (m) => m.user?.id === user?.id,
-    ),
+    /** Current user's membership in this organisation */
+    businessMember,
 
     fetchMembers: membersQuery,
     fetchProducts: productsQuery,

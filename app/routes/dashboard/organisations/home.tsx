@@ -150,7 +150,7 @@ function OrgCard({ org, index }: { org: OrganisationCore; index: number }) {
 
   return (
     <Link
-      to={`/dashboard/org/${org.id}`}
+      to={`/dashboard/org/${org.id}/home`}
       className={cn(
         "org-card group relative flex flex-col gap-4 overflow-hidden rounded-2xl border bg-card/60 p-5 backdrop-blur-sm transition-all duration-300",
         "hover:-translate-y-1 hover:shadow-xl",

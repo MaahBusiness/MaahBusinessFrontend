@@ -22,7 +22,6 @@ import type { DataTableToolbarProps } from "types";
 import { visibles } from "@/routes/dashboard/clients/data";
 import { useSearchParams } from "react-router";
 import { hasPermission } from "utils/permissions";
-import { CreateInvoiceDrawer } from "@/components/sales/invoice-add-new-drawer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { searchFilters } from "@/routes/dashboard/sales/data";
 import { ParamsFacetedFilter } from "@/components/ui/params-table-faceted-filter";
@@ -43,7 +42,7 @@ export function ClientTableToolbar<TData>({
       <div className="flex flex-1 items-center space-x-2">
         <InputGroup className="h-8 w-[200px] lg:w-[250px]">
           <InputGroupInput
-            placeholder="Search team..."
+            placeholder="Search customers..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => {

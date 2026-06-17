@@ -49,7 +49,7 @@ export function DashboardSidebar() {
   return (
     <Sidebar
       collapsible="icon"
-      className="dashboard-sidebar top-[--header-height] z-20 !h-[calc(100svh-var(--header-height))] border-r border-violet-500/10"
+      className="dashboard-sidebar sticky top-[--header-height] h-[calc(100svh-var(--header-height))] shrink-0 border-r border-violet-500/10"
     >
       <SidebarHeader className="border-b border-violet-500/10 p-3">
         <Link
