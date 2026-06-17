@@ -116,12 +116,22 @@ export const breadcrumbsConfig: BreadcrumbConfig = {
   ],
 
   // Single organisation (with switcher)
+  "/dashboard/org/:id/home": [
+    { label: "Dashboard", icon: Home, href: "/dashboard", hidden: true },
+    {
+      label: (params) => params.id,
+      href: (params) => `/dashboard/org/${params.id}/home`,
+      isOrgSwitcher: true,
+    },
+  ],
+
+  // Legacy org root (redirects to /home)
   "/dashboard/org/:id": [
     { label: "Dashboard", icon: Home, href: "/dashboard", hidden: true },
     {
-      label: (params) => params.id, // Will be replaced by org name
-      href: (params) => `/dashboard/org/${params.id}`,
-      isOrgSwitcher: true, // Renders as dropdown
+      label: (params) => params.id,
+      href: (params) => `/dashboard/org/${params.id}/home`,
+      isOrgSwitcher: true,
     },
   ],
 
@@ -130,7 +140,7 @@ export const breadcrumbsConfig: BreadcrumbConfig = {
     { label: "Dashboard", icon: Home, href: "/dashboard", hidden: true },
     {
       label: (params) => params.id, // Will be replaced by org name
-      href: (params) => `/dashboard/org/${params.id}`,
+      href: (params) => `/dashboard/org/${params.id}/home`,
       isOrgSwitcher: true, // Renders as dropdown
     },
     {
@@ -142,7 +152,7 @@ export const breadcrumbsConfig: BreadcrumbConfig = {
     { label: "Dashboard", icon: Home, href: "/dashboard", hidden: true },
     {
       label: (params) => params.id,
-      href: (params) => `/dashboard/org/${params.id}`,
+      href: (params) => `/dashboard/org/${params.id}/home`,
       isOrgSwitcher: true,
     },
   ],
@@ -151,7 +161,7 @@ export const breadcrumbsConfig: BreadcrumbConfig = {
     { label: "Dashboard", icon: Home, href: "/dashboard", hidden: true },
     {
       label: (params) => params.id,
-      href: (params) => `/dashboard/org/${params.id}`,
+      href: (params) => `/dashboard/org/${params.id}/home`,
       isOrgSwitcher: true,
     },
   ],
@@ -160,7 +170,7 @@ export const breadcrumbsConfig: BreadcrumbConfig = {
     { label: "Dashboard", icon: Home, href: "/dashboard", hidden: true },
     {
       label: (params) => params.id,
-      href: (params) => `/dashboard/org/${params.id}`,
+      href: (params) => `/dashboard/org/${params.id}/home`,
       isOrgSwitcher: true,
     },
   ],
@@ -170,7 +180,7 @@ export const breadcrumbsConfig: BreadcrumbConfig = {
     { label: "Dashboard", icon: Home, href: "/dashboard", hidden: true },
     {
       label: (params) => params.id,
-      href: (params) => `/dashboard/org/${params.id}`,
+      href: (params) => `/dashboard/org/${params.id}/home`,
       isOrgSwitcher: true,
     },
   ],
@@ -180,7 +190,7 @@ export const breadcrumbsConfig: BreadcrumbConfig = {
     { label: "Dashboard", icon: Home, href: "/dashboard", hidden: true },
     {
       label: (params) => params.id, // Will be replaced by org name
-      href: (params) => `/dashboard/org/${params.id}`,
+      href: (params) => `/dashboard/org/${params.id}/home`,
       isOrgSwitcher: true, // Renders as dropdown
     },
     {
@@ -192,7 +202,7 @@ export const breadcrumbsConfig: BreadcrumbConfig = {
     { label: "Dashboard", icon: Home, href: "/dashboard", hidden: true },
     {
       label: (params) => params.id, // Will be replaced by org name
-      href: (params) => `/dashboard/org/${params.id}`,
+      href: (params) => `/dashboard/org/${params.id}/home`,
       isOrgSwitcher: true, // Renders as dropdown
     },
     {
@@ -204,7 +214,7 @@ export const breadcrumbsConfig: BreadcrumbConfig = {
     { label: "Dashboard", icon: Home, href: "/dashboard", hidden: true },
     {
       label: (params) => params.id, // Will be replaced by org name
-      href: (params) => `/dashboard/org/${params.id}`,
+      href: (params) => `/dashboard/org/${params.id}/home`,
       isOrgSwitcher: true, // Renders as dropdown
     },
     {

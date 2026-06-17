@@ -10,15 +10,18 @@ import {
   SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { useParams } from "react-router";
 import { useOrganisation } from "@/hooks/use-organisation";
 import {
   filterSidebarByRole,
   SIDEBAR_NAV_SCHEMA,
-} from "@/lib/sidebar-nav";
+} from "@/lib/org-navigation";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { toggleSidebar } = useSidebar();
-  const { businessMember } = useOrganisation();
+  const { id: routeOrgId } = useParams<{ id: string }>();
+  const { businessMember, organisation } = useOrganisation();
+  const orgId = routeOrgId ?? organisation?.data?.id;
 
   const nav = React.useMemo(
     () => filterSidebarByRole(SIDEBAR_NAV_SCHEMA, businessMember?.role),
@@ -28,11 +31,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar
       collapsible="icon"
-      className="top-[--header-height] !h-[calc(100svh-var(--header-height))] border-border z-10 bg-background"
+      className="sticky top-[--header-height] h-[calc(100svh-var(--header-height))] shrink-0 border-border bg-background"
       {...props}
     >
       <SidebarContent>
-        <NavMain data={nav} />
+        <NavMain data={nav} orgId={orgId} />
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenuButton

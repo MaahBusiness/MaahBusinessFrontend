@@ -1,4 +1,6 @@
 import ClientSelector from "@/components/sales/client-selector";
+import { PosProductSearchDialog } from "@/components/sales/pos-product-search-dialog";
+import { ProductFormSection } from "@/components/products/product-form-section";
 import { Button } from "@/components/ui/button";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
 import {
@@ -15,7 +17,6 @@ import {
   FieldContent,
   FieldDescription,
   FieldError,
-  FieldGroup,
   FieldLabel,
   FieldTitle,
 } from "@/components/ui/field";
@@ -51,27 +52,59 @@ import {
 } from "@/components/ui/tooltip";
 import { useOrganisation } from "@/hooks/use-organisation";
 import { methods, statuses } from "@/routes/dashboard/sales/data";
-import { Barcode, Plus, ScanBarcode, Search, Trash2 } from "lucide-react";
-import React from "react";
+import {
+  Barcode,
+  CreditCard,
+  FileText,
+  Plus,
+  Receipt,
+  ScanBarcode,
+  Search,
+  Trash2,
+  UserRound,
+} from "lucide-react";
+import React, { useEffect, useRef } from "react";
 import { useState } from "react";
 import { Form, useActionData, useNavigation } from "react-router";
 import type { AddedLine, Product, ServerActionState } from "types";
 import {
-  formatAmount,
   formatDisplayAmount,
   genericErrorState,
   percent,
 } from "utils";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
-export function CreateInvoiceDrawer() {
+export function CreateInvoiceDrawer({
+  variant = "toolbar",
+  defaultOpen = false,
+  open: controlledOpen,
+  onOpenChange,
+  formAction,
+}: {
+  variant?: "toolbar" | "hero";
+  defaultOpen?: boolean;
+  /** Controlled open state (e.g. from `?new=1` on the sales page). */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  /** POST target when the drawer is used outside the sales route */
+  formAction?: string;
+}) {
   const actionData = useActionData<ServerActionState & { data?: Product }>();
   const navigation = useNavigation();
   const { scanCode } = useOrganisation();
 
+  const [internalOpen, setInternalOpen] = useState(defaultOpen);
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = onOpenChange ?? setInternalOpen;
+  const [searchOpen, setSearchOpen] = useState(false);
+  const barcodeRef = useRef<HTMLInputElement>(null);
+
   const [advance, setAdvance] = useState<string>();
   const [tax, setTax] = useState<string>();
   const [onCredit, setOnCredit] = useState<boolean>();
+  const [method, setMethod] = useState("cash");
+  const [status, setStatus] = useState("COMPLETED");
 
   // Code field data
   const [CFD, setCFD] = useState<{ code: string; qty: number }>();
@@ -82,6 +115,35 @@ export function CreateInvoiceDrawer() {
   const isSubmitting = navigation.state === "submitting";
   const intent = navigation.formData?.get("intent");
   const isAdding = isSubmitting && intent === "create-invoice";
+
+  useEffect(() => {
+    if (!actionData || navigation.state !== "idle") return;
+
+    if (actionData.success) {
+      setLines([]);
+      setAdvance(undefined);
+      setTax(undefined);
+      setOnCredit(false);
+      setCFD(undefined);
+      setMethod("cash");
+      setStatus("COMPLETED");
+      setOpen(false);
+      return;
+    }
+
+    if (actionData.errors) {
+      const messages = Object.values(actionData.errors).filter(Boolean);
+      if (messages.length) toast.error(messages[0] as string);
+    } else if (actionData.message) {
+      toast.error(actionData.message);
+    }
+  }, [actionData, navigation.state]);
+
+  useEffect(() => {
+    if (controlledOpen === undefined && defaultOpen) {
+      setInternalOpen(true);
+    }
+  }, [controlledOpen, defaultOpen]);
 
   const { refetch, isFetching } = scanCode(CFD?.code ?? "");
 
@@ -103,18 +165,35 @@ export function CreateInvoiceDrawer() {
   const total =
     totalAfterDiscount + (parseInt(`${tax}`.replace(/\D/g, ""), 10) || 0);
 
+  useEffect(() => {
+    if (onCredit) return;
+    if (!lines.length) {
+      setAdvance(undefined);
+      return;
+    }
+    setAdvance(String(totalAfterDiscount));
+  }, [lines, onCredit, totalAfterDiscount]);
+
+  useEffect(() => {
+    if (onCredit) {
+      setStatus("CREDIT");
+      return;
+    }
+    setStatus("COMPLETED");
+  }, [onCredit]);
+
   async function handleAdd() {
     if (!CFD) {
-      toast.error("Please provide a barcode and amount");
+      toast.error("Please provide a barcode and quantity");
       return;
     }
     const { code, qty } = CFD;
-    if (!code.replace("/\D/g", "")) {
+    if (!code.trim()) {
       toast.error("Please provide a valid barcode");
       return;
     }
     if (qty < 1) {
-      toast.error("Please provide a valid amount");
+      toast.error("Please provide a valid quantity");
       return;
     }
 
@@ -126,17 +205,19 @@ export function CreateInvoiceDrawer() {
     }
 
     if (!data?.data) {
-      toast.error(data?.message);
+      toast.error(data?.message ?? "Product not found");
       return;
     }
 
-    const { data: pr } = data;
+    addProductLine(data.data, qty);
+    setCFD((prev) => ({ code: prev?.code ?? "", qty: 1 }));
+  }
 
+  function addProductLine(pr: Product, qty: number) {
     setLines((prev) => {
       const existing = prev.find((l) => l.id === pr.id);
 
       if (existing) {
-        // 🔁 update quantity
         return prev.map((l) =>
           l.id === pr.id
             ? { ...l, qty: qty > pr.quantity ? pr.quantity : qty }
@@ -144,7 +225,6 @@ export function CreateInvoiceDrawer() {
         );
       }
 
-      //  add new
       return [
         ...prev,
         {
@@ -154,8 +234,6 @@ export function CreateInvoiceDrawer() {
         },
       ];
     });
-
-    // setCFD(undefined);
   }
 
   const updateQuantity = (id: string, qty: number) => {
@@ -177,276 +255,282 @@ export function CreateInvoiceDrawer() {
 
   return (
     <div className="flex flex-wrap gap-2">
-      <Drawer direction="right">
+      <Drawer direction="right" open={open} onOpenChange={setOpen}>
         <DrawerTrigger asChild>
-          <Button size={"sm"} className="h-8 px-2 lg:px-3 text-xs">
-            {isAdding ? <Spinner className="size-4" /> : <Plus size={4} />}
-            Create invoice
+          <Button
+            size={variant === "hero" ? "default" : "sm"}
+            className={cn(
+              variant === "hero"
+                ? "auth-submit-btn h-10 gap-2 border-0 px-5 shadow-sm"
+                : "h-8 px-2 text-xs lg:px-3",
+            )}
+          >
+            {isAdding ? (
+              <Spinner className="size-4" />
+            ) : (
+              <Plus className="size-4" />
+            )}
+            {variant === "hero" ? "New sale" : "Create invoice"}
           </Button>
         </DrawerTrigger>
 
-        {/* Form */}
-        <DrawerContent className="data-[vaul-drawer-direction=right]:tablet:max-w-xl data-[vaul-drawer-direction=right]:w-full data-[vaul-drawer-direction=bottom]:max-h-[90vh]">
+        <DrawerContent className="data-[vaul-drawer-direction=right]:w-full data-[vaul-drawer-direction=right]:sm:max-w-2xl data-[vaul-drawer-direction=bottom]:max-h-[90vh]">
           <Form
             method="POST"
+            action={formAction}
             encType="multipart/form-data"
-            className=" flex h-full flex-col"
+            className="flex h-full flex-col"
           >
-            <DrawerHeader className="px-6 py-4 border-b border-border">
-              <DrawerTitle className="text-base font-normal">
-                Create a new invoice
+            <DrawerHeader className="border-b border-violet-500/15 bg-gradient-to-r from-violet-500/10 via-card to-blue-500/5 px-6 py-5">
+              <DrawerTitle className="flex items-center gap-2 text-lg font-semibold tracking-tight">
+                <Receipt className="size-5 text-violet-600" />
+                New sale
               </DrawerTitle>
+              <p className="text-sm text-muted-foreground">
+                Add products, choose a customer, and record payment.
+              </p>
             </DrawerHeader>
 
-            <div className="no-scrollbar  h-auto  relative flex-1 overflow-y-auto ">
+            <div className="no-scrollbar relative flex-1 space-y-4 overflow-y-auto p-4 sm:p-6">
               <input type="hidden" name="intent" value="create-invoice" />
               <input type="hidden" name="lines" value={JSON.stringify(lines)} />
 
-              {/* Basic info */}
-              <FieldGroup className="flex flex-col border-b border-border py-6 px-6">
-                <Field className="gap-4">
-                  <div className="flex flex-col w-1/2 text-wrap">
-                    <FieldLabel htmlFor="client-name">
-                      Select customer
-                    </FieldLabel>
-                    <FieldDescription className="text-xs">
-                      Choose an existing customer from your records or add a new
-                      customer.
-                    </FieldDescription>
-                  </div>
+              <ProductFormSection
+                title="Customer"
+                description="Select an existing customer or add a new one."
+                icon={UserRound}
+                accent="violet"
+              >
+                <ClientSelector />
+                <FieldError errors={[{ message: errors?.client }]} />
+              </ProductFormSection>
 
-                  <div className="flex gap-2 w-full items-center">
-                    <ClientSelector />
-                  </div>
-
-                  <FieldError errors={[{ message: errors?.client }]} />
-                </Field>
-              </FieldGroup>
-
-              {/* Product Lines */}
-              <FieldGroup className="flex flex-col border-b border-border py-6 px-6">
-                <Field className="gap-4">
-                  <div className="flex flex-col flex-grow">
-                    <FieldLabel htmlFor="code">Products</FieldLabel>
-                    <FieldDescription className="text-xs">
-                      Scan or enter barcode or search to add one or more
-                      products to this invoice.
-                    </FieldDescription>
-                  </div>
-
-                  <div className="flex items-end gap-2">
-                    <Field>
-                      <InputGroup>
-                        <InputGroupInput
-                          id="code"
-                          name="code"
-                          type="text"
-                          value={CFD?.code}
-                          onChange={(e) =>
-                            setCFD((p) => ({
-                              code: e.target.value,
-                              qty: p?.qty ?? 1,
-                            }))
-                          }
-                          placeholder="Enter the product barcode"
-                          required
-                        />
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <InputGroupAddon align="inline-end">
-                              <Barcode />
-                            </InputGroupAddon>
-                          </TooltipTrigger>
-                          <TooltipContent>Barcode</TooltipContent>
-                        </Tooltip>
-                      </InputGroup>
-                    </Field>
-                    <Field className="max-w-25">
-                      <Input
-                        id="qty"
-                        type="number"
-                        name="qty"
-                        min={1}
-                        value={CFD?.qty}
+              <ProductFormSection
+                title="Products"
+                description="Scan or enter a barcode to add items to this sale."
+                icon={Barcode}
+                accent="blue"
+              >
+                <div className="flex flex-wrap items-end gap-2">
+                  <Field className="min-w-[180px] flex-1">
+                    <InputGroup>
+                      <InputGroupInput
+                        ref={barcodeRef}
+                        id="code"
+                        name="code"
+                        type="text"
+                        value={CFD?.code}
                         onChange={(e) =>
                           setCFD((p) => ({
-                            code: p?.code ?? "",
-                            qty: Number(e.target.value ?? 0),
+                            code: e.target.value,
+                            qty: p?.qty ?? 1,
                           }))
                         }
-                        placeholder="Quantity"
-                        required
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            void handleAdd();
+                          }
+                        }}
+                        placeholder="Scan or type barcode, then Enter"
                       />
-                    </Field>
-                    <Button
-                      variant="secondary"
-                      type="button"
-                      size="icon"
-                      onClick={handleAdd}
-                      disabled={isFetching}
-                      className="rounded-full"
-                    >
-                      {isFetching ? <Spinner /> : <Plus />}
-                    </Button>
-                  </div>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <InputGroupAddon align="inline-end">
+                            <Barcode />
+                          </InputGroupAddon>
+                        </TooltipTrigger>
+                        <TooltipContent>Barcode</TooltipContent>
+                      </Tooltip>
+                    </InputGroup>
+                  </Field>
+                  <Field className="w-24">
+                    <Input
+                      id="qty"
+                      type="number"
+                      name="qty"
+                      min={1}
+                      value={CFD?.qty}
+                      onChange={(e) =>
+                        setCFD((p) => ({
+                          code: p?.code ?? "",
+                          qty: Number(e.target.value ?? 0),
+                        }))
+                      }
+                      placeholder="Qty"
+                    />
+                  </Field>
+                  <Button
+                    variant="secondary"
+                    type="button"
+                    size="icon"
+                    onClick={handleAdd}
+                    disabled={isFetching}
+                    className="shrink-0 rounded-full"
+                  >
+                    {isFetching ? <Spinner /> : <Plus />}
+                  </Button>
+                </div>
 
-                  <div className="flex flex-col tablet:flex-row gap-2 tablet:items-center">
-                    <Button
-                      size={"sm"}
-                      variant={"secondary"}
-                      className="w-fit text-xs font-normal"
-                      disabled
-                    >
-                      <ScanBarcode size={4} />
-                      Scan barcode
-                    </Button>
-                    <Button
-                      size={"sm"}
-                      variant={"secondary"}
-                      className="w-fit text-xs font-normal"
-                    >
-                      <Barcode size={4} />
-                      Enter manually
-                    </Button>
-                    <Button
-                      size={"sm"}
-                      variant={"secondary"}
-                      className="w-fit text-xs font-normal"
-                      disabled
-                    >
-                      <Search size={4} />
-                      Search products
-                    </Button>
-                  </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    type="button"
+                    className="text-xs font-normal"
+                    onClick={() => barcodeRef.current?.focus()}
+                  >
+                    <ScanBarcode className="size-3.5" />
+                    Scan barcode
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    type="button"
+                    className="text-xs font-normal"
+                    onClick={() => barcodeRef.current?.focus()}
+                  >
+                    <Barcode className="size-3.5" />
+                    Enter manually
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    type="button"
+                    className="text-xs font-normal"
+                    onClick={() => setSearchOpen(true)}
+                  >
+                    <Search className="size-3.5" />
+                    Search products
+                  </Button>
+                </div>
 
-                  <div className="overflow-hidden rounded-md border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Product</TableHead>
-                          <TableHead>Price</TableHead>
-                          <TableHead>Stock</TableHead>
-                          <TableHead>Quantity</TableHead>
-                          <TableHead>Discount</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {lines.map((pr) => (
-                          <TableRow key={pr.id}>
-                            <TableCell className="font-medium max-w-[150px] truncate">
-                              {pr.name}
-                            </TableCell>
-                            <TableCell>
-                              {formatDisplayAmount(pr.unit_price)}
-                            </TableCell>
-                            <TableCell>{pr.quantity}</TableCell>
-                            <TableCell>
-                              <Input
-                                className="w-18"
-                                id="qty"
-                                type="number"
-                                name="qty"
-                                defaultValue={1}
-                                max={pr.quantity}
-                                value={pr.qty}
-                                onChange={(e) =>
-                                  updateQuantity(pr.id, Number(e.target.value))
-                                }
-                              />
-                            </TableCell>
+                <PosProductSearchDialog
+                  open={searchOpen}
+                  onOpenChange={setSearchOpen}
+                  onSelect={(product) => addProductLine(product, CFD?.qty ?? 1)}
+                />
 
-                            <TableCell
-                              title={formatDisplayAmount(pr.promo_price ?? 0)}
+                <div className="overflow-hidden rounded-lg border bg-background/60">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Product</TableHead>
+                        <TableHead>Price</TableHead>
+                        <TableHead>Stock</TableHead>
+                        <TableHead>Quantity</TableHead>
+                        <TableHead>Discount</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {lines.map((pr) => (
+                        <TableRow key={pr.id}>
+                          <TableCell className="max-w-[150px] truncate font-medium">
+                            {pr.name}
+                          </TableCell>
+                          <TableCell>
+                            {formatDisplayAmount(pr.unit_price)}
+                          </TableCell>
+                          <TableCell>{pr.quantity}</TableCell>
+                          <TableCell>
+                            <Input
+                              className="w-18"
+                              type="number"
+                              max={pr.quantity}
+                              value={pr.qty}
+                              onChange={(e) =>
+                                updateQuantity(pr.id, Number(e.target.value))
+                              }
+                            />
+                          </TableCell>
+                          <TableCell
+                            title={formatDisplayAmount(pr.promo_price ?? 0)}
+                          >
+                            {percent(pr.discount ?? 0, pr.unit_price, 2)}%
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              size="icon-sm"
+                              variant="secondary"
+                              type="button"
+                              onClick={() => removeLine(pr.id)}
                             >
-                              {percent(pr.discount ?? 0, pr.unit_price, 2)}%
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Button
-                                size="icon-sm"
-                                variant="secondary"
-                                onClick={() => removeLine(pr.id)}
-                              >
-                                <Trash2 className="text-destructive" />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                        {!lines.length && (
-                          <TableRow className="hover:bg-muted">
-                            <TableCell colSpan={6} className="h-32 text-center">
-                              No products added yet.
-                            </TableCell>
-                          </TableRow>
-                        )}
-                        <FieldError errors={[{ message: errors?.cat }]} />
-                      </TableBody>
-                      <TableFooter>
-                        <TableRow>
-                          <TableCell colSpan={4}>Subtotal</TableCell>
-                          <TableCell className="text-right" colSpan={2}>
-                            {formatDisplayAmount(subtotal)}
+                              <Trash2 className="text-destructive" />
+                            </Button>
                           </TableCell>
                         </TableRow>
-                        <TableRow>
-                          <TableCell colSpan={4}>Discounts</TableCell>
-                          <TableCell className="text-right" colSpan={2}>
-                            {formatDisplayAmount(totalDiscount)}
+                      ))}
+                      {!lines.length && (
+                        <TableRow className="hover:bg-muted/50">
+                          <TableCell
+                            colSpan={6}
+                            className="h-28 text-center text-muted-foreground"
+                          >
+                            No products yet. Scan a barcode, press Enter, or
+                            search by name.
                           </TableCell>
                         </TableRow>
-                        <TableRow>
-                          <TableCell colSpan={4}>Total</TableCell>
-                          <TableCell className="text-right" colSpan={2}>
-                            {formatDisplayAmount(totalAfterDiscount)}
-                          </TableCell>
-                        </TableRow>
-                      </TableFooter>
-                    </Table>
-                  </div>
+                      )}
+                    </TableBody>
+                    <TableFooter>
+                      <TableRow>
+                        <TableCell colSpan={4}>Subtotal</TableCell>
+                        <TableCell className="text-right" colSpan={2}>
+                          {formatDisplayAmount(subtotal)}
+                        </TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell colSpan={4}>Discounts</TableCell>
+                        <TableCell className="text-right" colSpan={2}>
+                          {formatDisplayAmount(totalDiscount)}
+                        </TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell colSpan={4}>Total</TableCell>
+                        <TableCell className="text-right font-semibold" colSpan={2}>
+                          {formatDisplayAmount(totalAfterDiscount)}
+                        </TableCell>
+                      </TableRow>
+                    </TableFooter>
+                  </Table>
+                </div>
+                <FieldError errors={[{ message: errors?.lines }]} />
+              </ProductFormSection>
 
-                  <FieldError errors={[{ message: errors?.lines }]} />
-                </Field>
-              </FieldGroup>
-
-              {/* 💳 Invoice — Payment & Charges */}
-              <FieldGroup className="flex flex-col border-b border-border py-6 px-6">
-                <Field className="flex-col tablet:flex-row gap-6 ">
-                  <div className="flex flex-col flex-grow">
-                    <FieldLabel htmlFor="method">Payment Method</FieldLabel>
-                    <FieldDescription className="text-xs">
-                      How the customer is paying for this invoice.
-                    </FieldDescription>
-                  </div>
-                  <div className="flex flex-col flex-grow">
-                    <Select name="method" required>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select payment method" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value={" "}>
-                          Select payment method
+              <ProductFormSection
+                title="Payment"
+                description="How the customer is paying for this sale."
+                icon={CreditCard}
+                accent="emerald"
+              >
+                <Field>
+                  <FieldLabel htmlFor="method">Payment method</FieldLabel>
+                  <Select
+                    name="method"
+                    required
+                    value={method}
+                    onValueChange={setMethod}
+                  >
+                    <SelectTrigger className="w-full" id="method">
+                      <SelectValue placeholder="Select payment method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {methods.map((m, i) => (
+                        <SelectItem key={i} value={m.value}>
+                          <span className="flex items-center gap-1">
+                            <m.icon className="mr-2 h-4 w-4 text-muted-foreground" />
+                            {m.label}
+                          </span>
                         </SelectItem>
-                        {methods.map((m, i) => (
-                          <SelectItem key={i} value={m.value}>
-                            <span className="flex items-center gap-1">
-                              <m.icon className="mr-2 h-4 w-4 text-muted-foreground" />
-                              {m.label}
-                            </span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </Field>
 
-                <Field className="flex-col tablet:flex-row gap-6 ">
-                  <div className="flex flex-col flex-grow">
-                    <FieldLabel htmlFor="tax">Tax Amount (optional)</FieldLabel>
-                    <FieldDescription className="text-xs">
-                      Tax applied to the invoice total, if applicable.
-                    </FieldDescription>
-                  </div>
-                  <div className="flex flex-col flex-grow">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field>
+                    <FieldLabel htmlFor="tax">Tax (optional)</FieldLabel>
                     <Input
                       id="tax"
                       type="number"
@@ -455,19 +539,9 @@ export function CreateInvoiceDrawer() {
                       onChange={(e) => handleAmtInputChange(e, setTax)}
                       placeholder="e.g. 1,200"
                     />
-                  </div>
-                </Field>
-
-                <Field className="flex-col tablet:flex-row gap-6 ">
-                  <div className="flex flex-col flex-grow">
-                    <FieldLabel htmlFor="advance">
-                      Amount Paid (optional)
-                    </FieldLabel>
-                    <FieldDescription className="text-xs">
-                      Amount paid upfront by the customer.
-                    </FieldDescription>
-                  </div>
-                  <div className="flex flex-col flex-grow">
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="advance">Amount paid (optional)</FieldLabel>
                     <Input
                       id="advance"
                       type="number"
@@ -476,122 +550,109 @@ export function CreateInvoiceDrawer() {
                       onChange={(e) => handleAmtInputChange(e, setAdvance)}
                       placeholder="e.g. 1,200"
                     />
-                  </div>
-                </Field>
-              </FieldGroup>
+                  </Field>
+                </div>
+              </ProductFormSection>
 
-              {/* 🕒 Credit & Status */}
-              <FieldGroup className="flex flex-col border-b border-border py-6 px-6">
-                <FieldLabel htmlFor="switch-credit" className="p-4 ">
+              <ProductFormSection
+                title="Credit sale"
+                description="Enable if payment will be completed later."
+                icon={CreditCard}
+                accent="orange"
+              >
+                <FieldLabel htmlFor="switch-credit" className="cursor-pointer">
                   <Field orientation="horizontal">
                     <FieldContent>
-                      <FieldTitle>Is this a credit sale?</FieldTitle>
+                      <FieldTitle>Credit sale?</FieldTitle>
                       <FieldDescription>
-                        Enable if payment will be completed at a later date.
+                        Remaining balance due on a future date.
                       </FieldDescription>
                     </FieldContent>
                     <Switch
                       id="switch-credit"
                       name="on-credit"
+                      checked={onCredit}
                       onCheckedChange={setOnCredit}
                     />
                   </Field>
                 </FieldLabel>
-
                 <FieldError errors={[{ message: errors?.credit }]} />
+
                 {onCredit && (
-                  <>
-                    <Field className="flex-col tablet:flex-row gap-6 ">
-                      <div className="flex flex-col flex-grow">
-                        <FieldLabel htmlFor="due-date">Due Date</FieldLabel>
-                        <FieldDescription className="text-xs">
-                          Date when the remaining payment is expected. Required
-                          for credit sales.
-                        </FieldDescription>
-                      </div>
-                      <div className="flex flex-col flex-grow">
-                        <DateTimePicker
-                          placeholder="Pick a date"
-                          minDate={new Date(Date.now())}
-                          dateLabel=""
-                          name="due-date"
-                          id="due-date"
-                          required
-                        />
-                        <FieldError errors={[{ message: errors?.due }]} />
-                      </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Field>
+                      <FieldLabel htmlFor="due-date">Due date</FieldLabel>
+                      <DateTimePicker
+                        placeholder="Pick a date"
+                        minDate={new Date(Date.now())}
+                        dateLabel=""
+                        name="due-date"
+                        id="due-date"
+                        required
+                      />
+                      <FieldError errors={[{ message: errors?.due }]} />
                     </Field>
-
-                    <Field className="flex-col tablet:flex-row gap-6 ">
-                      <div className="flex flex-col flex-grow">
-                        <FieldLabel htmlFor="reason">Credit Reason</FieldLabel>
-                        <FieldDescription className="text-xs">
-                          Reason for allowing delayed payment. Required for
-                          credit sales.
-                        </FieldDescription>
-                      </div>
-                      <div className="flex flex-col flex-grow">
-                        <Textarea
-                          id="reason"
-                          name="reason"
-                          placeholder="Reason for allowing delayed payment"
-                          required
-                        />
-                        <FieldError errors={[{ message: errors?.reason }]} />
-                      </div>
+                    <Field>
+                      <FieldLabel htmlFor="reason">Credit reason</FieldLabel>
+                      <Textarea
+                        id="reason"
+                        name="reason"
+                        placeholder="Why is payment delayed?"
+                        required
+                      />
+                      <FieldError errors={[{ message: errors?.reason }]} />
                     </Field>
-                  </>
+                  </div>
                 )}
-              </FieldGroup>
+              </ProductFormSection>
 
-              {/* Status */}
-              <FieldGroup className="flex flex-col border-b border-border py-6 px-6">
-                <Field className="flex-col tablet:flex-row gap-6 ">
-                  <div className="flex flex-col flex-grow">
-                    <FieldLabel htmlFor="status">Invoice Status</FieldLabel>
-                    <FieldDescription className="text-xs">
-                      Current state of the invoice (paid, partial, refunded,
-                      cancelled).
-                    </FieldDescription>
-                  </div>
-                  <div className="flex flex-col flex-grow">
-                    <Select name="status" required>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select option..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value={" "}>Select option...</SelectItem>
-                        {statuses.map((m, i) => (
-                          <SelectItem
-                            key={i}
-                            value={m.value}
-                            className="flex-row"
-                          >
-                            <span className="flex items-center gap-1">
-                              <m.icon className="mr-2 h-4 w-4 text-muted-foreground" />
-                              {m.label}
-                            </span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FieldError errors={[{ message: errors?.status }]} />
-                  </div>
-                </Field>
-              </FieldGroup>
+              <ProductFormSection
+                title="Status"
+                description="Current state of the invoice."
+                icon={FileText}
+                accent="rose"
+              >
+                <Select
+                  name="status"
+                  required
+                  value={status}
+                  onValueChange={setStatus}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statuses.map((m, i) => (
+                      <SelectItem key={i} value={m.value}>
+                        <span className="flex items-center gap-1">
+                          <m.icon className="mr-2 h-4 w-4 text-muted-foreground" />
+                          {m.label}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FieldError errors={[{ message: errors?.status }]} />
+              </ProductFormSection>
             </div>
 
-            <DrawerFooter className="flex-row justify-end border-t border-border px-6 py-4 items-center">
-              <div className="flex items-center gap-2 mr-auto">
-                <span> Total: {formatDisplayAmount(total)}</span>
+            <DrawerFooter className="flex-row items-center justify-end border-t border-border bg-muted/30 px-6 py-4">
+              <div className="mr-auto text-sm font-semibold">
+                Total: {formatDisplayAmount(total)}
               </div>
               <DrawerClose asChild>
-                <Button variant="outline" size={"sm"}>
+                <Button variant="outline" size="sm" type="button">
                   Cancel
                 </Button>
               </DrawerClose>
-              <Button size={"sm"} type="submit" disabled={isAdding}>
-                {isAdding && <Spinner />} Create invoice
+              <Button
+                size="sm"
+                type="submit"
+                disabled={isAdding || !lines.length}
+                className="auth-submit-btn border-0"
+              >
+                {isAdding && <Spinner />}
+                Create sale
               </Button>
             </DrawerFooter>
           </Form>

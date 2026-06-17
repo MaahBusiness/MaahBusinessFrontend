@@ -36,8 +36,7 @@ import { cn } from "@/lib/utils";
 import { useOrganisation } from "@/hooks/use-organisation";
 import type { DataTableToolbarProps } from "types";
 import { visibles } from "@/routes/dashboard/sales/data";
-import { useParams, useSearchParams } from "react-router";
-import { AddProductDrawer } from "@/components/products/product-add-new-drawer";
+import { useSearchParams } from "react-router";
 import { hasPermission } from "utils/permissions";
 import { CreateInvoiceDrawer } from "@/components/sales/invoice-add-new-drawer";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -105,11 +104,11 @@ export function InvoiceTableToolbar<TData>({
   };
 
   return (
-    <div className="flex items-center justify-between overflow-x-scroll no-scrollbar">
-      <div className="flex flex-1 items-center space-x-2 ">
-        <InputGroup className="h-8 w-[200px] lg:w-[250px]">
+    <div className="flex flex-col gap-3 p-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+        <InputGroup className="h-8 w-full min-w-[180px] sm:w-[200px] lg:w-[250px]">
           <InputGroupInput
-            placeholder="Search team..."
+            placeholder="Search invoices..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => {
@@ -244,7 +243,7 @@ export function InvoiceTableToolbar<TData>({
           </Button>
         )}
       </div>
-      <div className="flex items-center space-x-2">
+      <div className="flex shrink-0 items-center gap-2">
         <DataTableViewOptions table={table} options={visibles} />
         {isLoading ? (
           <Button size={"sm"}>

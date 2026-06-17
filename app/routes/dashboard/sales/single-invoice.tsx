@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useOrganisation } from "@/hooks/use-organisation";
 import { organisationKeys } from "@/lib/api/organisation";
+import { orgPath } from "@/lib/org-navigation";
 import { getSession } from "@/lib/session.server";
 import { RequestFailed } from "@/routes/404";
 import { methods, statuses } from "@/routes/dashboard/sales/data";
@@ -147,7 +148,7 @@ export default function SingleInvoicepage({
     <div className="w-full min-h-full flex flex-col gap-8 items-stretch max-w-[1200px] lg:px-6 px-4 mx-auto py-12">
       <div className="w-full flex flex-col md:flex-row md:items-center gap-4 md:gap-2">
         <div className="w-full flex items-center gap-2">
-          <Link to="../invoices">
+          <Link to={orgPath(id, "invoices")}>
             <h2 className="text-lg tracking-tight text-muted-foreground">
               Invoices
             </h2>
@@ -677,7 +678,7 @@ function InvoiceNotFound() {
         </EmptyDescription>
       </EmptyHeader>
       <EmptyContent>
-        <Link to="../invoices">
+        <Link to={orgPath(id, "invoices")}>
           <Button variant="outline">
             <ChevronLeft />
             Back to Sales

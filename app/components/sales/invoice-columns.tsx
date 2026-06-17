@@ -11,8 +11,14 @@ import { methods, statuses } from "@/routes/dashboard/sales/data";
 import { extractImageUrl, formatDisplayAmount } from "utils";
 import { InvoiceTableRowActions } from "@/components/sales/invoice-table-row-actions";
 import { Link } from "react-router";
+import { orgPath } from "@/lib/org-navigation";
 
-export const invoiceCols: ColumnDef<Invoice>[] = [
+function invoiceDetailPath(orgId: string | undefined, invId: string) {
+  return orgId ? orgPath(orgId, `invoices/${invId}`) : invId;
+}
+
+export function invoiceCols(orgId?: string): ColumnDef<Invoice>[] {
+  return [
   {
     id: "select",
     accessorKey: "number",
@@ -41,7 +47,7 @@ export const invoiceCols: ColumnDef<Invoice>[] = [
           />
 
           <Link
-            to={`../invoices/${row.original.id}`}
+            to={invoiceDetailPath(orgId, row.original.id)}
             className="hover:underline"
           >
             <span className="truncate">{row.original.number}</span>
@@ -64,7 +70,10 @@ export const invoiceCols: ColumnDef<Invoice>[] = [
         {...{ cell }}
         title={row.getValue("id")}
       >
-        <Link to={`../invoices/${row.original.id}`} className="hover:underline">
+        <Link
+          to={invoiceDetailPath(orgId, row.original.id)}
+          className="hover:underline"
+        >
           <span className="truncate">{row.getValue("id")}</span>
         </Link>
       </InvoiceTableContextMenu>
@@ -441,3 +450,4 @@ export const invoiceCols: ColumnDef<Invoice>[] = [
     cell: ({ row }) => <InvoiceTableRowActions row={row} />,
   },
 ];
+}

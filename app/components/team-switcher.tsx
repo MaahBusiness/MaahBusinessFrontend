@@ -79,7 +79,10 @@ export default function TeamSwitcher({ currentId }: TeamSwitcherProps) {
   return (
     <div className="flex items-center gap-1">
       <BreadcrumbLink asChild>
-        <Link to={`org/${selected?.id}`} className="flex items-center gap-2">
+        <Link
+          to={`/dashboard/org/${selected?.id}/home`}
+          className="flex items-center gap-2"
+        >
           <Avatar className="h-5 w-5">
             <AvatarImage
               src={extractImageUrl(selected?.logo_url ?? "") ?? undefined}
@@ -120,7 +123,7 @@ export default function TeamSwitcher({ currentId }: TeamSwitcherProps) {
                   {res.data.map((team) => (
                     // <Link to={`org/${team.id}`} key={team.id}>
                     <CommandItem
-                      onSelect={() => navigate(`org/${team.id}`)}
+                      onSelect={() => navigate(`/dashboard/org/${team.id}/home`)}
                       key={team.id}
                       className="text-xs"
                     >

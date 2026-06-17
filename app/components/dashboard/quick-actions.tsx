@@ -1,71 +1,37 @@
 import { Link } from "react-router";
-import {
-  FileBarChart,
-  PackagePlus,
-  Receipt,
-  UserPlus,
-  Users,
-  Warehouse,
-} from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ORG_QUICK_ACTIONS } from "@/lib/org-navigation";
+import { filterByRole } from "@/lib/dashboard-widgets";
+import type { Role } from "types";
 
-const actions = [
-  {
-    label: "New sale",
-    desc: "Create invoice",
-    icon: Receipt,
-    href: (id: string) => `/dashboard/org/${id}/invoices`,
-    gradient: "from-violet-600 to-indigo-600",
-    shadow: "shadow-violet-500/25",
-  },
-  {
-    label: "Add product",
-    desc: "Expand catalog",
-    icon: PackagePlus,
-    href: (id: string) => `/dashboard/org/${id}/products`,
-    gradient: "from-blue-600 to-cyan-600",
-    shadow: "shadow-blue-500/25",
-  },
-  {
-    label: "Clients",
-    desc: "Manage customers",
-    icon: UserPlus,
-    href: (id: string) => `/dashboard/org/${id}/clients`,
-    gradient: "from-emerald-600 to-teal-600",
-    shadow: "shadow-emerald-500/25",
-  },
-  {
-    label: "Inventory",
-    desc: "Stock levels",
-    icon: Warehouse,
-    href: (id: string) => `/dashboard/org/${id}/inventory`,
-    gradient: "from-orange-600 to-amber-600",
-    shadow: "shadow-orange-500/25",
-  },
-  {
-    label: "Team",
-    desc: "Members & roles",
-    icon: Users,
-    href: (id: string) => `/dashboard/org/${id}/team`,
-    gradient: "from-rose-600 to-pink-600",
-    shadow: "shadow-rose-500/25",
-  },
-  {
-    label: "Reports",
-    desc: "Export PDF",
-    icon: FileBarChart,
-    href: (id: string) => `/dashboard/org/${id}?tab=reports`,
-    gradient: "from-fuchsia-600 to-purple-600",
-    shadow: "shadow-fuchsia-500/25",
-  },
-] as const;
+export function DashboardQuickActions({
+  orgId,
+  role,
+  excludeIds = [],
+}: {
+  orgId: string;
+  role?: Role;
+  excludeIds?: string[];
+}) {
+  const visible = filterByRole(role, ORG_QUICK_ACTIONS).filter(
+    (action) => !excludeIds.includes(action.id),
+  );
 
-export function DashboardQuickActions({ orgId }: { orgId: string }) {
+  if (!visible.length) return null;
+
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
-      {actions.map((action) => (
+    <div
+      className={cn(
+        "grid gap-3",
+        visible.length === 1 && "grid-cols-1",
+        visible.length === 2 && "grid-cols-2",
+        visible.length >= 3 && "grid-cols-2 sm:grid-cols-3",
+        visible.length >= 5 && "xl:grid-cols-6",
+      )}
+    >
+      {visible.map((action) => (
         <Link
-          key={action.label}
+          key={action.id}
           to={action.href(orgId)}
           className={cn(
             "group relative overflow-hidden rounded-2xl border border-white/10 p-4 text-white transition-all duration-300",

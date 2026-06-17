@@ -1,4 +1,5 @@
-import { ChevronRight, type LucideIcon } from "lucide-react";
+import { ChevronRight } from "lucide-react";
+import { NavLink, useLocation, useParams } from "react-router";
 
 import {
   Collapsible,
@@ -7,7 +8,6 @@ import {
 } from "@/components/ui/collapsible";
 import {
   SidebarGroup,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -16,33 +16,28 @@ import {
   SidebarMenuSubItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { Link, useParams } from "react-router";
+import { isOrgSegmentActive, orgPath } from "@/lib/org-navigation";
 import type { SideItem } from "types";
-import {
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuShortcut,
-} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
-export function NavMain({ data }: { data: { [key: string]: SideItem[] } }) {
-  const { id: orgId } = useParams<{ id: string }>();
+export function NavMain({
+  data,
+  orgId: orgIdProp,
+}: {
+  data: { [key: string]: SideItem[] };
+  orgId?: string;
+}) {
+  const { id: routeOrgId } = useParams<{ id: string }>();
+  const orgId = orgIdProp ?? routeOrgId;
+  const { pathname } = useLocation();
   const { setOpen } = useSidebar();
 
-  const orgPath = (path: string) =>
-    orgId
-      ? path
-        ? `/dashboard/org/${orgId}/${path}`
-        : `/dashboard/org/${orgId}`
-      : path;
+  if (!orgId) return null;
 
   return Object.entries(data)
     .filter(([, items]) => items.length > 0)
     .map(([group, items]) => (
       <SidebarGroup key={group}>
-        {/* <SidebarGroupLabel>{group}</SidebarGroupLabel> */}
         <SidebarMenu>
           {items.map((item) =>
             item.items ? (
@@ -67,35 +62,41 @@ export function NavMain({ data }: { data: { [key: string]: SideItem[] } }) {
                     <SidebarMenuSub>
                       {item.items?.map((subItem) => (
                         <SidebarMenuSubItem key={subItem.title}>
-                          <SidebarMenuSubButton asChild>
-                            <Link to={orgPath(subItem.url)}>
+                          <SidebarMenuSubButton
+                            asChild
+                            isActive={isOrgSegmentActive(
+                              pathname,
+                              orgId,
+                              subItem.url,
+                            )}
+                          >
+                            <NavLink to={orgPath(orgId, subItem.url)}>
                               <span>{subItem.title}</span>
-                            </Link>
+                            </NavLink>
                           </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
                       ))}
                     </SidebarMenuSub>
                   </CollapsibleContent>
-
-                  {/* <DropdownMenuContent>
-                    {item.items?.map((subItem) => (
-                      <DropdownMenuItem key={subItem.title} asChild>
-                        <Link to={subItem.url}>
-                          <span>{subItem.title}</span>
-                        <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
-                        </Link>
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent> */}
                 </SidebarMenuItem>
               </Collapsible>
             ) : (
               <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton tooltip={item.title} asChild>
-                  <Link to={orgPath(item.url)}>
+                <SidebarMenuButton
+                  tooltip={item.title}
+                  asChild
+                  isActive={isOrgSegmentActive(pathname, orgId, item.url)}
+                >
+                  <NavLink
+                    to={orgPath(orgId, item.url)}
+                    className={({ isActive }) =>
+                      cn(isActive && "font-medium")
+                    }
+                    end={item.url === "home"}
+                  >
                     <item.icon />
                     <span>{item.title}</span>
-                  </Link>
+                  </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ),

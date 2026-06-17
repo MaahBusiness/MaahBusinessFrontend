@@ -18,8 +18,7 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { redirect } from "react-router";
-import type { Client, Invoice } from "types";
+import type { Client } from "types";
 import { useOrganisation } from "@/hooks/use-organisation";
 import {
   AlertDialogTitle,
@@ -45,9 +44,19 @@ interface ClientTableRowActionsProps {
 }
 
 export function ClientTableRowActions({ row }: ClientTableRowActionsProps) {
-  const { businessMember } = useOrganisation();
+  const { businessMember, isLoading } = useOrganisation();
 
-  if (!businessMember) throw redirect("/dashboard/organisations/");
+  if (isLoading || !businessMember) {
+    return (
+      <Button
+        variant="outline"
+        size="icon-sm"
+        className="mr-4 h-7 w-6 rounded-sm p-0"
+        disabled
+        aria-hidden
+      />
+    );
+  }
 
   const clipboard = useClipboard({
     resetDelay: 3000,

@@ -22,7 +22,7 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Form, redirect, useActionData, useNavigation } from "react-router";
+import { Form, useActionData, useNavigation } from "react-router";
 import type { Invoice, ServerActionState } from "types";
 import { useOrganisation } from "@/hooks/use-organisation";
 import {
@@ -77,6 +77,7 @@ import { DialogTrigger } from "@radix-ui/react-dialog";
 export function SingleInvoiceActions({ data }: { data: Invoice }) {
   const {
     businessMember,
+    isLoading,
     removeinvoice,
     archiveInvoice,
     cancelInvoice,
@@ -88,7 +89,7 @@ export function SingleInvoiceActions({ data }: { data: Invoice }) {
   const actionData = useActionData<ServerActionState>();
   const navigation = useNavigation();
 
-  if (!businessMember) redirect("/dashboard/organisations/");
+  if (isLoading || !businessMember) return null;
 
   const clipboard = useClipboard({
     resetDelay: 3000,

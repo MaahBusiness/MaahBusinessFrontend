@@ -153,7 +153,7 @@ export default function OrganisationDashboard() {
       <StaffDashboard
         orgId={orgId}
         orgName={orgName ?? "Organisation"}
-        role={businessMember?.role ?? "member"}
+        role={businessMember?.role ?? "cashier"}
       />
     );
   }
@@ -237,7 +237,7 @@ export default function OrganisationDashboard() {
           </div>
         </div>
 
-        <DashboardQuickActions orgId={orgId} />
+        <DashboardQuickActions orgId={orgId} role={businessMember?.role} />
 
         <DashboardOverviewStrip summary={summary} />
 
@@ -267,7 +267,9 @@ export default function OrganisationDashboard() {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
-            {isPeriodEmpty && <DashboardEmptyHint orgId={orgId} />}
+            {isPeriodEmpty && (
+              <DashboardEmptyHint orgId={orgId} role={businessMember?.role} />
+            )}
 
             {/* KPI row 1 */}
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

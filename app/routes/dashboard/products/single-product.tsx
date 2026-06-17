@@ -19,10 +19,15 @@ import { getSession } from "@/lib/session.server";
 import { RequestFailed } from "@/routes/404";
 import { ChevronLeft, CircleDashed } from "lucide-react";
 import { useState } from "react";
-import { Link, redirect, useParams } from "react-router";
+import { Link, Navigate, redirect, useParams } from "react-router";
 import { handleProductActions } from "services/api";
 import { toast } from "sonner";
 import type { ServerActionState, Product } from "types";
+import {
+  orgPath,
+  orgProductsPath,
+  RESERVED_PRODUCT_SLUGS,
+} from "@/lib/org-navigation";
 
 export async function action({ request, params }: Route.ActionArgs): Promise<
   ServerActionState & {
@@ -42,20 +47,17 @@ export default function SingleproductPage({
   actionData,
 }: Route.ComponentProps) {
   const { organisation: orgRes, fetchSingleProduct } = useOrganisation();
-  const { prodId, id } = useParams();
+  const { prodId, id: orgId } = useParams();
   const [copiedBarcode, setCopiedBarcode] = useState(false);
 
-  const clipboard = useClipboard({
-    resetDelay: 3000,
-    onCopy: () => {
-      toast.success("Copied to clipboard");
-      setTimeout(() => setCopiedBarcode(false), 2000);
-    },
-    onError: () => toast.error("Could not copy to clipboard"),
-  });
-
   const { data: res, isLoading, refetch } = fetchSingleProduct(prodId ?? "");
-  useProductActionFeedback(actionData, id);
+  useProductActionFeedback(actionData, orgId);
+
+  if (prodId && RESERVED_PRODUCT_SLUGS.has(prodId) && orgId) {
+    const target =
+      prodId === "clients" ? orgPath(orgId, "clients") : orgProductsPath(orgId);
+    return <Navigate to={target} replace />;
+  }
 
   if (!prodId) return null;
 

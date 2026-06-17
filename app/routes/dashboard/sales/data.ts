@@ -426,30 +426,19 @@ export const STATUS_META = {
 
 export const statuses = [
   {
-    value: "paid",
-    label: "Paid",
+    value: "COMPLETED",
+    label: "Completed",
     icon: CheckCircle,
-    // className: "text-green-700 border-green-300",
   },
-
   {
-    value: "partial",
-    label: "Partial",
+    value: "CREDIT",
+    label: "Credit",
     icon: Timer,
-    // className: "text-yellow-700 border-yellow-300",
   },
   {
-    value: "refunded",
-    label: "Refunded",
-    icon: RotateCcw,
-    // className: "text-blue-700 border-blue-300",
-  },
-
-  {
-    value: "cancelled",
+    value: "CANCELLED",
     label: "Cancelled",
-    icon: CheckCircle,
-    className: "text-destructive border-red-300",
+    icon: CircleOff,
   },
 ];
 export const methods = [

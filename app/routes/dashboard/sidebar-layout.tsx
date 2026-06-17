@@ -1,6 +1,9 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import { useOrganisation } from "@/hooks/use-organisation";
-import { getOrgRoutePermission } from "@/lib/sidebar-nav";
+import {
+  getOrgRoutePermission,
+  getPermissionFallbackPath,
+} from "@/lib/org-navigation";
 import { SidebarInset } from "@/components/ui/sidebar";
 import { Navigate, Outlet, useLocation, useParams } from "react-router";
 import { matchesAnyPermission } from "utils/permissions";
@@ -8,24 +11,26 @@ import { matchesAnyPermission } from "utils/permissions";
 function OrgPermissionGuard() {
   const { pathname } = useLocation();
   const { id: orgId } = useParams();
-  const { businessMember, isLoading } = useOrganisation();
+  const { businessMember, isLoading, organisation } = useOrganisation();
 
   if (isLoading) return <Outlet />;
+
+  if (organisation?.success && !businessMember) {
+    return <Navigate to="/dashboard/organisations" replace />;
+  }
 
   const required = getOrgRoutePermission(pathname);
   if (
     required &&
-    !matchesAnyPermission(businessMember?.role, required)
+    businessMember &&
+    !matchesAnyPermission(businessMember.role, required)
   ) {
-    const canViewDashboard = matchesAnyPermission(businessMember?.role, [
-      "dashboard:full",
-      "dashboard:limited",
-    ]);
-    const fallback = canViewDashboard
-      ? `/dashboard/org/${orgId}`
-      : "/dashboard/organisations";
-
-    return <Navigate to={fallback} replace />;
+    return (
+      <Navigate
+        to={getPermissionFallbackPath(orgId, businessMember.role)}
+        replace
+      />
+    );
   }
 
   return <Outlet />;
@@ -39,13 +44,11 @@ export default function Layout() {
   }
 
   return (
-    <div className="flex flex-col">
-      <div className="flex flex-1">
-        <AppSidebar />
-        <SidebarInset className="overflow-x-hidden">
-          <OrgPermissionGuard />
-        </SidebarInset>
-      </div>
+    <div className="flex min-h-[calc(100svh-var(--header-height))] w-full min-w-0 flex-1">
+      <AppSidebar />
+      <SidebarInset className="min-w-0 flex-1 overflow-x-hidden">
+        <OrgPermissionGuard />
+      </SidebarInset>
     </div>
   );
 }

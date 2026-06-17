@@ -96,7 +96,7 @@ export function InvoiceTableContextMenu({
                 </ContextMenuShortcut>
               </ContextMenuItem>
             </ContextMenuGroup>
-            {hasPermission(businessMember?.role, "products:crud") && (
+            {hasPermission(businessMember?.role, "invoice:create") && (
               <>
                 <ContextMenuSeparator />
                 <ContextMenuGroup>
@@ -109,6 +109,10 @@ export function InvoiceTableContextMenu({
                     </ContextMenuItem>
                   </DrawerTrigger>
                 </ContextMenuGroup>
+              </>
+            )}
+            {hasPermission(businessMember?.role, "invoice:delete") && (
+              <>
                 <ContextMenuSeparator />
                 <ContextMenuGroup>
                   <ContextMenuItem
