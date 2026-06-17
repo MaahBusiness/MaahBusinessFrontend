@@ -31,6 +31,13 @@ export function NavMain({ data }: { data: { [key: string]: SideItem[] } }) {
   const { id: orgId } = useParams<{ id: string }>();
   const { setOpen } = useSidebar();
 
+  const orgPath = (path: string) =>
+    orgId
+      ? path
+        ? `/dashboard/org/${orgId}/${path}`
+        : `/dashboard/org/${orgId}`
+      : path;
+
   return Object.entries(data)
     .filter(([, items]) => items.length > 0)
     .map(([group, items]) => (
@@ -61,7 +68,7 @@ export function NavMain({ data }: { data: { [key: string]: SideItem[] } }) {
                       {item.items?.map((subItem) => (
                         <SidebarMenuSubItem key={subItem.title}>
                           <SidebarMenuSubButton asChild>
-                            <Link to={subItem.url}>
+                            <Link to={orgPath(subItem.url)}>
                               <span>{subItem.title}</span>
                             </Link>
                           </SidebarMenuSubButton>
@@ -85,7 +92,7 @@ export function NavMain({ data }: { data: { [key: string]: SideItem[] } }) {
             ) : (
               <SidebarMenuItem key={item.title}>
                 <SidebarMenuButton tooltip={item.title} asChild>
-                  <Link to={item.url}>
+                  <Link to={orgPath(item.url)}>
                     <item.icon />
                     <span>{item.title}</span>
                   </Link>

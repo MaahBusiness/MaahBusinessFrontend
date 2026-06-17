@@ -114,6 +114,16 @@ export function hasPermission(
   return PERMISSIONS[role]?.includes(feature) ?? false;
 }
 
+/** True if the role has at least one of the given features (or when features is omitted). */
+export function matchesAnyPermission(
+  role: Role | undefined,
+  features?: Feature | Feature[],
+): boolean {
+  if (!features) return true;
+  const list = Array.isArray(features) ? features : [features];
+  return list.some((feature) => hasPermission(role, feature));
+}
+
 export function requirePermission(role: Role | undefined, feature: Feature) {
   if (!hasPermission(role, feature)) {
     throw new Error("Forbidden");
