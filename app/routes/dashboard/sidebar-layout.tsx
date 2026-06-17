@@ -1,12 +1,40 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import { useOrganisation } from "@/hooks/use-organisation";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { Navigate, Outlet } from "react-router";
+import { getOrgRoutePermission } from "@/lib/sidebar-nav";
+import { SidebarInset } from "@/components/ui/sidebar";
+import { Navigate, Outlet, useLocation, useParams } from "react-router";
+import { matchesAnyPermission } from "utils/permissions";
 
-export default function Layout({ children }: { children: React.ReactNode }) {
-  const { businessMember } = useOrganisation();
+function OrgPermissionGuard() {
+  const { pathname } = useLocation();
+  const { id: orgId } = useParams();
+  const { businessMember, isLoading } = useOrganisation();
 
-  if (businessMember?.is_active === false) {
+  if (isLoading) return <Outlet />;
+
+  const required = getOrgRoutePermission(pathname);
+  if (
+    required &&
+    !matchesAnyPermission(businessMember?.role, required)
+  ) {
+    const canViewDashboard = matchesAnyPermission(businessMember?.role, [
+      "dashboard:full",
+      "dashboard:limited",
+    ]);
+    const fallback = canViewDashboard
+      ? `/dashboard/org/${orgId}`
+      : "/dashboard/organisations";
+
+    return <Navigate to={fallback} replace />;
+  }
+
+  return <Outlet />;
+}
+
+export default function Layout() {
+  const { businessMember, isLoading } = useOrganisation();
+
+  if (!isLoading && businessMember?.is_active === false) {
     return <Navigate to="/dashboard/organisations" replace />;
   }
 
@@ -15,7 +43,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <div className="flex flex-1">
         <AppSidebar />
         <SidebarInset className="overflow-x-hidden">
-          <Outlet />
+          <OrgPermissionGuard />
         </SidebarInset>
       </div>
     </div>

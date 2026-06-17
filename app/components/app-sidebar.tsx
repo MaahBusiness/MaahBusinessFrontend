@@ -1,12 +1,5 @@
 import * as React from "react";
-import {
-  BadgePercent,
-  Database,
-  Gauge,
-  PackageSearch,
-  SidebarIcon,
-  Users,
-} from "lucide-react";
+import { SidebarIcon } from "lucide-react";
 
 import { NavMain } from "@/components/nav-main";
 import {
@@ -17,54 +10,20 @@ import {
   SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar";
-import type { SideItem } from "types";
-
-// This is the sidebar navigation schema
-const schema: { [key: string]: SideItem[] } = {
-  navMain: [
-    {
-      title: "Dashboard",
-      url: "",
-      icon: Gauge,
-    },
-    {
-      title: "Products",
-      url: "products",
-      icon: Database,
-      isActive: true,
-      items: [
-        {
-          title: "All Products",
-          url: "products",
-        },
-        {
-          title: "Categories",
-          url: "products/categories",
-        },
-      ],
-    },
-    {
-      title: "Sales",
-      url: "invoices",
-      icon: BadgePercent,
-    },
-    {
-      title: "Inventory",
-      url: "inventory",
-      icon: PackageSearch,
-    },
-  ],
-  secondary: [
-    {
-      title: "Team",
-      url: "team",
-      icon: Users,
-    },
-  ],
-};
+import { useOrganisation } from "@/hooks/use-organisation";
+import {
+  filterSidebarByRole,
+  SIDEBAR_NAV_SCHEMA,
+} from "@/lib/sidebar-nav";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { toggleSidebar } = useSidebar();
+  const { businessMember } = useOrganisation();
+
+  const nav = React.useMemo(
+    () => filterSidebarByRole(SIDEBAR_NAV_SCHEMA, businessMember?.role),
+    [businessMember?.role],
+  );
 
   return (
     <Sidebar
@@ -73,10 +32,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       {...props}
     >
       <SidebarContent>
-        <NavMain data={schema} />
+        <NavMain data={nav} />
       </SidebarContent>
       <SidebarFooter>
-        {/* <NavUser user={data.user} /> */}
         <SidebarMenuButton
           tooltip={"Toggle sidebar"}
           className="h-8 w-8"

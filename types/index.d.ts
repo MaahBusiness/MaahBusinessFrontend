@@ -306,9 +306,12 @@ export interface SideItem {
   icon: LucideIcon;
   isActive?: boolean;
   collapsible?: boolean;
+  /** Required permission(s) — user needs at least one when an array */
+  permission?: import("utils/permissions").Feature | import("utils/permissions").Feature[];
   items?: {
     title: string;
     url: string;
+    permission?: import("utils/permissions").Feature | import("utils/permissions").Feature[];
   }[];
 }
 
