@@ -38,6 +38,8 @@ import {
 import { useOrganisation } from "@/hooks/use-organisation";
 import { organisationKeys } from "@/lib/api/organisation";
 import { orgPath } from "@/lib/org-navigation";
+import { OrgPageShell } from "@/components/layout/org-page-shell";
+import { Badge } from "@/components/ui/badge";
 import { getSession } from "@/lib/session.server";
 import { RequestFailed } from "@/routes/404";
 import { methods, statuses } from "@/routes/dashboard/sales/data";
@@ -145,19 +147,20 @@ export default function SingleInvoicepage({
   );
 
   return (
-    <div className="w-full min-h-full flex flex-col gap-8 items-stretch max-w-[1200px] lg:px-6 px-4 mx-auto py-12">
-      <div className="w-full flex flex-col md:flex-row md:items-center gap-4 md:gap-2">
-        <div className="w-full flex items-center gap-2">
-          <Link to={orgPath(id, "invoices")}>
-            <h2 className="text-lg tracking-tight text-muted-foreground">
-              Invoices
-            </h2>
+    <OrgPageShell className="gap-6">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <Link
+            to={orgPath(id, "invoices")}
+            className="text-sm font-medium text-muted-foreground transition hover:text-violet-600"
+          >
+            Sales & invoices
           </Link>
-          <ChevronRight className="text-muted-foreground size-4" />
-          <h2 className="text-lg tracking-tight">#{data.number}</h2>
+          <ChevronRight className="size-4 text-muted-foreground" />
+          <span className="text-sm font-semibold">#{data.number}</span>
         </div>
 
-        <div className="md:ml-auto flex  md:items-center md:justify-end">
+        <div className="flex shrink-0 items-center gap-2">
           {data.is_archived ? (
             <SingleArchivedActions data={data} />
           ) : (
@@ -166,17 +169,34 @@ export default function SingleInvoicepage({
         </div>
       </div>
 
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl tracking-tight font-medium">
-          Invoice #{data.number}
-        </h1>
-        <h5 className="text-muted-foreground">ID: {data.id}</h5>
-      </div>
+      <div className="overflow-hidden rounded-2xl border border-violet-500/15 bg-card/95 shadow-lg backdrop-blur-sm">
+        <div className="border-b border-border/60 bg-gradient-to-r from-violet-500/10 via-card to-emerald-500/5 px-6 py-5 sm:px-8">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0 space-y-1">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Sales receipt
+              </p>
+              <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+                Invoice #{data.number}
+              </h1>
+              <p className="truncate text-xs text-muted-foreground">
+                Ref. {data.id}
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {status?.icon && <status.icon className="size-4" />}
+              <Badge variant="secondary" className="capitalize">
+                {status?.label ?? data.status}
+              </Badge>
+              <Badge variant="outline">
+                {formatDisplayAmount(`${data.total}`)}
+              </Badge>
+            </div>
+          </div>
+        </div>
 
-      <Separator className="h-px" />
-
-      {/* Meta */}
-      <div className="grid auto-rows-min gap-6 grid-cols-2  md:grid-cols-4">
+        <div className="flex flex-col gap-8 p-6 sm:p-8">
+          <div className="grid auto-rows-min grid-cols-2 gap-6 md:grid-cols-4">
         <Item className="p-0">
           <ItemContent className="gap-3">
             <ItemDescription>Total Amount</ItemDescription>
@@ -279,12 +299,12 @@ export default function SingleInvoicepage({
             </ItemTitle>
           </ItemContent>
         </Item>
-      </div>
+          </div>
 
-      <Separator className="h-px" />
+          <Separator className="h-px" />
 
-      {/* Dual Cols */}
-      <div className="justify-between flex flex-col laptop:flex-row w-full overflow-hidden gap-8 laptop:gap-20 ">
+          {/* Line items + summary */}
+          <div className="grid w-full gap-8 lg:grid-cols-[minmax(0,1fr)_min(100%,320px)]">
         {/* Right Col */}
         <div className="flex items-stretch flex-initial flex-col gap-20 w-full">
           <div className="flex flex-col gap-8">
@@ -366,7 +386,7 @@ export default function SingleInvoicepage({
         </div>
 
         {/* Left side  */}
-        <div className=" laptop:max-w-80  w-full shrink-0  sticky  self-start">
+        <div className="w-full shrink-0 lg:sticky lg:top-4 lg:self-start">
           <div className="flex flex-col gap-4">
             {/* <h4 className="scroll-m-20 text-lg tracking-tight">Timeline</h4> */}
 
@@ -423,8 +443,10 @@ export default function SingleInvoicepage({
             </div>
           </div>
         </div>
+          </div>
+        </div>
       </div>
-    </div>
+    </OrgPageShell>
   );
 }
 
@@ -604,63 +626,18 @@ function Payments({ invoice }: { invoice: Invoice }) {
 
 function SingleSkeleton() {
   return (
-    <div className="w-full min-h-full flex flex-col gap-8 items-stretch max-w-[1200px] lg:px-6 px-4 mx-auto py-12">
-      <div className="w-full flex items-center gap-2">
-        <Skeleton className="h-5 w-16" />
-        <ChevronRight className="text-muted-foreground size-4" />
-        <Skeleton className="h-5 w-16" />
-
-        <div className="ml-auto flex items-center justify-end gap-2">
-          <Button>
-            <Skeleton className="h-2 w-8" />
-          </Button>
-          <Button variant={"outline"}>
-            <Skeleton className="h-2 w-8" />
-          </Button>
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-1">
-        <Skeleton className="h-5 w-32" />
-        <Skeleton className="h-4 w-14" />
-      </div>
-
-      <Separator className="h-px" />
-
-      {/* Meta */}
-      <div className="grid auto-rows-min gap-6 grid-cols-2  md:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, id) => (
-          <div className="flex flex-col gap-4">
-            <Skeleton key={id} className="h-18" />
-          </div>
-        ))}
-      </div>
-
-      <Separator className="h-px" />
-
-      {/* Dual Cols */}
-      <div className="justify-between flex flex-col md:flex-row w-full gap-20 ">
-        {/* Right Col */}
-        <div className="flex items-stretch flex-initial flex-col gap-20 w-full">
-          {Array.from({ length: 2 }).map((_) => (
-            <div className="flex flex-col gap-4">
-              <Skeleton className="h-4 w-16" />
-              <Skeleton className="h-40" />
-            </div>
+    <OrgPageShell className="gap-6">
+      <Skeleton className="h-8 w-48" />
+      <div className="rounded-2xl border border-border/60 p-8">
+        <Skeleton className="mb-6 h-10 w-64" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-20" />
           ))}
         </div>
-
-        {/* Right side  */}
-        <div className=" max-w-80 w-full  sticky top-4 self-start gap-8">
-          <div className="flex flex-col gap-8">
-            <div className="flex flex-col gap-4">
-              <Skeleton className="h-5 w-16" />
-              <Skeleton className="h-28" />
-            </div>
-          </div>
-        </div>
+        <Skeleton className="mt-8 h-64 w-full" />
       </div>
-    </div>
+    </OrgPageShell>
   );
 }
 

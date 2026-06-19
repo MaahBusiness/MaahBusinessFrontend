@@ -163,7 +163,7 @@ export default function SingleCatPage({ actionData }: Route.ComponentProps) {
 
   return (
     <>
-      <div className="w-full flex flex-col gap-8 items-stretch max-w-[1200px] lg:px-6 px-4 mx-auto py-12">
+      <div className="w-full min-w-0 flex flex-col gap-8 items-stretch px-4 py-8 lg:px-6">
         <div className="w-full flex flex-col tablet:flex-row tablet:items-center gap-4">
           <div className="w-auto flex items-center gap-2 overflow-x-scroll no-scrollbar">
             <Link to="../products">

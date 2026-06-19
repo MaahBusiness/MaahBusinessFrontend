@@ -242,6 +242,10 @@ export interface DateTimePickerProps {
  *   disabledDates={[new Date(2025, 0, 1)]}
  * />
  */
+function startOfDay(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
 export function DateTimePicker({
   value,
   onChange,
@@ -355,8 +359,8 @@ export function DateTimePicker({
                 defaultMonth={internalDate}
                 onSelect={handleDateSelect}
                 disabled={(date) => {
-                  if (minDate && date < minDate) return true;
-                  if (maxDate && date > maxDate) return true;
+                  if (minDate && startOfDay(date) < startOfDay(minDate)) return true;
+                  if (maxDate && startOfDay(date) > startOfDay(maxDate)) return true;
                   if (
                     disabledDates?.some(
                       (d) => d.toDateString() === date.toDateString(),

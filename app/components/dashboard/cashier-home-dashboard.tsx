@@ -13,6 +13,7 @@ import { ProductStatsGrid } from "@/components/products/product-stats-grid";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { OrgPageShell } from "@/components/layout/org-page-shell";
 import { formatDisplayAmount } from "utils";
 import {
   orgClientsPath,
@@ -41,11 +42,7 @@ export function CashierHomeDashboard({
   const clientsUrl = orgClientsPath(orgId);
 
   return (
-    <div className="dashboard-page relative min-h-full overflow-x-hidden">
-      <div aria-hidden className="dashboard-orb dashboard-orb-violet" />
-      <div aria-hidden className="dashboard-orb dashboard-orb-blue" />
-
-      <div className="relative z-10 mx-auto w-full min-w-0 max-w-6xl space-y-6 px-3 py-4 sm:px-5 sm:py-8 lg:px-6 lg:py-10">
+    <OrgPageShell className="space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-2">
             <Badge variant="secondary" className="capitalize">
@@ -161,7 +158,6 @@ export function CashierHomeDashboard({
             </CardContent>
           </Card>
         )}
-      </div>
-    </div>
+    </OrgPageShell>
   );
 }

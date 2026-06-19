@@ -4,6 +4,7 @@ import { invoiceCols } from "@/components/sales/invoice-columns";
 import { CreateInvoiceDrawer } from "@/components/sales/invoice-add-new-drawer";
 import { InvoiceTableToolbar } from "@/components/sales/invoice-table-toolbar";
 import { ProductStatsGrid } from "@/components/products/product-stats-grid";
+import { OrgPageShell } from "@/components/layout/org-page-shell";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
 import {
@@ -126,68 +127,61 @@ export default function SalesPage({ actionData }: Route.ComponentProps) {
   if (!res?.success) return <RequestFailed />;
 
   return (
-    <div className="dashboard-page relative min-h-full overflow-x-hidden">
-      <div aria-hidden className="dashboard-orb dashboard-orb-violet" />
-      <div aria-hidden className="dashboard-orb dashboard-orb-blue" />
-
-      <div className="relative z-10 mx-auto w-full min-w-0 max-w-6xl px-3 py-4 sm:px-5 sm:py-8 lg:px-6 lg:py-10">
-        <div className="mb-5 min-w-0 space-y-4 sm:mb-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="min-w-0">
-              <h1 className="text-xl font-bold tracking-tight sm:text-2xl">
-                {isCashier ? "Point of sale" : "Sales workspace"}
-              </h1>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {isCashier
-                  ? "Enregistrez les ventes, scannez les produits et suivez les factures du jour."
-                  : "Create and manage invoices, payments, and customer sales."}
-              </p>
-            </div>
-            {canCreate && (
-              <CreateInvoiceDrawer
-                variant="hero"
-                open={createOpen}
-                onOpenChange={setCreateOpen}
-              />
-            )}
+    <OrgPageShell>
+      <div className="mb-1 min-w-0 space-y-4 sm:mb-2">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold tracking-tight sm:text-2xl">
+              {isCashier ? "Point of sale" : "Sales"}
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Record sales, scan products, and track invoices and payments.
+            </p>
           </div>
-
-          <ProductStatsGrid items={statItems} />
-        </div>
-
-        <div className="min-w-0 overflow-hidden rounded-xl border border-violet-500/15 bg-card/80 shadow-sm backdrop-blur-sm">
-          {invoices.length === 0 && !searchParams.toString() && canCreate ? (
-            <Empty className="border-0 bg-transparent py-12 sm:py-16">
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <Receipt className="size-5" />
-                </EmptyMedia>
-                <EmptyTitle>Prêt pour votre première vente</EmptyTitle>
-                <EmptyDescription className="max-w-sm text-pretty">
-                  Scannez un code-barres, choisissez un client et enregistrez le
-                  paiement en quelques clics.
-                </EmptyDescription>
-              </EmptyHeader>
-              <Button
-                type="button"
-                className="auth-submit-btn gap-2 border-0"
-                onClick={() => setCreateOpen(true)}
-              >
-                <Plus className="size-4" />
-                Nouvelle vente
-              </Button>
-            </Empty>
-          ) : (
-            <DataTable
-              data={invoices}
-              meta={res.meta}
-              columns={cols}
-              density="compact"
-              DataTableToolbar={InvoiceTableToolbar}
+          {canCreate && (
+            <CreateInvoiceDrawer
+              variant="hero"
+              open={createOpen}
+              onOpenChange={setCreateOpen}
             />
           )}
         </div>
+
+        <ProductStatsGrid items={statItems} />
       </div>
-    </div>
+
+      <div className="min-w-0 flex-1 overflow-hidden rounded-xl border border-violet-500/15 bg-card/80 shadow-sm backdrop-blur-sm">
+        {invoices.length === 0 && !searchParams.toString() && canCreate ? (
+          <Empty className="border-0 bg-transparent py-12 sm:py-16">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <Receipt className="size-5" />
+              </EmptyMedia>
+              <EmptyTitle>Ready for your first sale</EmptyTitle>
+              <EmptyDescription className="max-w-sm text-pretty">
+                Scan a barcode, select a customer, and record payment in a few
+                steps.
+              </EmptyDescription>
+            </EmptyHeader>
+            <Button
+              type="button"
+              className="auth-submit-btn gap-2 border-0"
+              onClick={() => setCreateOpen(true)}
+            >
+              <Plus className="size-4" />
+              New sale
+            </Button>
+          </Empty>
+        ) : (
+          <DataTable
+            data={invoices}
+            meta={res.meta}
+            columns={cols}
+            density="compact"
+            DataTableToolbar={InvoiceTableToolbar}
+          />
+        )}
+      </div>
+    </OrgPageShell>
   );
 }

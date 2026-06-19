@@ -15,6 +15,7 @@ import type {
   PaymentFilters,
   ProductFilters,
 } from "types";
+import { normalizeRole } from "utils/permissions";
 
 export function useOrganisation() {
   const { id: orgId } = useParams<{ id: string }>();
@@ -124,7 +125,7 @@ export function useOrganisation() {
       // staleTime: 2 * 60 * 1000, // 2 minutes (more dynamic data)
     });
 
-  const clientsQuery = (filters?: ClientFilters) =>
+  const clientsQuery = (filters?: ClientFilters, opts?: QueryOpts) =>
     useQuery({
       queryKey: organisationKeys.clientList(orgId, filters),
       queryFn: async () => {
@@ -135,7 +136,7 @@ export function useOrganisation() {
           filters,
         );
       },
-      enabled: !!accessToken && !!coreQuery.data,
+      enabled: (opts?.enabled ?? true) && !!accessToken && !!coreQuery.data,
       // staleTime: 2 * 60 * 1000, // 2 minutes (more dynamic data)
     });
 
@@ -424,15 +425,41 @@ export function useOrganisation() {
 
   // You can handle custom success toast messages for fetchers on individual components since no success message is returned from the API (intentionally)
 
-  const { data: membersListRes } = membersQuery();
+  const { data: membersListRes, isLoading: isMembersLoading } = membersQuery();
 
   const businessMember = useMemo(() => {
-    const embedded = coreQuery.data?.data?.members ?? [];
+    const org = coreQuery.data?.data;
+    const embedded = org?.members ?? [];
     const listed = membersListRes?.data ?? [];
     const pool = embedded.length ? embedded : listed;
 
-    return pool.find((m) => m.user?.id === user?.id);
-  }, [coreQuery.data?.data?.members, membersListRes?.data, user?.id]);
+    const match = pool.find((m) => m.user?.id === user?.id);
+    if (match) {
+      return { ...match, role: normalizeRole(match.role) ?? match.role };
+    }
+
+    // Members list can be empty while the user is still the business owner
+    if (user?.id && org?.owner_id === user.id) {
+      return (
+        pool.find((m) => m.role === "owner") ?? {
+          id: org.owner_id,
+          role: "owner" as const,
+          is_active: true,
+          joined_at: org.created_at,
+          created_at: org.created_at,
+          updated_at: org.updated_at,
+          user: {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            is_active: true,
+          },
+        }
+      );
+    }
+
+    return undefined;
+  }, [coreQuery.data?.data, membersListRes?.data, user?.id, user?.email, user?.name]);
 
   useEffect(() => {
     if (coreQuery.data?.message) {
@@ -461,6 +488,7 @@ export function useOrganisation() {
 
     // Loading states
     isLoading: coreQuery.isLoading,
+    isMembersLoading,
 
     // Error states
     error: coreQuery.error,

@@ -124,6 +124,14 @@ export function matchesAnyPermission(
   return list.some((feature) => hasPermission(role, feature));
 }
 
+/** Normalize API role strings (e.g. "Owner", "STOCK_KEEPER") to app Role. */
+export function normalizeRole(role: Role | string | undefined): Role | undefined {
+  if (!role) return undefined;
+  const key = String(role).trim().toLowerCase().replace(/-/g, "_");
+  if (key in PERMISSIONS) return key as Role;
+  return undefined;
+}
+
 export function requirePermission(role: Role | undefined, feature: Feature) {
   if (!hasPermission(role, feature)) {
     throw new Error("Forbidden");

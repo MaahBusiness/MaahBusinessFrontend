@@ -201,12 +201,12 @@ export default function OrganisationDashboard() {
   };
 
   return (
-    <div className="dashboard-page relative min-h-full">
+    <div className="dashboard-page relative min-h-full w-full">
       <div aria-hidden className="dashboard-orb dashboard-orb-violet" />
       <div aria-hidden className="dashboard-orb dashboard-orb-blue" />
       <div aria-hidden className="dashboard-orb dashboard-orb-emerald" />
 
-      <div className="relative z-10 space-y-6 p-6 lg:p-8">
+      <div className="relative z-10 w-full space-y-6 p-6 lg:p-8">
         {/* Header */}
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-500">

@@ -47,8 +47,8 @@ export function PosProductSearchDialog({
   }, [open]);
 
   const { data: res, isFetching } = fetchProducts(
-    { search: debounced, page_size: 12 },
-    { enabled: open && debounced.length >= 2 },
+    { search: debounced || undefined, page_size: 20 },
+    { enabled: open },
   );
 
   const products = res?.data ?? [];
@@ -70,17 +70,13 @@ export function PosProductSearchDialog({
               autoFocus
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Name or barcode…"
+              placeholder="Search by name or barcode…"
               className="pl-9"
             />
           </div>
 
           <div className="max-h-72 space-y-1 overflow-y-auto">
-            {debounced.length < 2 ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">
-                Type at least 2 characters to search.
-              </p>
-            ) : isFetching ? (
+            {isFetching ? (
               <div className="flex justify-center py-10">
                 <Spinner />
               </div>
@@ -96,7 +92,9 @@ export function PosProductSearchDialog({
                   </EmptyMedia>
                   <EmptyTitle>No products found</EmptyTitle>
                   <EmptyDescription>
-                    Try another name or scan the barcode instead.
+                    {debounced
+                      ? "Try another search term or scan the barcode."
+                      : "No products in catalog yet."}
                   </EmptyDescription>
                 </EmptyHeader>
               </Empty>

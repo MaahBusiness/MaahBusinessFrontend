@@ -11,6 +11,7 @@ import { useOrganisation } from "@/hooks/use-organisation";
 import DataTableSkeleton from "@/components/data-table-skeleton";
 import { RequestFailed } from "@/routes/404";
 import { CategoriesBrowser } from "@/components/categories/categories-browser";
+import { OrgPageShell } from "@/components/layout/org-page-shell";
 
 export async function action({ request, params }: Route.ActionArgs): Promise<
   ServerActionState & {
@@ -136,13 +137,8 @@ export default function CategoriesPage({ actionData }: Route.ComponentProps) {
   if (!res?.success) return <RequestFailed />;
 
   return (
-    <div className="dashboard-page relative min-h-full overflow-x-hidden">
-      <div aria-hidden className="dashboard-orb dashboard-orb-violet" />
-      <div aria-hidden className="dashboard-orb dashboard-orb-blue" />
-
-      <div className="relative z-10 mx-auto w-full max-w-3xl overflow-x-hidden px-3 py-4 sm:px-5 sm:py-8 lg:px-6 lg:py-10">
-        <CategoriesBrowser categories={res.data?.categories ?? []} />
-      </div>
-    </div>
+    <OrgPageShell>
+      <CategoriesBrowser categories={res.data?.categories ?? []} />
+    </OrgPageShell>
   );
 }

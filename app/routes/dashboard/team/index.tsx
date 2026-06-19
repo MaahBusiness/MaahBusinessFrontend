@@ -1,5 +1,5 @@
 import type { Route } from ".react-router/types/app/routes/dashboard/team/+types";
-import DataTableSkeleton from "@/components/data-table-skeleton";
+import { OrgPageShell } from "@/components/layout/org-page-shell";
 import { columns } from "@/components/team/team-columns";
 import { TeamTableToolbar } from "@/components/team/team-table-toolbar";
 import { DataTable } from "@/components/ui/data-table";
@@ -141,17 +141,17 @@ export default function TeamPage({ actionData }: Route.ComponentProps) {
   if (!res?.success) return <RequestFailed />;
 
   return (
-    <div className="w-full min-h-full flex flex-col gap-8 items-stretch max-w-[1200px] lg:px-6 px-4 mx-auto py-12">
-      <div className="w-full flex items-center gap-2">
-        <h2 className="text-lg tracking-tight">Team</h2>
-      </div>
+    <OrgPageShell>
+      <h2 className="text-xl font-bold tracking-tight">Team</h2>
 
-      <DataTable
-        data={res?.data ?? []}
-        meta={res.meta}
-        columns={cols}
-        DataTableToolbar={TeamTableToolbar}
-      />
-    </div>
+      <div className="min-w-0 flex-1 overflow-hidden rounded-xl border border-violet-500/15 bg-card/80 shadow-sm backdrop-blur-sm">
+        <DataTable
+          data={res?.data ?? []}
+          meta={res.meta}
+          columns={cols}
+          DataTableToolbar={TeamTableToolbar}
+        />
+      </div>
+    </OrgPageShell>
   );
 }
