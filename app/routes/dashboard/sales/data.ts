@@ -474,3 +474,27 @@ export const methods = [
     icon: FileClock,
   },
 ];
+
+/** Payment methods shown at checkout — credit is handled by the credit-sale toggle. */
+export const paymentMethodsAtCheckout = methods.filter(
+  (m) => m.value !== "credit",
+);
+
+export const searchFilters = [
+  { value: "number", label: "Invoice #" },
+  { value: "customer_name", label: "Customer" },
+  { value: "cashier_name", label: "Cashier" },
+];
+
+export const visibles = [
+  { value: "number", label: "#" },
+  { value: "status", label: "Status" },
+  { value: "total", label: "Total" },
+  { value: "paid", label: "Paid" },
+  { value: "method", label: "Method" },
+  { value: "due", label: "Due" },
+  { value: "due-date", label: "Due date" },
+  { value: "customer", label: "Customer" },
+  { value: "cashier", label: "Cashier" },
+  { value: "created", label: "Created" },
+];

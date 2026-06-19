@@ -5,41 +5,57 @@ import {
   getPermissionFallbackPath,
 } from "@/lib/org-navigation";
 import { SidebarInset } from "@/components/ui/sidebar";
-import { Navigate, Outlet, useLocation, useParams } from "react-router";
-import { matchesAnyPermission } from "utils/permissions";
+import { Navigate, Outlet, useLocation, useNavigate, useParams } from "react-router";
+import { matchesAnyPermission, normalizeRole } from "utils/permissions";
+import { useEffect } from "react";
 
+/**
+ * Always render <Outlet /> so client-side navigation completes immediately.
+ * Redirect unauthorized access in an effect (never replace Outlet with Navigate).
+ */
 function OrgPermissionGuard() {
+  const navigate = useNavigate();
   const { pathname } = useLocation();
   const { id: orgId } = useParams();
-  const { businessMember, isLoading, organisation } = useOrganisation();
+  const { businessMember, isLoading, isMembersLoading, organisation } =
+    useOrganisation();
 
-  if (isLoading) return <Outlet />;
+  const membershipReady = !isLoading && !isMembersLoading;
+  const role = normalizeRole(businessMember?.role);
 
-  if (organisation?.success && !businessMember) {
-    return <Navigate to="/dashboard/organisations" replace />;
-  }
+  useEffect(() => {
+    if (!membershipReady) return;
 
-  const required = getOrgRoutePermission(pathname);
-  if (
-    required &&
-    businessMember &&
-    !matchesAnyPermission(businessMember.role, required)
-  ) {
-    return (
-      <Navigate
-        to={getPermissionFallbackPath(orgId, businessMember.role)}
-        replace
-      />
-    );
-  }
+    if (organisation?.success && !businessMember) {
+      navigate("/dashboard/organisations", { replace: true });
+      return;
+    }
 
-  return <Outlet />;
+    const required = getOrgRoutePermission(pathname);
+    if (required && role && !matchesAnyPermission(role, required)) {
+      navigate(getPermissionFallbackPath(orgId, role), { replace: true });
+    }
+  }, [
+    membershipReady,
+    organisation?.success,
+    businessMember,
+    role,
+    pathname,
+    orgId,
+    navigate,
+  ]);
+
+  return <Outlet key={pathname} />;
 }
 
 export default function Layout() {
-  const { businessMember, isLoading } = useOrganisation();
+  const { businessMember, isLoading, isMembersLoading } = useOrganisation();
 
-  if (!isLoading && businessMember?.is_active === false) {
+  if (
+    !isLoading &&
+    !isMembersLoading &&
+    businessMember?.is_active === false
+  ) {
     return <Navigate to="/dashboard/organisations" replace />;
   }
 

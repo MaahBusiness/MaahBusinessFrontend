@@ -1,32 +1,26 @@
 import * as React from "react";
 import { SidebarIcon } from "lucide-react";
+import { useParams } from "react-router";
 
-import { NavMain } from "@/components/nav-main";
+import { OrgSidebarNav } from "@/components/layout/org-sidebar-nav";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarMenuButton,
-  SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { useParams } from "react-router";
 import { useOrganisation } from "@/hooks/use-organisation";
-import {
-  filterSidebarByRole,
-  SIDEBAR_NAV_SCHEMA,
-} from "@/lib/org-navigation";
+import { normalizeRole } from "utils/permissions";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { toggleSidebar } = useSidebar();
-  const { id: routeOrgId } = useParams<{ id: string }>();
-  const { businessMember, organisation } = useOrganisation();
-  const orgId = routeOrgId ?? organisation?.data?.id;
+  const { id: orgId } = useParams<{ id: string }>();
+  const { businessMember, isLoading, isMembersLoading } = useOrganisation();
 
-  const nav = React.useMemo(
-    () => filterSidebarByRole(SIDEBAR_NAV_SCHEMA, businessMember?.role),
-    [businessMember?.role],
-  );
+  const role = normalizeRole(businessMember?.role);
+  const membershipPending = isLoading || isMembersLoading;
 
   return (
     <Sidebar
@@ -35,18 +29,25 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       {...props}
     >
       <SidebarContent>
-        <NavMain data={nav} orgId={orgId} />
+        {!orgId ? null : membershipPending && !role ? (
+          <div className="flex flex-col gap-2 p-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-8 w-full rounded-md" />
+            ))}
+          </div>
+        ) : (
+          <OrgSidebarNav role={role} />
+        )}
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenuButton
-          tooltip={"Toggle sidebar"}
+          tooltip="Toggle sidebar"
           className="h-8 w-8"
           onClick={toggleSidebar}
         >
           <SidebarIcon />
         </SidebarMenuButton>
       </SidebarFooter>
-      <SidebarRail />
     </Sidebar>
   );
 }

@@ -15,10 +15,24 @@ import {
 } from "lucide-react";
 import type { Role, SideItem } from "types";
 import type { Feature } from "utils/permissions";
-import { matchesAnyPermission } from "utils/permissions";
+import { matchesAnyPermission, normalizeRole } from "utils/permissions";
 
-/** Reserved product slug segments that are real org routes, not product IDs. */
-export const RESERVED_PRODUCT_SLUGS = new Set(["clients", "archived"]);
+/** URL segments under /products/:id that are routes, not product UUIDs. */
+export const RESERVED_PRODUCT_SLUGS = new Set([
+  "clients",
+  "archived",
+  "categories",
+]);
+
+export function resolveReservedProductPath(
+  orgId: string,
+  slug: string,
+): string | null {
+  if (slug === "clients") return orgClientsPath(orgId);
+  if (slug === "categories") return orgPath(orgId, "products/categories");
+  if (slug === "archived") return orgPath(orgId, "invoices/archived");
+  return null;
+}
 
 // ---------------------------------------------------------------------------
 // Paths
@@ -133,8 +147,19 @@ export function getOrgRoutePermission(
 }
 
 // ---------------------------------------------------------------------------
-// Sidebar schema
+// Sidebar schema — each `url` must match a route in app/routes.ts under org/:id
 // ---------------------------------------------------------------------------
+
+/** Verified segment → page mapping (org/:id/<segment>) */
+export const ORG_NAV_SEGMENTS = {
+  home: "routes/dashboard/org/dashboard.tsx",
+  products: "routes/dashboard/products/index.tsx",
+  "products/categories": "routes/dashboard/products/categories.tsx",
+  invoices: "routes/dashboard/sales/index.tsx",
+  clients: "routes/dashboard/clients/index.tsx",
+  inventory: "routes/dashboard/inventory/index.tsx",
+  team: "routes/dashboard/team/index.tsx",
+} as const;
 
 export const SIDEBAR_NAV_SCHEMA: { [key: string]: SideItem[] } = {
   navMain: [
@@ -148,7 +173,6 @@ export const SIDEBAR_NAV_SCHEMA: { [key: string]: SideItem[] } = {
       title: "Products",
       url: "products",
       icon: Database,
-      isActive: true,
       permission: "products:crud",
       items: [
         { title: "All Products", url: "products", permission: "products:crud" },
@@ -188,7 +212,7 @@ export const SIDEBAR_NAV_SCHEMA: { [key: string]: SideItem[] } = {
   ],
 };
 
-function filterSideItem(role: Role | undefined, item: SideItem): SideItem | null {
+function filterSideItem(role: Role, item: SideItem): SideItem | null {
   if (item.items?.length) {
     if (item.permission && !matchesAnyPermission(role, item.permission)) {
       return null;
@@ -204,9 +228,10 @@ function filterSideItem(role: Role | undefined, item: SideItem): SideItem | null
 
 export function filterSidebarByRole(
   schema: { [key: string]: SideItem[] },
-  role: Role | undefined,
+  role: Role | string | undefined,
 ): { [key: string]: SideItem[] } {
-  if (!role) {
+  const normalized = normalizeRole(role);
+  if (!normalized) {
     return Object.fromEntries(
       Object.keys(schema).map((group) => [group, [] as SideItem[]]),
     );
@@ -215,7 +240,7 @@ export function filterSidebarByRole(
     Object.entries(schema).map(([group, items]) => [
       group,
       items
-        .map((item) => filterSideItem(role, item))
+        .map((item) => filterSideItem(normalized, item))
         .filter((item): item is SideItem => item !== null),
     ]),
   );

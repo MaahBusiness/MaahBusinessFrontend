@@ -3,6 +3,7 @@ import DataTableSkeleton from "@/components/data-table-skeleton";
 import { invoiceCols } from "@/components/sales/invoice-columns";
 import { InvoiceTableToolbar } from "@/components/sales/invoice-table-toolbar";
 import { DataTable } from "@/components/ui/data-table";
+import { OrgPageShell } from "@/components/layout/org-page-shell";
 import { useOrganisation } from "@/hooks/use-organisation";
 import { useSalesActionFeedback } from "@/hooks/use-sales-action-feedback";
 import { getSession } from "@/lib/session.server";
@@ -50,28 +51,26 @@ export default function ArchivedInvoicesPage({
   if (!res?.success) return <RequestFailed refetch={refetch} />;
 
   return (
-    <div className="dashboard-page relative min-h-full overflow-x-hidden">
-      <div className="relative z-10 mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-6 px-3 py-4 sm:px-5 sm:py-8 lg:px-6 lg:py-10">
-        <div className="flex items-center gap-2">
-          <Link to={orgPath(orgId, "invoices")}>
-            <h2 className="text-lg tracking-tight text-muted-foreground hover:underline">
-              Sales
-            </h2>
-          </Link>
-          <ChevronRight className="size-4 text-muted-foreground" />
-          <h2 className="text-lg font-semibold tracking-tight">Archived</h2>
-        </div>
-
-        <div className="min-w-0 overflow-hidden rounded-xl border border-violet-500/15 bg-card/80 shadow-sm backdrop-blur-sm">
-          <DataTable
-            data={res.data ?? []}
-            meta={res.meta}
-            columns={cols}
-            density="compact"
-            DataTableToolbar={InvoiceTableToolbar}
-          />
-        </div>
+    <OrgPageShell>
+      <div className="flex items-center gap-2">
+        <Link to={orgPath(orgId, "invoices")}>
+          <h2 className="text-lg tracking-tight text-muted-foreground hover:underline">
+            Sales
+          </h2>
+        </Link>
+        <ChevronRight className="size-4 text-muted-foreground" />
+        <h2 className="text-lg font-semibold tracking-tight">Archived</h2>
       </div>
-    </div>
+
+      <div className="min-w-0 flex-1 overflow-hidden rounded-xl border border-violet-500/15 bg-card/80 shadow-sm backdrop-blur-sm">
+        <DataTable
+          data={res.data ?? []}
+          meta={res.meta}
+          columns={cols}
+          density="compact"
+          DataTableToolbar={InvoiceTableToolbar}
+        />
+      </div>
+    </OrgPageShell>
   );
 }

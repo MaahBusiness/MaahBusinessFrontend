@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, Archive } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { OrgPageShell } from "@/components/layout/org-page-shell";
 
 export default function InventoryPage() {
   const { organisation } = useOrganisation();
@@ -30,9 +31,9 @@ export default function InventoryPage() {
   }
 
   return (
-    <div className="w-full min-h-full flex flex-col gap-6 max-w-[1200px] lg:px-6 px-4 mx-auto py-12">
+    <OrgPageShell orbs={["orange", "blue"]}>
       <div className="flex items-center justify-between">
-        <h2 className="text-lg tracking-tight">Inventory Alerts</h2>
+        <h2 className="text-xl font-bold tracking-tight">Inventory alerts</h2>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -69,6 +70,6 @@ export default function InventoryPage() {
           Check expired
         </Button>
       </div>
-    </div>
+    </OrgPageShell>
   );
 }

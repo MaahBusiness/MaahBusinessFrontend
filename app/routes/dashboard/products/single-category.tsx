@@ -176,7 +176,7 @@ export default function SingleCatPage({ actionData }: Route.ComponentProps) {
 
   return (
     <>
-      <div className="w-full flex flex-col  gap-8 items-stretch max-w-[1200px] lg:px-6 px-4 mx-auto py-12">
+      <div className="w-full min-w-0 flex flex-col gap-8 items-stretch px-4 py-8 lg:px-6">
         <div className="w-full flex flex-col tablet:flex-row tablet:items-center gap-4">
           <div className="w-full flex items-center gap-2">
             <Link to="../products">
@@ -210,7 +210,7 @@ export default function SingleCatPage({ actionData }: Route.ComponentProps) {
       </div>
 
       <div
-        className={`w-full flex flex-col gap-8 items-stretch max-w-[1200px] lg:px-6 px-4 mx-auto ${subs?.length ? "py-12" : ""} `}
+        className={`w-full min-w-0 flex flex-col gap-8 items-stretch px-4 lg:px-6 ${subs?.length ? "py-8" : ""} `}
       >
         <div className="w-full flex items-center gap-2">
           <h2 className="text-lg tracking-tight">

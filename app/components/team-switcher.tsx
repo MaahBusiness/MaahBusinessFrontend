@@ -18,7 +18,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Link, redirect, useLocation, useNavigate } from "react-router";
+import { Link, Navigate, useNavigate } from "react-router";
 import { Badge } from "@/components/ui/badge";
 import { BreadcrumbLink } from "@/components/ui/breadcrumb";
 import { useAuth } from "@/contexts/auth-context";
@@ -37,22 +37,26 @@ interface TeamSwitcherProps extends PopoverTriggerProps {
 }
 
 export default function TeamSwitcher({ currentId }: TeamSwitcherProps) {
-  const { user, accessToken } = useAuth(); // Get token from context
+  const { user, accessToken } = useAuth();
   const [open, setOpen] = React.useState(false);
-  const { pathname } = useLocation();
   const navigate = useNavigate();
 
-  // Fetch all organisations for the switcher dropdown
   const { data: res, isLoading } = useQuery({
     queryKey: organisationKeys.lists(),
     queryFn: async () => {
-      if (!accessToken)
-        throw redirect(
-          `/auth/signin?redirectTo=${encodeURIComponent(pathname)}`,
-        );
+      if (!accessToken) return null;
       return await organisationsApi.getAll(accessToken);
     },
-    enabled: !!accessToken, // Only run if token exists
+    enabled: !!accessToken,
+  });
+
+  const { data: membersRes, isLoading: membersLoading } = useQuery({
+    queryKey: organisationKeys.members(currentId),
+    queryFn: async () => {
+      if (!accessToken) return null;
+      return await organisationsApi.getMembers(accessToken, currentId);
+    },
+    enabled: !!accessToken && !!currentId,
   });
 
   if (isLoading || !res?.success)
@@ -66,15 +70,27 @@ export default function TeamSwitcher({ currentId }: TeamSwitcherProps) {
 
   const selected =
     res?.data?.find((d) => d.id === currentId) || res?.data?.at(0);
-  // Roundabout way to get the user's role in the current organisation
-  const businessUser = selected?.members?.find((m) => m.user?.id === user?.id);
 
-  if (selected && !businessUser) {
-    throw redirect("/dashboard/organisations/");
-    throw new Error(
-      "You must be a member of this organisation to access this page",
-    );
+  const businessUser =
+    selected?.members?.find((m) => m.user?.id === user?.id) ??
+    membersRes?.data?.find((m) => m.user?.id === user?.id) ??
+    (user?.id && selected?.owner_id === user.id
+      ? membersRes?.data?.find((m) => m.role === "owner")
+      : undefined);
+
+  if (
+    selected &&
+    !membersLoading &&
+    membersRes !== undefined &&
+    !businessUser &&
+    user?.id !== selected.owner_id
+  ) {
+    return <Navigate to="/dashboard/organisations" replace />;
   }
+
+  const role =
+    businessUser?.role ??
+    (user?.id === selected?.owner_id ? ("owner" as const) : undefined);
 
   return (
     <div className="flex items-center gap-1">
@@ -93,7 +109,7 @@ export default function TeamSwitcher({ currentId }: TeamSwitcherProps) {
           </Avatar>
           <span className="text-xxs tablet:text-sm">{selected?.name} </span>
           <Badge variant="secondary" className="text-[10px] tablet:text-xxs">
-            {businessUser?.role && capitalizeFirstChar(businessUser?.role)}
+            {role && capitalizeFirstChar(role)}
           </Badge>
         </Link>
       </BreadcrumbLink>

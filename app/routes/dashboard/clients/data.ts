@@ -137,6 +137,12 @@ export const mockClients: Client[] = [
   },
 ];
 
+export const searchFilters = [
+  { value: "name", label: "Name" },
+  { value: "email", label: "Email" },
+  { value: "phone_number", label: "Phone" },
+];
+
 export const types = [
   {
     value: "REGULAR",

@@ -189,11 +189,11 @@ export function StaffDashboard({
   }
 
   return (
-    <div className="dashboard-page relative min-h-full">
+    <div className="dashboard-page relative min-h-full w-full">
       <div aria-hidden className="dashboard-orb dashboard-orb-violet" />
       <div aria-hidden className="dashboard-orb dashboard-orb-blue" />
 
-      <div className="relative z-10 space-y-6 p-6 lg:p-8">
+      <div className="relative z-10 w-full space-y-6 p-6 lg:p-8">
         <div className="space-y-2">
           <Badge variant="secondary" className="capitalize">
             {role.replace("_", " ")} workspace

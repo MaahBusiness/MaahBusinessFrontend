@@ -41,9 +41,8 @@ export default [
       route("home", "routes/dashboard/org/dashboard.tsx"),
       route("team", "routes/dashboard/team/index.tsx"),
 
-      // Products
+      // Products — static segments before :prodId (otherwise "categories" is treated as an ID)
       route("products", "routes/dashboard/products/index.tsx"),
-      route("products/:prodId", "routes/dashboard/products/single-product.tsx"),
       route("products/categories", "routes/dashboard/products/categories.tsx"),
       route(
         "products/categories/:catId",
@@ -53,6 +52,7 @@ export default [
         "products/categories/:catId/:subId",
         "routes/dashboard/products/single-sub-cat.tsx",
       ),
+      route("products/:prodId", "routes/dashboard/products/single-product.tsx"),
 
       // Sales
       route("invoices", "routes/dashboard/sales/index.tsx"),

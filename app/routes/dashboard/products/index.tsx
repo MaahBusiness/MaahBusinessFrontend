@@ -15,6 +15,7 @@ import { Package, TrendingDown, Boxes, Barcode } from "lucide-react";
 import { useMemo } from "react";
 import { formatDisplayAmount } from "utils";
 import { ProductStatsGrid } from "@/components/products/product-stats-grid";
+import { OrgPageShell } from "@/components/layout/org-page-shell";
 
 export async function action({ request, params }: Route.ActionArgs): Promise<
   ServerActionState & {
@@ -99,34 +100,29 @@ export default function ProductsPage({ actionData }: Route.ComponentProps) {
     );
 
   return (
-    <div className="dashboard-page relative min-h-full overflow-x-hidden">
-      <div aria-hidden className="dashboard-orb dashboard-orb-violet" />
-      <div aria-hidden className="dashboard-orb dashboard-orb-blue" />
-
-      <div className="relative z-10 mx-auto w-full min-w-0 max-w-6xl px-3 py-4 sm:px-5 sm:py-8 lg:px-6 lg:py-10">
-        <div className="mb-5 min-w-0 space-y-4 sm:mb-6">
-          <div className="min-w-0">
-            <h1 className="text-xl font-bold tracking-tight sm:text-2xl">
-              Product catalog
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Manage inventory, pricing, and promotions for your store.
-            </p>
-          </div>
-
-          <ProductStatsGrid items={statItems} />
+    <OrgPageShell>
+      <div className="mb-1 min-w-0 space-y-4 sm:mb-2">
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold tracking-tight sm:text-2xl">
+            Product catalog
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Manage inventory, pricing, and promotions for your store.
+          </p>
         </div>
 
-        <div className="min-w-0 overflow-hidden rounded-xl border border-violet-500/15 bg-card/80 shadow-sm backdrop-blur-sm">
-          <DataTable
-            data={products}
-            meta={res.meta}
-            columns={cols}
-            density="compact"
-            DataTableToolbar={ProductTableToolbar}
-          />
-        </div>
+        <ProductStatsGrid items={statItems} />
       </div>
-    </div>
+
+      <div className="min-w-0 flex-1 overflow-hidden rounded-xl border border-violet-500/15 bg-card/80 shadow-sm backdrop-blur-sm">
+        <DataTable
+          data={products}
+          meta={res.meta}
+          columns={cols}
+          density="compact"
+          DataTableToolbar={ProductTableToolbar}
+        />
+      </div>
+    </OrgPageShell>
   );
 }

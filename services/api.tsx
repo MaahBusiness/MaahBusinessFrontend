@@ -215,34 +215,31 @@ export async function handleSalesActions({
 
   switch (intent) {
     case "create-invoice": {
-      const isNewClient =
-        "id" in client!
+      if (!lines?.length) errors.lines = "Add at least one product to continue.";
+
+      if (onCredit) {
+        if (!due) errors.due = "Due date is required for credit sales.";
+        if (!reason?.trim())
+          errors.reason = "Reason is required for credit sales.";
+      }
+
+      if (Object.keys(errors).length > 0) return { success: false, errors };
+
+      const isWalkIn = !_client || !hasData;
+      const clientPayload = isWalkIn
+        ? { customer_name: "Walk-in customer" }
+        : "id" in client!
           ? { customer_id: client.id }
           : {
               customer_name: client?.name,
               customer_email: client?.email,
               customer_phone: client?.phone_number,
               customer_address: client?.address,
-              customer_type: client?.customer_type.toUpperCase() as
-                | Customer
-                | undefined,
+              customer_type: (client?.customer_type?.toUpperCase() ?? "REGULAR") as
+                "REGULAR" | "WHOLESALER",
             };
-      if (!lines?.length) errors.lines = "Please add products to the invoice.";
-      if (!_client || !hasData)
-        errors.client = "Please select or add a client..";
-      if (advance + tax < total && !onCredit)
-        errors.credit =
-          "The amount paid appears to be less than the total. Please mark as 'credit'";
-      if (onCredit && status !== "CREDIT")
-        errors.status =
-          "The status should be set to 'Credit' for credit invoices";
 
-      if (onCredit) {
-        if (!due) errors.due = "Please provide a due date for the credit.";
-        if (!reason) errors.reason = "Please provide a reason for the credit.";
-      }
-
-      if (Object.keys(errors).length > 0) return { success: false, errors };
+      const paymentMethod = onCredit ? "credit" : method!;
 
       if (session?.accessToken)
         return await organisationsApi.createInvoice(session.accessToken, {
@@ -252,13 +249,12 @@ export async function handleSalesActions({
             quantity: l.qty,
             discount: (l.discount || 0) * l.qty,
           })),
-          is_credit: onCredit ? true : false,
-          status: status?.toUpperCase() as InvoiceStatus,
-          payment_method: method!,
-          ...isNewClient,
+          is_credit: Boolean(onCredit),
+          payment_method: paymentMethod,
+          ...clientPayload,
           advance_paid: advance,
-          due_date: due,
-          reason,
+          due_date: onCredit ? due : undefined,
+          reason: onCredit ? reason : undefined,
           tax,
         });
       break;

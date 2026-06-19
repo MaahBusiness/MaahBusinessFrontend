@@ -30,7 +30,6 @@ import {
   InputGroup,
   InputGroupInput,
   InputGroupAddon,
-  InputGroupButton,
 } from "@/components/ui/input-group";
 import {
   Item,
@@ -66,10 +65,8 @@ import {
   RefreshCcwIcon,
   CircleDashed,
   CircleSlash,
-  Slash,
 } from "lucide-react";
-import { useState, type Dispatch, type SetStateAction } from "react";
-import { toast } from "sonner";
+import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import type { Client, ClientUpdateParams, Customer } from "types";
 import { CUSTOMER_TYPES } from "types/consts";
 import { capitalizeFirstChar, genericErrorState } from "utils";
@@ -78,35 +75,46 @@ export default function ClientSelector({
   value,
   disabled,
   className,
+  allowWalkIn = false,
 }: {
   value?: string;
   disabled?: boolean;
   className?: string;
+  /** When true, show a quick walk-in option (no saved customer record). */
+  allowWalkIn?: boolean;
 }) {
   const { fetchClients } = useOrganisation();
 
   const [open, setOpen] = useState(false);
   const [d, setD] = useState(false);
   const [client, setClient] = useState<Client | ClientUpdateParams>();
-  const [query, setQuery] = useState<string>();
+  const [query, setQuery] = useState("");
+  const [debounced, setDebounced] = useState("");
 
-  const { data, error, refetch, isFetching } = fetchClients({ search: query });
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebounced(query.trim()), 300);
+    return () => window.clearTimeout(timer);
+  }, [query]);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault(); // ⛔ stop navigation
-    if (!query) return;
+  useEffect(() => {
+    if (!open) setQuery("");
+  }, [open]);
 
-    const { data, error } = await refetch();
+  const { data, error, refetch, isFetching } = fetchClients(
+    { search: debounced || undefined, page_size: 20 },
+    { enabled: open },
+  );
 
-    if (error) {
-      toast.error(genericErrorState().message);
-      return;
-    }
+  const customers = data?.data ?? [];
 
-    if (!data?.data) {
-      toast.error(data?.message);
-      return;
-    }
+  const selectCustomer = (c: Client) => {
+    setClient(c);
+    setOpen(false);
+  };
+
+  const openAddCustomer = () => {
+    setOpen(false);
+    setD(true);
   };
 
   return (
@@ -116,7 +124,6 @@ export default function ClientSelector({
           type="hidden"
           name="client-id"
           value={(client as Client)?.id ?? ""}
-          required
         />
 
         <input type="hidden" name="client" value={JSON.stringify(client)} />
@@ -163,198 +170,148 @@ export default function ClientSelector({
               </ItemActions>
             </Item>
           ) : (
-            <div className="flex flex-col gap-4">
-              <PopoverTrigger disabled={disabled} asChild>
-                <Button
-                  variant="outline"
-                  className={cn(className, " justify-between w-auto flex-1")}
-                >
-                  Search clients...
-                  <SearchIcon className="text-muted-foreground" />
-                </Button>
-              </PopoverTrigger>
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-wrap gap-2">
+                <PopoverTrigger disabled={disabled} asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(className, "flex-1 justify-between")}
+                  >
+                    Search customers
+                    <SearchIcon className="text-muted-foreground" />
+                  </Button>
+                </PopoverTrigger>
+                {allowWalkIn && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    className="text-xs"
+                    onClick={() =>
+                      setClient({
+                        name: "Walk-in customer",
+                        customer_type: "regular",
+                      })
+                    }
+                  >
+                    Walk-in
+                  </Button>
+                )}
+              </div>
 
-              <DialogTrigger asChild>
-                <Button
-                  size={"sm"}
-                  variant={"secondary"}
-                  className="w-fit text-xs font-normal"
-                >
-                  <Plus size={4} />
-                  Add new client
-                </Button>
-              </DialogTrigger>
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                className="w-fit text-xs font-normal"
+                onClick={openAddCustomer}
+              >
+                <Plus size={4} />
+                Add new customer
+              </Button>
             </div>
           )}
         </div>
         <PopoverContent
-          className="p-0 w-[--radix-popper-anchor-width]"
-          align="center"
+          className="w-[var(--radix-popover-trigger-width)] min-w-[320px] p-0"
+          align="start"
+          side="bottom"
         >
-          <Command>
-            {/* <CommandInput placeholder="Search client..." /> */}
-            <form onSubmit={handleSubmit}>
-              <InputGroup className="h-full  border-0 border-b rounded-none">
+          <Command shouldFilter={false}>
+            <div className="border-b border-border p-2">
+              <InputGroup>
                 <InputGroupInput
-                  placeholder="Type to search..."
+                  autoFocus
+                  placeholder="Search by name or email…"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  // onKeyDown={(e) => e.key === "Enter" && handleSubmit(e)}
-                  // className="p-0"
                 />
                 <InputGroupAddon align="inline-end">
-                  <InputGroupButton
-                    variant="secondary"
-                    type="submit"
-                    disabled={isFetching}
-                  >
-                    {isFetching ? <Spinner /> : "Search"}
-                  </InputGroupButton>
+                  {isFetching ? (
+                    <Spinner className="size-4" />
+                  ) : (
+                    <SearchIcon className="size-4" />
+                  )}
                 </InputGroupAddon>
               </InputGroup>
-            </form>
+            </div>
 
-            <CommandList>
-              <CommandEmpty>No roles found.</CommandEmpty>
-              {/* {isLoading && <TeamSwitcherSkeleton />} */}
-
-              <CommandGroup>
-                {!data && !error && (
-                  <Empty>
-                    <EmptyHeader>
-                      <EmptyMedia variant="icon">
-                        {isFetching ? <Spinner /> : <SearchIcon />}
-                      </EmptyMedia>
-                      <EmptyTitle>Search clients</EmptyTitle>
-                      <EmptyDescription>
-                        Search by name or email from the database.
-                      </EmptyDescription>
-                    </EmptyHeader>
-                    <EmptyContent>
-                      <form onSubmit={handleSubmit}>
-                        <InputGroup>
-                          <InputGroupInput
-                            placeholder="Type to search..."
-                            value={query}
-                            onChange={(e) => setQuery(e.target.value)}
-                          />
-                          <InputGroupAddon>
-                            <SearchIcon />
-                          </InputGroupAddon>
-                          <InputGroupAddon align="inline-end">
-                            <InputGroupButton
-                              variant="secondary"
-                              type="submit"
-                              size={"icon-xs"}
-                              disabled={isFetching}
-                            >
-                              {isFetching ? (
-                                <Spinner className="size-3" />
-                              ) : (
-                                <Slash className="size-3" />
-                              )}
-                            </InputGroupButton>
-                          </InputGroupAddon>
-                        </InputGroup>
-                      </form>
-                    </EmptyContent>
-                  </Empty>
-                )}
-
-                {(error || !data?.success) && (
-                  <Empty className="bg-muted/30 h-full">
-                    <EmptyHeader>
-                      <EmptyMedia variant="icon">
-                        {isFetching ? <Spinner /> : <CircleSlash />}
-                      </EmptyMedia>
-                      <EmptyTitle>Oops!</EmptyTitle>
-                      <EmptyDescription className="max-w-xs text-pretty">
-                        {genericErrorState().message}
-                      </EmptyDescription>
-                    </EmptyHeader>
-                    <EmptyContent>
-                      <Button
-                        variant="secondary"
-                        onClick={async () => await refetch()}
-                        disabled={isFetching}
-                      >
-                        {isFetching ? <Spinner /> : <RefreshCcwIcon />}
-                        Try again
-                      </Button>
-                    </EmptyContent>
-                  </Empty>
-                )}
-
-                {data?.data && !data.data?.length && (
-                  <Empty>
-                    <EmptyHeader>
-                      <EmptyMedia variant="icon">
-                        {isFetching ? <Spinner /> : <CircleDashed />}
-                      </EmptyMedia>
-                      <EmptyTitle>No results</EmptyTitle>
-                      <EmptyDescription>
-                        We couldn't find any client matching '{query}'. Try a
-                        different query.
-                      </EmptyDescription>
-                    </EmptyHeader>
-                    <EmptyContent>
-                      <form onSubmit={handleSubmit}>
-                        <InputGroup>
-                          <InputGroupInput
-                            placeholder="Type to search..."
-                            value={query}
-                            onChange={(e) => setQuery(e.target.value)}
-                          />
-                          <InputGroupAddon>
-                            <SearchIcon />
-                          </InputGroupAddon>
-                          <InputGroupAddon align="inline-end">
-                            <InputGroupButton
-                              variant="secondary"
-                              type="submit"
-                              size={"icon-xs"}
-                            >
-                              {isFetching ? (
-                                <Spinner className="size-3" />
-                              ) : (
-                                <Slash className="size-3" />
-                              )}
-                            </InputGroupButton>
-                          </InputGroupAddon>
-                        </InputGroup>
-                      </form>
-                    </EmptyContent>
-                  </Empty>
-                )}
-
-                {data?.data?.length &&
-                  data.data.map((c) => (
-                    <CommandItem
-                      onSelect={() => setClient(c)}
-                      key={c.id}
-                      className="text-xs"
+            <CommandList className="max-h-64">
+              {isFetching && !customers.length ? (
+                <div className="flex justify-center py-8">
+                  <Spinner />
+                </div>
+              ) : error || !data?.success ? (
+                <Empty className="border-0 py-6">
+                  <EmptyHeader>
+                    <EmptyMedia variant="icon">
+                      <CircleSlash />
+                    </EmptyMedia>
+                    <EmptyTitle>Could not load customers</EmptyTitle>
+                    <EmptyDescription>
+                      {genericErrorState().message}
+                    </EmptyDescription>
+                  </EmptyHeader>
+                  <EmptyContent>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => void refetch()}
                     >
-                      <Avatar className="mr-1 size-8">
+                      <RefreshCcwIcon className="size-4" />
+                      Try again
+                    </Button>
+                  </EmptyContent>
+                </Empty>
+              ) : customers.length === 0 ? (
+                <Empty className="border-0 py-6">
+                  <EmptyHeader>
+                    <EmptyMedia variant="icon">
+                      <CircleDashed />
+                    </EmptyMedia>
+                    <EmptyTitle>No customers found</EmptyTitle>
+                    <EmptyDescription>
+                      {debounced
+                        ? `No match for "${debounced}".`
+                        : "No customers in your catalog yet."}
+                    </EmptyDescription>
+                  </EmptyHeader>
+                </Empty>
+              ) : (
+                <CommandGroup>
+                  {customers.map((c) => (
+                    <CommandItem
+                      key={c.id}
+                      value={c.id}
+                      onSelect={() => selectCustomer(c)}
+                      className="cursor-pointer gap-2 py-2"
+                    >
+                      <Avatar className="size-8 shrink-0">
                         <BoringFallback name={c.name ?? c.id} />
                       </Avatar>
-
-                      <span className="flex flex-col">
-                        {c.name}
-                        <span>{c.email}</span>
+                      <span className="flex min-w-0 flex-col">
+                        <span className="truncate font-medium">{c.name}</span>
+                        <span className="truncate text-xs text-muted-foreground">
+                          {c.email || c.phone_number || "—"}
+                        </span>
                       </span>
                     </CommandItem>
                   ))}
-              </CommandGroup>
+                </CommandGroup>
+              )}
+              <CommandEmpty>No customers found.</CommandEmpty>
             </CommandList>
             <CommandSeparator />
             <CommandList>
               <CommandGroup>
-                <DialogTrigger asChild>
-                  <CommandItem>
-                    <PlusCircle className="h-5 w-5" />
-                    Add new client
-                  </CommandItem>
-                </DialogTrigger>
+                <CommandItem
+                  className="cursor-pointer"
+                  onSelect={openAddCustomer}
+                >
+                  <PlusCircle className="size-4" />
+                  Add new customer
+                </CommandItem>
               </CommandGroup>
             </CommandList>
           </Command>
@@ -394,17 +351,17 @@ export function AddNewDialog({
     <DialogContent className="!max-w-sm p-0">
       <form onSubmit={handleSubmit}>
         <DialogHeader className="p-6 py-4 border-b border-border">
-          <DialogTitle className="text-base">Add new client</DialogTitle>
+          <DialogTitle className="text-base">Add new customer</DialogTitle>
         </DialogHeader>
         <div className="no-scrollbar -mx-4 max-h-[50vh] overflow-y-auto px-4">
           <div className="flex flex-col gap-6 p-6 py-4">
             <Field className="gap-4">
               <Label htmlFor="type" defaultValue={client?.customer_type}>
-                Client type
+                Customer type
               </Label>
               <Select name="type" defaultValue="regular" required>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select the type of client" />
+                  <SelectValue placeholder="Select customer type" />
                 </SelectTrigger>
                 <SelectContent>
                   {CUSTOMER_TYPES.map((t) => (
@@ -465,7 +422,7 @@ export function AddNewDialog({
             </Button>
           </DialogClose>
           <Button type="submit" size={"sm"}>
-            Add client
+            Add customer
           </Button>
         </DialogFooter>
       </form>

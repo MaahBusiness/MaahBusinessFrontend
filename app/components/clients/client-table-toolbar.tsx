@@ -23,7 +23,7 @@ import { visibles } from "@/routes/dashboard/clients/data";
 import { useSearchParams } from "react-router";
 import { hasPermission } from "utils/permissions";
 import { Skeleton } from "@/components/ui/skeleton";
-import { searchFilters } from "@/routes/dashboard/sales/data";
+import { searchFilters } from "@/routes/dashboard/clients/data";
 import { ParamsFacetedFilter } from "@/components/ui/params-table-faceted-filter";
 import { types } from "@/routes/dashboard/clients/data";
 import { AddClientDialog } from "@/components/clients/client-dialogs";
