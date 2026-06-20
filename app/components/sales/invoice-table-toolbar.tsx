@@ -1,16 +1,9 @@
 import {
-  AlertTriangleIcon,
   ArrowRight,
   CalendarClock,
   Check,
-  CheckIcon,
   ChevronDownIcon,
-  ChevronRightIcon,
-  CopyIcon,
-  ShareIcon,
   TrashIcon,
-  UserRoundXIcon,
-  VolumeOffIcon,
   X,
 } from "lucide-react";
 
@@ -40,12 +33,26 @@ import { useSearchParams } from "react-router";
 import { hasPermission } from "utils/permissions";
 import { CreateInvoiceDrawer } from "@/components/sales/invoice-add-new-drawer";
 import { Skeleton } from "@/components/ui/skeleton";
-import { searchFilters, statuses } from "@/routes/dashboard/sales/data";
+import { statuses } from "@/routes/dashboard/sales/data";
 import { ParamsFacetedFilter } from "@/components/ui/params-table-faceted-filter";
-import { CalendarDateRangePicker } from "@/components/date-range-picker";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { ButtonGroup } from "@/components/ui/button-group";
 import type { DateRange } from "react-day-picker";
+
+function applyDateRangeToParams(
+  params: URLSearchParams,
+  range: DateRange | undefined,
+) {
+  const next = new URLSearchParams(params);
+  if (range?.from && range?.to) {
+    next.set("start_date", range.from.toISOString());
+    next.set("end_date", range.to.toISOString());
+  } else {
+    next.delete("start_date");
+    next.delete("end_date");
+  }
+  return next;
+}
 
 export function InvoiceTableToolbar<TData>({
   table,
@@ -61,46 +68,39 @@ export function InvoiceTableToolbar<TData>({
       }
     : undefined;
 
-  const [filter, setFilter] = useState(searchFilters[0].value);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(searchParams.get("search") ?? "");
   const [dateRange, setDateRange] = useState<DateRange | undefined>(
     defaultDateRange,
   );
+
+  const hasActiveFilters = Array.from(searchParams.keys()).some(
+    (key) => key !== "page" && key !== "page_size",
+  );
+
+  const applyDateRange = (range: DateRange | undefined) => {
+    setDateRange(range);
+    if (range?.from && range?.to) {
+      setSearchParams((params) => applyDateRangeToParams(params, range));
+    }
+  };
 
   const selectLast7Days = () => {
     const to = new Date();
     const from = new Date();
     from.setDate(from.getDate() - 7);
-    setDateRange({ from, to });
-
-    setSearchParams((params) => {
-      params.set("start_date", from?.toISOString());
-      params.set("end_date", to?.toISOString());
-      return params;
-    });
+    applyDateRange({ from, to });
   };
 
   const selectLast30Days = () => {
     const to = new Date();
     const from = new Date();
     from.setDate(from.getDate() - 30);
-    setDateRange({ from, to });
-
-    setSearchParams((params) => {
-      params.set("start_date", from?.toISOString());
-      params.set("end_date", to?.toISOString());
-      return params;
-    });
+    applyDateRange({ from, to });
   };
 
   const handleDateRange = () => {
     if (!dateRange?.from || !dateRange?.to) return;
-
-    setSearchParams((params) => {
-      params.set("start_date", dateRange.from?.toISOString() ?? "");
-      params.set("end_date", dateRange.to?.toISOString() ?? "");
-      return params;
-    });
+    setSearchParams((params) => applyDateRangeToParams(params, dateRange));
   };
 
   return (
@@ -116,52 +116,26 @@ export function InvoiceTableToolbar<TData>({
                 const value = search.trim();
 
                 setSearchParams((params) => {
+                  const next = new URLSearchParams(params);
                   if (value) {
-                    params.set("search", value);
-                    params.set("name", filter);
+                    next.set("search", value);
                   } else {
-                    params.delete("search");
-                    params.delete("name");
+                    next.delete("search");
                   }
-                  return params;
+                  return next;
                 });
               }
             }}
           />
-
-          <InputGroupAddon align="inline-end">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <InputGroupButton
-                  variant="ghost"
-                  className="!pr-1.5 text-xs outline-0 focus-visible:ring-0"
-                >
-                  Search {filter}
-                  <ChevronDownIcon className="size-3" />
-                </InputGroupButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="[--radius:0.95rem]">
-                {searchFilters.map((f, i) => (
-                  <DropdownMenuItem key={i} onClick={() => setFilter(f.value)}>
-                    {f.label}
-                    <Check
-                      className={cn(
-                        "ml-auto",
-                        f.value === filter ? "opacity-100" : "opacity-0",
-                      )}
-                    />
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </InputGroupAddon>
         </InputGroup>
 
         <ParamsFacetedFilter
           title="Status"
           options={statuses.map((s) => ({
-            ...s,
-            key: s.value.toLocaleUpperCase(),
+            label: s.label,
+            value: s.value,
+            key: "status",
+            icon: s.icon,
           }))}
         />
 
@@ -193,11 +167,9 @@ export function InvoiceTableToolbar<TData>({
                   variant="destructive"
                   onClick={() => {
                     setDateRange(undefined);
-                    setSearchParams((params) => {
-                      params.delete("start_date");
-                      params.delete("end_date");
-                      return params;
-                    });
+                    setSearchParams((params) =>
+                      applyDateRangeToParams(params, undefined),
+                    );
                   }}
                 >
                   <TrashIcon className="text-destructive" />
@@ -210,19 +182,23 @@ export function InvoiceTableToolbar<TData>({
             buttonClassName="h-8 border-dashed rounded-none"
             buttonSize="sm"
             value={dateRange}
-            onChange={setDateRange}
+            onChange={applyDateRange}
+            useFixedPortal
+            numberOfMonths={1}
+            closeOnSelect
           />
           <Button
             variant="outline"
             size={"sm"}
             className="!pl-2 h-8 border-dashed bg-accent "
             onClick={handleDateRange}
+            title="Apply date range"
           >
             <ArrowRight />
           </Button>
         </ButtonGroup>
 
-        {searchParams.size > 2 && (
+        {hasActiveFilters && (
           <Button
             variant="ghost"
             onClick={() =>

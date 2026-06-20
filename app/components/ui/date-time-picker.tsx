@@ -1,6 +1,7 @@
 // components/ui/datetime-picker.tsx
 
 import * as React from "react";
+import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -10,11 +11,7 @@ import {
   FieldError,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ChevronDownIcon } from "lucide-react";
 
@@ -270,6 +267,51 @@ export function DateTimePicker({
   const [internalDate, setInternalDate] = React.useState<Date | undefined>(
     value,
   );
+  const triggerRef = React.useRef<HTMLButtonElement>(null);
+  const panelRef = React.useRef<HTMLDivElement>(null);
+  const [panelPos, setPanelPos] = React.useState({ top: 0, left: 0 });
+
+  const updatePanelPosition = React.useCallback(() => {
+    const el = triggerRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const panelWidth = 280;
+    let left = rect.left;
+    left = Math.max(8, Math.min(left, window.innerWidth - panelWidth - 8));
+    setPanelPos({ top: rect.bottom + 6, left });
+  }, []);
+
+  React.useLayoutEffect(() => {
+    if (!open) return;
+    updatePanelPosition();
+    window.addEventListener("resize", updatePanelPosition);
+    window.addEventListener("scroll", updatePanelPosition, true);
+    return () => {
+      window.removeEventListener("resize", updatePanelPosition);
+      window.removeEventListener("scroll", updatePanelPosition, true);
+    };
+  }, [open, updatePanelPosition]);
+
+  React.useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [open]);
+
+  React.useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (e: PointerEvent) => {
+      const target = e.target as Node;
+      if (triggerRef.current?.contains(target)) return;
+      if (panelRef.current?.contains(target)) return;
+      setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [open]);
 
   // Sync internal state with external value
   React.useEffect(() => {
@@ -335,44 +377,55 @@ export function DateTimePicker({
               {required && <span className="text-destructive ml-1">*</span>}
             </FieldLabel>
           )}
-          <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                type="button"
-                variant="outline"
-                id={id || name}
-                disabled={disabled}
-                className={`justify-between font-normal ${dateClassName || ""}`}
+          <Button
+            ref={triggerRef}
+            type="button"
+            variant="outline"
+            id={id || name}
+            disabled={disabled}
+            aria-expanded={open}
+            onClick={() => setOpen((v) => !v)}
+            className={cn("w-full justify-between font-normal", dateClassName)}
+          >
+            {internalDate ? format(internalDate, dateFormat) : placeholder}
+            <ChevronDownIcon
+              className={cn(
+                "h-4 w-4 opacity-50 transition-transform",
+                open && "rotate-180",
+              )}
+            />
+          </Button>
+          {open &&
+            createPortal(
+              <div
+                ref={panelRef}
+                className="pointer-events-auto fixed z-[200] overflow-hidden rounded-md border border-border bg-popover p-0 text-popover-foreground shadow-lg animate-in fade-in-0 zoom-in-95"
+                style={{ top: panelPos.top, left: panelPos.left }}
               >
-                {internalDate ? format(internalDate, dateFormat) : placeholder}
-                <ChevronDownIcon className="h-4 w-4 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent
-              className="w-auto overflow-hidden p-0"
-              align="start"
-            >
-              <Calendar
-                mode="single"
-                selected={internalDate}
-                captionLayout="dropdown"
-                defaultMonth={internalDate}
-                onSelect={handleDateSelect}
-                disabled={(date) => {
-                  if (minDate && startOfDay(date) < startOfDay(minDate)) return true;
-                  if (maxDate && startOfDay(date) > startOfDay(maxDate)) return true;
-                  if (
-                    disabledDates?.some(
-                      (d) => d.toDateString() === date.toDateString(),
-                    )
-                  ) {
-                    return true;
-                  }
-                  return false;
-                }}
-              />
-            </PopoverContent>
-          </Popover>
+                <Calendar
+                  mode="single"
+                  selected={internalDate}
+                  captionLayout="dropdown"
+                  defaultMonth={internalDate ?? minDate ?? new Date()}
+                  onSelect={handleDateSelect}
+                  disabled={(date) => {
+                    if (minDate && startOfDay(date) < startOfDay(minDate))
+                      return true;
+                    if (maxDate && startOfDay(date) > startOfDay(maxDate))
+                      return true;
+                    if (
+                      disabledDates?.some(
+                        (d) => d.toDateString() === date.toDateString(),
+                      )
+                    ) {
+                      return true;
+                    }
+                    return false;
+                  }}
+                />
+              </div>,
+              document.body,
+            )}
           {error && <FieldError>{error}</FieldError>}
         </Field>
 

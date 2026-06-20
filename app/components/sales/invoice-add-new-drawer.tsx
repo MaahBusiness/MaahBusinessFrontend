@@ -1,8 +1,9 @@
 import ClientSelector from "@/components/sales/client-selector";
-import { PosProductSearchDialog } from "@/components/sales/pos-product-search-dialog";
+import { PickerDropdown } from "@/components/sales/picker-dropdown";
+import { PosProductPicker } from "@/components/sales/pos-product-search-dialog";
 import { ProductFormSection } from "@/components/products/product-form-section";
 import { Button } from "@/components/ui/button";
-import { DateTimePicker } from "@/components/ui/date-time-picker";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Drawer,
   DrawerClose,
@@ -50,16 +51,17 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useOrganisation } from "@/hooks/use-organisation";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { paymentMethodsAtCheckout } from "@/routes/dashboard/sales/data";
 import {
   AlertCircle,
   Barcode,
+  CalendarIcon,
   CreditCard,
   FileClock,
   Plus,
   Receipt,
   ScanBarcode,
-  Search,
   Trash2,
   UserRound,
 } from "lucide-react";
@@ -70,6 +72,7 @@ import type { AddedLine, Product, ServerActionState } from "types";
 import { formatDisplayAmount, genericErrorState, percent } from "utils";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { format } from "date-fns";
 
 function parseAmount(raw: string | undefined): number {
   return parseInt(`${raw ?? ""}`.replace(/\D/g, ""), 10) || 0;
@@ -91,16 +94,18 @@ export function CreateInvoiceDrawer({
   const actionData = useActionData<ServerActionState & { data?: Product }>();
   const navigation = useNavigation();
   const { scanCode } = useOrganisation();
+  const isMobile = useIsMobile();
 
   const [internalOpen, setInternalOpen] = useState(defaultOpen);
   const open = controlledOpen ?? internalOpen;
   const setOpen = onOpenChange ?? setInternalOpen;
-  const [searchOpen, setSearchOpen] = useState(false);
   const barcodeRef = useRef<HTMLInputElement>(null);
 
-  const [advance, setAdvance] = useState<string>();
-  const [tax, setTax] = useState<string>();
+  const [advance, setAdvance] = useState("0");
+  const [tax, setTax] = useState("0");
   const [onCredit, setOnCredit] = useState(false);
+  const [dueDate, setDueDate] = useState<Date>();
+  const [dueCalendarOpen, setDueCalendarOpen] = useState(false);
   const [method, setMethod] = useState("cash");
   const [CFD, setCFD] = useState<{ code: string; qty: number }>();
   const [lines, setLines] = React.useState<AddedLine[]>([]);
@@ -115,9 +120,11 @@ export function CreateInvoiceDrawer({
 
     if (actionData.success) {
       setLines([]);
-      setAdvance(undefined);
-      setTax(undefined);
+      setAdvance("0");
+      setTax("0");
       setOnCredit(false);
+      setDueDate(undefined);
+      setDueCalendarOpen(false);
       setCFD(undefined);
       setMethod("cash");
       setOpen(false);
@@ -160,16 +167,11 @@ export function CreateInvoiceDrawer({
   const isPartialPayment = paidAmount > 0 && paidAmount < grandTotal && !onCredit;
 
   useEffect(() => {
-    if (onCredit) return;
-    if (!lines.length) {
-      setAdvance(undefined);
-      return;
-    }
-    setAdvance(String(grandTotal));
-  }, [lines, onCredit, grandTotal]);
-
-  useEffect(() => {
     if (onCredit) setMethod("credit");
+    else {
+      setDueDate(undefined);
+      setDueCalendarOpen(false);
+    }
   }, [onCredit]);
 
   async function handleAdd() {
@@ -216,7 +218,7 @@ export function CreateInvoiceDrawer({
         {
           ...pr,
           qty: Math.min(qty, pr.quantity),
-          discount: (pr.unit_price ?? 0) - (pr.promo_price ?? 0),
+          discount: 0,
         },
       ];
     });
@@ -230,13 +232,29 @@ export function CreateInvoiceDrawer({
     );
   };
 
+  const updateLineDiscount = (id: string, raw: string) => {
+    const perUnit = Math.max(0, Number(raw) || 0);
+    setLines((prev) =>
+      prev.map((l) => {
+        if (l.id !== id) return l;
+        const max = Number(l.unit_price) || 0;
+        return { ...l, discount: Math.min(perUnit, max) };
+      }),
+    );
+  };
+
   const removeLine = (id: string) => {
     setLines((prev) => prev.filter((l) => l.id !== id));
   };
 
   return (
     <div className="flex flex-wrap gap-2">
-      <Drawer direction="right" open={open} onOpenChange={setOpen} modal={false}>
+      <Drawer
+        direction={isMobile ? "bottom" : "right"}
+        open={open}
+        onOpenChange={setOpen}
+        modal={false}
+      >
         <DrawerTrigger asChild>
           <Button
             size={variant === "hero" ? "default" : "sm"}
@@ -255,12 +273,30 @@ export function CreateInvoiceDrawer({
           </Button>
         </DrawerTrigger>
 
-        <DrawerContent className="data-[vaul-drawer-direction=right]:w-full data-[vaul-drawer-direction=right]:sm:max-w-3xl data-[vaul-drawer-direction=bottom]:max-h-[90vh]">
+        <DrawerContent className="data-[vaul-drawer-direction=right]:w-full data-[vaul-drawer-direction=right]:sm:max-w-3xl data-[vaul-drawer-direction=bottom]:max-h-[min(92vh,720px)] data-[vaul-drawer-direction=bottom]:rounded-t-xl">
           <Form
             method="POST"
             action={formAction}
             encType="multipart/form-data"
             className="flex h-full flex-col"
+            onSubmit={(e) => {
+              const invalid = lines.find((l) => {
+                const lineSubtotal = l.qty * l.unit_price;
+                const lineDiscount = l.qty * (l.discount || 0);
+                return lineDiscount > lineSubtotal;
+              });
+              if (invalid) {
+                e.preventDefault();
+                toast.error(
+                  `Discount for "${invalid.name}" cannot exceed the line subtotal.`,
+                );
+                return;
+              }
+              if (onCredit && !dueDate) {
+                e.preventDefault();
+                toast.error("Please select a due date for the credit sale.");
+              }
+            }}
           >
             <DrawerHeader className="border-b border-violet-500/15 bg-gradient-to-r from-violet-500/10 via-card to-blue-500/5 px-6 py-5">
               <DrawerTitle className="flex items-center gap-2 text-lg font-semibold tracking-tight">
@@ -284,7 +320,7 @@ export function CreateInvoiceDrawer({
                 <div className="space-y-4">
                   <ProductFormSection
                     title="Customer"
-                    description="Search for a customer, add a new one, or use walk-in."
+                    description="Search and select a customer, or use walk-in."
                     icon={UserRound}
                     accent="violet"
                   >
@@ -294,7 +330,7 @@ export function CreateInvoiceDrawer({
 
                   <ProductFormSection
                     title="Line items"
-                    description="Scan a barcode, enter one manually, or search the catalog."
+                    description="Scan, browse the catalog, then set quantity and discount per line."
                     icon={Barcode}
                     accent="blue"
                   >
@@ -364,7 +400,7 @@ export function CreateInvoiceDrawer({
                       </Button>
                     </div>
 
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Button
                         size="sm"
                         variant="secondary"
@@ -375,25 +411,16 @@ export function CreateInvoiceDrawer({
                         <ScanBarcode className="size-3.5" />
                         Focus scanner
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        type="button"
-                        className="text-xs"
-                        onClick={() => setSearchOpen(true)}
-                      >
-                        <Search className="size-3.5" />
-                        Search catalog
-                      </Button>
+                      <PosProductPicker
+                        className="flex-1 sm:flex-none"
+                        defaultQty={CFD?.qty ?? 1}
+                        onAdd={(products) => {
+                          products.forEach((product) =>
+                            addProductLine(product, CFD?.qty ?? 1),
+                          );
+                        }}
+                      />
                     </div>
-
-                    <PosProductSearchDialog
-                      open={searchOpen}
-                      onOpenChange={setSearchOpen}
-                      onSelect={(product) =>
-                        addProductLine(product, CFD?.qty ?? 1)
-                      }
-                    />
 
                     <div className="overflow-hidden rounded-lg border bg-background/60">
                       <Table>
@@ -402,8 +429,10 @@ export function CreateInvoiceDrawer({
                             <TableHead>Product</TableHead>
                             <TableHead className="text-right">Unit</TableHead>
                             <TableHead className="w-16 text-center">Qty</TableHead>
-                            <TableHead className="text-right">Disc.</TableHead>
-                            <TableHead className="text-right">Total</TableHead>
+                            <TableHead className="text-right">
+                              Discount / unit
+                            </TableHead>
+                            <TableHead className="text-right">Line total</TableHead>
                             <TableHead className="w-10" />
                           </TableRow>
                         </TableHeader>
@@ -440,13 +469,32 @@ export function CreateInvoiceDrawer({
                                     }
                                   />
                                 </TableCell>
-                                <TableCell
-                                  className="text-right text-xs text-muted-foreground"
-                                  title={formatDisplayAmount(lineDisc)}
-                                >
-                                  {pr.discount
-                                    ? `${percent(pr.discount, pr.unit_price, 0)}%`
-                                    : "—"}
+                                <TableCell>
+                                  <div className="flex flex-col items-end gap-0.5">
+                                    <Input
+                                      className="h-8 w-20 px-1 text-right text-sm"
+                                      type="number"
+                                      min={0}
+                                      max={pr.unit_price}
+                                      step={1}
+                                      value={pr.discount ?? 0}
+                                      onChange={(e) =>
+                                        updateLineDiscount(pr.id, e.target.value)
+                                      }
+                                      aria-label={`Discount per unit for ${pr.name}`}
+                                    />
+                                    {(pr.discount ?? 0) > 0 && pr.unit_price > 0 && (
+                                      <span className="text-[10px] text-muted-foreground">
+                                        {percent(
+                                          pr.discount ?? 0,
+                                          pr.unit_price,
+                                          0,
+                                        )}
+                                        % · −
+                                        {formatDisplayAmount(lineDisc)}
+                                      </span>
+                                    )}
+                                  </div>
                                 </TableCell>
                                 <TableCell className="text-right text-sm font-medium">
                                   {formatDisplayAmount(lineTotal)}
@@ -525,7 +573,7 @@ export function CreateInvoiceDrawer({
                           type="number"
                           name="tax"
                           min={0}
-                          value={tax ?? ""}
+                          value={tax}
                           onChange={(e) => setTax(e.target.value)}
                           placeholder="0"
                         />
@@ -539,7 +587,7 @@ export function CreateInvoiceDrawer({
                           type="number"
                           name="advance"
                           min={0}
-                          value={advance ?? ""}
+                          value={advance}
                           onChange={(e) => setAdvance(e.target.value)}
                           placeholder="0"
                         />
@@ -594,20 +642,71 @@ export function CreateInvoiceDrawer({
                     <FieldError errors={[{ message: errors?.credit }]} />
 
                     {onCredit && (
-                      <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="grid gap-4">
                         <Field>
                           <FieldLabel htmlFor="due-date">Due date</FieldLabel>
-                          <DateTimePicker
-                            placeholder="Select due date"
-                            minDate={new Date()}
-                            dateLabel=""
+                          <PickerDropdown
+                            open={dueCalendarOpen}
+                            onOpenChange={setDueCalendarOpen}
+                            className="w-full sm:max-w-[280px]"
+                            matchTriggerWidth
+                            mobileCenter
+                            maxWidth={300}
+                            minWidth={260}
+                            trigger={
+                              <Button
+                                id="due-date"
+                                type="button"
+                                variant="outline"
+                                className={cn(
+                                  "h-10 w-full touch-manipulation justify-start text-left font-normal sm:h-9",
+                                  !dueDate && "text-muted-foreground",
+                                )}
+                                onClick={() =>
+                                  setDueCalendarOpen((prev) => !prev)
+                                }
+                              >
+                                <CalendarIcon className="mr-2 size-4 shrink-0" />
+                                <span className="truncate">
+                                  {dueDate
+                                    ? format(dueDate, "MMM d, yyyy")
+                                    : "Pick due date"}
+                                </span>
+                              </Button>
+                            }
+                          >
+                            <Calendar
+                              mode="single"
+                              selected={dueDate}
+                              onSelect={(date) => {
+                                setDueDate(date);
+                                if (date) setDueCalendarOpen(false);
+                              }}
+                              captionLayout="dropdown"
+                              defaultMonth={dueDate ?? new Date()}
+                              disabled={(date) => {
+                                const today = new Date();
+                                today.setHours(0, 0, 0, 0);
+                                return date < today;
+                              }}
+                              className="w-full p-1.5 sm:p-2"
+                              classNames={{
+                                months: "flex w-full flex-col",
+                                month: "w-full space-y-2",
+                                table: "w-full",
+                                day: "h-9 w-9 p-0 font-normal sm:h-8 sm:w-8",
+                              }}
+                            />
+                          </PickerDropdown>
+                          <input
+                            type="hidden"
                             name="due-date"
-                            id="due-date"
+                            value={dueDate?.toISOString() ?? ""}
                             required
                           />
                           <FieldError errors={[{ message: errors?.due }]} />
                         </Field>
-                        <Field className="sm:col-span-2">
+                        <Field>
                           <FieldLabel htmlFor="reason">Credit reason</FieldLabel>
                           <Textarea
                             id="reason"

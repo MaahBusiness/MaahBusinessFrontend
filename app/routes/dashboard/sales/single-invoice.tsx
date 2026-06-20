@@ -154,7 +154,7 @@ export default function SingleInvoicepage({
             to={orgPath(id, "invoices")}
             className="text-sm font-medium text-muted-foreground transition hover:text-violet-600"
           >
-            Sales & invoices
+            Sales
           </Link>
           <ChevronRight className="size-4 text-muted-foreground" />
           <span className="text-sm font-semibold">#{data.number}</span>
