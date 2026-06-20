@@ -9,8 +9,9 @@ import {
   Trash2Icon,
   Wallet,
 } from "lucide-react";
-import { Link, useNavigation, useParams } from "react-router";
-import { orgPath } from "@/lib/org-navigation";
+import { useState } from "react";
+import { InvoiceReceiptDialog } from "@/components/sales/invoice-receipt-dialog";
+import { useNavigation } from "react-router";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -60,14 +61,11 @@ interface InvoiceTableRowActionsProps {
 }
 
 export function InvoiceTableRowActions({ row }: InvoiceTableRowActionsProps) {
+  const [viewOpen, setViewOpen] = useState(false);
   const { businessMember, isLoading, archiveInvoice, isArchivingInvoice } =
     useOrganisation();
   const navigation = useNavigation();
-  const { id: orgId } = useParams();
   const invoice = row.original;
-  const detailPath = orgId
-    ? orgPath(orgId, `invoices/${invoice.id}`)
-    : invoice.id;
   const isCashier = businessMember?.role === "cashier";
   const canPay =
     canRecordInvoicePayment(businessMember?.role) &&
@@ -110,16 +108,22 @@ export function InvoiceTableRowActions({ row }: InvoiceTableRowActionsProps) {
   return (
     <div className="flex items-center justify-end gap-1 pr-2">
       <Button
-        asChild
+        type="button"
         variant="outline"
-        size="sm"
-        className="h-7 gap-1 px-2 text-xs"
+        size="icon-sm"
+        className="h-7 w-7 shrink-0"
+        title="View invoice"
+        onClick={() => setViewOpen(true)}
       >
-        <Link to={detailPath}>
-          <Eye className="size-3.5" />
-          View
-        </Link>
+        <Eye className="size-3.5" />
+        <span className="sr-only">View</span>
       </Button>
+
+      <InvoiceReceiptDialog
+        invoiceId={invoice.id}
+        open={viewOpen}
+        onOpenChange={setViewOpen}
+      />
 
       {canPay && (
         <Dialog>

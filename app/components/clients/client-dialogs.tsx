@@ -9,16 +9,7 @@ import {
   DialogTrigger,
   DialogDescription,
 } from "@/components/ui/dialog";
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer";
+import { InvoiceReceiptDialog } from "@/components/sales/invoice-receipt-dialog";
 import {
   Field,
   FieldLabel,
@@ -42,9 +33,24 @@ import {
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { useCloseOnActionSuccess } from "@/hooks/use-close-on-action-success";
-import { useCloseDrawerOnActionSuccess } from "@/hooks/use-close-drawer-on-action-success";
-import { Pencil, Plus, UserPlus } from "lucide-react";
+import { useOrganisation } from "@/hooks/use-organisation";
+import { Pencil, Plus, Receipt, ShoppingBag, UserPlus } from "lucide-react";
 import { Form, useActionData, useNavigation } from "react-router";
 import type { Client, ServerActionState } from "types";
 import { CUSTOMER_TYPES } from "types/consts";
@@ -191,7 +197,7 @@ export function AddClientDialog({ triggerClassName }: AddClientDialogProps) {
   );
 }
 
-export function EditClientDrawer({
+export function EditClientDialog({
   client,
   open,
   onOpenChange,
@@ -207,33 +213,33 @@ export function EditClientDrawer({
   const intent = navigation.formData?.get("intent");
   const isUpdating = isSubmitting && intent === "update-client";
 
-  useCloseDrawerOnActionSuccess(open, onOpenChange, "update-client");
+  useCloseOnActionSuccess(open, () => onOpenChange(false), "update-client");
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange} direction="right">
-      <DrawerContent className="data-[vaul-drawer-direction=right]:w-full data-[vaul-drawer-direction=right]:sm:max-w-md">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="mx-4 flex max-h-[90vh] w-[calc(100%-2rem)] flex-col gap-0 overflow-hidden p-0 sm:mx-auto sm:max-w-lg">
         <Form
           method="POST"
-          className="flex h-full flex-col"
+          className="flex max-h-[90vh] flex-col"
           key={open ? `edit-${client.id}` : "edit-closed"}
         >
           <input type="hidden" name="intent" value="update-client" />
           <input type="hidden" name="id" value={client.id} />
 
-          <DrawerHeader className="border-b border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-blue-500/5 to-transparent px-6 py-5">
+          <DialogHeader className="border-b border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-blue-500/5 to-transparent px-6 py-5">
             <div className="flex items-center gap-2 text-emerald-600">
               <Pencil className="size-5" />
               <span className="text-[10px] font-semibold uppercase tracking-wider">
                 Edit client
               </span>
             </div>
-            <DrawerTitle className="truncate text-lg">{client.name}</DrawerTitle>
-            <p className="text-sm text-muted-foreground">
+            <DialogTitle className="truncate text-lg">{client.name}</DialogTitle>
+            <DialogDescription>
               Update contact details or customer type.
-            </p>
-          </DrawerHeader>
+            </DialogDescription>
+          </DialogHeader>
 
-          <div className="relative flex-1 overflow-y-auto bg-muted/10">
+          <div className="no-scrollbar relative flex-1 overflow-y-auto bg-muted/10">
             {actionData?.message && !actionData.success && (
               <p className="px-6 pt-4 text-sm text-destructive">
                 {actionData.message}
@@ -242,24 +248,27 @@ export function EditClientDrawer({
             <ClientFormFields client={client} />
           </div>
 
-          <DrawerFooter className="border-t border-border bg-background/95 px-6 py-4">
-            <DrawerClose asChild>
+          <DialogFooter className="border-t border-border bg-background/95 px-6 py-4">
+            <DialogClose asChild>
               <Button type="button" variant="outline">
                 Cancel
               </Button>
-            </DrawerClose>
+            </DialogClose>
             <Button type="submit" disabled={isUpdating} className="auth-submit-btn border-0">
               {isUpdating && <Spinner className="size-4" />}
               Save changes
             </Button>
-          </DrawerFooter>
+          </DialogFooter>
         </Form>
-      </DrawerContent>
-    </Drawer>
+      </DialogContent>
+    </Dialog>
   );
 }
 
-type ClientDetailsDrawerProps = {
+/** @deprecated Use EditClientDialog */
+export const EditClientDrawer = EditClientDialog;
+
+type ClientDetailsDialogProps = {
   client: Client;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -278,26 +287,48 @@ function formatDateTime(value?: string) {
   });
 }
 
-export function ClientDetailsDrawer({
+function formatDate(value?: string) {
+  if (!value) return "--";
+
+  return new Date(value).toLocaleDateString("en", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+export function ClientDetailsDialog({
   client,
   open: openProp,
   onOpenChange,
   trigger,
-}: ClientDetailsDrawerProps) {
+}: ClientDetailsDialogProps) {
   const [internalOpen, setInternalOpen] = useState(false);
+  const [invoiceOpen, setInvoiceOpen] = useState(false);
+  const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
   const open = openProp ?? internalOpen;
   const setOpen = onOpenChange ?? setInternalOpen;
+  const { fetchSingleClient } = useOrganisation();
+  const { data: detailRes, isLoading } = fetchSingleClient(client.id, {
+    enabled: open,
+  });
+
+  const detail = detailRes?.success ? detailRes.data : undefined;
   const customerType = capitalizeFirstChar(
-    normalizeCustomerType(client.customer_type),
+    normalizeCustomerType(detail?.customer_type ?? client.customer_type),
   );
+  const totalSpent = Number(detail?.total_purchases ?? client.total_purchases ?? 0);
+  const purchaseHistory = detail?.purchase_history ?? [];
+  const productsBought = detail?.products_bought ?? [];
+  const hasPurchases = purchaseHistory.length > 0;
 
   return (
-    <Drawer open={open} onOpenChange={setOpen} direction="right">
-      {trigger ? <DrawerTrigger asChild>{trigger}</DrawerTrigger> : null}
+    <>
+      <Dialog open={open} onOpenChange={setOpen}>
+        {trigger ? <DialogTrigger asChild>{trigger}</DialogTrigger> : null}
 
-      <DrawerContent className="data-[vaul-drawer-direction=right]:w-full data-[vaul-drawer-direction=right]:sm:max-w-lg">
-        <div className="flex h-full flex-col">
-          <DrawerHeader className="border-b border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-blue-500/5 to-transparent px-6 py-5">
+        <DialogContent className="mx-4 flex max-h-[90vh] w-[calc(100%-2rem)] flex-col gap-0 overflow-hidden p-0 sm:mx-auto sm:max-w-2xl">
+          <DialogHeader className="border-b border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-blue-500/5 to-transparent px-6 py-5">
             <div className="flex items-start gap-3">
               <Avatar className="mt-0.5 size-11">
                 <BoringFallback name={client.name} />
@@ -309,97 +340,237 @@ export function ClientDetailsDrawer({
                   </Badge>
                   <Badge variant="secondary">{customerType}</Badge>
                 </div>
-                <DrawerTitle className="truncate text-lg">{client.name}</DrawerTitle>
-                <DrawerDescription className="truncate">
-                  Customer profile, contact details, and purchase summary.
-                </DrawerDescription>
+                <DialogTitle className="truncate text-lg">{client.name}</DialogTitle>
+                <DialogDescription className="truncate">
+                  Profile, contact details, and purchase analytics.
+                </DialogDescription>
               </div>
             </div>
-          </DrawerHeader>
+          </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto bg-muted/10 px-6 py-5">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Item variant="outline" className="rounded-xl">
-                <ItemContent className="gap-2">
-                  <ItemDescription>Total spent</ItemDescription>
-                  <ItemTitle className="text-base">
-                    {formatDisplayAmount(Number(client.total_purchases ?? 0))}
-                  </ItemTitle>
-                </ItemContent>
-              </Item>
-
-              <Item variant="outline" className="rounded-xl">
-                <ItemContent className="gap-2">
-                  <ItemDescription>Loyalty points</ItemDescription>
-                  <ItemTitle className="text-base">
-                    {client.loyalty_points || "0"}
-                  </ItemTitle>
-                </ItemContent>
-              </Item>
-            </div>
-
-            <div className="mt-5 space-y-3">
-              <Item variant="outline" className="rounded-xl">
-                <ItemContent>
-                  <ItemDescription>Email</ItemDescription>
-                  <ItemTitle>{client.email || "--"}</ItemTitle>
-                </ItemContent>
-              </Item>
-
-              <Item variant="outline" className="rounded-xl">
-                <ItemContent>
-                  <ItemDescription>Phone</ItemDescription>
-                  <ItemTitle>{client.phone_number || "--"}</ItemTitle>
-                </ItemContent>
-              </Item>
-
-              <Item variant="outline" className="rounded-xl">
-                <ItemContent>
-                  <ItemDescription>Address</ItemDescription>
-                  <ItemTitle className="w-full whitespace-normal">
-                    {client.address || "--"}
-                  </ItemTitle>
-                </ItemContent>
-              </Item>
-
-              <Item variant="outline" className="rounded-xl">
-                <ItemContent>
-                  <ItemDescription>Customer ID</ItemDescription>
-                  <ItemTitle className="break-all">{client.id}</ItemTitle>
-                </ItemContent>
-              </Item>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <Item variant="outline" className="rounded-xl">
-                  <ItemContent>
-                    <ItemDescription>Created</ItemDescription>
-                    <ItemTitle className="w-full whitespace-normal">
-                      {formatDateTime(client.created_at)}
-                    </ItemTitle>
-                  </ItemContent>
-                </Item>
-
-                <Item variant="outline" className="rounded-xl">
-                  <ItemContent>
-                    <ItemDescription>Last updated</ItemDescription>
-                    <ItemTitle className="w-full whitespace-normal">
-                      {formatDateTime(client.updated_at)}
-                    </ItemTitle>
-                  </ItemContent>
-                </Item>
+          <div className="no-scrollbar flex-1 overflow-y-auto bg-muted/10 px-6 py-5">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-16">
+                <Spinner className="size-6" />
               </div>
-            </div>
+            ) : (
+              <>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Item variant="outline" className="rounded-xl border-emerald-500/20 bg-emerald-500/5 sm:col-span-2">
+                    <ItemContent className="gap-2">
+                      <ItemDescription>Lifetime total spent</ItemDescription>
+                      <ItemTitle className="text-2xl font-semibold text-emerald-700 dark:text-emerald-400">
+                        {formatDisplayAmount(totalSpent)}
+                      </ItemTitle>
+                      <p className="text-xs text-muted-foreground">
+                        {hasPurchases
+                          ? `${purchaseHistory.length} invoice${purchaseHistory.length === 1 ? "" : "s"} on record`
+                          : "No purchases recorded yet"}
+                      </p>
+                    </ItemContent>
+                  </Item>
+
+                  <Item variant="outline" className="rounded-xl">
+                    <ItemContent className="gap-2">
+                      <ItemDescription>Loyalty points</ItemDescription>
+                      <ItemTitle className="text-base">
+                        {detail?.loyalty_points ?? client.loyalty_points ?? "0"}
+                      </ItemTitle>
+                    </ItemContent>
+                  </Item>
+
+                  <Item variant="outline" className="rounded-xl">
+                    <ItemContent className="gap-2">
+                      <ItemDescription>Products purchased</ItemDescription>
+                      <ItemTitle className="text-base">
+                        {productsBought.length}
+                      </ItemTitle>
+                    </ItemContent>
+                  </Item>
+                </div>
+
+                <section className="mt-6 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Receipt className="size-4 text-emerald-600" />
+                    <h3 className="text-sm font-semibold">Purchase history</h3>
+                  </div>
+
+                  {!hasPurchases ? (
+                    <Empty className="border border-dashed">
+                      <EmptyHeader>
+                        <EmptyMedia variant="icon">
+                          <Receipt />
+                        </EmptyMedia>
+                        <EmptyTitle>No purchases yet</EmptyTitle>
+                        <EmptyDescription>
+                          Invoices linked to this customer will appear here.
+                        </EmptyDescription>
+                      </EmptyHeader>
+                    </Empty>
+                  ) : (
+                    <div className="overflow-hidden rounded-xl border border-border bg-background">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Invoice</TableHead>
+                            <TableHead className="text-right">Amount</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {purchaseHistory.map((purchase) => (
+                            <TableRow key={purchase.invoice_id}>
+                              <TableCell className="whitespace-nowrap text-muted-foreground">
+                                {formatDate(purchase.purchase_date)}
+                              </TableCell>
+                              <TableCell>
+                                <button
+                                  type="button"
+                                  className="font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+                                  onClick={() => {
+                                    setSelectedInvoiceId(purchase.invoice_id);
+                                    setInvoiceOpen(true);
+                                  }}
+                                >
+                                  #{purchase.invoice_number}
+                                </button>
+                              </TableCell>
+                              <TableCell className="text-right font-medium">
+                                {formatDisplayAmount(Number(purchase.total_amount))}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </section>
+
+                <section className="mt-6 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <ShoppingBag className="size-4 text-emerald-600" />
+                    <h3 className="text-sm font-semibold">Products bought</h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Sorted by how often this customer buys each product.
+                  </p>
+
+                  {productsBought.length === 0 ? (
+                    <Empty className="border border-dashed">
+                      <EmptyHeader>
+                        <EmptyMedia variant="icon">
+                          <ShoppingBag />
+                        </EmptyMedia>
+                        <EmptyTitle>No product history</EmptyTitle>
+                        <EmptyDescription>
+                          Product breakdown appears after the first sale.
+                        </EmptyDescription>
+                      </EmptyHeader>
+                    </Empty>
+                  ) : (
+                    <div className="overflow-hidden rounded-xl border border-border bg-background">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Product</TableHead>
+                            <TableHead className="text-right">Times</TableHead>
+                            <TableHead className="text-right">Qty</TableHead>
+                            <TableHead className="text-right">Spent</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {productsBought.map((product) => (
+                            <TableRow key={product.product_id}>
+                              <TableCell className="max-w-[140px] truncate font-medium sm:max-w-none">
+                                {product.product_name}
+                              </TableCell>
+                              <TableCell className="text-right text-muted-foreground">
+                                {product.purchase_count}
+                              </TableCell>
+                              <TableCell className="text-right text-muted-foreground">
+                                {product.total_qty}
+                              </TableCell>
+                              <TableCell className="text-right font-medium">
+                                {formatDisplayAmount(Number(product.total_spent))}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </section>
+
+                <div className="mt-6 space-y-3">
+                  <h3 className="text-sm font-semibold">Contact</h3>
+
+                  <Item variant="outline" className="rounded-xl">
+                    <ItemContent>
+                      <ItemDescription>Email</ItemDescription>
+                      <ItemTitle>{(detail?.email ?? client.email) || "--"}</ItemTitle>
+                    </ItemContent>
+                  </Item>
+
+                  <Item variant="outline" className="rounded-xl">
+                    <ItemContent>
+                      <ItemDescription>Phone</ItemDescription>
+                      <ItemTitle>{(detail?.phone_number ?? client.phone_number) || "--"}</ItemTitle>
+                    </ItemContent>
+                  </Item>
+
+                  <Item variant="outline" className="rounded-xl">
+                    <ItemContent>
+                      <ItemDescription>Address</ItemDescription>
+                      <ItemTitle className="w-full whitespace-normal">
+                        {(detail?.address ?? client.address) || "--"}
+                      </ItemTitle>
+                    </ItemContent>
+                  </Item>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Item variant="outline" className="rounded-xl">
+                      <ItemContent>
+                        <ItemDescription>Created</ItemDescription>
+                        <ItemTitle className="w-full whitespace-normal">
+                          {formatDateTime(detail?.created_at ?? client.created_at)}
+                        </ItemTitle>
+                      </ItemContent>
+                    </Item>
+
+                    <Item variant="outline" className="rounded-xl">
+                      <ItemContent>
+                        <ItemDescription>Last updated</ItemDescription>
+                        <ItemTitle className="w-full whitespace-normal">
+                          {formatDateTime(detail?.updated_at ?? client.updated_at)}
+                        </ItemTitle>
+                      </ItemContent>
+                    </Item>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
-          <DrawerFooter className="border-t border-border bg-background/95 px-6 py-4">
-            <DrawerClose asChild>
+          <DialogFooter className="border-t border-border bg-background/95 px-6 py-4">
+            <DialogClose asChild>
               <Button type="button" variant="outline">
                 Close
               </Button>
-            </DrawerClose>
-          </DrawerFooter>
-        </div>
-      </DrawerContent>
-    </Drawer>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {selectedInvoiceId ? (
+        <InvoiceReceiptDialog
+          invoiceId={selectedInvoiceId}
+          open={invoiceOpen}
+          onOpenChange={setInvoiceOpen}
+        />
+      ) : null}
+    </>
   );
 }
+
+/** @deprecated Use ClientDetailsDialog */
+export const ClientDetailsDrawer = ClientDetailsDialog;

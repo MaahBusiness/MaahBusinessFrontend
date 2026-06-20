@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
-  ClientDetailsDrawer,
-  EditClientDrawer,
+  ClientDetailsDialog,
+  EditClientDialog,
 } from "@/components/clients/client-dialogs";
 import {
   AlertDialog,
@@ -61,29 +61,41 @@ export function ClientTableContextMenu({
     });
   };
 
+  const handleRowClick = (e: React.MouseEvent) => {
+    if (!hasPermission(businessMember?.role, "customers:view")) return;
+    const target = e.target as HTMLElement;
+    if (target.closest("button, a, [role='checkbox'], input, label")) return;
+    setViewOpen(true);
+  };
+
   return (
     <ContextMenu>
       <ContextMenuTrigger
         title={title}
         className={cn(
-          "flex h-full w-full max-w-xs items-center justify-start gap-2 px-4",
+          "flex h-full w-full max-w-xs cursor-pointer items-center justify-start gap-2 px-4",
           className,
         )}
+        onClick={handleRowClick}
       >
         {children}
       </ContextMenuTrigger>
 
       <ContextMenuContent>
+        {hasPermission(businessMember?.role, "customers:view") && (
+          <ContextMenuGroup>
+            <ContextMenuItem
+              className="px-1.5 py-1 text-xs"
+              onClick={() => setViewOpen(true)}
+            >
+              View details
+              <ContextMenuShortcut>
+                <Eye className="size-3" />
+              </ContextMenuShortcut>
+            </ContextMenuItem>
+          </ContextMenuGroup>
+        )}
         <ContextMenuGroup>
-          <ContextMenuItem
-            className="px-1.5 py-1 text-xs"
-            onClick={() => setViewOpen(true)}
-          >
-            View details
-            <ContextMenuShortcut>
-              <Eye className="size-3" />
-            </ContextMenuShortcut>
-          </ContextMenuItem>
           <ContextMenuItem
             className="px-1.5 py-1 text-xs"
             onClick={() => {
@@ -139,13 +151,15 @@ export function ClientTableContextMenu({
         )}
       </ContextMenuContent>
 
-      <ClientDetailsDrawer
-        client={cell.row.original}
-        open={viewOpen}
-        onOpenChange={setViewOpen}
-      />
+      {hasPermission(businessMember?.role, "customers:view") && (
+        <ClientDetailsDialog
+          client={cell.row.original}
+          open={viewOpen}
+          onOpenChange={setViewOpen}
+        />
+      )}
 
-      <EditClientDrawer
+      <EditClientDialog
         client={cell.row.original}
         open={editOpen}
         onOpenChange={setEditOpen}

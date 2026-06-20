@@ -11,12 +11,7 @@ import { methods, statuses } from "@/routes/dashboard/sales/data";
 import { extractImageUrl, formatDisplayAmount } from "utils";
 import { Badge } from "@/components/ui/badge";
 import { InvoiceTableRowActions } from "@/components/sales/invoice-table-row-actions";
-import { Link } from "react-router";
-import { orgPath } from "@/lib/org-navigation";
-
-function invoiceDetailPath(orgId: string | undefined, invId: string) {
-  return orgId ? orgPath(orgId, `invoices/${invId}`) : invId;
-}
+import { InvoiceDetailTrigger } from "@/components/sales/invoice-receipt-dialog";
 
 export function invoiceCols(orgId?: string): ColumnDef<Invoice>[] {
   return [
@@ -47,12 +42,12 @@ export function invoiceCols(orgId?: string): ColumnDef<Invoice>[] {
             aria-label="Select row"
           />
 
-          <Link
-            to={invoiceDetailPath(orgId, row.original.id)}
-            className="hover:underline"
+          <InvoiceDetailTrigger
+            invoiceId={row.original.id}
+            className="truncate hover:underline"
           >
             <span className="truncate">{row.original.number}</span>
-          </Link>
+          </InvoiceDetailTrigger>
         </InvoiceTableContextMenu>
       );
     },
@@ -71,12 +66,12 @@ export function invoiceCols(orgId?: string): ColumnDef<Invoice>[] {
         {...{ cell }}
         title={row.getValue("id")}
       >
-        <Link
-          to={invoiceDetailPath(orgId, row.original.id)}
-          className="hover:underline"
+        <InvoiceDetailTrigger
+          invoiceId={row.original.id}
+          className="truncate hover:underline"
         >
           <span className="truncate">{row.getValue("id")}</span>
-        </Link>
+        </InvoiceDetailTrigger>
       </InvoiceTableContextMenu>
     ),
     enableSorting: false,

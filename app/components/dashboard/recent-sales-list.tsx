@@ -1,4 +1,4 @@
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, BoringFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDisplayAmount } from "utils";
@@ -34,12 +34,6 @@ export function DashboardRecentSales({
           <div className="space-y-4">
             {sales.slice(0, 8).map((sale) => {
               const name = sale.customer_name || "Walk-in customer";
-              const initials = name
-                .split(" ")
-                .map((n) => n[0])
-                .join("")
-                .slice(0, 2)
-                .toUpperCase();
 
               return (
                 <Link
@@ -47,10 +41,8 @@ export function DashboardRecentSales({
                   to={`/dashboard/org/${orgId}/invoices/${sale.invoice_id}`}
                   className="flex items-center gap-3 rounded-xl border border-transparent p-2 transition-colors hover:border-violet-500/20 hover:bg-violet-500/5"
                 >
-                  <Avatar className="size-9 ring-2 ring-violet-500/20">
-                    <AvatarFallback className="bg-gradient-to-br from-violet-500/20 to-blue-500/20 text-xs font-semibold">
-                      {initials}
-                    </AvatarFallback>
+                  <Avatar className="size-9">
+                    <BoringFallback name={name} className="text-xs font-semibold" />
                   </Avatar>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{name}</p>

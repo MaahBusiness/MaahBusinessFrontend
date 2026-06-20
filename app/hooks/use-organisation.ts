@@ -140,14 +140,24 @@ export function useOrganisation() {
       // staleTime: 2 * 60 * 1000, // 2 minutes (more dynamic data)
     });
 
-  const invoiceQuery = (id: string) =>
+  const clientQuery = (id: string, opts?: QueryOpts) =>
+    useQuery({
+      queryKey: organisationKeys.client(id),
+      queryFn: async () => {
+        if (!accessToken) throw rdr;
+        return await organisationsApi.getSingleClient(accessToken, id);
+      },
+      enabled: (opts?.enabled ?? true) && !!accessToken && !!id,
+    });
+
+  const invoiceQuery = (id: string, opts?: QueryOpts) =>
     useQuery({
       queryKey: organisationKeys.invoice(id),
       queryFn: async () => {
         if (!accessToken) throw rdr;
         return await organisationsApi.getSingleInvoice(accessToken, id);
       },
-      enabled: !!accessToken && !!coreQuery.data,
+      enabled: (opts?.enabled ?? true) && !!accessToken && !!id && !!coreQuery.data,
       // staleTime: 2 * 60 * 1000, // 2 minutes (more dynamic data)
     });
 
@@ -507,6 +517,7 @@ export function useOrganisation() {
     fetchInvoicePayments: invoicePaymentsQuery,
     fetchSinglePayment: paymentQuery,
     fetchClients: clientsQuery,
+    fetchSingleClient: clientQuery,
 
     // Loading states
     isLoading: coreQuery.isLoading,

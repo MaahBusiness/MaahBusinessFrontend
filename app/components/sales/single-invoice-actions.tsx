@@ -153,18 +153,28 @@ export function SingleInvoiceActions({ data }: { data: Invoice }) {
 
   return (
     <Dialog>
-      <div className="flex items-center gap-2">
-        <Button onClick={handlePrintInvoice} disabled={isFetching}>
-          {isFetching ? <Spinner /> : <Download className="size-4" />}
-          Generate Receipt
+      <div className="flex flex-wrap items-center justify-end gap-1.5 sm:gap-2">
+        <Button
+          size="sm"
+          onClick={handlePrintInvoice}
+          disabled={isFetching}
+        >
+          {isFetching ? <Spinner /> : <Download className="size-3.5" />}
+          <span className="hidden sm:inline">Generate Receipt</span>
+          <span className="sm:hidden">Receipt</span>
         </Button>
 
         {canRecordInvoicePayment(businessMember?.role) &&
         invoiceHasOutstandingBalance(data) ? (
           <DialogTrigger asChild>
-            <Button variant={"outline"} onClick={() => setOpen("credit")}>
-              <BadgePlus className="size-4" />
-              Record payment
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setOpen("credit")}
+            >
+              <BadgePlus className="size-3.5" />
+              <span className="hidden sm:inline">Record payment</span>
+              <span className="sm:hidden">Pay</span>
             </Button>
           </DialogTrigger>
         ) : data.refund_amount > 0 ? (
@@ -188,10 +198,10 @@ export function SingleInvoiceActions({ data }: { data: Invoice }) {
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
-                  size={"icon"}
-                  className="flex rounded-sm p-0 data-[state=open]:bg-muted mr-4"
+                  size="icon-sm"
+                  className="rounded-sm data-[state=open]:bg-muted"
                 >
-                  <MoreVertical className="size-3" />
+                  <MoreVertical className="size-3.5" />
                   <span className="sr-only">Open menu</span>
                 </Button>
               </DropdownMenuTrigger>
@@ -376,9 +386,9 @@ export function SingleArchivedActions({ data }: { data: Invoice }) {
   const handleUnarchiveInvoice = () => unArchiveInvoice(data.id);
 
   return (
-    <div className="flex items-center gap-2">
-      <Button onClick={handlePrintInvoice} disabled={isFetching}>
-        {isFetching ? <Spinner /> : <Download className="size-4" />}
+    <div className="flex flex-wrap items-center justify-end gap-1.5 sm:gap-2">
+      <Button size="sm" onClick={handlePrintInvoice} disabled={isFetching}>
+        {isFetching ? <Spinner /> : <Download className="size-3.5" />}
         Generate Receipt
       </Button>
 
@@ -387,10 +397,10 @@ export function SingleArchivedActions({ data }: { data: Invoice }) {
           <DropdownMenuTrigger asChild>
             <Button
               variant="outline"
-              size={"icon"}
-              className="flex rounded-sm p-0 data-[state=open]:bg-muted mr-4"
+              size="icon-sm"
+              className="rounded-sm data-[state=open]:bg-muted"
             >
-              <MoreVertical className="size-3" />
+              <MoreVertical className="size-3.5" />
               <span className="sr-only">Open menu</span>
             </Button>
           </DropdownMenuTrigger>

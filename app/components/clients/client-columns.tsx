@@ -9,8 +9,7 @@ import { cn } from "@/lib/utils";
 import { types } from "@/routes/dashboard/clients/data";
 import { ClientTableContextMenu } from "@/components/clients/client-table-context-menu";
 import { ClientTableRowActions } from "@/components/clients/client-table-row-actions";
-import { ClientDetailsDrawer } from "@/components/clients/client-dialogs";
-import { Avatar, BoringFallback } from "@/components/ui/avatar";
+import { ClientNameCell } from "@/components/clients/client-name-cell";
 
 export const clientCols: ColumnDef<Client>[] = [
   {
@@ -73,21 +72,7 @@ export const clientCols: ColumnDef<Client>[] = [
         title={row.getValue("name")}
         {...{ cell }}
       >
-        <ClientDetailsDrawer
-          client={row.original}
-          trigger={
-            <button
-              type="button"
-              className="flex min-w-0 items-center gap-2 text-left transition hover:text-emerald-700 hover:underline dark:hover:text-emerald-400"
-              title={`View ${row.original.name}`}
-            >
-              <Avatar className="size-5">
-                <BoringFallback name={row.getValue("name")} />
-              </Avatar>
-              <span className="truncate">{row.getValue("name")}</span>
-            </button>
-          }
-        />
+        <ClientNameCell client={row.original} />
       </ClientTableContextMenu>
     ),
     enableHiding: false,

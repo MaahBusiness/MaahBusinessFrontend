@@ -198,12 +198,9 @@ export const breadcrumbsConfig: BreadcrumbConfig = {
   "/dashboard/org/:id/clients/*": [
     { label: "Dashboard", icon: Home, href: "/dashboard", hidden: true },
     {
-      label: (params) => params.id, // Will be replaced by org name
+      label: (params) => params.id,
       href: (params) => `/dashboard/org/${params.id}/home`,
-      isOrgSwitcher: true, // Renders as dropdown
-    },
-    {
-      label: "Clients",
+      isOrgSwitcher: true,
     },
   ],
 

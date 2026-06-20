@@ -125,6 +125,26 @@ export interface OrganisationCustomers {
   updated_at: string;
 }
 
+export interface CustomerPurchaseRecord {
+  invoice_id: string;
+  invoice_number: number;
+  total_amount: string;
+  purchase_date: string;
+}
+
+export interface CustomerProductPurchase {
+  product_id: string;
+  product_name: string;
+  total_qty: number;
+  total_spent: string;
+  purchase_count: number;
+}
+
+export interface ClientDetail extends OrganisationCustomers {
+  purchase_history: CustomerPurchaseRecord[];
+  products_bought: CustomerProductPurchase[];
+}
+
 /** Customer record returned by the customers API */
 export type Client = OrganisationCustomers;
 

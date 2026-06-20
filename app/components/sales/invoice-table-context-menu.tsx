@@ -29,17 +29,8 @@ import { useOrganisation } from "@/hooks/use-organisation";
 import { useClipboard } from "@/hooks/useClipboard";
 import { cn } from "@/lib/utils";
 import type { Cell } from "@tanstack/react-table";
-import {
-  Archive,
-  Copy,
-  Edit,
-  Eye,
-  Trash2,
-  Trash2Icon,
-  Wallet,
-} from "lucide-react";
-import { Link, useNavigation, useParams } from "react-router";
-import { orgPath } from "@/lib/org-navigation";
+import { Archive, Copy, Edit, Eye, Trash2, Trash2Icon, Wallet } from "lucide-react";
+import { useNavigation } from "react-router";
 import { toast } from "sonner";
 import type { Invoice, TableContextMenuProps } from "types";
 import { hasPermission } from "utils/permissions";
@@ -58,14 +49,11 @@ export function InvoiceTableContextMenu({
   const { businessMember, archiveInvoice, isArchivingInvoice } =
     useOrganisation();
   const navigation = useNavigation();
-  const { id: orgId } = useParams();
+  const [payOpen, setPayOpen] = useState(false);
+  const [viewOpen, setViewOpen] = useState(false);
+
   const cell = c as Cell<Invoice, unknown>;
   const invoice = cell.row.original;
-  const [payOpen, setPayOpen] = useState(false);
-
-  const detailPath = orgId
-    ? orgPath(orgId, `invoices/${invoice.id}`)
-    : invoice.id;
   const val = cell.getValue() as string | number | undefined;
   const isCashier = businessMember?.role === "cashier";
   const canPay =
@@ -98,6 +86,12 @@ export function InvoiceTableContextMenu({
 
   const handleArchiveInvoice = () => archiveInvoice(invoice.id);
 
+  const handleRowClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest("a, button, [role='checkbox'], input, label")) return;
+    setViewOpen(true);
+  };
+
   return (
     <>
       <ContextMenu>
@@ -106,25 +100,27 @@ export function InvoiceTableContextMenu({
             <ContextMenuTrigger
               title={title}
               className={cn(
-                "flex h-full w-full max-w-xs items-center justify-start gap-2 px-4",
+                "flex h-full w-full max-w-xs cursor-pointer items-center justify-start gap-2 px-4",
                 className,
               )}
+              onClick={handleRowClick}
             >
               {children}
             </ContextMenuTrigger>
 
             <ContextMenuContent>
               <ContextMenuGroup>
-                <ContextMenuItem asChild className="text-xs px-1.5 py-1">
-                  <Link to={detailPath}>
-                    View invoice
-                    <ContextMenuShortcut>
-                      <Eye className="size-3" />
-                    </ContextMenuShortcut>
-                  </Link>
+                <ContextMenuItem
+                  className="px-1.5 py-1 text-xs"
+                  onClick={() => setViewOpen(true)}
+                >
+                  View invoice
+                  <ContextMenuShortcut>
+                    <Eye className="size-3" />
+                  </ContextMenuShortcut>
                 </ContextMenuItem>
                 <ContextMenuItem
-                  className="text-xs px-1.5 py-1"
+                  className="px-1.5 py-1 text-xs"
                   onClick={handleCopyCell}
                 >
                   Copy cell
@@ -133,7 +129,7 @@ export function InvoiceTableContextMenu({
                   </ContextMenuShortcut>
                 </ContextMenuItem>
                 <ContextMenuItem
-                  className="text-xs px-1.5 py-1"
+                  className="px-1.5 py-1 text-xs"
                   onClick={handleCopyRow}
                 >
                   Copy row
@@ -147,7 +143,7 @@ export function InvoiceTableContextMenu({
                   <ContextMenuSeparator />
                   <ContextMenuGroup>
                     <DrawerTrigger asChild>
-                      <ContextMenuItem className="text-xs px-1.5 py-1">
+                      <ContextMenuItem className="px-1.5 py-1 text-xs">
                         Edit invoice
                         <ContextMenuShortcut>
                           <Edit className="size-3" />
@@ -162,7 +158,7 @@ export function InvoiceTableContextMenu({
                   <ContextMenuSeparator />
                   <ContextMenuGroup>
                     <ContextMenuItem
-                      className="text-xs px-1.5 py-1"
+                      className="px-1.5 py-1 text-xs"
                       onClick={() => setPayOpen(true)}
                     >
                       Record payment
@@ -179,7 +175,7 @@ export function InvoiceTableContextMenu({
                   <ContextMenuGroup>
                     <AlertDialogTrigger asChild>
                       <ContextMenuItem
-                        className="text-xs px-1.5 py-1"
+                        className="px-1.5 py-1 text-xs"
                         variant="destructive"
                       >
                         {isCashier ? "Remove invoice" : "Archive invoice"}
@@ -230,6 +226,12 @@ export function InvoiceTableContextMenu({
           </AlertDialog>
         </Drawer>
       </ContextMenu>
+
+      <InvoiceReceiptDialog
+        invoiceId={invoice.id}
+        open={viewOpen}
+        onOpenChange={setViewOpen}
+      />
 
       <Dialog open={payOpen} onOpenChange={setPayOpen}>
         <DialogContent className="!max-w-sm p-0">
