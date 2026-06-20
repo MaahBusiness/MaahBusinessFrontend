@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { EditInvoiceDrawer } from "@/components/sales/invoice-edit-drawer";
+import { InvoicePaymentFormContent } from "@/components/sales/single-invoice-actions";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -9,6 +11,7 @@ import {
   AlertDialogHeader,
   AlertDialogMedia,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
   ContextMenu,
@@ -19,16 +22,32 @@ import {
   ContextMenuShortcut,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Drawer, DrawerTrigger } from "@/components/ui/drawer";
 import { Spinner } from "@/components/ui/spinner";
 import { useOrganisation } from "@/hooks/use-organisation";
 import { useClipboard } from "@/hooks/useClipboard";
 import { cn } from "@/lib/utils";
 import type { Cell } from "@tanstack/react-table";
-import { Copy, Edit, Trash2, Trash2Icon } from "lucide-react";
+import {
+  Archive,
+  Copy,
+  Edit,
+  Eye,
+  Trash2,
+  Trash2Icon,
+  Wallet,
+} from "lucide-react";
+import { Link, useNavigation, useParams } from "react-router";
+import { orgPath } from "@/lib/org-navigation";
 import { toast } from "sonner";
 import type { Invoice, TableContextMenuProps } from "types";
 import { hasPermission } from "utils/permissions";
+import {
+  canArchiveInvoice,
+  canRecordInvoicePayment,
+  invoiceHasOutstandingBalance,
+} from "utils/permissions";
 
 export function InvoiceTableContextMenu({
   cell: c,
@@ -38,10 +57,29 @@ export function InvoiceTableContextMenu({
 }: TableContextMenuProps<Invoice>) {
   const { businessMember, archiveInvoice, isArchivingInvoice } =
     useOrganisation();
+  const navigation = useNavigation();
+  const { id: orgId } = useParams();
+  const cell = c as Cell<Invoice, unknown>;
+  const invoice = cell.row.original;
+  const [payOpen, setPayOpen] = useState(false);
 
-  const cell = c as Cell<Invoice, any>;
-
+  const detailPath = orgId
+    ? orgPath(orgId, `invoices/${invoice.id}`)
+    : invoice.id;
   const val = cell.getValue() as string | number | undefined;
+  const isCashier = businessMember?.role === "cashier";
+  const canPay =
+    canRecordInvoicePayment(businessMember?.role) &&
+    invoiceHasOutstandingBalance(invoice);
+  const canArchive = canArchiveInvoice(businessMember?.role);
+  const canEdit = hasPermission(businessMember?.role, "invoice:create");
+
+  const isSubmitting = navigation.state === "submitting";
+  const intent = navigation.formData?.get("intent");
+  const isPaying =
+    isSubmitting &&
+    intent === "credit-invoice" &&
+    navigation.formData?.get("invId") === invoice.id;
 
   const clipboard = useClipboard({
     resetDelay: 3000,
@@ -55,115 +93,154 @@ export function InvoiceTableContextMenu({
   };
   const handleCopyRow = () => {
     if (clipboard.isCopying) return;
-    clipboard.copy(JSON.stringify(cell.row.original));
+    clipboard.copy(JSON.stringify(invoice));
   };
 
-  const handleArchiveInvoice = () => archiveInvoice(cell.row.original.id);
+  const handleArchiveInvoice = () => archiveInvoice(invoice.id);
 
   return (
-    <ContextMenu>
-      <Drawer direction="right">
-        <AlertDialog>
-          <ContextMenuTrigger
-            title={title}
-            className={cn(
-              "flex h-full w-full max-w-xs items-center justify-start gap-2 px-4",
-              className,
-            )}
-          >
-            {children}
-          </ContextMenuTrigger>
+    <>
+      <ContextMenu>
+        <Drawer direction="right">
+          <AlertDialog>
+            <ContextMenuTrigger
+              title={title}
+              className={cn(
+                "flex h-full w-full max-w-xs items-center justify-start gap-2 px-4",
+                className,
+              )}
+            >
+              {children}
+            </ContextMenuTrigger>
 
-          {/* Context Menu */}
-          <ContextMenuContent>
-            <ContextMenuGroup>
-              <ContextMenuItem
-                className="text-xs px-1.5 py-1"
-                onClick={handleCopyCell}
-              >
-                Copy cell
-                <ContextMenuShortcut>
-                  <Copy className="size-3" />
-                </ContextMenuShortcut>
-              </ContextMenuItem>
-              <ContextMenuItem
-                className="text-xs px-1.5 py-1"
-                onClick={handleCopyRow}
-              >
-                Copy row
-                <ContextMenuShortcut>
-                  <Copy className="size-3" />
-                </ContextMenuShortcut>
-              </ContextMenuItem>
-            </ContextMenuGroup>
-            {hasPermission(businessMember?.role, "invoice:create") && (
-              <>
-                <ContextMenuSeparator />
-                <ContextMenuGroup>
-                  <DrawerTrigger asChild>
-                    <ContextMenuItem className="text-xs px-1.5 py-1">
-                      Edit row
+            <ContextMenuContent>
+              <ContextMenuGroup>
+                <ContextMenuItem asChild className="text-xs px-1.5 py-1">
+                  <Link to={detailPath}>
+                    View invoice
+                    <ContextMenuShortcut>
+                      <Eye className="size-3" />
+                    </ContextMenuShortcut>
+                  </Link>
+                </ContextMenuItem>
+                <ContextMenuItem
+                  className="text-xs px-1.5 py-1"
+                  onClick={handleCopyCell}
+                >
+                  Copy cell
+                  <ContextMenuShortcut>
+                    <Copy className="size-3" />
+                  </ContextMenuShortcut>
+                </ContextMenuItem>
+                <ContextMenuItem
+                  className="text-xs px-1.5 py-1"
+                  onClick={handleCopyRow}
+                >
+                  Copy row
+                  <ContextMenuShortcut>
+                    <Copy className="size-3" />
+                  </ContextMenuShortcut>
+                </ContextMenuItem>
+              </ContextMenuGroup>
+              {canEdit && (
+                <>
+                  <ContextMenuSeparator />
+                  <ContextMenuGroup>
+                    <DrawerTrigger asChild>
+                      <ContextMenuItem className="text-xs px-1.5 py-1">
+                        Edit invoice
+                        <ContextMenuShortcut>
+                          <Edit className="size-3" />
+                        </ContextMenuShortcut>
+                      </ContextMenuItem>
+                    </DrawerTrigger>
+                  </ContextMenuGroup>
+                </>
+              )}
+              {canPay && (
+                <>
+                  <ContextMenuSeparator />
+                  <ContextMenuGroup>
+                    <ContextMenuItem
+                      className="text-xs px-1.5 py-1"
+                      onClick={() => setPayOpen(true)}
+                    >
+                      Record payment
                       <ContextMenuShortcut>
-                        <Edit className="size-3" />
+                        <Wallet className="size-3 text-amber-600" />
                       </ContextMenuShortcut>
                     </ContextMenuItem>
-                  </DrawerTrigger>
-                </ContextMenuGroup>
-              </>
-            )}
-            {hasPermission(businessMember?.role, "invoice:delete") && (
-              <>
-                <ContextMenuSeparator />
-                <ContextMenuGroup>
-                  <ContextMenuItem
-                    className="text-xs px-1.5 py-1"
-                    variant="destructive"
-                  >
-                    Archive row
-                    <ContextMenuShortcut>
-                      <Trash2 className="size-3 text-destructive" />
-                    </ContextMenuShortcut>
-                  </ContextMenuItem>
-                </ContextMenuGroup>
-              </>
-            )}
-          </ContextMenuContent>
+                  </ContextMenuGroup>
+                </>
+              )}
+              {canArchive && (
+                <>
+                  <ContextMenuSeparator />
+                  <ContextMenuGroup>
+                    <AlertDialogTrigger asChild>
+                      <ContextMenuItem
+                        className="text-xs px-1.5 py-1"
+                        variant="destructive"
+                      >
+                        {isCashier ? "Remove invoice" : "Archive invoice"}
+                        <ContextMenuShortcut>
+                          {isCashier ? (
+                            <Trash2 className="size-3 text-destructive" />
+                          ) : (
+                            <Archive className="size-3 text-destructive" />
+                          )}
+                        </ContextMenuShortcut>
+                      </ContextMenuItem>
+                    </AlertDialogTrigger>
+                  </ContextMenuGroup>
+                </>
+              )}
+            </ContextMenuContent>
 
-          {/* Drawer Content */}
-          <EditInvoiceDrawer data={cell.row.original} />
+            <EditInvoiceDrawer data={invoice} />
 
-          {/* Alert Dialog */}
-          <AlertDialogContent size="sm">
-            <AlertDialogHeader>
-              <AlertDialogMedia className="bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive">
-                <Trash2Icon />
-              </AlertDialogMedia>
-              <AlertDialogTitle>
-                Archive Invoice #{cell.row.original.number}?
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                This invoice will be moved to archives and hidden from active
-                lists. You can restore it later.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel variant="outline">Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                variant="destructive"
-                disabled={isArchivingInvoice}
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleArchiveInvoice();
-                  // return true;
-                }}
-              >
-                {isArchivingInvoice && <Spinner />}
-                Archive
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </Drawer>
-    </ContextMenu>
+            <AlertDialogContent size="sm">
+              <AlertDialogHeader>
+                <AlertDialogMedia className="bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive">
+                  {isCashier ? <Trash2Icon /> : <Archive />}
+                </AlertDialogMedia>
+                <AlertDialogTitle>
+                  {isCashier ? "Remove" : "Archive"} Invoice #{invoice.number}?
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  This invoice will be moved to archives and hidden from active
+                  lists.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel variant="outline">Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  variant="destructive"
+                  disabled={isArchivingInvoice}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleArchiveInvoice();
+                  }}
+                >
+                  {isArchivingInvoice && <Spinner />}
+                  {isCashier ? "Remove" : "Archive"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </Drawer>
+      </ContextMenu>
+
+      <Dialog open={payOpen} onOpenChange={setPayOpen}>
+        <DialogContent className="!max-w-sm p-0">
+          <InvoicePaymentFormContent
+            id={invoice.id}
+            number={invoice.number}
+            max={invoice.remaining_amount}
+            isLoading={!!isPaying}
+          />
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

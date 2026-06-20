@@ -1,5 +1,16 @@
 import { type Row } from "@tanstack/react-table";
-import { Copy, Edit, MoreVertical, Trash2, Trash2Icon } from "lucide-react";
+import {
+  Archive,
+  Copy,
+  Edit,
+  Eye,
+  MoreVertical,
+  Trash2,
+  Trash2Icon,
+  Wallet,
+} from "lucide-react";
+import { Link, useNavigation, useParams } from "react-router";
+import { orgPath } from "@/lib/org-navigation";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -11,6 +22,11 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import type { Invoice } from "types";
 import { useOrganisation } from "@/hooks/use-organisation";
 import {
@@ -27,11 +43,17 @@ import {
 } from "@/components/ui/alert-dialog";
 
 import { hasPermission } from "utils/permissions";
+import {
+  canArchiveInvoice,
+  canRecordInvoicePayment,
+  invoiceHasOutstandingBalance,
+} from "utils/permissions";
 import { Drawer, DrawerTrigger } from "@/components/ui/drawer";
 import { toast } from "sonner";
 import { useClipboard } from "@/hooks/useClipboard";
 import { Spinner } from "@/components/ui/spinner";
 import { EditInvoiceDrawer } from "@/components/sales/invoice-edit-drawer";
+import { InvoicePaymentFormContent } from "@/components/sales/single-invoice-actions";
 
 interface InvoiceTableRowActionsProps {
   row: Row<Invoice>;
@@ -40,6 +62,25 @@ interface InvoiceTableRowActionsProps {
 export function InvoiceTableRowActions({ row }: InvoiceTableRowActionsProps) {
   const { businessMember, isLoading, archiveInvoice, isArchivingInvoice } =
     useOrganisation();
+  const navigation = useNavigation();
+  const { id: orgId } = useParams();
+  const invoice = row.original;
+  const detailPath = orgId
+    ? orgPath(orgId, `invoices/${invoice.id}`)
+    : invoice.id;
+  const isCashier = businessMember?.role === "cashier";
+  const canPay =
+    canRecordInvoicePayment(businessMember?.role) &&
+    invoiceHasOutstandingBalance(invoice);
+  const canArchive = canArchiveInvoice(businessMember?.role);
+  const canEdit = hasPermission(businessMember?.role, "invoice:create");
+
+  const isSubmitting = navigation.state === "submitting";
+  const intent = navigation.formData?.get("intent");
+  const isPaying =
+    isSubmitting &&
+    intent === "credit-invoice" &&
+    navigation.formData?.get("invId") === invoice.id;
 
   if (isLoading || !businessMember) {
     return (
@@ -61,27 +102,114 @@ export function InvoiceTableRowActions({ row }: InvoiceTableRowActionsProps) {
 
   const handleCopyRow = () => {
     if (clipboard.isCopying) return;
-    clipboard.copy(JSON.stringify(row.original));
+    clipboard.copy(JSON.stringify(invoice));
   };
 
-  const handleArchiveInvoice = () => archiveInvoice(row.original.id);
+  const handleArchiveInvoice = () => archiveInvoice(invoice.id);
 
   return (
-    <Drawer direction="right">
-      <AlertDialog>
+    <div className="flex items-center justify-end gap-1 pr-2">
+      <Button
+        asChild
+        variant="outline"
+        size="sm"
+        className="h-7 gap-1 px-2 text-xs"
+      >
+        <Link to={detailPath}>
+          <Eye className="size-3.5" />
+          View
+        </Link>
+      </Button>
+
+      {canPay && (
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon-sm"
+              className="h-7 w-7 shrink-0"
+              title="Record payment"
+            >
+              <Wallet className="size-3.5 text-amber-600 dark:text-amber-400" />
+              <span className="sr-only">Record payment</span>
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="!max-w-sm p-0">
+            <InvoicePaymentFormContent
+              id={invoice.id}
+              number={invoice.number}
+              max={invoice.remaining_amount}
+              isLoading={!!isPaying}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {canArchive && (
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon-sm"
+              className="h-7 w-7 shrink-0"
+              title={isCashier ? "Remove invoice" : "Archive invoice"}
+            >
+              {isCashier ? (
+                <Trash2 className="size-3.5 text-destructive" />
+              ) : (
+                <Archive className="size-3.5 text-muted-foreground" />
+              )}
+              <span className="sr-only">
+                {isCashier ? "Remove invoice" : "Archive invoice"}
+              </span>
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent size="sm">
+            <AlertDialogHeader>
+              <AlertDialogMedia className="bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive">
+                {isCashier ? <Trash2Icon /> : <Archive />}
+              </AlertDialogMedia>
+              <AlertDialogTitle>
+                {isCashier ? "Remove" : "Archive"} Invoice #{invoice.number}?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                This invoice will be moved to archives and hidden from active
+                lists.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel variant="outline">Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                variant="destructive"
+                disabled={isArchivingInvoice}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleArchiveInvoice();
+                }}
+              >
+                {isArchivingInvoice && <Spinner />}
+                {isCashier ? "Remove" : "Archive"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+
+      <Drawer direction="right">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="outline"
-              size={"icon-sm"}
-              className="flex h-7 w-6 rounded-sm p-0 data-[state=open]:bg-muted mr-4"
+              size="icon-sm"
+              className="flex h-7 w-6 rounded-sm p-0 data-[state=open]:bg-muted"
             >
               <MoreVertical className="size-3" />
               <span className="sr-only">Open menu</span>
             </Button>
           </DropdownMenuTrigger>
 
-          {/* Dropdown Content */}
           <DropdownMenuContent align="end">
             <DropdownMenuGroup>
               <DropdownMenuItem
@@ -94,13 +222,13 @@ export function InvoiceTableRowActions({ row }: InvoiceTableRowActionsProps) {
                 </DropdownMenuShortcut>
               </DropdownMenuItem>
             </DropdownMenuGroup>
-            {hasPermission(businessMember?.role, "invoice:create") && (
+            {canEdit && (
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
                   <DrawerTrigger asChild>
                     <DropdownMenuItem className="text-xs px-1.5 py-1">
-                      Edit row
+                      Edit invoice
                       <DropdownMenuShortcut>
                         <Edit className="size-3" />
                       </DropdownMenuShortcut>
@@ -109,59 +237,11 @@ export function InvoiceTableRowActions({ row }: InvoiceTableRowActionsProps) {
                 </DropdownMenuGroup>
               </>
             )}
-            {hasPermission(businessMember?.role, "invoice:delete") && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuGroup>
-                  <AlertDialogTrigger asChild>
-                    <DropdownMenuItem
-                      className="text-xs px-1.5 py-1"
-                      variant="destructive"
-                    >
-                      Delete row
-                      <DropdownMenuShortcut>
-                        <Trash2 className="size-3 text-destructive" />
-                      </DropdownMenuShortcut>
-                    </DropdownMenuItem>
-                  </AlertDialogTrigger>
-                </DropdownMenuGroup>
-              </>
-            )}
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <EditInvoiceDrawer data={row.original} />
-
-        <AlertDialogContent size="sm">
-          <AlertDialogHeader>
-            <AlertDialogMedia className="bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive">
-              <Trash2Icon />
-            </AlertDialogMedia>
-            <AlertDialogTitle>
-              Archive Invoice #{row.original.number}?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              This invoice will be moved to archives and hidden from active
-              lists. You can restore it later.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel variant="outline">Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              disabled={isArchivingInvoice}
-              onClick={(e) => {
-                e.preventDefault();
-                handleArchiveInvoice();
-                // return true;
-              }}
-            >
-              {isArchivingInvoice && <Spinner />}
-              Archive
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </Drawer>
+        <EditInvoiceDrawer data={invoice} />
+      </Drawer>
+    </div>
   );
 }

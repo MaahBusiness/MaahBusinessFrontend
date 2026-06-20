@@ -429,16 +429,25 @@ export const statuses = [
     value: "COMPLETED",
     label: "Completed",
     icon: CheckCircle,
+    className: "text-emerald-700 dark:text-emerald-400",
+    badgeClassName:
+      "border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300",
   },
   {
     value: "CREDIT",
     label: "Credit",
     icon: Timer,
+    className: "text-amber-700 dark:text-amber-400",
+    badgeClassName:
+      "border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-300",
   },
   {
     value: "CANCELLED",
     label: "Cancelled",
     icon: CircleOff,
+    className: "text-red-700 dark:text-red-400",
+    badgeClassName:
+      "border-red-500/30 bg-red-500/10 text-red-800 dark:text-red-300",
   },
 ];
 export const methods = [
@@ -487,14 +496,17 @@ export const searchFilters = [
 ];
 
 export const visibles = [
-  { value: "number", label: "#" },
+  { value: "select", label: "#" },
   { value: "status", label: "Status" },
-  { value: "total", label: "Total" },
+  { value: "amounts", label: "Items / Total / Disc." },
+  { value: "client", label: "Customer" },
   { value: "paid", label: "Paid" },
   { value: "method", label: "Method" },
   { value: "due", label: "Due" },
+  { value: "total", label: "Total only" },
+  { value: "discount", label: "Discount only" },
+  { value: "stock", label: "Items only" },
   { value: "due-date", label: "Due date" },
-  { value: "customer", label: "Customer" },
   { value: "cashier", label: "Cashier" },
   { value: "created", label: "Created" },
 ];

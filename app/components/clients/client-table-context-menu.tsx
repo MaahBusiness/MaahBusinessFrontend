@@ -1,4 +1,8 @@
-import { ClientEditDeleteDialogs } from "@/components/clients/client-dialogs";
+import { useState } from "react";
+import {
+  ClientDetailsDrawer,
+  EditClientDrawer,
+} from "@/components/clients/client-dialogs";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,13 +23,12 @@ import {
   ContextMenuShortcut,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import { Drawer, DrawerTrigger } from "@/components/ui/drawer";
 import { Spinner } from "@/components/ui/spinner";
 import { useOrganisation } from "@/hooks/use-organisation";
 import { useClipboard } from "@/hooks/useClipboard";
 import { cn } from "@/lib/utils";
 import type { Cell } from "@tanstack/react-table";
-import { Copy, Edit, Trash2, Trash2Icon } from "lucide-react";
+import { Copy, Edit, Eye, Trash2, Trash2Icon } from "lucide-react";
 import { toast } from "sonner";
 import type { Client, TableContextMenuProps } from "types";
 import { hasPermission } from "utils/permissions";
@@ -36,11 +39,12 @@ export function ClientTableContextMenu({
   children,
   title,
 }: TableContextMenuProps<Client>) {
-  const { businessMember, removeProduct, isRemovingProduct } =
-    useOrganisation();
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [viewOpen, setViewOpen] = useState(false);
+  const { businessMember, removeClient, isRemovingClient } = useOrganisation();
 
-  const cell = c as Cell<Client, any>;
-
+  const cell = c as Cell<Client, unknown>;
   const val = cell.getValue() as string | number | undefined;
 
   const clipboard = useClipboard({
@@ -49,87 +53,131 @@ export function ClientTableContextMenu({
     onError: () => toast.error("Copy was unsuccessful"),
   });
 
-  const handleCopyCell = () => {
-    if (clipboard.isCopying) return;
-    clipboard.copy(`${val}`);
-  };
-  const handleCopyRow = () => {
-    if (clipboard.isCopying) return;
-    clipboard.copy(JSON.stringify(cell.row.original));
-  };
-
-  const handleDeleteProduct = () => {
-    removeProduct(cell.row.original.id);
+  const handleDeleteClient = () => {
+    removeClient(cell.row.original.id, {
+      onSuccess: (res) => {
+        if (res.success) setDeleteOpen(false);
+      },
+    });
   };
 
   return (
     <ContextMenu>
-      <Drawer direction="right">
-        <AlertDialog>
-          <ContextMenuTrigger
-            title={title}
-            className={cn(
-              "flex h-full w-full max-w-xs items-center justify-start gap-2 px-4",
-              className,
-            )}
-          >
-            {children}
-          </ContextMenuTrigger>
+      <ContextMenuTrigger
+        title={title}
+        className={cn(
+          "flex h-full w-full max-w-xs items-center justify-start gap-2 px-4",
+          className,
+        )}
+      >
+        {children}
+      </ContextMenuTrigger>
 
-          {/* Context Menu */}
-          <ContextMenuContent>
+      <ContextMenuContent>
+        <ContextMenuGroup>
+          <ContextMenuItem
+            className="px-1.5 py-1 text-xs"
+            onClick={() => setViewOpen(true)}
+          >
+            View details
+            <ContextMenuShortcut>
+              <Eye className="size-3" />
+            </ContextMenuShortcut>
+          </ContextMenuItem>
+          <ContextMenuItem
+            className="px-1.5 py-1 text-xs"
+            onClick={() => {
+              if (!clipboard.isCopying) clipboard.copy(`${val}`);
+            }}
+          >
+            Copy cell
+            <ContextMenuShortcut>
+              <Copy className="size-3" />
+            </ContextMenuShortcut>
+          </ContextMenuItem>
+          <ContextMenuItem
+            className="px-1.5 py-1 text-xs"
+            onClick={() => {
+              if (!clipboard.isCopying)
+                clipboard.copy(JSON.stringify(cell.row.original));
+            }}
+          >
+            Copy row
+            <ContextMenuShortcut>
+              <Copy className="size-3" />
+            </ContextMenuShortcut>
+          </ContextMenuItem>
+        </ContextMenuGroup>
+        {hasPermission(businessMember?.role, "customers:crud") && (
+          <>
+            <ContextMenuSeparator />
             <ContextMenuGroup>
               <ContextMenuItem
-                className="text-xs px-1.5 py-1"
-                onClick={handleCopyCell}
+                className="px-1.5 py-1 text-xs"
+                onClick={() => setEditOpen(true)}
               >
-                Copy cell
+                Edit row
                 <ContextMenuShortcut>
-                  <Copy className="size-3" />
-                </ContextMenuShortcut>
-              </ContextMenuItem>
-              <ContextMenuItem
-                className="text-xs px-1.5 py-1"
-                onClick={handleCopyRow}
-              >
-                Copy row
-                <ContextMenuShortcut>
-                  <Copy className="size-3" />
+                  <Edit className="size-3" />
                 </ContextMenuShortcut>
               </ContextMenuItem>
             </ContextMenuGroup>
-            {hasPermission(businessMember?.role, "customers:crud") && (
-              <>
-                <ContextMenuSeparator />
-                <ContextMenuGroup>
-                  <DrawerTrigger asChild>
-                    <ContextMenuItem className="text-xs px-1.5 py-1">
-                      Edit row
-                      <ContextMenuShortcut>
-                        <Edit className="size-3" />
-                      </ContextMenuShortcut>
-                    </ContextMenuItem>
-                  </DrawerTrigger>
-                </ContextMenuGroup>
-                <ContextMenuSeparator />
-                <ContextMenuGroup>
-                  <ContextMenuItem
-                    className="text-xs px-1.5 py-1"
-                    variant="destructive"
-                  >
-                    Delete row
-                    <ContextMenuShortcut>
-                      <Trash2 className="size-3 text-destructive" />
-                    </ContextMenuShortcut>
-                  </ContextMenuItem>
-                </ContextMenuGroup>
-              </>
-            )}
-          </ContextMenuContent>
+            <ContextMenuSeparator />
+            <ContextMenuGroup>
+              <ContextMenuItem
+                className="px-1.5 py-1 text-xs"
+                variant="destructive"
+                onClick={() => setDeleteOpen(true)}
+              >
+                Delete row
+                <ContextMenuShortcut>
+                  <Trash2 className="size-3 text-destructive" />
+                </ContextMenuShortcut>
+              </ContextMenuItem>
+            </ContextMenuGroup>
+          </>
+        )}
+      </ContextMenuContent>
 
-          <ClientEditDeleteDialogs row={cell.row} />
-        </AlertDialog>
-      </Drawer>
+      <ClientDetailsDrawer
+        client={cell.row.original}
+        open={viewOpen}
+        onOpenChange={setViewOpen}
+      />
+
+      <EditClientDrawer
+        client={cell.row.original}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+      />
+
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent size="sm">
+          <AlertDialogHeader>
+            <AlertDialogMedia className="bg-destructive/10 text-destructive">
+              <Trash2Icon />
+            </AlertDialogMedia>
+            <AlertDialogTitle>Remove {cell.row.original.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove this customer from your list.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel variant="outline">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={isRemovingClient}
+              onClick={(e) => {
+                e.preventDefault();
+                handleDeleteClient();
+              }}
+            >
+              {isRemovingClient && <Spinner className="size-4" />}
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </ContextMenu>
   );
 }

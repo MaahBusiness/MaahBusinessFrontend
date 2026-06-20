@@ -1,25 +1,21 @@
 import ClientSelector from "@/components/sales/client-selector";
 import { PickerDropdown } from "@/components/sales/picker-dropdown";
 import { PosProductPicker } from "@/components/sales/pos-product-search-dialog";
-import { ProductFormSection } from "@/components/products/product-form-section";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer";
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   Field,
-  FieldContent,
-  FieldDescription,
   FieldError,
   FieldLabel,
-  FieldTitle,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
@@ -45,37 +41,33 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { useOrganisation } from "@/hooks/use-organisation";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { paymentMethodsAtCheckout } from "@/routes/dashboard/sales/data";
 import {
-  AlertCircle,
   Barcode,
   CalendarIcon,
-  CreditCard,
-  FileClock,
   Plus,
-  Receipt,
-  ScanBarcode,
   Trash2,
-  UserRound,
 } from "lucide-react";
 import React, { useEffect, useRef } from "react";
 import { useState } from "react";
 import { Form, useActionData, useNavigation } from "react-router";
 import type { AddedLine, Product, ServerActionState } from "types";
-import { formatDisplayAmount, genericErrorState, percent } from "utils";
+import { formatDisplayAmount, genericErrorState } from "utils";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
 function parseAmount(raw: string | undefined): number {
   return parseInt(`${raw ?? ""}`.replace(/\D/g, ""), 10) || 0;
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+      {children}
+    </p>
+  );
 }
 
 export function CreateInvoiceDrawer({
@@ -94,7 +86,6 @@ export function CreateInvoiceDrawer({
   const actionData = useActionData<ServerActionState & { data?: Product }>();
   const navigation = useNavigation();
   const { scanCode } = useOrganisation();
-  const isMobile = useIsMobile();
 
   const [internalOpen, setInternalOpen] = useState(defaultOpen);
   const open = controlledOpen ?? internalOpen;
@@ -164,7 +155,6 @@ export function CreateInvoiceDrawer({
   const paidAmount = parseAmount(advance);
   const balanceDue = Math.max(0, grandTotal - paidAmount);
   const changeDue = Math.max(0, paidAmount - grandTotal);
-  const isPartialPayment = paidAmount > 0 && paidAmount < grandTotal && !onCredit;
 
   useEffect(() => {
     if (onCredit) setMethod("credit");
@@ -249,13 +239,8 @@ export function CreateInvoiceDrawer({
 
   return (
     <div className="flex flex-wrap gap-2">
-      <Drawer
-        direction={isMobile ? "bottom" : "right"}
-        open={open}
-        onOpenChange={setOpen}
-        modal={false}
-      >
-        <DrawerTrigger asChild>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
           <Button
             size={variant === "hero" ? "default" : "sm"}
             className={cn(
@@ -271,14 +256,17 @@ export function CreateInvoiceDrawer({
             )}
             New sale
           </Button>
-        </DrawerTrigger>
+        </DialogTrigger>
 
-        <DrawerContent className="data-[vaul-drawer-direction=right]:w-full data-[vaul-drawer-direction=right]:sm:max-w-3xl data-[vaul-drawer-direction=bottom]:max-h-[min(92vh,720px)] data-[vaul-drawer-direction=bottom]:rounded-t-xl">
+        <DialogContent
+          showCloseButton
+          className="flex max-h-[min(92vh,680px)] w-[calc(100%-1.5rem)] max-w-[540px] flex-col gap-0 overflow-hidden p-0 sm:max-w-[540px]"
+        >
           <Form
             method="POST"
             action={formAction}
             encType="multipart/form-data"
-            className="flex h-full flex-col"
+            className="flex min-h-0 flex-1 flex-col"
             onSubmit={(e) => {
               const invalid = lines.find((l) => {
                 const lineSubtotal = l.qty * l.unit_price;
@@ -298,504 +286,399 @@ export function CreateInvoiceDrawer({
               }
             }}
           >
-            <DrawerHeader className="border-b border-violet-500/15 bg-gradient-to-r from-violet-500/10 via-card to-blue-500/5 px-6 py-5">
-              <DrawerTitle className="flex items-center gap-2 text-lg font-semibold tracking-tight">
-                <Receipt className="size-5 text-violet-600" />
+            <DialogHeader className="shrink-0 border-b px-5 py-4">
+              <DialogTitle className="text-base font-semibold">
                 New sale
-              </DrawerTitle>
-              <p className="text-sm text-muted-foreground">
-                Scan products, assign a customer, and record payment. Invoice
-                status is calculated automatically.
-              </p>
-            </DrawerHeader>
+              </DialogTitle>
+            </DialogHeader>
 
-            <div className="no-scrollbar relative flex-1 overflow-y-auto p-4 sm:p-6">
+            <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-5 py-4">
               <input type="hidden" name="intent" value="create-invoice" />
               <input type="hidden" name="lines" value={JSON.stringify(lines)} />
               {onCredit && (
                 <input type="hidden" name="method" value="credit" />
               )}
 
-              <div className="grid gap-4 lg:grid-cols-[1fr_280px] lg:gap-6">
-                <div className="space-y-4">
-                  <ProductFormSection
-                    title="Customer"
-                    description="Search and select a customer, or use walk-in."
-                    icon={UserRound}
-                    accent="violet"
-                  >
-                    <ClientSelector allowWalkIn />
-                    <FieldError errors={[{ message: errors?.client }]} />
-                  </ProductFormSection>
-
-                  <ProductFormSection
-                    title="Line items"
-                    description="Scan, browse the catalog, then set quantity and discount per line."
-                    icon={Barcode}
-                    accent="blue"
-                  >
-                    <div className="flex flex-wrap items-end gap-2">
-                      <Field className="min-w-[180px] flex-1">
-                        <FieldLabel htmlFor="code" className="sr-only">
-                          Barcode
-                        </FieldLabel>
-                        <InputGroup>
-                          <InputGroupInput
-                            ref={barcodeRef}
-                            id="code"
-                            name="code"
-                            type="text"
-                            value={CFD?.code ?? ""}
-                            onChange={(e) =>
-                              setCFD((p) => ({
-                                code: e.target.value,
-                                qty: p?.qty ?? 1,
-                              }))
-                            }
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                e.preventDefault();
-                                void handleAdd();
-                              }
-                            }}
-                            placeholder="Barcode — press Enter to add"
-                          />
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <InputGroupAddon align="inline-end">
-                                <Barcode />
-                              </InputGroupAddon>
-                            </TooltipTrigger>
-                            <TooltipContent>Product barcode</TooltipContent>
-                          </Tooltip>
-                        </InputGroup>
-                      </Field>
-                      <Field className="w-20">
-                        <FieldLabel htmlFor="qty" className="sr-only">
-                          Quantity
-                        </FieldLabel>
-                        <Input
-                          id="qty"
-                          type="number"
-                          name="qty"
-                          min={1}
-                          value={CFD?.qty ?? 1}
-                          onChange={(e) =>
-                            setCFD((p) => ({
-                              code: p?.code ?? "",
-                              qty: Number(e.target.value) || 1,
-                            }))
-                          }
-                        />
-                      </Field>
-                      <Button
-                        variant="secondary"
-                        type="button"
-                        size="icon"
-                        onClick={() => void handleAdd()}
-                        disabled={isFetching}
-                        className="shrink-0 rounded-full"
-                      >
-                        {isFetching ? <Spinner /> : <Plus />}
-                      </Button>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        type="button"
-                        className="text-xs"
-                        onClick={() => barcodeRef.current?.focus()}
-                      >
-                        <ScanBarcode className="size-3.5" />
-                        Focus scanner
-                      </Button>
-                      <PosProductPicker
-                        className="flex-1 sm:flex-none"
-                        defaultQty={CFD?.qty ?? 1}
-                        onAdd={(products) => {
-                          products.forEach((product) =>
-                            addProductLine(product, CFD?.qty ?? 1),
-                          );
-                        }}
-                      />
-                    </div>
-
-                    <div className="overflow-hidden rounded-lg border bg-background/60">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Product</TableHead>
-                            <TableHead className="text-right">Unit</TableHead>
-                            <TableHead className="w-16 text-center">Qty</TableHead>
-                            <TableHead className="text-right">
-                              Discount / unit
-                            </TableHead>
-                            <TableHead className="text-right">Line total</TableHead>
-                            <TableHead className="w-10" />
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {lines.map((pr) => {
-                            const lineDisc = (pr.discount || 0) * pr.qty;
-                            const lineTotal =
-                              pr.qty * pr.unit_price - lineDisc;
-                            return (
-                              <TableRow key={pr.id}>
-                                <TableCell className="max-w-[140px]">
-                                  <p className="truncate font-medium">
-                                    {pr.name}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">
-                                    Stock: {pr.quantity}
-                                  </p>
-                                </TableCell>
-                                <TableCell className="text-right text-sm">
-                                  {formatDisplayAmount(pr.unit_price)}
-                                </TableCell>
-                                <TableCell>
-                                  <Input
-                                    className="h-8 w-14 px-1 text-center"
-                                    type="number"
-                                    min={1}
-                                    max={pr.quantity}
-                                    value={pr.qty}
-                                    onChange={(e) =>
-                                      updateQuantity(
-                                        pr.id,
-                                        Number(e.target.value),
-                                      )
-                                    }
-                                  />
-                                </TableCell>
-                                <TableCell>
-                                  <div className="flex flex-col items-end gap-0.5">
-                                    <Input
-                                      className="h-8 w-20 px-1 text-right text-sm"
-                                      type="number"
-                                      min={0}
-                                      max={pr.unit_price}
-                                      step={1}
-                                      value={pr.discount ?? 0}
-                                      onChange={(e) =>
-                                        updateLineDiscount(pr.id, e.target.value)
-                                      }
-                                      aria-label={`Discount per unit for ${pr.name}`}
-                                    />
-                                    {(pr.discount ?? 0) > 0 && pr.unit_price > 0 && (
-                                      <span className="text-[10px] text-muted-foreground">
-                                        {percent(
-                                          pr.discount ?? 0,
-                                          pr.unit_price,
-                                          0,
-                                        )}
-                                        % · −
-                                        {formatDisplayAmount(lineDisc)}
-                                      </span>
-                                    )}
-                                  </div>
-                                </TableCell>
-                                <TableCell className="text-right text-sm font-medium">
-                                  {formatDisplayAmount(lineTotal)}
-                                </TableCell>
-                                <TableCell>
-                                  <Button
-                                    size="icon-sm"
-                                    variant="ghost"
-                                    type="button"
-                                    onClick={() => removeLine(pr.id)}
-                                  >
-                                    <Trash2 className="size-3.5 text-destructive" />
-                                  </Button>
-                                </TableCell>
-                              </TableRow>
-                            );
-                          })}
-                          {!lines.length && (
-                            <TableRow className="hover:bg-transparent">
-                              <TableCell
-                                colSpan={6}
-                                className="h-24 text-center text-sm text-muted-foreground"
-                              >
-                                No items yet. Scan a barcode or search the
-                                catalog.
-                              </TableCell>
-                            </TableRow>
-                          )}
-                        </TableBody>
-                      </Table>
-                    </div>
-                    <FieldError errors={[{ message: errors?.lines }]} />
-                  </ProductFormSection>
-
-                  <ProductFormSection
-                    title="Payment"
-                    description={
-                      onCredit
-                        ? "Credit sale — record the advance payment and balance due date."
-                        : "Select how the customer is paying today."
-                    }
-                    icon={CreditCard}
-                    accent="emerald"
-                  >
-                    {!onCredit && (
-                      <Field>
-                        <FieldLabel htmlFor="method">Payment method</FieldLabel>
-                        <Select
-                          name="method"
-                          required
-                          value={method}
-                          onValueChange={setMethod}
-                        >
-                          <SelectTrigger className="w-full" id="method">
-                            <SelectValue placeholder="Select payment method" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {paymentMethodsAtCheckout.map((m) => (
-                              <SelectItem key={m.value} value={m.value}>
-                                <span className="flex items-center gap-2">
-                                  <m.icon className="size-4 text-muted-foreground" />
-                                  {m.label}
-                                </span>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </Field>
-                    )}
-
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <Field>
-                        <FieldLabel htmlFor="tax">Tax amount</FieldLabel>
-                        <Input
-                          id="tax"
-                          type="number"
-                          name="tax"
-                          min={0}
-                          value={tax}
-                          onChange={(e) => setTax(e.target.value)}
-                          placeholder="0"
-                        />
-                      </Field>
-                      <Field>
-                        <FieldLabel htmlFor="advance">
-                          {onCredit ? "Advance paid" : "Amount received"}
-                        </FieldLabel>
-                        <Input
-                          id="advance"
-                          type="number"
-                          name="advance"
-                          min={0}
-                          value={advance}
-                          onChange={(e) => setAdvance(e.target.value)}
-                          placeholder="0"
-                        />
-                      </Field>
-                    </div>
-
-                    {isPartialPayment && (
-                      <div className="flex gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-xs text-amber-900 dark:text-amber-200">
-                        <AlertCircle className="mt-0.5 size-3.5 shrink-0" />
-                        <p>
-                          Partial payment will be recorded as credit with a
-                          default 15-day due date. Enable{" "}
-                          <strong>Credit sale</strong> below to set a custom due
-                          date and reason.
-                        </p>
-                      </div>
-                    )}
-
-                    {changeDue > 0 && !onCredit && (
-                      <p className="text-xs text-muted-foreground">
-                        Change due to customer:{" "}
-                        <span className="font-medium text-foreground">
-                          {formatDisplayAmount(changeDue)}
-                        </span>
-                      </p>
-                    )}
-                  </ProductFormSection>
-
-                  <ProductFormSection
-                    title="Credit sale"
-                    description="Enable when the full balance will be paid later."
-                    icon={FileClock}
-                    accent="orange"
-                  >
-                    <FieldLabel htmlFor="switch-credit" className="cursor-pointer">
-                      <Field orientation="horizontal">
-                        <FieldContent>
-                          <FieldTitle>Pay on credit</FieldTitle>
-                          <FieldDescription>
-                            Requires a due date and reason. Status is set to
-                            Credit automatically.
-                          </FieldDescription>
-                        </FieldContent>
-                        <Switch
-                          id="switch-credit"
-                          name="on-credit"
-                          checked={onCredit}
-                          onCheckedChange={setOnCredit}
-                        />
-                      </Field>
-                    </FieldLabel>
-                    <FieldError errors={[{ message: errors?.credit }]} />
-
-                    {onCredit && (
-                      <div className="grid gap-4">
-                        <Field>
-                          <FieldLabel htmlFor="due-date">Due date</FieldLabel>
-                          <PickerDropdown
-                            open={dueCalendarOpen}
-                            onOpenChange={setDueCalendarOpen}
-                            className="w-full sm:max-w-[280px]"
-                            matchTriggerWidth
-                            mobileCenter
-                            maxWidth={300}
-                            minWidth={260}
-                            trigger={
-                              <Button
-                                id="due-date"
-                                type="button"
-                                variant="outline"
-                                className={cn(
-                                  "h-10 w-full touch-manipulation justify-start text-left font-normal sm:h-9",
-                                  !dueDate && "text-muted-foreground",
-                                )}
-                                onClick={() =>
-                                  setDueCalendarOpen((prev) => !prev)
-                                }
-                              >
-                                <CalendarIcon className="mr-2 size-4 shrink-0" />
-                                <span className="truncate">
-                                  {dueDate
-                                    ? format(dueDate, "MMM d, yyyy")
-                                    : "Pick due date"}
-                                </span>
-                              </Button>
-                            }
-                          >
-                            <Calendar
-                              mode="single"
-                              selected={dueDate}
-                              onSelect={(date) => {
-                                setDueDate(date);
-                                if (date) setDueCalendarOpen(false);
-                              }}
-                              captionLayout="dropdown"
-                              defaultMonth={dueDate ?? new Date()}
-                              disabled={(date) => {
-                                const today = new Date();
-                                today.setHours(0, 0, 0, 0);
-                                return date < today;
-                              }}
-                              className="w-full p-1.5 sm:p-2"
-                              classNames={{
-                                months: "flex w-full flex-col",
-                                month: "w-full space-y-2",
-                                table: "w-full",
-                                day: "h-9 w-9 p-0 font-normal sm:h-8 sm:w-8",
-                              }}
-                            />
-                          </PickerDropdown>
-                          <input
-                            type="hidden"
-                            name="due-date"
-                            value={dueDate?.toISOString() ?? ""}
-                            required
-                          />
-                          <FieldError errors={[{ message: errors?.due }]} />
-                        </Field>
-                        <Field>
-                          <FieldLabel htmlFor="reason">Credit reason</FieldLabel>
-                          <Textarea
-                            id="reason"
-                            name="reason"
-                            rows={2}
-                            placeholder="e.g. Customer will pay at end of month"
-                            required
-                          />
-                          <FieldError errors={[{ message: errors?.reason }]} />
-                        </Field>
-                      </div>
-                    )}
-                  </ProductFormSection>
+              <div className="space-y-5">
+                <div className="space-y-2">
+                  <SectionLabel>Customer</SectionLabel>
+                  <ClientSelector allowWalkIn />
+                  <FieldError errors={[{ message: errors?.client }]} />
                 </div>
 
-                {/* Order summary sidebar */}
-                <aside className="lg:sticky lg:top-0 lg:self-start">
-                  <div className="rounded-xl border border-violet-500/20 bg-gradient-to-b from-violet-500/5 to-card p-4 shadow-sm">
-                    <h3 className="mb-3 text-sm font-semibold tracking-tight">
-                      Order summary
-                    </h3>
-                    <dl className="space-y-2 text-sm">
-                      <div className="flex justify-between text-muted-foreground">
-                        <dt>Subtotal</dt>
-                        <dd>{formatDisplayAmount(subtotal)}</dd>
-                      </div>
-                      {totalDiscount > 0 && (
-                        <div className="flex justify-between text-emerald-700 dark:text-emerald-400">
-                          <dt>Discounts</dt>
-                          <dd>−{formatDisplayAmount(totalDiscount)}</dd>
-                        </div>
-                      )}
-                      {taxAmount > 0 && (
-                        <div className="flex justify-between text-muted-foreground">
-                          <dt>Tax</dt>
-                          <dd>{formatDisplayAmount(taxAmount)}</dd>
-                        </div>
-                      )}
-                      <div className="flex justify-between border-t border-border pt-2 text-base font-semibold">
-                        <dt>Total</dt>
-                        <dd>{formatDisplayAmount(grandTotal)}</dd>
-                      </div>
-                      {paidAmount > 0 && (
-                        <div className="flex justify-between text-muted-foreground">
-                          <dt>Received</dt>
-                          <dd>{formatDisplayAmount(paidAmount)}</dd>
-                        </div>
-                      )}
-                      {balanceDue > 0 && (
-                        <div className="flex justify-between font-medium text-orange-700 dark:text-orange-400">
-                          <dt>Balance due</dt>
-                          <dd>{formatDisplayAmount(balanceDue)}</dd>
-                        </div>
-                      )}
-                      {changeDue > 0 && (
-                        <div className="flex justify-between font-medium text-blue-700 dark:text-blue-400">
-                          <dt>Change</dt>
-                          <dd>{formatDisplayAmount(changeDue)}</dd>
-                        </div>
-                      )}
-                    </dl>
-                    <p className="mt-3 text-xs text-muted-foreground">
-                      {lines.length} item{lines.length !== 1 ? "s" : ""} ·{" "}
-                      {onCredit ? "Credit sale" : "Standard sale"}
-                    </p>
+                <div className="space-y-2">
+                  <SectionLabel>Items</SectionLabel>
+                  <div className="flex gap-2">
+                    <Field className="min-w-0 flex-1">
+                      <FieldLabel htmlFor="code" className="sr-only">
+                        Barcode
+                      </FieldLabel>
+                      <InputGroup>
+                        <InputGroupInput
+                          ref={barcodeRef}
+                          id="code"
+                          name="code"
+                          type="text"
+                          value={CFD?.code ?? ""}
+                          onChange={(e) =>
+                            setCFD((p) => ({
+                              code: e.target.value,
+                              qty: p?.qty ?? 1,
+                            }))
+                          }
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              void handleAdd();
+                            }
+                          }}
+                          placeholder="Scan or enter barcode"
+                          className="h-9"
+                        />
+                        <InputGroupAddon align="inline-end">
+                          <Barcode className="size-4 text-muted-foreground" />
+                        </InputGroupAddon>
+                      </InputGroup>
+                    </Field>
+                    <Input
+                      id="qty"
+                      type="number"
+                      name="qty"
+                      min={1}
+                      value={CFD?.qty ?? 1}
+                      onChange={(e) =>
+                        setCFD((p) => ({
+                          code: p?.code ?? "",
+                          qty: Number(e.target.value) || 1,
+                        }))
+                      }
+                      className="h-9 w-14 px-2 text-center"
+                      aria-label="Quantity"
+                    />
+                    <Button
+                      variant="secondary"
+                      type="button"
+                      size="icon"
+                      className="size-9 shrink-0"
+                      onClick={() => void handleAdd()}
+                      disabled={isFetching}
+                    >
+                      {isFetching ? <Spinner /> : <Plus className="size-4" />}
+                    </Button>
                   </div>
-                </aside>
+
+                  <PosProductPicker
+                    className="w-full"
+                    defaultQty={CFD?.qty ?? 1}
+                    onAdd={(products) => {
+                      products.forEach((product) =>
+                        addProductLine(product, CFD?.qty ?? 1),
+                      );
+                    }}
+                  />
+
+                  <div className="overflow-hidden rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="hover:bg-transparent">
+                          <TableHead className="h-8 text-xs">Product</TableHead>
+                          <TableHead className="h-8 w-12 text-center text-xs">
+                            Qty
+                          </TableHead>
+                          <TableHead className="h-8 w-14 text-right text-xs">
+                            Disc.
+                          </TableHead>
+                          <TableHead className="h-8 text-right text-xs">
+                            Total
+                          </TableHead>
+                          <TableHead className="h-8 w-8" />
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {lines.map((pr) => {
+                          const lineDisc = (pr.discount || 0) * pr.qty;
+                          const lineTotal = pr.qty * pr.unit_price - lineDisc;
+                          return (
+                            <TableRow key={pr.id}>
+                              <TableCell className="max-w-[140px] py-2">
+                                <p className="truncate text-sm font-medium">
+                                  {pr.name}
+                                </p>
+                                <p className="text-[11px] text-muted-foreground">
+                                  {formatDisplayAmount(pr.unit_price)}
+                                </p>
+                              </TableCell>
+                              <TableCell className="py-2">
+                                <Input
+                                  className="h-7 w-11 px-1 text-center text-xs"
+                                  type="number"
+                                  min={1}
+                                  max={pr.quantity}
+                                  value={pr.qty}
+                                  onChange={(e) =>
+                                    updateQuantity(pr.id, Number(e.target.value))
+                                  }
+                                />
+                              </TableCell>
+                              <TableCell className="py-2">
+                                <Input
+                                  className="h-7 w-12 px-1 text-right text-xs"
+                                  type="number"
+                                  min={0}
+                                  max={pr.unit_price}
+                                  step={1}
+                                  value={pr.discount ?? 0}
+                                  onChange={(e) =>
+                                    updateLineDiscount(pr.id, e.target.value)
+                                  }
+                                  aria-label={`Discount for ${pr.name}`}
+                                />
+                              </TableCell>
+                              <TableCell className="py-2 text-right text-sm font-medium">
+                                {formatDisplayAmount(lineTotal)}
+                              </TableCell>
+                              <TableCell className="py-2">
+                                <Button
+                                  size="icon-sm"
+                                  variant="ghost"
+                                  type="button"
+                                  className="size-7"
+                                  onClick={() => removeLine(pr.id)}
+                                >
+                                  <Trash2 className="size-3.5 text-destructive" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                        {!lines.length && (
+                          <TableRow className="hover:bg-transparent">
+                            <TableCell
+                              colSpan={5}
+                              className="h-16 text-center text-xs text-muted-foreground"
+                            >
+                              No items added
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  <FieldError errors={[{ message: errors?.lines }]} />
+                </div>
+
+                <div className="space-y-3">
+                  <SectionLabel>Payment</SectionLabel>
+
+                  <div className="flex items-center justify-between gap-3 rounded-md border px-3 py-2.5">
+                    <span className="text-sm">Credit sale</span>
+                    <Switch
+                      id="switch-credit"
+                      name="on-credit"
+                      checked={onCredit}
+                      onCheckedChange={setOnCredit}
+                    />
+                  </div>
+                  <FieldError errors={[{ message: errors?.credit }]} />
+
+                  {!onCredit && (
+                    <Field>
+                      <FieldLabel htmlFor="method" className="text-xs">
+                        Method
+                      </FieldLabel>
+                      <Select
+                        name="method"
+                        required
+                        value={method}
+                        onValueChange={setMethod}
+                      >
+                        <SelectTrigger className="h-9 w-full" id="method">
+                          <SelectValue placeholder="Payment method" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {paymentMethodsAtCheckout.map((m) => (
+                            <SelectItem key={m.value} value={m.value}>
+                              <span className="flex items-center gap-2">
+                                <m.icon className="size-4 text-muted-foreground" />
+                                {m.label}
+                              </span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </Field>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field>
+                      <FieldLabel htmlFor="tax" className="text-xs">
+                        Tax
+                      </FieldLabel>
+                      <Input
+                        id="tax"
+                        type="number"
+                        name="tax"
+                        min={0}
+                        value={tax}
+                        onChange={(e) => setTax(e.target.value)}
+                        placeholder="0"
+                        className="h-9"
+                      />
+                    </Field>
+                    <Field>
+                      <FieldLabel htmlFor="advance" className="text-xs">
+                        {onCredit ? "Advance" : "Received"}
+                      </FieldLabel>
+                      <Input
+                        id="advance"
+                        type="number"
+                        name="advance"
+                        min={0}
+                        value={advance}
+                        onChange={(e) => setAdvance(e.target.value)}
+                        placeholder="0"
+                        className="h-9"
+                      />
+                    </Field>
+                  </div>
+
+                  {onCredit && (
+                    <div className="space-y-3 rounded-md border bg-muted/30 p-3">
+                      <Field>
+                        <FieldLabel htmlFor="due-date" className="text-xs">
+                          Due date
+                        </FieldLabel>
+                        <PickerDropdown
+                          open={dueCalendarOpen}
+                          onOpenChange={setDueCalendarOpen}
+                          className="w-full"
+                          matchTriggerWidth
+                          mobileCenter
+                          maxWidth={300}
+                          minWidth={260}
+                          trigger={
+                            <Button
+                              id="due-date"
+                              type="button"
+                              variant="outline"
+                              className={cn(
+                                "h-9 w-full justify-start text-left font-normal",
+                                !dueDate && "text-muted-foreground",
+                              )}
+                              onClick={() =>
+                                setDueCalendarOpen((prev) => !prev)
+                              }
+                            >
+                              <CalendarIcon className="mr-2 size-4 shrink-0" />
+                              <span className="truncate">
+                                {dueDate
+                                  ? format(dueDate, "MMM d, yyyy")
+                                  : "Select date"}
+                              </span>
+                            </Button>
+                          }
+                        >
+                          <Calendar
+                            mode="single"
+                            selected={dueDate}
+                            onSelect={(date) => {
+                              setDueDate(date);
+                              if (date) setDueCalendarOpen(false);
+                            }}
+                            captionLayout="dropdown"
+                            defaultMonth={dueDate ?? new Date()}
+                            disabled={(date) => {
+                              const today = new Date();
+                              today.setHours(0, 0, 0, 0);
+                              return date < today;
+                            }}
+                            className="w-full p-1.5 sm:p-2"
+                            classNames={{
+                              months: "flex w-full flex-col",
+                              month: "w-full space-y-2",
+                              table: "w-full",
+                              day: "h-9 w-9 p-0 font-normal sm:h-8 sm:w-8",
+                            }}
+                          />
+                        </PickerDropdown>
+                        <input
+                          type="hidden"
+                          name="due-date"
+                          value={dueDate?.toISOString() ?? ""}
+                          required
+                        />
+                        <FieldError errors={[{ message: errors?.due }]} />
+                      </Field>
+                      <Field>
+                        <FieldLabel htmlFor="reason" className="text-xs">
+                          Reason
+                        </FieldLabel>
+                        <Textarea
+                          id="reason"
+                          name="reason"
+                          rows={2}
+                          placeholder="Why is this on credit?"
+                          required
+                          className="min-h-[60px] resize-none text-sm"
+                        />
+                        <FieldError errors={[{ message: errors?.reason }]} />
+                      </Field>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
-            <DrawerFooter className="flex-row items-center justify-end gap-2 border-t border-border bg-muted/30 px-6 py-4">
-              <DrawerClose asChild>
-                <Button variant="outline" size="sm" type="button">
-                  Cancel
+            <div className="shrink-0 border-t bg-muted/20 px-5 py-3">
+              <div className="mb-3 flex items-end justify-between gap-4 text-sm">
+                <div className="space-y-0.5 text-muted-foreground">
+                  <p>
+                    {lines.length} item{lines.length !== 1 ? "s" : ""}
+                    {totalDiscount > 0 && (
+                      <span className="ml-1.5 text-emerald-600 dark:text-emerald-400">
+                        · −{formatDisplayAmount(totalDiscount)} disc.
+                      </span>
+                    )}
+                  </p>
+                  {balanceDue > 0 && (
+                    <p className="text-orange-600 dark:text-orange-400">
+                      Due {formatDisplayAmount(balanceDue)}
+                    </p>
+                  )}
+                  {changeDue > 0 && !onCredit && (
+                    <p>
+                      Change {formatDisplayAmount(changeDue)}
+                    </p>
+                  )}
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-muted-foreground">Total</p>
+                  <p className="text-xl font-semibold tabular-nums">
+                    {formatDisplayAmount(grandTotal)}
+                  </p>
+                </div>
+              </div>
+
+              <DialogFooter className="gap-2 sm:justify-end">
+                <DialogClose asChild>
+                  <Button variant="outline" size="sm" type="button">
+                    Cancel
+                  </Button>
+                </DialogClose>
+                <Button
+                  size="sm"
+                  type="submit"
+                  disabled={isAdding || !lines.length}
+                  className="auth-submit-btn min-w-[110px] border-0"
+                >
+                  {isAdding && <Spinner />}
+                  Complete sale
                 </Button>
-              </DrawerClose>
-              <Button
-                size="sm"
-                type="submit"
-                disabled={isAdding || !lines.length}
-                className="auth-submit-btn min-w-[120px] border-0"
-              >
-                {isAdding && <Spinner />}
-                Complete sale
-              </Button>
-            </DrawerFooter>
+              </DialogFooter>
+            </div>
           </Form>
-        </DrawerContent>
-      </Drawer>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

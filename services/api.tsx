@@ -480,21 +480,50 @@ export async function handleClientActions({
   const address = formData.get("address") as string | undefined;
   const phone_number = formData.get("phone") as string | undefined;
 
+  const clientId = formData.get("id") as string | undefined;
+
   const errors: Record<string, string> = {};
-  // if (!lines?.length) errors.lines = "Please add products to the invoice.";
-  if (Object.keys(errors).length > 0) return { success: false, errors };
+  if (!name?.trim()) errors.name = "Please provide a customer name.";
+  if (Object.keys(errors).length > 0) {
+    const firstError = Object.values(errors).find(Boolean);
+    return {
+      success: false,
+      errors,
+      message: firstError ?? "Please fix the form errors.",
+    };
+  }
+
+  const normalizedType = (customer_type?.toUpperCase() ?? "REGULAR") as
+    | "REGULAR"
+    | "WHOLESALER";
 
   switch (intent) {
     case "add-client": {
       if (session?.accessToken)
         return await organisationsApi.createClient(session.accessToken, {
           business_id: id,
-          name,
-          customer_type: customer_type.toUpperCase() as Customer,
-          address,
-          email,
-          phone_number,
+          name: name.trim(),
+          customer_type: normalizedType,
+          address: address?.trim() || undefined,
+          email: email?.trim() || undefined,
+          phone_number: phone_number?.trim() || undefined,
         });
+      break;
+    }
+
+    case "update-client": {
+      if (session?.accessToken && clientId)
+        return await organisationsApi.updateClient(
+          session.accessToken,
+          clientId,
+          {
+            name: name.trim(),
+            customer_type: normalizedType,
+            address: address?.trim() || undefined,
+            email: email?.trim() || undefined,
+            phone_number: phone_number?.trim() || undefined,
+          },
+        );
       break;
     }
 

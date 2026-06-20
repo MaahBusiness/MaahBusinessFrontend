@@ -159,7 +159,7 @@ export const types = [
 
 export const visibles = [
   { value: "id", label: "ID" },
-  { value: "total", label: "Total Purchases" },
+  { value: "total", label: "Total spent" },
   { value: "points", label: "Loyalty Points" },
   { value: "created", label: "Date Created" },
   { value: "updated", label: "Date Updated" },

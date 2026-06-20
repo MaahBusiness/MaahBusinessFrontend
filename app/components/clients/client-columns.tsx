@@ -5,9 +5,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import type { Client } from "types";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import { formatDisplayAmount } from "utils";
+import { cn } from "@/lib/utils";
 import { types } from "@/routes/dashboard/clients/data";
 import { ClientTableContextMenu } from "@/components/clients/client-table-context-menu";
 import { ClientTableRowActions } from "@/components/clients/client-table-row-actions";
+import { ClientDetailsDrawer } from "@/components/clients/client-dialogs";
 import { Avatar, BoringFallback } from "@/components/ui/avatar";
 
 export const clientCols: ColumnDef<Client>[] = [
@@ -71,13 +73,21 @@ export const clientCols: ColumnDef<Client>[] = [
         title={row.getValue("name")}
         {...{ cell }}
       >
-        {/* <Link to={`../products/${row.original.id}`} className="hover:underline"> */}
-        <Avatar className="size-5">
-          <BoringFallback name={row.getValue("name")} />
-        </Avatar>
-
-        {row.getValue("name")}
-        {/* </Link> */}
+        <ClientDetailsDrawer
+          client={row.original}
+          trigger={
+            <button
+              type="button"
+              className="flex min-w-0 items-center gap-2 text-left transition hover:text-emerald-700 hover:underline dark:hover:text-emerald-400"
+              title={`View ${row.original.name}`}
+            >
+              <Avatar className="size-5">
+                <BoringFallback name={row.getValue("name")} />
+              </Avatar>
+              <span className="truncate">{row.getValue("name")}</span>
+            </button>
+          }
+        />
       </ClientTableContextMenu>
     ),
     enableHiding: false,
@@ -172,15 +182,21 @@ export const clientCols: ColumnDef<Client>[] = [
       <DataTableColumnHeader
         column={column}
         className="text-center"
-        title="Total Amount"
+        title="Total spent"
       />
     ),
     cell: ({ row, cell }) => {
-      const amount = parseFloat(row.getValue("total"));
+      const amount = Number(row.original.total_purchases ?? 0);
 
       return (
-        <ClientTableContextMenu {...{ cell }} className=" font-medium">
-          <span>{formatDisplayAmount(row.getValue("total"))}</span>
+        <ClientTableContextMenu
+          {...{ cell }}
+          className={cn(
+            "font-medium",
+            amount > 0 && "text-emerald-700 dark:text-emerald-400",
+          )}
+        >
+          <span>{formatDisplayAmount(amount)}</span>
         </ClientTableContextMenu>
       );
     },
@@ -258,6 +274,8 @@ export const clientCols: ColumnDef<Client>[] = [
   },
   {
     id: "actions",
+    header: () => <span className="sr-only">Actions</span>,
     cell: ({ row }) => <ClientTableRowActions row={row} />,
+    enableHiding: false,
   },
 ];

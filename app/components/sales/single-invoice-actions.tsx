@@ -38,7 +38,13 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-import { hasPermission } from "utils/permissions";
+import {
+  canArchiveInvoice,
+  canHardDeleteInvoice,
+  canRecordInvoicePayment,
+  hasPermission,
+  invoiceHasOutstandingBalance,
+} from "utils/permissions";
 import { Drawer, DrawerTrigger } from "@/components/ui/drawer";
 import { toast } from "sonner";
 import { useClipboard } from "@/hooks/useClipboard";
@@ -153,15 +159,15 @@ export function SingleInvoiceActions({ data }: { data: Invoice }) {
           Generate Receipt
         </Button>
 
-        {hasPermission(businessMember?.role, "invoice:create") ? (
-          data.remaining_amount > 0 ? (
-            <DialogTrigger asChild>
-              <Button variant={"outline"} onClick={() => setOpen("credit")}>
-                <BadgePlus className="size-4" />
-                Credit
-              </Button>
-            </DialogTrigger>
-          ) : data.refund_amount > 0 ? (
+        {canRecordInvoicePayment(businessMember?.role) &&
+        invoiceHasOutstandingBalance(data) ? (
+          <DialogTrigger asChild>
+            <Button variant={"outline"} onClick={() => setOpen("credit")}>
+              <BadgePlus className="size-4" />
+              Record payment
+            </Button>
+          </DialogTrigger>
+        ) : data.refund_amount > 0 ? (
             <DialogTrigger asChild disabled>
               <Button
                 variant={"outline"}
@@ -174,10 +180,7 @@ export function SingleInvoiceActions({ data }: { data: Invoice }) {
             </DialogTrigger>
           ) : (
             <></>
-          )
-        ) : (
-          <></>
-        )}
+          )}
 
         <Drawer direction="right">
           <AlertDialog>
@@ -216,22 +219,24 @@ export function SingleInvoiceActions({ data }: { data: Invoice }) {
                   )}
                 </DropdownMenuGroup>
 
-                {hasPermission(businessMember?.role, "invoice:delete") && (
+                {canArchiveInvoice(businessMember?.role) && (
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuGroup>
-                      <AlertDialogTrigger asChild>
-                        <DropdownMenuItem
-                          className="text-xs px-1.5 py-1"
-                          variant="destructive"
-                          onClick={() => setOpen("cancel")}
-                        >
-                          Cancel invoice
-                          <DropdownMenuShortcut>
-                            <CircleSlash className="size-3 text-destructive" />
-                          </DropdownMenuShortcut>
-                        </DropdownMenuItem>
-                      </AlertDialogTrigger>
+                      {canHardDeleteInvoice(businessMember?.role) && (
+                        <AlertDialogTrigger asChild>
+                          <DropdownMenuItem
+                            className="text-xs px-1.5 py-1"
+                            variant="destructive"
+                            onClick={() => setOpen("cancel")}
+                          >
+                            Cancel invoice
+                            <DropdownMenuShortcut>
+                              <CircleSlash className="size-3 text-destructive" />
+                            </DropdownMenuShortcut>
+                          </DropdownMenuItem>
+                        </AlertDialogTrigger>
+                      )}
 
                       <AlertDialogTrigger asChild>
                         <DropdownMenuItem
@@ -239,25 +244,33 @@ export function SingleInvoiceActions({ data }: { data: Invoice }) {
                           variant="destructive"
                           onClick={() => setOpen("archive")}
                         >
-                          Archive invoice
+                          {businessMember.role === "cashier"
+                            ? "Remove invoice"
+                            : "Archive invoice"}
                           <DropdownMenuShortcut>
-                            <Archive className="size-3 text-destructive" />
+                            {businessMember.role === "cashier" ? (
+                              <Trash2 className="size-3 text-destructive" />
+                            ) : (
+                              <Archive className="size-3 text-destructive" />
+                            )}
                           </DropdownMenuShortcut>
                         </DropdownMenuItem>
                       </AlertDialogTrigger>
 
-                      <AlertDialogTrigger asChild>
-                        <DropdownMenuItem
-                          className="text-xs px-1.5 py-1"
-                          variant="destructive"
-                          onClick={() => setOpen("delete")}
-                        >
-                          Delete invoice
-                          <DropdownMenuShortcut>
-                            <Trash2 className="size-3 text-destructive" />
-                          </DropdownMenuShortcut>
-                        </DropdownMenuItem>
-                      </AlertDialogTrigger>
+                      {canHardDeleteInvoice(businessMember?.role) && (
+                        <AlertDialogTrigger asChild>
+                          <DropdownMenuItem
+                            className="text-xs px-1.5 py-1"
+                            variant="destructive"
+                            onClick={() => setOpen("delete")}
+                          >
+                            Delete permanently
+                            <DropdownMenuShortcut>
+                              <Trash2 className="size-3 text-destructive" />
+                            </DropdownMenuShortcut>
+                          </DropdownMenuItem>
+                        </AlertDialogTrigger>
+                      )}
                     </DropdownMenuGroup>
                   </>
                 )}
@@ -641,7 +654,7 @@ function CreditContent({
 
         <DialogHeader className="p-6 py-4 border-b border-border">
           <DialogTitle className="text-base">
-            Apply credit to Invoice #{number}
+            Record payment — Invoice #{number}
           </DialogTitle>
         </DialogHeader>
         <div className="no-scrollbar -mx-4 max-h-[50vh] overflow-y-auto px-4">
@@ -698,13 +711,16 @@ function CreditContent({
           </DialogClose>
           <Button type="submit" size={"sm"} disabled={isLoading}>
             {isLoading && <Spinner className="size-4" />}
-            Apply Credit
+            Apply payment
           </Button>
         </DialogFooter>
       </Form>
     </>
   );
 }
+
+/** Shared payment form — posts `credit-invoice` to the current route action. */
+export { CreditContent as InvoicePaymentFormContent };
 
 function RefundContent({
   id,

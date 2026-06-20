@@ -40,6 +40,7 @@ import { organisationKeys } from "@/lib/api/organisation";
 import { orgPath } from "@/lib/org-navigation";
 import { OrgPageShell } from "@/components/layout/org-page-shell";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import { getSession } from "@/lib/session.server";
 import { RequestFailed } from "@/routes/404";
 import { methods, statuses } from "@/routes/dashboard/sales/data";
@@ -184,8 +185,11 @@ export default function SingleInvoicepage({
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              {status?.icon && <status.icon className="size-4" />}
-              <Badge variant="secondary" className="capitalize">
+              <Badge
+                variant="outline"
+                className={cn("gap-1 capitalize", status?.badgeClassName)}
+              >
+                {status?.icon && <status.icon className="size-3.5" />}
                 {status?.label ?? data.status}
               </Badge>
               <Badge variant="outline">

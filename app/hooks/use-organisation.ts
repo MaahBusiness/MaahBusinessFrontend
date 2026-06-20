@@ -314,6 +314,24 @@ export function useOrganisation() {
     },
   });
 
+  const removeClient = useMutation({
+    mutationFn: async (clientId: string) => {
+      if (!accessToken) throw rdr;
+      return organisationsApi.removeClient(accessToken, clientId);
+    },
+    onSuccess: (res) => {
+      if (res.success) {
+        queryClient.invalidateQueries({
+          queryKey: organisationKeys.clientList(orgId),
+        });
+        toast.success(res.message ?? "Customer removed successfully.");
+      } else toast.error(res.message ?? "Could not remove customer.");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
   const removeinvoice = useMutation({
     mutationFn: async (id: string) => {
       if (!accessToken) throw rdr;
@@ -343,8 +361,12 @@ export function useOrganisation() {
     },
     onSuccess: (res) => {
       if (res.success) {
-        // Automatically refetch product
-        queryClient.invalidateQueries({ queryKey: ["invoice"] });
+        queryClient.invalidateQueries({
+          queryKey: organisationKeys.invoiceList(orgId),
+        });
+        queryClient.invalidateQueries({
+          queryKey: organisationKeys.invoices(orgId),
+        });
         toast.success("The invoice has been archived successfully!");
       } else toast.error(res.message);
     },
@@ -512,6 +534,10 @@ export function useOrganisation() {
     removeProduct: removeProduct.mutate,
     isRemovingProduct: removeProduct.isPending,
     removeProductState: removeProduct.data,
+
+    removeClient: removeClient.mutate,
+    isRemovingClient: removeClient.isPending,
+    removeClientState: removeClient.data,
 
     scanCode: barcodeQuery,
     generateReceipt: printQuery,

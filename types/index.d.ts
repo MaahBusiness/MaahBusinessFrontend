@@ -125,6 +125,36 @@ export interface OrganisationCustomers {
   updated_at: string;
 }
 
+/** Customer record returned by the customers API */
+export type Client = OrganisationCustomers;
+
+export interface ClientFilters {
+  name?: string;
+  customer_type?: string;
+  search?: string;
+  page?: number;
+  page_size?: number;
+  order_by?: string;
+}
+
+export interface ClientCreateParams {
+  business_id: string;
+  name: string;
+  customer_type?: "REGULAR" | "WHOLESALER";
+  email?: string;
+  phone_number?: string;
+  address?: string;
+}
+
+export interface ClientUpdateParams {
+  id?: string;
+  name?: string;
+  customer_type?: "REGULAR" | "WHOLESALER";
+  email?: string;
+  phone_number?: string;
+  address?: string;
+}
+
 export interface CreditCreate {
   customer_id: string;
   invoice_id: string;

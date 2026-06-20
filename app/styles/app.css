@@ -1,7 +1,4 @@
 @import "../../node_modules/tw-animate-css/dist/tw-animate.css";
-/*---break---*/
-@custom-variant dark (&:is(.dark *));
-/*---break---*/
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
