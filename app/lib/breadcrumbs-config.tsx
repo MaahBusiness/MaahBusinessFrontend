@@ -185,16 +185,13 @@ export const breadcrumbsConfig: BreadcrumbConfig = {
     },
   ],
 
-  // ALL products routes (top-level + nested)
+  // ALL invoice / sales routes — org switcher only
   "/dashboard/org/:id/invoices/*": [
     { label: "Dashboard", icon: Home, href: "/dashboard", hidden: true },
     {
-      label: (params) => params.id, // Will be replaced by org name
+      label: (params) => params.id,
       href: (params) => `/dashboard/org/${params.id}/home`,
-      isOrgSwitcher: true, // Renders as dropdown
-    },
-    {
-      label: "Sales & Invoices",
+      isOrgSwitcher: true,
     },
   ],
 

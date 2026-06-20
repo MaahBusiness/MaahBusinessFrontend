@@ -13,11 +13,7 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { PickerDropdown } from "@/components/sales/picker-dropdown";
 import { Separator } from "@/components/ui/separator";
 import { useSearchParams } from "react-router";
 
@@ -35,6 +31,7 @@ export function ParamsFacetedFilter<TData, TValue>({
   title,
   options,
 }: ParamsFacetedFilterProps<TData, TValue>) {
+  const [open, setOpen] = React.useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
 
   const paramPairs = React.useMemo(() => {
@@ -57,9 +54,20 @@ export function ParamsFacetedFilter<TData, TValue>({
   }, [options, paramPairs]);
 
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" className="h-8 border-dashed">
+    <PickerDropdown
+      open={open}
+      onOpenChange={setOpen}
+      minWidth={220}
+      maxWidth={320}
+      mobileCenter
+      trigger={
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-8 border-dashed"
+          onClick={() => setOpen((prev) => !prev)}
+        >
           <PlusCircle />
           {title}
           {selectedValues?.size > 0 && (
@@ -100,74 +108,74 @@ export function ParamsFacetedFilter<TData, TValue>({
             </>
           )}
         </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[200px] p-0" align="start">
-        <Command>
-          <CommandInput placeholder={title} />
-          <CommandList>
-            <CommandEmpty>No results found.</CommandEmpty>
-            <CommandGroup>
-              {options.map((option) => {
-                const isSelected = selectedValues.has(
-                  `${option.key}:${option.value}`,
-                );
-                return (
-                  <CommandItem
-                    key={option.value}
-                    onSelect={() => {
-                      const id = `${option.key}:${option.value}`;
-
-                      if (isSelected) selectedValues.delete(id);
-                      else selectedValues.add(id);
-
-                      setSearchParams((_params) => {
-                        _params.has(option.key)
-                          ? _params.delete(option.key)
-                          : _params.set(option.key, option.value);
-                        return _params;
-                      });
-                    }}
-                  >
-                    <div
-                      className={cn(
-                        "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
-                        isSelected
-                          ? "bg-primary text-primary-foreground"
-                          : "opacity-50 [&_svg]:invisible",
-                      )}
-                    >
-                      <Check />
-                    </div>
-                    {option.icon && (
-                      <option.icon className="mr-2 h-4 w-4 text-muted-foreground" />
+      }
+    >
+      <Command>
+        <CommandInput placeholder={title} />
+        <CommandList>
+          <CommandEmpty>No results found.</CommandEmpty>
+          <CommandGroup>
+            {options.map((option) => {
+              const isSelected = selectedValues.has(
+                `${option.key}:${option.value}`,
+              );
+              return (
+                <CommandItem
+                  key={option.value}
+                  onSelect={() => {
+                    setSearchParams((params) => {
+                      const next = new URLSearchParams(params);
+                      if (isSelected) {
+                        next.delete(option.key);
+                      } else {
+                        next.set(option.key, option.value);
+                      }
+                      return next;
+                    });
+                    setOpen(false);
+                  }}
+                >
+                  <div
+                    className={cn(
+                      "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
+                      isSelected
+                        ? "bg-primary text-primary-foreground"
+                        : "opacity-50 [&_svg]:invisible",
                     )}
-                    <span>{option.label}</span>
-                  </CommandItem>
-                );
-              })}
-            </CommandGroup>
-            {selectedValues.size > 0 && (
-              <>
-                <CommandSeparator />
-
-                <CommandGroup>
-                  <CommandItem
-                    onSelect={() => {
-                      setSearchParams((_params) => {
-                        options.forEach((o) => _params.delete(o.key));
-                        return _params;
-                      });
-                    }}
-                    className="justify-center text-center"
                   >
-                    Clear filters
-                  </CommandItem>
-                </CommandGroup>
-              </>
-            )}
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+                    <Check />
+                  </div>
+                  {option.icon && (
+                    <option.icon className="mr-2 h-4 w-4 text-muted-foreground" />
+                  )}
+                  <span>{option.label}</span>
+                </CommandItem>
+              );
+            })}
+          </CommandGroup>
+          {selectedValues.size > 0 && (
+            <>
+              <CommandSeparator />
+
+              <CommandGroup>
+                <CommandItem
+                  onSelect={() => {
+                    setSearchParams((params) => {
+                      const next = new URLSearchParams(params);
+                      options.forEach((o) => next.delete(o.key));
+                      return next;
+                    });
+                    setOpen(false);
+                  }}
+                  className="justify-center text-center"
+                >
+                  Clear filters
+                </CommandItem>
+              </CommandGroup>
+            </>
+          )}
+        </CommandList>
+      </Command>
+    </PickerDropdown>
   );
 }

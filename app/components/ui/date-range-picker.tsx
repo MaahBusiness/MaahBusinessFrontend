@@ -6,6 +6,7 @@ import { Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
+import { PickerDropdown } from "@/components/sales/picker-dropdown";
 import {
   Popover,
   PopoverContent,
@@ -209,6 +210,14 @@ export interface DateRangePickerProps {
    * @default "end"
    */
   align?: "start" | "center" | "end";
+
+  /**
+   * Use a fixed-position portal (works inside overflow-hidden containers).
+   *
+   * @type {boolean}
+   * @default false
+   */
+  useFixedPortal?: boolean;
 }
 
 /**
@@ -267,6 +276,7 @@ export function DateRangePicker({
   buttonClassName,
   buttonSize,
   align = "end",
+  useFixedPortal = false,
 }: DateRangePickerProps) {
   const [open, setOpen] = React.useState(false);
   const [internalRange, setInternalRange] = React.useState<
@@ -282,11 +292,67 @@ export function DateRangePicker({
     setInternalRange(range);
     onChange?.(range);
 
-    // Close popover when both dates are selected
     if (range?.from && range?.to && closeOnSelect) {
       setOpen(false);
     }
   };
+
+  const triggerButton = (
+    <Button
+      id={id || name}
+      type="button"
+      variant="outline"
+      disabled={disabled}
+      size={buttonSize}
+      className={cn(
+        "justify-start text-left font-normal",
+        !internalRange && "text-muted-foreground",
+        buttonClassName,
+      )}
+      onClick={
+        useFixedPortal && !disabled
+          ? () => setOpen((prev) => !prev)
+          : undefined
+      }
+    >
+      <CalendarIcon className="mr-2 h-4 w-4" />
+      {internalRange?.from ? (
+        internalRange.to ? (
+          <>
+            {format(internalRange.from, dateFormat)} -{" "}
+            {format(internalRange.to, dateFormat)}
+          </>
+        ) : (
+          format(internalRange.from, dateFormat)
+        )
+      ) : (
+        <span>{placeholder}</span>
+      )}
+    </Button>
+  );
+
+  const calendar = (
+    <Calendar
+      initialFocus
+      mode="range"
+      defaultMonth={internalRange?.from}
+      selected={internalRange}
+      onSelect={handleSelect}
+      numberOfMonths={numberOfMonths}
+      disabled={(date) => {
+        if (minDate && date < minDate) return true;
+        if (maxDate && date > maxDate) return true;
+        if (
+          disabledDates?.some(
+            (d) => d.toDateString() === date.toDateString(),
+          )
+        ) {
+          return true;
+        }
+        return false;
+      }}
+    />
+  );
 
   return (
     <div className={cn("flex flex-col gap-2", className)}>
@@ -298,58 +364,27 @@ export function DateRangePicker({
       )}
 
       <div>
-        <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              id={id || name}
-              type="button"
-              variant="outline"
-              disabled={disabled}
-              size={buttonSize}
-              className={cn(
-                "justify-start text-left font-normal",
-                !internalRange && "text-muted-foreground",
-                buttonClassName,
-              )}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {internalRange?.from ? (
-                internalRange.to ? (
-                  <>
-                    {format(internalRange.from, dateFormat)} -{" "}
-                    {format(internalRange.to, dateFormat)}
-                  </>
-                ) : (
-                  format(internalRange.from, dateFormat)
-                )
-              ) : (
-                <span>{placeholder}</span>
-              )}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align={align}>
-            <Calendar
-              initialFocus
-              mode="range"
-              defaultMonth={internalRange?.from}
-              selected={internalRange}
-              onSelect={handleSelect}
-              numberOfMonths={numberOfMonths}
-              disabled={(date) => {
-                if (minDate && date < minDate) return true;
-                if (maxDate && date > maxDate) return true;
-                if (
-                  disabledDates?.some(
-                    (d) => d.toDateString() === date.toDateString(),
-                  )
-                ) {
-                  return true;
-                }
-                return false;
-              }}
-            />
-          </PopoverContent>
-        </Popover>
+        {useFixedPortal ? (
+          <PickerDropdown
+            open={open}
+            onOpenChange={setOpen}
+            align={align === "end" ? "end" : "start"}
+            minWidth={numberOfMonths > 1 ? 560 : 280}
+            maxWidth={numberOfMonths > 1 ? 560 : 320}
+            matchTriggerWidth={numberOfMonths <= 1}
+            mobileCenter
+            trigger={triggerButton}
+          >
+            <div className="p-0">{calendar}</div>
+          </PickerDropdown>
+        ) : (
+          <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>{triggerButton}</PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align={align}>
+              {calendar}
+            </PopoverContent>
+          </Popover>
+        )}
       </div>
 
       {error && <FieldError>{error}</FieldError>}
