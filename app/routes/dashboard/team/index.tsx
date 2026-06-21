@@ -6,6 +6,7 @@ import { DataTable } from "@/components/ui/data-table";
 import { useAuth } from "@/contexts/auth-context";
 import { useOrganisation } from "@/hooks/use-organisation";
 import { organisationKeys, organisationsApi } from "@/lib/api/organisation";
+import { invalidateOrgDashboard } from "@/lib/api/dashboard";
 import { getSession } from "@/lib/session.server";
 import { RequestFailed } from "@/routes/404";
 import { useQueryClient } from "@tanstack/react-query";
@@ -121,11 +122,12 @@ export default function TeamPage({ actionData }: Route.ComponentProps) {
     }
 
     if (actionData?.success) {
-      if (id)
-        // Automatically refetch members
+      if (id) {
         queryClient.invalidateQueries({
           queryKey: organisationKeys.members(id),
         });
+        void invalidateOrgDashboard(queryClient, id);
+      }
 
       if (intent === "update-member" && actionData?.success)
         toast.success(

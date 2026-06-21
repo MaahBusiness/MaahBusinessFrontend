@@ -20,12 +20,10 @@ import {
 } from "@/components/ui/popover";
 import { Link, Navigate, useNavigate } from "react-router";
 import { Badge } from "@/components/ui/badge";
-import { BreadcrumbLink } from "@/components/ui/breadcrumb";
 import { useAuth } from "@/contexts/auth-context";
 import { useQuery } from "@tanstack/react-query";
 import { organisationKeys, organisationsApi } from "@/lib/api/organisation";
 import { capitalizeFirstChar, extractImageUrl, genericErrorState } from "utils";
-import { Spinner } from "@/components/ui/spinner";
 import { Skeleton } from "@/components/ui/skeleton";
 
 type PopoverTriggerProps = React.ComponentPropsWithoutRef<
@@ -59,12 +57,19 @@ export default function TeamSwitcher({ currentId }: TeamSwitcherProps) {
     enabled: !!accessToken && !!currentId,
   });
 
-  if (isLoading || !res?.success)
+  if (isLoading && !res)
     return (
-      <div className="flex items-center gap-2">
+      <div className="flex h-8 min-w-[10rem] items-center gap-2">
         <Skeleton className="size-5 shrink-0 rounded-full" />
-        <Skeleton className="h-4 w-12" />
-        <Spinner className="size-4 text-muted-foreground" />
+        <Skeleton className="h-4 w-24" />
+      </div>
+    );
+
+  if (!res?.success)
+    return (
+      <div className="flex h-8 min-w-[10rem] items-center gap-2">
+        <Skeleton className="size-5 shrink-0 rounded-full" />
+        <Skeleton className="h-4 w-24" />
       </div>
     );
 
@@ -94,25 +99,23 @@ export default function TeamSwitcher({ currentId }: TeamSwitcherProps) {
 
   return (
     <div className="flex items-center gap-1">
-      <BreadcrumbLink asChild>
-        <Link
-          to={`/dashboard/org/${selected?.id}/home`}
-          className="flex items-center gap-2"
-        >
-          <Avatar className="h-5 w-5">
-            <AvatarImage
-              src={extractImageUrl(selected?.logo_url ?? "") ?? undefined}
-              alt={selected?.unique_name}
-              // className="grayscale"
-            />
-            <BoringFallback name={selected?.unique_name} />
-          </Avatar>
-          <span className="text-xxs tablet:text-sm">{selected?.name} </span>
-          <Badge variant="secondary" className="text-[10px] tablet:text-xxs">
-            {role && capitalizeFirstChar(role)}
-          </Badge>
-        </Link>
-      </BreadcrumbLink>
+      <Link
+        to={`/dashboard/org/${selected?.id}/home`}
+        className="flex items-center gap-2 transition-colors hover:text-foreground"
+      >
+        <Avatar className="h-5 w-5">
+          <AvatarImage
+            src={extractImageUrl(selected?.logo_url ?? "") ?? undefined}
+            alt={selected?.unique_name}
+            // className="grayscale"
+          />
+          <BoringFallback name={selected?.unique_name} />
+        </Avatar>
+        <span className="text-xxs tablet:text-sm">{selected?.name} </span>
+        <Badge variant="secondary" className="text-[10px] tablet:text-xxs">
+          {role && capitalizeFirstChar(role)}
+        </Badge>
+      </Link>
 
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>

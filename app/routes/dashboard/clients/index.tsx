@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/empty";
 import { useOrganisation } from "@/hooks/use-organisation";
 import { organisationKeys } from "@/lib/api/organisation";
+import { invalidateOrgDashboard } from "@/lib/api/dashboard";
 import { getSession } from "@/lib/session.server";
 import { RequestFailed } from "@/routes/404";
 import { useQueryClient } from "@tanstack/react-query";
@@ -69,10 +70,12 @@ export default function ClientsPage({ actionData }: Route.ComponentProps) {
     }
 
     if (actionData?.success) {
-      if (id)
+      if (id) {
         queryClient.invalidateQueries({
           queryKey: organisationKeys.clientList(id, filters),
         });
+        void invalidateOrgDashboard(queryClient, id);
+      }
 
       if (intent === "add-client")
         toast.success(`${actionData.data?.name} has been added succesfully!`);

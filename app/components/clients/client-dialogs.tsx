@@ -32,6 +32,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -297,6 +298,31 @@ function formatDate(value?: string) {
   });
 }
 
+function ClientDetailsSkeleton() {
+  return (
+    <div className="min-h-[28rem] space-y-6">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Skeleton className="h-28 rounded-xl sm:col-span-2" />
+        <Skeleton className="h-20 rounded-xl" />
+        <Skeleton className="h-20 rounded-xl" />
+      </div>
+      <div className="space-y-3">
+        <Skeleton className="h-4 w-36" />
+        <Skeleton className="h-32 w-full rounded-xl" />
+      </div>
+      <div className="space-y-3">
+        <Skeleton className="h-4 w-32" />
+        <Skeleton className="h-24 w-full rounded-xl" />
+      </div>
+      <div className="space-y-3">
+        <Skeleton className="h-4 w-20" />
+        <Skeleton className="h-16 w-full rounded-xl" />
+        <Skeleton className="h-16 w-full rounded-xl" />
+      </div>
+    </div>
+  );
+}
+
 export function ClientDetailsDialog({
   client,
   open: openProp,
@@ -349,10 +375,8 @@ export function ClientDetailsDialog({
           </DialogHeader>
 
           <div className="no-scrollbar flex-1 overflow-y-auto bg-muted/10 px-6 py-5">
-            {isLoading ? (
-              <div className="flex items-center justify-center py-16">
-                <Spinner className="size-6" />
-              </div>
+            {isLoading && !detailRes ? (
+              <ClientDetailsSkeleton />
             ) : (
               <>
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -561,13 +585,15 @@ export function ClientDetailsDialog({
         </DialogContent>
       </Dialog>
 
-      {selectedInvoiceId ? (
-        <InvoiceReceiptDialog
-          invoiceId={selectedInvoiceId}
-          open={invoiceOpen}
-          onOpenChange={setInvoiceOpen}
-        />
-      ) : null}
+      <InvoiceReceiptDialog
+        invoiceId={selectedInvoiceId ?? ""}
+        open={invoiceOpen && !!selectedInvoiceId}
+        stacked
+        onOpenChange={(nextOpen) => {
+          setInvoiceOpen(nextOpen);
+          if (!nextOpen) setSelectedInvoiceId(null);
+        }}
+      />
     </>
   );
 }

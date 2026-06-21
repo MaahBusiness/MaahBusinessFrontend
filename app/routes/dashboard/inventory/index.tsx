@@ -1,13 +1,14 @@
 import DataTableSkeleton from "@/components/data-table-skeleton";
 import { useAuth } from "@/contexts/auth-context";
 import { useOrganisation } from "@/hooks/use-organisation";
-import { inventoryApi } from "@/lib/api/inventory";
+import { inventoryApi, inventoryKeys, invalidateOrgInventory } from "@/lib/api/inventory";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Archive, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { OrgPageShell } from "@/components/layout/org-page-shell";
 import { hasPermission } from "utils/permissions";
+import { invalidateOrgDashboard } from "@/lib/api/dashboard";
 import { toast } from "sonner";
 
 export default function InventoryPage() {
@@ -19,13 +20,13 @@ export default function InventoryPage() {
   const canManageStock = hasPermission(businessMember?.role, "stock:movements");
 
   const lowStock = useQuery({
-    queryKey: ["inventory", businessId, "low-stock"],
+    queryKey: inventoryKeys.lowStock(businessId!),
     queryFn: async () =>
       inventoryApi.getLowStockProducts(accessToken!, businessId!),
     enabled: !!businessId && !!accessToken && canManageStock,
   });
   const expired = useQuery({
-    queryKey: ["inventory", businessId, "expired"],
+    queryKey: inventoryKeys.expired(businessId!),
     queryFn: async () =>
       inventoryApi.getExpiredProducts(accessToken!, businessId!),
     enabled: !!businessId && !!accessToken && canManageStock,
@@ -37,9 +38,10 @@ export default function InventoryPage() {
     onSuccess: (res) => {
       if (res.success) {
         toast.success(res.message ?? "Low stock check completed.");
-        queryClient.invalidateQueries({
-          queryKey: ["inventory", businessId, "low-stock"],
-        });
+        if (businessId) {
+          void invalidateOrgInventory(queryClient, businessId);
+          void invalidateOrgDashboard(queryClient, businessId);
+        }
       } else toast.error(res.message ?? "Low stock check failed.");
     },
     onError: (err: Error) => toast.error(err.message),
@@ -51,9 +53,10 @@ export default function InventoryPage() {
     onSuccess: (res) => {
       if (res.success) {
         toast.success(res.message ?? "Expired products check completed.");
-        queryClient.invalidateQueries({
-          queryKey: ["inventory", businessId, "expired"],
-        });
+        if (businessId) {
+          void invalidateOrgInventory(queryClient, businessId);
+          void invalidateOrgDashboard(queryClient, businessId);
+        }
       } else toast.error(res.message ?? "Expired products check failed.");
     },
     onError: (err: Error) => toast.error(err.message),

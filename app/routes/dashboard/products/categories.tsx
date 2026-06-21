@@ -1,4 +1,5 @@
 import { organisationKeys, organisationsApi } from "@/lib/api/organisation";
+import { invalidateOrgDashboard } from "@/lib/api/dashboard";
 import { getSession } from "@/lib/session.server";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
@@ -113,6 +114,7 @@ export default function CategoriesPage({ actionData }: Route.ComponentProps) {
         queryClient.invalidateQueries({
           queryKey: organisationKeys.core(id),
         });
+        void invalidateOrgDashboard(queryClient, id);
       }
 
       if (intent === "update-category") {
