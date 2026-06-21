@@ -4,6 +4,8 @@
 // CREATE A BUSINESS
 
 import { organisationsApi } from "@/lib/api/organisation";
+import { financeApi } from "@/lib/api/finance";
+import type { Expense, ExpenseCreateParams, ExpenseUpdateParams } from "@/lib/finance-types";
 import { data, redirect, type SessionData } from "react-router";
 import type {
   AddedLine,
@@ -530,5 +532,98 @@ export async function handleClientActions({
     default:
       return genericErrorState();
   }
+  return genericErrorState();
+}
+
+export async function handleExpenseActions({
+  formData,
+  id,
+  session,
+}: {
+  session?: SessionData | null;
+  formData: FormData;
+  id: string;
+}): Promise<ServerActionState & { data?: Expense }> {
+  const intent = formData.get("intent");
+
+  const expense_type = formData.get("expense_type") as string;
+  const amountRaw = formData.get("amount") as string;
+  const reason = formData.get("reason") as string;
+  const reason_details = formData.get("reason_details") as string;
+  const payee_name = formData.get("payee_name") as string;
+  const payee_type = formData.get("payee_type") as string;
+  const payment_method = formData.get("payment_method") as string;
+  const payment_reference = formData.get("payment_reference") as string | null;
+  const employee_id = formData.get("employee_id") as string | null;
+  const expenseId = formData.get("id") as string | undefined;
+
+  const amount = Number(amountRaw);
+  const errors: Record<string, string> = {};
+  if (!reason?.trim()) errors.reason = "Reason is required.";
+  if (!reason_details?.trim()) errors.reason_details = "Details are required.";
+  if (!payee_name?.trim()) errors.payee_name = "Payee name is required.";
+  if (!amount || amount <= 0) errors.amount = "Enter a valid amount.";
+  if (expense_type === "SALARY" && !employee_id?.trim()) {
+    errors.employee_id = "Select an employee for salary expenses.";
+  }
+
+  if (Object.keys(errors).length > 0) {
+    const firstError = Object.values(errors).find(Boolean);
+    return {
+      success: false,
+      errors,
+      message: firstError ?? "Please fix the form errors.",
+    };
+  }
+
+  const justification_metadata: Record<string, unknown> = {};
+  if (employee_id?.trim()) {
+    justification_metadata.employee_id = employee_id.trim();
+  }
+
+  switch (intent) {
+    case "add-expense": {
+      if (!session?.accessToken) break;
+      const payload: ExpenseCreateParams = {
+        business_id: id,
+        expense_type: expense_type as ExpenseCreateParams["expense_type"],
+        amount,
+        reason: reason.trim(),
+        reason_details: reason_details.trim(),
+        payee_name: payee_name.trim(),
+        payee_type: payee_type as ExpenseCreateParams["payee_type"],
+        payment_method: payment_method as ExpenseCreateParams["payment_method"],
+        payment_reference: payment_reference?.trim() || undefined,
+        justification_metadata:
+          Object.keys(justification_metadata).length > 0
+            ? justification_metadata
+            : undefined,
+      };
+      return financeApi.createExpense(session.accessToken, payload);
+    }
+
+    case "update-expense": {
+      if (!session?.accessToken || !expenseId) break;
+      const payload: ExpenseUpdateParams = {
+        expense_type: expense_type as ExpenseUpdateParams["expense_type"],
+        amount,
+        reason: reason.trim(),
+        reason_details: reason_details.trim(),
+        payee_name: payee_name.trim(),
+        payee_type: payee_type as ExpenseUpdateParams["payee_type"],
+        payment_method: payment_method as ExpenseUpdateParams["payment_method"],
+        payment_reference: payment_reference?.trim() || undefined,
+        justification_metadata:
+          Object.keys(justification_metadata).length > 0
+            ? justification_metadata
+            : undefined,
+      };
+      return financeApi.updateExpense(session.accessToken, expenseId, payload);
+    }
+
+    default:
+      return genericErrorState();
+  }
+
   return genericErrorState();
 }

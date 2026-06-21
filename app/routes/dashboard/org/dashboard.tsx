@@ -25,10 +25,12 @@ import {
   ProfitAnalyticsChart,
   RevenueTrendChart,
   SalesMixChart,
+  SalesPerformanceAreaChart,
   SalesVolumeChart,
   TopCategoriesChart,
   TopProductsChart,
 } from "@/components/dashboard/dashboard-charts";
+import { PeriodPerformanceStrip } from "@/components/dashboard/period-performance";
 import { InventoryAlerts } from "@/components/dashboard/inventory-alerts";
 import { DashboardRecentSales } from "@/components/dashboard/recent-sales-list";
 import { StaffDashboard } from "@/components/dashboard/staff-dashboard";
@@ -357,14 +359,14 @@ export default function OrganisationDashboard() {
               <KpiCard
                 title="Net profit"
                 value={formatDisplayAmount(summary.profit.total_profit)}
-                subtitle={`${marginPct.toFixed(1)}% margin`}
+                subtitle={`${marginPct.toFixed(1)}% margin · ${formatDisplayAmount(summary.profit.profit_this_month)} this month`}
                 icon={TrendingUp}
                 accent="emerald"
               />
               <KpiCard
                 title="Expenses"
                 value={formatDisplayAmount(summary.expenses.total_expenses)}
-                subtitle={`Salaries ${formatDisplayAmount(summary.expenses.salary_expenses)}`}
+                subtitle={`${formatDisplayAmount(summary.expenses.other_expenses)} other · ${formatDisplayAmount(summary.expenses.expenses_this_month)} this month`}
                 icon={Wallet}
                 accent="orange"
               />
@@ -382,7 +384,7 @@ export default function OrganisationDashboard() {
               <KpiCard
                 title="Customers"
                 value={String(summary.customers.total_customers)}
-                subtitle={`${summary.customers.new_customers_this_month} new this month`}
+                subtitle={`${summary.customers.new_customers_this_month} new · ${summary.customers.active_customers} active`}
                 icon={Users}
                 accent="cyan"
               />
@@ -394,25 +396,36 @@ export default function OrganisationDashboard() {
                 accent="rose"
               />
               <KpiCard
-                title="Products"
+                title="Inventory"
                 value={String(summary.inventory.total_products)}
-                subtitle={`${summary.inventory.low_stock_products} low stock`}
+                subtitle={`${summary.inventory.low_stock_products} low · ${summary.inventory.expired_products} expired · ${summary.inventory.products_on_promotion} promo`}
                 icon={Package}
                 accent="blue"
+                trend={{
+                  value: `${formatDisplayAmount(summary.inventory.total_inventory_value)} value`,
+                  positive: true,
+                }}
               />
               <KpiCard
                 title="Today's activity"
                 value={formatDisplayAmount(summary.revenue.revenue_today)}
-                subtitle={`${summary.revenue.orders_today} orders today`}
+                subtitle={`${summary.revenue.orders_today} orders · ${summary.revenue.orders_this_month} this month`}
                 icon={Activity}
                 accent="violet"
               />
             </div>
 
-            {/* Charts */}
+            <PeriodPerformanceStrip summary={summary} insights={insights} />
+
+            {/* Area charts */}
+            <div className="grid gap-4 lg:grid-cols-2">
+              <RevenueTrendChart dailyData={insights.daily_data} />
+              <ProfitAnalyticsChart dailyData={insights.daily_data} />
+            </div>
+
             <div className="grid gap-4 lg:grid-cols-7">
               <div className="lg:col-span-4">
-                <RevenueTrendChart dailyData={insights.daily_data} />
+                <SalesPerformanceAreaChart dailyData={insights.daily_data} />
               </div>
               <div className="flex flex-col gap-4 lg:col-span-3">
                 <SalesMixChart performance={insights.sales_performance} />

@@ -6,13 +6,12 @@ import {
   CartesianGrid,
   Cell,
   Legend,
-  Line,
-  LineChart,
   Pie,
   PieChart,
   XAxis,
   YAxis,
 } from "recharts";
+import { useId } from "react";
 import {
   Card,
   CardContent,
@@ -41,8 +40,23 @@ const salesMixConfig = {
   credit: { label: "Credit", color: "hsl(280 67% 58%)" },
 } satisfies ChartConfig;
 
-const categoryConfig = {
+const categoryChartConfig = {
   revenue: { label: "Revenue", color: "hsl(262 83% 58%)" },
+} satisfies ChartConfig;
+
+const salesPerformanceConfig = {
+  paid: { label: "Paid sales", color: "hsl(217 91% 60%)" },
+  credit: { label: "Credit sales", color: "hsl(280 67% 58%)" },
+} satisfies ChartConfig;
+
+const volumeConfig = {
+  sales: { label: "Orders", color: "hsl(217 91% 60%)" },
+} satisfies ChartConfig;
+
+const profitAreaConfig = {
+  gross: { label: "Gross profit", color: "hsl(142 71% 45%)" },
+  net: { label: "Net profit", color: "hsl(189 94% 43%)" },
+  expenses: { label: "Expenses", color: "hsl(25 95% 53%)" },
 } satisfies ChartConfig;
 
 const PIE_COLORS = [
@@ -67,6 +81,7 @@ export function RevenueTrendChart({
 }: {
   dailyData: DashboardInsights["daily_data"];
 }) {
+  const chartId = useId().replace(/:/g, "");
   const data = dailyData.map((d) => ({
     date: formatDayLabel(d.date),
     total_revenue: Number(d.total_revenue),
@@ -85,13 +100,17 @@ export function RevenueTrendChart({
         <ChartContainer config={revenueChartConfig} className="h-[300px] w-full">
           <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
             <defs>
-              <linearGradient id="fillRevenue" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="hsl(262 83% 58%)" stopOpacity={0.35} />
-                <stop offset="100%" stopColor="hsl(262 83% 58%)" stopOpacity={0} />
+              <linearGradient id={`${chartId}-revenue`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="hsl(262 83% 58%)" stopOpacity={0.4} />
+                <stop offset="100%" stopColor="hsl(262 83% 58%)" stopOpacity={0.05} />
               </linearGradient>
-              <linearGradient id="fillProfit" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="hsl(142 71% 45%)" stopOpacity={0.3} />
-                <stop offset="100%" stopColor="hsl(142 71% 45%)" stopOpacity={0} />
+              <linearGradient id={`${chartId}-profit`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="hsl(142 71% 45%)" stopOpacity={0.35} />
+                <stop offset="100%" stopColor="hsl(142 71% 45%)" stopOpacity={0.05} />
+              </linearGradient>
+              <linearGradient id={`${chartId}-expenses`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="hsl(25 95% 53%)" stopOpacity={0.25} />
+                <stop offset="100%" stopColor="hsl(25 95% 53%)" stopOpacity={0.05} />
               </linearGradient>
             </defs>
             <CartesianGrid vertical={false} strokeDasharray="3 3" />
@@ -112,26 +131,28 @@ export function RevenueTrendChart({
                 />
               }
             />
+            <Legend />
             <Area
               type="monotone"
               dataKey="total_revenue"
               stroke="var(--color-total_revenue)"
-              fill="url(#fillRevenue)"
+              fill={`url(#${chartId}-revenue)`}
               strokeWidth={2}
             />
             <Area
               type="monotone"
               dataKey="profit"
               stroke="var(--color-profit)"
-              fill="url(#fillProfit)"
+              fill={`url(#${chartId}-profit)`}
               strokeWidth={2}
             />
-            <Line
+            <Area
               type="monotone"
               dataKey="total_expenses"
               stroke="var(--color-total_expenses)"
+              fill={`url(#${chartId}-expenses)`}
               strokeWidth={2}
-              dot={false}
+              strokeDasharray="4 4"
             />
           </AreaChart>
         </ChartContainer>
@@ -145,6 +166,7 @@ export function SalesVolumeChart({
 }: {
   dailyData: DashboardInsights["daily_data"];
 }) {
+  const chartId = useId().replace(/:/g, "");
   const data = dailyData.map((d) => ({
     date: formatDayLabel(d.date),
     sales: d.total_sales,
@@ -157,11 +179,114 @@ export function SalesVolumeChart({
         <CardDescription>Invoice count per day</CardDescription>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={categoryConfig} className="h-[120px] w-full">
-          <BarChart data={data}>
-            <Bar dataKey="sales" fill="hsl(217 91% 60%)" radius={[4, 4, 0, 0]} />
-          </BarChart>
+        <ChartContainer config={volumeConfig} className="h-[160px] w-full">
+          <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+            <defs>
+              <linearGradient id={`${chartId}-volume`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="hsl(217 91% 60%)" stopOpacity={0.4} />
+                <stop offset="100%" stopColor="hsl(217 91% 60%)" stopOpacity={0.05} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid vertical={false} strokeDasharray="3 3" />
+            <XAxis dataKey="date" tickLine={false} axisLine={false} fontSize={10} />
+            <YAxis tickLine={false} axisLine={false} fontSize={10} allowDecimals={false} />
+            <ChartTooltip
+              content={
+                <ChartTooltipContent
+                  formatter={(value) => [String(value), "Orders"]}
+                />
+              }
+            />
+            <Area
+              type="monotone"
+              dataKey="sales"
+              stroke="var(--color-sales)"
+              fill={`url(#${chartId}-volume)`}
+              strokeWidth={2}
+            />
+          </AreaChart>
         </ChartContainer>
+      </CardContent>
+    </Card>
+  );
+}
+
+export function SalesPerformanceAreaChart({
+  dailyData,
+}: {
+  dailyData: DashboardInsights["daily_data"];
+}) {
+  const chartId = useId().replace(/:/g, "");
+  const data = dailyData.map((d) => ({
+    date: formatDayLabel(d.date),
+    paid: Number(d.complete_revenue),
+    credit: Number(d.credit_revenue),
+  }));
+
+  const hasData = data.some((d) => d.paid > 0 || d.credit > 0);
+
+  return (
+    <Card className="border-indigo-500/15 bg-card/80 backdrop-blur-sm">
+      <CardHeader>
+        <CardTitle>Paid vs credit</CardTitle>
+        <CardDescription>Daily revenue split by payment type</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {!hasData ? (
+          <p className="py-8 text-center text-sm text-muted-foreground">
+            No sales data for this period.
+          </p>
+        ) : (
+          <ChartContainer config={salesPerformanceConfig} className="h-[260px] w-full">
+            <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id={`${chartId}-paid`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="hsl(217 91% 60%)" stopOpacity={0.45} />
+                  <stop offset="100%" stopColor="hsl(217 91% 60%)" stopOpacity={0.08} />
+                </linearGradient>
+                <linearGradient id={`${chartId}-credit`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="hsl(280 67% 58%)" stopOpacity={0.4} />
+                  <stop offset="100%" stopColor="hsl(280 67% 58%)" stopOpacity={0.08} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid vertical={false} strokeDasharray="3 3" />
+              <XAxis dataKey="date" tickLine={false} axisLine={false} fontSize={11} />
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                fontSize={11}
+                tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+              />
+              <ChartTooltip
+                content={
+                  <ChartTooltipContent
+                    formatter={(value, name) => [
+                      formatDisplayAmount(Number(value)),
+                      salesPerformanceConfig[name as keyof typeof salesPerformanceConfig]?.label,
+                    ]}
+                  />
+                }
+              />
+              <Legend />
+              <Area
+                type="monotone"
+                dataKey="paid"
+                stackId="1"
+                stroke="var(--color-paid)"
+                fill={`url(#${chartId}-paid)`}
+                strokeWidth={2}
+              />
+              <Area
+                type="monotone"
+                dataKey="credit"
+                stackId="1"
+                stroke="var(--color-credit)"
+                fill={`url(#${chartId}-credit)`}
+                strokeWidth={2}
+              />
+            </AreaChart>
+          </ChartContainer>
+        )}
       </CardContent>
     </Card>
   );
@@ -258,7 +383,7 @@ export function TopProductsChart({
             No product sales for this period. Try a wider date range.
           </p>
         ) : (
-          <ChartContainer config={categoryConfig} className="h-[260px] w-full">
+          <ChartContainer config={categoryChartConfig} className="h-[260px] w-full">
             <BarChart data={data} layout="vertical" margin={{ left: 8 }}>
               <CartesianGrid horizontal={false} strokeDasharray="3 3" />
               <XAxis type="number" hide />
@@ -313,7 +438,7 @@ export function TopCategoriesChart({
             No category sales for this period. Try a wider date range.
           </p>
         ) : (
-          <ChartContainer config={categoryConfig} className="h-[260px] w-full">
+          <ChartContainer config={categoryChartConfig} className="h-[260px] w-full">
             <PieChart>
               <Pie
                 data={data}
@@ -349,18 +474,13 @@ export function ProfitAnalyticsChart({
 }: {
   dailyData: DashboardInsights["daily_data"];
 }) {
+  const chartId = useId().replace(/:/g, "");
   const data = dailyData.map((d) => ({
     date: formatDayLabel(d.date),
     gross: Number(d.gross_profit),
     net: Number(d.net_profit),
     expenses: Number(d.total_expenses),
   }));
-
-  const config = {
-    gross: { label: "Gross profit", color: "hsl(142 71% 45%)" },
-    net: { label: "Net profit", color: "hsl(189 94% 43%)" },
-    expenses: { label: "Expenses", color: "hsl(25 95% 53%)" },
-  } satisfies ChartConfig;
 
   return (
     <Card className="border-cyan-500/15 bg-card/80 backdrop-blur-sm">
@@ -369,26 +489,64 @@ export function ProfitAnalyticsChart({
         <CardDescription>Gross vs net profit and expenses</CardDescription>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={config} className="h-[280px] w-full">
-          <LineChart data={data}>
+        <ChartContainer config={profitAreaConfig} className="h-[280px] w-full">
+          <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+            <defs>
+              <linearGradient id={`${chartId}-gross`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="hsl(142 71% 45%)" stopOpacity={0.35} />
+                <stop offset="100%" stopColor="hsl(142 71% 45%)" stopOpacity={0.05} />
+              </linearGradient>
+              <linearGradient id={`${chartId}-net`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="hsl(189 94% 43%)" stopOpacity={0.35} />
+                <stop offset="100%" stopColor="hsl(189 94% 43%)" stopOpacity={0.05} />
+              </linearGradient>
+              <linearGradient id={`${chartId}-expenses`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="hsl(25 95% 53%)" stopOpacity={0.25} />
+                <stop offset="100%" stopColor="hsl(25 95% 53%)" stopOpacity={0.05} />
+              </linearGradient>
+            </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
             <XAxis dataKey="date" tickLine={false} axisLine={false} fontSize={11} />
-            <YAxis tickLine={false} axisLine={false} fontSize={11} />
+            <YAxis
+              tickLine={false}
+              axisLine={false}
+              fontSize={11}
+              tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+            />
             <ChartTooltip
               content={
                 <ChartTooltipContent
                   formatter={(value, name) => [
                     formatDisplayAmount(Number(value)),
-                    config[name as keyof typeof config]?.label,
+                    profitAreaConfig[name as keyof typeof profitAreaConfig]?.label,
                   ]}
                 />
               }
             />
             <Legend />
-            <Line type="monotone" dataKey="gross" stroke="var(--color-gross)" strokeWidth={2} dot={false} />
-            <Line type="monotone" dataKey="net" stroke="var(--color-net)" strokeWidth={2} dot={false} />
-            <Line type="monotone" dataKey="expenses" stroke="var(--color-expenses)" strokeWidth={2} strokeDasharray="4 4" dot={false} />
-          </LineChart>
+            <Area
+              type="monotone"
+              dataKey="gross"
+              stroke="var(--color-gross)"
+              fill={`url(#${chartId}-gross)`}
+              strokeWidth={2}
+            />
+            <Area
+              type="monotone"
+              dataKey="net"
+              stroke="var(--color-net)"
+              fill={`url(#${chartId}-net)`}
+              strokeWidth={2}
+            />
+            <Area
+              type="monotone"
+              dataKey="expenses"
+              stroke="var(--color-expenses)"
+              fill={`url(#${chartId}-expenses)`}
+              strokeWidth={2}
+              strokeDasharray="4 4"
+            />
+          </AreaChart>
         </ChartContainer>
       </CardContent>
     </Card>
