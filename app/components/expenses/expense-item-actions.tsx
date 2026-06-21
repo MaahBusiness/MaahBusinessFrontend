@@ -6,7 +6,9 @@ import {
   Trash2,
   Trash2Icon,
 } from "lucide-react";
-import type { Expense } from "@/lib/finance-types";
+import { useSearchParams } from "react-router";
+import { expenseFilterParsers, parseSearchParams } from "utils";
+import type { ExpenseFilters } from "@/lib/finance-types";
 import { useOrganisation } from "@/hooks/use-organisation";
 import { useExpenses } from "@/hooks/use-expenses";
 import { hasPermission } from "utils/permissions";
@@ -41,9 +43,14 @@ export function ExpenseItemActions({
   const [viewOpen, setViewOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const filters = parseSearchParams<ExpenseFilters>(
+    searchParams,
+    expenseFilterParsers,
+  );
   const { businessMember, isLoading } = useOrganisation();
   const { deleteExpense, approveExpense, isDeleting, isApproving } =
-    useExpenses();
+    useExpenses(filters);
 
   const canView = hasPermission(businessMember?.role, "expenses:view");
   const canManage = hasPermission(businessMember?.role, "expenses:manage");
@@ -72,6 +79,12 @@ export function ExpenseItemActions({
   };
 
   const handleApprove = () => {
+    if (searchParams.get("is_approved") === "false") {
+      setSearchParams((params) => {
+        params.delete("is_approved");
+        return params;
+      });
+    }
     approveExpense(expense.id);
   };
 

@@ -120,10 +120,15 @@ export default function ExpensesPage({ actionData }: Route.ComponentProps) {
     ];
   }, [expenses, listQuery.data?.meta?.count, summary]);
 
+  const hasActiveFilters = searchParams.toString().length > 0;
+  const hasAnyExpenses = (summary?.total_count ?? listQuery.data?.meta?.count ?? 0) > 0;
+
   if (listQuery.isLoading && !listQuery.data) return <DataTableSkeleton />;
   if (!listQuery.data?.success) return <RequestFailed refetch={listQuery.refetch} />;
 
   const canManage = hasPermission(businessMember?.role, "expenses:manage");
+  const showOnboardingEmpty =
+    expenses.length === 0 && !hasActiveFilters && !hasAnyExpenses;
 
   return (
     <OrgPageShell orbs={["violet", "emerald"]}>
@@ -141,7 +146,7 @@ export default function ExpensesPage({ actionData }: Route.ComponentProps) {
       </div>
 
       <div className="min-w-0 flex-1 overflow-hidden rounded-xl border border-orange-500/15 bg-card/80 shadow-sm backdrop-blur-sm">
-        {expenses.length === 0 && !searchParams.toString() ? (
+        {showOnboardingEmpty ? (
           <Empty className="border-0 bg-transparent py-16">
             <EmptyHeader>
               <EmptyMedia variant="icon">

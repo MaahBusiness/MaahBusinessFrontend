@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/auth-context";
 import { invalidateOrgDashboard } from "@/lib/api/dashboard";
 import { financeApi, financeKeys } from "@/lib/api/finance";
-import type { ExpenseFilters } from "@/lib/finance-types";
+import type { Expense, ExpenseFilters } from "@/lib/finance-types";
 
 export function useExpenses(filters?: ExpenseFilters) {
   const { id: orgId } = useParams<{ id: string }>();
@@ -63,10 +63,36 @@ export function useExpenses(filters?: ExpenseFilters) {
       });
     },
     onSuccess: (res) => {
-      if (res.success) {
-        toast.success("Expense approved");
-        invalidate();
-      } else toast.error(res.message);
+      if (!res.success || !orgId) {
+        toast.error(res.message);
+        return;
+      }
+
+      const updated = res.data;
+      if (updated) {
+        queryClient.setQueriesData(
+          { queryKey: financeKeys.org(orgId) },
+          (
+            old:
+              | { data?: Expense[]; success?: boolean; meta?: unknown }
+              | undefined,
+          ) => {
+            if (!old?.data || !Array.isArray(old.data)) return old;
+            return {
+              ...old,
+              data: old.data.map((e) =>
+                e.id === updated.id ? { ...e, ...updated } : e,
+              ),
+            };
+          },
+        );
+      }
+
+      void queryClient.invalidateQueries({
+        queryKey: financeKeys.summary(orgId),
+      });
+      void invalidateOrgDashboard(queryClient, orgId);
+      toast.success("Expense approved");
     },
     onError: () => toast.error("Failed to approve expense"),
   });
