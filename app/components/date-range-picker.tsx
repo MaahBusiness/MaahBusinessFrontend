@@ -1,5 +1,5 @@
 import * as React from "react";
-import { addDays, format } from "date-fns";
+import { addDays, endOfDay, format, startOfDay } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -32,8 +32,12 @@ export function CalendarDateRangePicker({
   const date = value ?? internal;
 
   const handleSelect = (range: DateRange | undefined) => {
+    if (!range?.from) return;
     if (!value) setInternal(range);
-    onRangeChange?.(range);
+    // Only notify parent when the range is complete (avoids empty API filters mid-selection)
+    if (range.from && range.to) {
+      onRangeChange?.(range);
+    }
   };
 
   return (
@@ -77,10 +81,11 @@ export function CalendarDateRangePicker({
   );
 }
 
+/** Build API date filters — only when both ends of the range are selected. */
 export function dateRangeToFilters(range?: DateRange) {
-  if (!range?.from) return {};
+  if (!range?.from || !range?.to) return {};
   return {
-    start_date: format(range.from, "yyyy-MM-dd"),
-    end_date: format(range.to ?? range.from, "yyyy-MM-dd"),
+    start_date: format(startOfDay(range.from), "yyyy-MM-dd"),
+    end_date: format(endOfDay(range.to), "yyyy-MM-dd"),
   };
 }

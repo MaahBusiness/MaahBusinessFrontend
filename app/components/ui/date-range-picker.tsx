@@ -1,7 +1,7 @@
 // components/ui/date-range-picker.tsx
 
 import * as React from "react";
-import { format } from "date-fns";
+import { endOfDay, format, startOfDay } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -218,6 +218,19 @@ export interface DateRangePickerProps {
    * @default false
    */
   useFixedPortal?: boolean;
+
+  /**
+   * Show Apply / Clear footer — range is committed only when Apply is clicked.
+   *
+   * @type {boolean}
+   * @default false
+   */
+  showActions?: boolean;
+
+  /**
+   * Quick preset ranges shown above the calendar.
+   */
+  presets?: Array<{ label: string; range: DateRange }>;
 }
 
 /**
@@ -277,24 +290,77 @@ export function DateRangePicker({
   buttonSize,
   align = "end",
   useFixedPortal = false,
+  showActions = false,
+  presets,
 }: DateRangePickerProps) {
   const [open, setOpen] = React.useState(false);
   const [internalRange, setInternalRange] = React.useState<
     DateRange | undefined
   >(value);
+  const [draftRange, setDraftRange] = React.useState<DateRange | undefined>(
+    value,
+  );
+
+  const displayRange = showActions ? draftRange : internalRange;
 
   // Sync internal state with external value
   React.useEffect(() => {
     setInternalRange(value);
-  }, [value]);
+    if (!open) setDraftRange(value);
+  }, [value, open]);
+
+  React.useEffect(() => {
+    if (open && showActions) {
+      setDraftRange(value);
+    }
+  }, [open, showActions, value]);
+
+  const normalizeMaxDate = maxDate
+    ? endOfDay(maxDate)
+    : undefined;
+  const normalizeMinDate = minDate
+    ? startOfDay(minDate)
+    : undefined;
+
+  const commitRange = (range: DateRange | undefined) => {
+    if (!range?.from || !range?.to) return;
+    const committed = {
+      from: startOfDay(range.from),
+      to: endOfDay(range.to),
+    };
+    setInternalRange(committed);
+    onChange?.(committed);
+    setOpen(false);
+  };
 
   const handleSelect = (range: DateRange | undefined) => {
+    if (showActions) {
+      setDraftRange(range);
+      return;
+    }
+
     setInternalRange(range);
     onChange?.(range);
 
     if (range?.from && range?.to && closeOnSelect) {
       setOpen(false);
     }
+  };
+
+  const handleApply = () => {
+    commitRange(draftRange);
+  };
+
+  const handleClear = () => {
+    setDraftRange(undefined);
+    setInternalRange(undefined);
+    onChange?.(undefined);
+    setOpen(false);
+  };
+
+  const applyPreset = (range: DateRange) => {
+    setDraftRange(range);
+    commitRange(range);
   };
 
   const triggerButton = (
@@ -306,7 +372,7 @@ export function DateRangePicker({
       size={buttonSize}
       className={cn(
         "justify-start text-left font-normal",
-        !internalRange && "text-muted-foreground",
+        !displayRange?.from && "text-muted-foreground",
         buttonClassName,
       )}
       onClick={
@@ -315,15 +381,17 @@ export function DateRangePicker({
           : undefined
       }
     >
-      <CalendarIcon className="mr-2 h-4 w-4" />
-      {internalRange?.from ? (
-        internalRange.to ? (
+      <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+      {displayRange?.from ? (
+        displayRange.to ? (
           <>
-            {format(internalRange.from, dateFormat)} -{" "}
-            {format(internalRange.to, dateFormat)}
+            {format(displayRange.from, dateFormat)} –{" "}
+            {format(displayRange.to, dateFormat)}
           </>
         ) : (
-          format(internalRange.from, dateFormat)
+          <>
+            {format(displayRange.from, dateFormat)} – …
+          </>
         )
       ) : (
         <span>{placeholder}</span>
@@ -331,27 +399,73 @@ export function DateRangePicker({
     </Button>
   );
 
+  const calendarFooter = showActions ? (
+    <div className="flex flex-col gap-2 border-t p-3">
+      <p className="text-xs text-muted-foreground">
+        {draftRange?.from && !draftRange?.to
+          ? "Now select the end date"
+          : "Select a start date, then an end date"}
+      </p>
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant="ghost" size="sm" onClick={handleClear}>
+          Clear
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          disabled={!draftRange?.from || !draftRange?.to}
+          onClick={handleApply}
+        >
+          Apply
+        </Button>
+      </div>
+    </div>
+  ) : null;
+
+  const presetBar =
+    presets && presets.length > 0 ? (
+      <div className="flex flex-wrap gap-1.5 border-b p-2">
+        {presets.map((preset) => (
+          <Button
+            key={preset.label}
+            type="button"
+            variant="secondary"
+            size="sm"
+            className="h-7 text-xs"
+            onClick={() => applyPreset(preset.range)}
+          >
+            {preset.label}
+          </Button>
+        ))}
+      </div>
+    ) : null;
+
   const calendar = (
-    <Calendar
-      initialFocus
-      mode="range"
-      defaultMonth={internalRange?.from}
-      selected={internalRange}
-      onSelect={handleSelect}
-      numberOfMonths={numberOfMonths}
-      disabled={(date) => {
-        if (minDate && date < minDate) return true;
-        if (maxDate && date > maxDate) return true;
-        if (
-          disabledDates?.some(
-            (d) => d.toDateString() === date.toDateString(),
-          )
-        ) {
-          return true;
-        }
-        return false;
-      }}
-    />
+    <>
+      {presetBar}
+      <Calendar
+        initialFocus
+        mode="range"
+        defaultMonth={displayRange?.from ?? displayRange?.to ?? new Date()}
+        selected={displayRange}
+        onSelect={handleSelect}
+        numberOfMonths={numberOfMonths}
+        disabled={(date) => {
+          const day = startOfDay(date);
+          if (normalizeMinDate && day < normalizeMinDate) return true;
+          if (normalizeMaxDate && day > normalizeMaxDate) return true;
+          if (
+            disabledDates?.some(
+              (d) => d.toDateString() === date.toDateString(),
+            )
+          ) {
+            return true;
+          }
+          return false;
+        }}
+      />
+      {calendarFooter}
+    </>
   );
 
   return (
@@ -369,9 +483,9 @@ export function DateRangePicker({
             open={open}
             onOpenChange={setOpen}
             align={align === "end" ? "end" : "start"}
-            minWidth={numberOfMonths > 1 ? 560 : 280}
-            maxWidth={numberOfMonths > 1 ? 560 : 320}
-            matchTriggerWidth={numberOfMonths <= 1}
+            minWidth={numberOfMonths > 1 ? 560 : 300}
+            maxWidth={numberOfMonths > 1 ? 560 : 340}
+            matchTriggerWidth={false}
             mobileCenter
             trigger={triggerButton}
           >
@@ -395,12 +509,18 @@ export function DateRangePicker({
           <input
             type="hidden"
             name={`${name}_from`}
-            value={internalRange?.from ? internalRange.from.toISOString() : ""}
+            value={
+              internalRange?.from
+                ? startOfDay(internalRange.from).toISOString()
+                : ""
+            }
           />
           <input
             type="hidden"
             name={`${name}_to`}
-            value={internalRange?.to ? internalRange.to.toISOString() : ""}
+            value={
+              internalRange?.to ? endOfDay(internalRange.to).toISOString() : ""
+            }
           />
         </>
       )}

@@ -255,7 +255,7 @@ export function TopProductsChart({
       <CardContent>
         {data.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted-foreground">
-            No product sales yet.
+            No product sales for this period. Try a wider date range.
           </p>
         ) : (
           <ChartContainer config={categoryConfig} className="h-[260px] w-full">
@@ -310,7 +310,7 @@ export function TopCategoriesChart({
       <CardContent>
         {data.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted-foreground">
-            No category data yet.
+            No category sales for this period. Try a wider date range.
           </p>
         ) : (
           <ChartContainer config={categoryConfig} className="h-[260px] w-full">

@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
-import { addDays, format, parseISO } from "date-fns";
+import { addDays, format, parseISO, startOfDay, endOfDay } from "date-fns";
 import {
   Activity,
   CreditCard,
@@ -18,10 +18,8 @@ import { useSearchParams } from "react-router";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import {
-  CalendarDateRangePicker,
-  dateRangeToFilters,
-} from "@/components/date-range-picker";
+import { dateRangeToFilters } from "@/components/date-range-picker";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import {
   ProfitAnalyticsChart,
@@ -116,15 +114,46 @@ export default function OrganisationDashboard() {
   const orgId = res?.data?.id;
   const orgName = res?.data?.name;
 
-  const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: addDays(new Date(), -6),
-    to: new Date(),
-  });
+  const defaultRange: DateRange = {
+    from: startOfDay(addDays(new Date(), -6)),
+    to: endOfDay(new Date()),
+  };
+  const [dateRange, setDateRange] = useState<DateRange>(defaultRange);
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get("tab") ?? "overview";
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const filters = useMemo(() => dateRangeToFilters(dateRange), [dateRange]);
+  const datePresets = useMemo(
+    () => [
+      {
+        label: "Last 7 days",
+        range: {
+          from: startOfDay(addDays(new Date(), -6)),
+          to: endOfDay(new Date()),
+        },
+      },
+      {
+        label: "Last 30 days",
+        range: {
+          from: startOfDay(addDays(new Date(), -29)),
+          to: endOfDay(new Date()),
+        },
+      },
+      {
+        label: "This month",
+        range: {
+          from: startOfDay(new Date(new Date().getFullYear(), new Date().getMonth(), 1)),
+          to: endOfDay(new Date()),
+        },
+      },
+    ],
+    [],
+  );
+
+  const filters = useMemo(
+    () => dateRangeToFilters(dateRange),
+    [dateRange.from?.getTime(), dateRange.to?.getTime()],
+  );
 
   useEffect(() => {
     if (orgId) void invalidateOrgDashboardViews(queryClient, orgId);
@@ -132,24 +161,24 @@ export default function OrganisationDashboard() {
 
   const isOwner = businessMember?.role === "owner";
 
-  const dashboardQueryOpts = {
-    staleTime: 60 * 1000,
-    refetchOnMount: "always" as const,
-  };
-
   const summaryQuery = useQuery({
     queryKey: dashboardKeys.summary(orgId!, filters),
     queryFn: async () => dashboardApi.getSummary(accessToken!, orgId!, filters),
-    enabled: !!orgId && !!accessToken && isOwner,
-    ...dashboardQueryOpts,
+    enabled: !!orgId && !!accessToken && isOwner && !!filters.start_date,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const insightsQuery = useQuery({
     queryKey: dashboardKeys.insights(orgId!, filters),
     queryFn: async () => dashboardApi.getInsights(accessToken!, orgId!, filters),
-    enabled: !!orgId && !!accessToken && isOwner,
-    ...dashboardQueryOpts,
+    enabled: !!orgId && !!accessToken && isOwner && !!filters.start_date,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
+
+  const isDashboardFetching =
+    summaryQuery.isFetching || insightsQuery.isFetching;
 
   const notificationsQuery = useQuery({
     queryKey: ["notifications"],
@@ -170,7 +199,10 @@ export default function OrganisationDashboard() {
     );
   }
 
-  if (summaryQuery.isLoading || insightsQuery.isLoading) {
+  if (
+    (summaryQuery.isLoading && !summaryQuery.data) ||
+    (insightsQuery.isLoading && !insightsQuery.data)
+  ) {
     return <DashboardSkeleton />;
   }
 
@@ -230,17 +262,43 @@ export default function OrganisationDashboard() {
               {orgName}
             </h1>
             <p className="text-sm text-muted-foreground">
-              Financial overview · {summary.period.start_date.slice(0, 10)} to{" "}
-              {summary.period.end_date.slice(0, 10)}
+              Financial overview ·{" "}
+              {dateRange.from && dateRange.to
+                ? `${format(dateRange.from, "MMM d, yyyy")} – ${format(dateRange.to, "MMM d, yyyy")}`
+                : `${summary.period.start_date.slice(0, 10)} to ${summary.period.end_date.slice(0, 10)}`}
+              {isDashboardFetching && (
+                <span className="ml-2 text-violet-600 dark:text-violet-400">
+                  Updating…
+                </span>
+              )}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <CalendarDateRangePicker value={dateRange} onRangeChange={setDateRange} />
+            <DateRangePicker
+              value={dateRange}
+              onChange={(range) => {
+                if (range?.from && range?.to) {
+                  setDateRange({
+                    from: startOfDay(range.from),
+                    to: endOfDay(range.to),
+                  });
+                }
+              }}
+              showActions
+              presets={datePresets}
+              placeholder="Select start and end date"
+              maxDate={new Date()}
+              numberOfMonths={1}
+              buttonClassName="w-full min-w-[240px] max-w-[300px] border-violet-500/20 bg-card/80 backdrop-blur-sm sm:w-[280px]"
+              buttonSize="default"
+              align="end"
+              useFixedPortal
+            />
             <Button
               variant="outline"
               size="icon"
               className="shrink-0"
-              disabled={isRefreshing}
+              disabled={isRefreshing || isDashboardFetching}
               onClick={handleRefresh}
               aria-label="Refresh dashboard"
             >
