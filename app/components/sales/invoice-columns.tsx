@@ -9,13 +9,9 @@ import { InvoiceTableContextMenu } from "@/components/sales/invoice-table-contex
 import { cn } from "@/lib/utils";
 import { methods, statuses } from "@/routes/dashboard/sales/data";
 import { extractImageUrl, formatDisplayAmount } from "utils";
+import { Badge } from "@/components/ui/badge";
 import { InvoiceTableRowActions } from "@/components/sales/invoice-table-row-actions";
-import { Link } from "react-router";
-import { orgPath } from "@/lib/org-navigation";
-
-function invoiceDetailPath(orgId: string | undefined, invId: string) {
-  return orgId ? orgPath(orgId, `invoices/${invId}`) : invId;
-}
+import { InvoiceDetailTrigger } from "@/components/sales/invoice-receipt-dialog";
 
 export function invoiceCols(orgId?: string): ColumnDef<Invoice>[] {
   return [
@@ -46,12 +42,12 @@ export function invoiceCols(orgId?: string): ColumnDef<Invoice>[] {
             aria-label="Select row"
           />
 
-          <Link
-            to={invoiceDetailPath(orgId, row.original.id)}
-            className="hover:underline"
+          <InvoiceDetailTrigger
+            invoiceId={row.original.id}
+            className="truncate hover:underline"
           >
             <span className="truncate">{row.original.number}</span>
-          </Link>
+          </InvoiceDetailTrigger>
         </InvoiceTableContextMenu>
       );
     },
@@ -70,12 +66,12 @@ export function invoiceCols(orgId?: string): ColumnDef<Invoice>[] {
         {...{ cell }}
         title={row.getValue("id")}
       >
-        <Link
-          to={invoiceDetailPath(orgId, row.original.id)}
-          className="hover:underline"
+        <InvoiceDetailTrigger
+          invoiceId={row.original.id}
+          className="truncate hover:underline"
         >
           <span className="truncate">{row.getValue("id")}</span>
-        </Link>
+        </InvoiceDetailTrigger>
       </InvoiceTableContextMenu>
     ),
     enableSorting: false,
@@ -96,13 +92,16 @@ export function invoiceCols(orgId?: string): ColumnDef<Invoice>[] {
 
       return (
         <InvoiceTableContextMenu {...{ cell }}>
-          {status?.icon && (
-            <status.icon className="mr-2 h-4 w-4 text-muted-foreground" />
-          )}
-          <span className={status?.className}>{status?.label}</span>
-          {/* <Badge variant="outline" className={className}>
-            {capitalizeFirstChar(`${cell.getValue()}`)}
-          </Badge> */}
+          <Badge
+            variant="outline"
+            className={cn(
+              "gap-1 font-normal",
+              status?.badgeClassName,
+            )}
+          >
+            {status?.icon && <status.icon className="size-3.5 shrink-0" />}
+            {status?.label ?? String(cell.getValue())}
+          </Badge>
         </InvoiceTableContextMenu>
       );
     },
@@ -112,25 +111,92 @@ export function invoiceCols(orgId?: string): ColumnDef<Invoice>[] {
   },
 
   {
+    id: "amounts",
+    accessorFn: (row) => row.total,
+    header: () => (
+      <div className="min-w-[168px] text-xs font-normal">
+        <div className="flex items-center gap-3 text-muted-foreground">
+          <span className="w-8 shrink-0 text-center">Items</span>
+          <span className="min-w-[72px]">Total</span>
+          <span className="w-14 shrink-0 text-right">Disc.</span>
+        </div>
+      </div>
+    ),
+    cell: ({ row, cell }) => {
+      const inv = row.original;
+      const disc = Number(inv.total_discount || 0);
+
+      return (
+        <InvoiceTableContextMenu {...{ cell }} className="min-w-[168px]">
+          <div className="flex items-center gap-3 text-sm tabular-nums">
+            <span className="w-8 shrink-0 text-center text-muted-foreground">
+              {inv.lines.length}
+            </span>
+            <span className="min-w-[72px] font-medium">
+              {formatDisplayAmount(inv.total)}
+            </span>
+            <span
+              className={cn(
+                "w-14 shrink-0 text-right text-xs",
+                disc > 0
+                  ? "text-emerald-700 dark:text-emerald-400"
+                  : "text-muted-foreground",
+              )}
+            >
+              {disc > 0 ? `−${formatDisplayAmount(disc)}` : "—"}
+            </span>
+          </div>
+        </InvoiceTableContextMenu>
+      );
+    },
+    enableSorting: false,
+    enableHiding: false,
+  },
+
+  {
+    id: "client",
+    accessorKey: "customer_id",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Customer" />
+    ),
+    cell: ({ row, cell }) => {
+      const val = row.original.customer_name ?? row.original.customer_id;
+      return (
+        <InvoiceTableContextMenu className="w-[160px] truncate" {...{ cell }}>
+          {val && (
+            <Avatar className="size-5">
+              <AvatarImage src={extractImageUrl(val)} />
+              <BoringFallback name={val} />
+            </Avatar>
+          )}
+          {val ? (
+            <span className="truncate">{val}</span>
+          ) : (
+            <span className="text-muted-foreground text-normal">--</span>
+          )}
+        </InvoiceTableContextMenu>
+      );
+    },
+    enableHiding: false,
+  },
+
+  {
     id: "total",
     accessorKey: "total",
     header: ({ column }) => (
       <DataTableColumnHeader
         column={column}
         className="text-center"
-        title="Total Amount"
+        title="Total"
       />
     ),
-    cell: ({ row, cell }) => {
-      const amount = parseFloat(row.getValue("total"));
-
-      return (
-        <InvoiceTableContextMenu {...{ cell }} className=" font-medium">
-          <span>{formatDisplayAmount(row.getValue("total"))}</span>
-        </InvoiceTableContextMenu>
-      );
-    },
+    cell: ({ row, cell }) => (
+      <InvoiceTableContextMenu {...{ cell }} className="font-medium">
+        <span>{formatDisplayAmount(row.getValue("total"))}</span>
+      </InvoiceTableContextMenu>
+    ),
     enableSorting: false,
+    meta: { hidden: true },
   },
   {
     id: "reason",
@@ -150,16 +216,13 @@ export function invoiceCols(orgId?: string): ColumnDef<Invoice>[] {
       </InvoiceTableContextMenu>
     ),
     enableHiding: false,
+    meta: { hidden: true },
   },
   {
     id: "paid",
     accessorKey: "advance_paid",
     header: ({ column }) => (
-      <DataTableColumnHeader
-        column={column}
-        className=" "
-        title="Amount Paid"
-      />
+      <DataTableColumnHeader column={column} title="Paid" />
     ),
     cell: ({ row, cell }) => {
       const amount = parseFloat(row.getValue("paid"));
@@ -175,7 +238,7 @@ export function invoiceCols(orgId?: string): ColumnDef<Invoice>[] {
     id: "method",
     accessorKey: "payment_method",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Payment Method" />
+      <DataTableColumnHeader column={column} title="Method" />
     ),
     cell: ({ cell }) => {
       // const isActive = cell.row.original.is_active;
@@ -199,7 +262,7 @@ export function invoiceCols(orgId?: string): ColumnDef<Invoice>[] {
     id: "due",
     accessorKey: "remaining_amount",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Amount Due" />
+      <DataTableColumnHeader column={column} title="Due" />
     ),
     cell: ({ row, cell }) => {
       const amount = parseFloat(row.getValue("due"));
@@ -208,8 +271,8 @@ export function invoiceCols(orgId?: string): ColumnDef<Invoice>[] {
         <InvoiceTableContextMenu
           {...{ cell }}
           className={cn(
-            " font-medium",
-            amount && amount < 0 && "text-destructive",
+            "font-medium",
+            amount > 0 && "text-amber-700 dark:text-amber-400",
           )}
         >
           {amount ? (
@@ -254,6 +317,7 @@ export function invoiceCols(orgId?: string): ColumnDef<Invoice>[] {
       );
     },
     enableSorting: false,
+    meta: { hidden: true },
   },
 
   {
@@ -276,18 +340,19 @@ export function invoiceCols(orgId?: string): ColumnDef<Invoice>[] {
       );
     },
     enableSorting: false,
+    meta: { hidden: true },
   },
   {
     id: "discount",
     accessorKey: "total_discount",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Discount" />
+      <DataTableColumnHeader column={column} title="Disc." />
     ),
     cell: ({ row, cell }) => {
       const amount = parseFloat(row.getValue("discount"));
 
       return (
-        <InvoiceTableContextMenu {...{ cell }} className=" font-medium">
+        <InvoiceTableContextMenu {...{ cell }} className="font-medium">
           {amount ? (
             formatDisplayAmount(row.getValue("discount"))
           ) : (
@@ -297,6 +362,7 @@ export function invoiceCols(orgId?: string): ColumnDef<Invoice>[] {
       );
     },
     enableSorting: false,
+    meta: { hidden: true },
   },
 
   {
@@ -319,6 +385,7 @@ export function invoiceCols(orgId?: string): ColumnDef<Invoice>[] {
       );
     },
     enableSorting: false,
+    meta: { hidden: true },
   },
 
   {
@@ -327,45 +394,17 @@ export function invoiceCols(orgId?: string): ColumnDef<Invoice>[] {
     header: ({ column }) => (
       <DataTableColumnHeader
         column={column}
-        title="N0 of items"
+        title="Items"
         className="text-center"
       />
     ),
     cell: ({ row, cell }) => (
-      <InvoiceTableContextMenu className="gap-2 justify-center" {...{ cell }}>
-        <span className="max-w-[400px] truncate ">
-          {row.original.lines.length}
-        </span>
+      <InvoiceTableContextMenu className="justify-center gap-2" {...{ cell }}>
+        <span>{row.original.lines.length}</span>
       </InvoiceTableContextMenu>
     ),
     enableSorting: false,
-  },
-
-  {
-    id: "client",
-    accessorKey: "customer_id",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Customer" />
-    ),
-    cell: ({ row, cell }) => {
-      const val = row.original.customer_name ?? row.original.customer_id;
-      return (
-        <InvoiceTableContextMenu className="w-[200px] truncate" {...{ cell }}>
-          {val && (
-            <Avatar className="size-5">
-              <AvatarImage src={extractImageUrl(val)} />
-              <BoringFallback name={val} />
-            </Avatar>
-          )}
-          {val ? (
-            <span className="truncate">{val}</span>
-          ) : (
-            <span className="text-muted-foreground text-normal">--</span>
-          )}
-        </InvoiceTableContextMenu>
-      );
-    },
-    enableHiding: false,
+    meta: { hidden: true },
   },
 
   {
@@ -393,6 +432,7 @@ export function invoiceCols(orgId?: string): ColumnDef<Invoice>[] {
       );
     },
     enableHiding: false,
+    meta: { hidden: true },
   },
 
   {
@@ -418,7 +458,7 @@ export function invoiceCols(orgId?: string): ColumnDef<Invoice>[] {
         </InvoiceTableContextMenu>
       );
     },
-    meta: { sort: true },
+    meta: { sort: true, hidden: true },
   },
   {
     id: "created",
@@ -447,7 +487,9 @@ export function invoiceCols(orgId?: string): ColumnDef<Invoice>[] {
   },
   {
     id: "actions",
+    header: () => <span className="sr-only">Actions</span>,
     cell: ({ row }) => <InvoiceTableRowActions row={row} />,
+    enableHiding: false,
   },
 ];
 }

@@ -2,6 +2,7 @@ import { apiClient } from "@/lib/api-client";
 import type {
   Client,
   ClientCreateParams,
+  ClientDetail,
   ClientFilters,
   ClientUpdateParams,
   Credit,
@@ -20,7 +21,7 @@ export const customersApi = {
     return apiClient.get<Client[]>(`${CLIENT_URL}${query}`, token);
   },
   getById: (token: string, id: string) =>
-    apiClient.get<Client>(CLIENT_URL + id, token),
+    apiClient.get<ClientDetail>(CLIENT_URL + id, token),
   create: (token: string, data: ClientCreateParams) =>
     apiClient.post<Client>(CLIENT_URL, token, cleanPayload(data)),
   update: (token: string, id: string, data: ClientUpdateParams) =>

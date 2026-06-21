@@ -41,7 +41,7 @@ export const productCols = ({
           />
           <Avatar className="size-7 shrink-0 rounded-sm">
             <AvatarImage src={extractImageUrl(entry.image_url)} />
-            <BoringFallback name={entry.id} square variant="marble" />
+            <BoringFallback name={entry.name} className="rounded-sm" />
           </Avatar>
         </div>
       );
@@ -123,7 +123,7 @@ export const productCols = ({
       <ProductTableContextMenu compact {...{ cell }}>
         <Avatar className="size-7 shrink-0 rounded-sm">
           <AvatarImage src={extractImageUrl(row.original.barcode_image_url)} />
-          <BoringFallback name={row.original.id} square variant="bauhaus" />
+          <BoringFallback name={row.original.name} className="rounded-sm" />
         </Avatar>
       </ProductTableContextMenu>
     ),

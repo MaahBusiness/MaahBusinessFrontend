@@ -125,6 +125,56 @@ export interface OrganisationCustomers {
   updated_at: string;
 }
 
+export interface CustomerPurchaseRecord {
+  invoice_id: string;
+  invoice_number: number;
+  total_amount: string;
+  purchase_date: string;
+}
+
+export interface CustomerProductPurchase {
+  product_id: string;
+  product_name: string;
+  total_qty: number;
+  total_spent: string;
+  purchase_count: number;
+}
+
+export interface ClientDetail extends OrganisationCustomers {
+  purchase_history: CustomerPurchaseRecord[];
+  products_bought: CustomerProductPurchase[];
+}
+
+/** Customer record returned by the customers API */
+export type Client = OrganisationCustomers;
+
+export interface ClientFilters {
+  name?: string;
+  customer_type?: string;
+  search?: string;
+  page?: number;
+  page_size?: number;
+  order_by?: string;
+}
+
+export interface ClientCreateParams {
+  business_id: string;
+  name: string;
+  customer_type?: "REGULAR" | "WHOLESALER";
+  email?: string;
+  phone_number?: string;
+  address?: string;
+}
+
+export interface ClientUpdateParams {
+  id?: string;
+  name?: string;
+  customer_type?: "REGULAR" | "WHOLESALER";
+  email?: string;
+  phone_number?: string;
+  address?: string;
+}
+
 export interface CreditCreate {
   customer_id: string;
   invoice_id: string;

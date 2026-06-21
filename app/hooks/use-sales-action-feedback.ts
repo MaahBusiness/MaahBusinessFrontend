@@ -36,6 +36,9 @@ export function useSalesActionFeedback(
         queryClient.invalidateQueries({
           queryKey: organisationKeys.invoiceList(orgId),
         });
+        queryClient.invalidateQueries({
+          queryKey: organisationKeys.clientList(orgId),
+        });
         if (actionData.data?.id) {
           queryClient.invalidateQueries({
             queryKey: organisationKeys.invoice(actionData.data.id),

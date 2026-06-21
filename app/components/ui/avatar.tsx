@@ -1,9 +1,7 @@
 import * as React from "react";
 import * as AvatarPrimitive from "@radix-ui/react-avatar";
-import * as BAV from "boring-avatars";
 
 import { cn } from "@/lib/utils";
-import type { AvatarProps } from "boring-avatars/dist/components/types";
 
 function Avatar({
   className,
@@ -49,16 +47,29 @@ function AvatarFallback({
     />
   );
 }
+
+function getAvatarInitials(name?: string | null): string {
+  if (!name?.trim()) return "?";
+
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+  }
+
+  return name.trim().slice(0, 2).toUpperCase();
+}
+
 function BoringFallback({
   className,
-  variant,
-  colors,
   name,
-  title,
-  size,
-  square,
+  variant: _variant,
+  colors: _colors,
+  title: _title,
+  size: _size,
+  square: _square,
   ...props
-}: Partial<AvatarProps> & {
+}: React.ComponentProps<typeof AvatarFallback> & {
+  name?: string | null;
   variant?:
     | "pixel"
     | "bauhaus"
@@ -68,18 +79,21 @@ function BoringFallback({
     | "marble"
     | "geometric"
     | "abstract";
+  colors?: string[];
+  title?: boolean;
+  size?: number;
+  square?: boolean;
 }) {
-  const Boring = BAV.default;
-
   return (
-    <Boring
-      name={name}
-      {...{ variant, colors, title, size, square, ...props }}
+    <AvatarFallback
       className={cn(
-        "bg-muted flex size-full items-center justify-center",
+        "bg-muted text-muted-foreground text-[0.625rem] font-medium uppercase tracking-wide",
         className,
       )}
-    />
+      {...props}
+    >
+      {getAvatarInitials(name)}
+    </AvatarFallback>
   );
 }
 

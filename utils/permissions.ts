@@ -14,6 +14,7 @@ export const FEATURES = [
   "products:crud",
   "stock:movements",
   "invoice:create",
+  "invoice:archive",
   "invoice:delete",
   "expenses:view",
   "expenses:manage",
@@ -36,6 +37,7 @@ export const PERMISSIONS: Record<Role, Feature[]> = {
     "products:crud",
     "stock:movements",
     "invoice:create",
+    "invoice:archive",
     "invoice:delete",
     "expenses:view",
     "expenses:manage",
@@ -47,13 +49,13 @@ export const PERMISSIONS: Record<Role, Feature[]> = {
     "reports:sales",
     "reports:inventory",
   ],
-
   manager: [
     "dashboard:limited",
     "manage:members",
     "products:crud",
     "stock:movements",
     "invoice:create",
+    "invoice:archive",
     "invoice:delete",
     "expenses:view",
     "expenses:manage",
@@ -67,6 +69,7 @@ export const PERMISSIONS: Record<Role, Feature[]> = {
   cashier: [
     "dashboard:limited",
     "invoice:create",
+    "invoice:archive",
     "customers:view",
     "customers:crud",
     "credits:manage",
@@ -136,6 +139,37 @@ export function requirePermission(role: Role | undefined, feature: Feature) {
   if (!hasPermission(role, feature)) {
     throw new Error("Forbidden");
   }
+}
+
+/** Soft-remove (archive) — cashiers see this as “Remove”. */
+export function canArchiveInvoice(role: Role | undefined): boolean {
+  return (
+    hasPermission(role, "invoice:archive") ||
+    hasPermission(role, "invoice:delete")
+  );
+}
+
+/** Permanent delete — owners and managers only. */
+export function canHardDeleteInvoice(role: Role | undefined): boolean {
+  return hasPermission(role, "invoice:delete");
+}
+
+/** Record a payment against outstanding balance. */
+export function canRecordInvoicePayment(role: Role | undefined): boolean {
+  return (
+    hasPermission(role, "credits:manage") ||
+    hasPermission(role, "invoice:create")
+  );
+}
+
+export function invoiceHasOutstandingBalance(invoice: {
+  remaining_amount?: number;
+  status?: string;
+}): boolean {
+  return (
+    Number(invoice.remaining_amount ?? 0) > 0 &&
+    invoice.status !== "CANCELLED"
+  );
 }
 
 export function canManageMember(

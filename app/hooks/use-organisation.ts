@@ -140,14 +140,24 @@ export function useOrganisation() {
       // staleTime: 2 * 60 * 1000, // 2 minutes (more dynamic data)
     });
 
-  const invoiceQuery = (id: string) =>
+  const clientQuery = (id: string, opts?: QueryOpts) =>
+    useQuery({
+      queryKey: organisationKeys.client(id),
+      queryFn: async () => {
+        if (!accessToken) throw rdr;
+        return await organisationsApi.getSingleClient(accessToken, id);
+      },
+      enabled: (opts?.enabled ?? true) && !!accessToken && !!id,
+    });
+
+  const invoiceQuery = (id: string, opts?: QueryOpts) =>
     useQuery({
       queryKey: organisationKeys.invoice(id),
       queryFn: async () => {
         if (!accessToken) throw rdr;
         return await organisationsApi.getSingleInvoice(accessToken, id);
       },
-      enabled: !!accessToken && !!coreQuery.data,
+      enabled: (opts?.enabled ?? true) && !!accessToken && !!id && !!coreQuery.data,
       // staleTime: 2 * 60 * 1000, // 2 minutes (more dynamic data)
     });
 
@@ -314,6 +324,24 @@ export function useOrganisation() {
     },
   });
 
+  const removeClient = useMutation({
+    mutationFn: async (clientId: string) => {
+      if (!accessToken) throw rdr;
+      return organisationsApi.removeClient(accessToken, clientId);
+    },
+    onSuccess: (res) => {
+      if (res.success) {
+        queryClient.invalidateQueries({
+          queryKey: organisationKeys.clientList(orgId),
+        });
+        toast.success(res.message ?? "Customer removed successfully.");
+      } else toast.error(res.message ?? "Could not remove customer.");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
   const removeinvoice = useMutation({
     mutationFn: async (id: string) => {
       if (!accessToken) throw rdr;
@@ -343,8 +371,12 @@ export function useOrganisation() {
     },
     onSuccess: (res) => {
       if (res.success) {
-        // Automatically refetch product
-        queryClient.invalidateQueries({ queryKey: ["invoice"] });
+        queryClient.invalidateQueries({
+          queryKey: organisationKeys.invoiceList(orgId),
+        });
+        queryClient.invalidateQueries({
+          queryKey: organisationKeys.invoices(orgId),
+        });
         toast.success("The invoice has been archived successfully!");
       } else toast.error(res.message);
     },
@@ -485,6 +517,7 @@ export function useOrganisation() {
     fetchInvoicePayments: invoicePaymentsQuery,
     fetchSinglePayment: paymentQuery,
     fetchClients: clientsQuery,
+    fetchSingleClient: clientQuery,
 
     // Loading states
     isLoading: coreQuery.isLoading,
@@ -512,6 +545,10 @@ export function useOrganisation() {
     removeProduct: removeProduct.mutate,
     isRemovingProduct: removeProduct.isPending,
     removeProductState: removeProduct.data,
+
+    removeClient: removeClient.mutate,
+    isRemovingClient: removeClient.isPending,
+    removeClientState: removeClient.data,
 
     scanCode: barcodeQuery,
     generateReceipt: printQuery,

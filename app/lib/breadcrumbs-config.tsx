@@ -1,72 +1,5 @@
-// ============================================================================
-// BREADCRUMB CONFIGURATION
-// ============================================================================
-
 import { Home } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-
-/** 
-WILDCARD PATTERN MATCHING:
-
-Using `/*` allows one config to match ALL nested routes!
-
-Example 1: Match all product routes \
-`"/dashboard/organizations/:orgId/products/*": [...]`
-
-This matches:
-```
-✅ /dashboard/organizations/123/products
-✅ /dashboard/organizations/123/products/new
-✅ /dashboard/organizations/123/products/456
-✅ /dashboard/organizations/123/products/456/edit
-✅ /dashboard/organizations/123/products/456/variants/789
-```
-
-Example 2: Match all customer routes
-`"/dashboard/organizations/:orgId/customers/*": [...]`
-
-This matches:
-```
-✅ /dashboard/organizations/123/customers
-✅ /dashboard/organizations/123/customers/new
-✅ /dashboard/organizations/123/customers/456
-✅ /dashboard/organizations/123/customers/456/orders
-```
-
-PRIORITY SYSTEM: \
-1. Exact matches first (no wildcard)
-2. Wildcards second (sorted by specificity)
-
-So you can have both:
-```
-"/dashboard/organizations/:orgId/products/new": [...]  // Exact - higher priority
-"/dashboard/organizations/:orgId/products/*": [...]    // Wildcard - lower priority
-```
-
-The "new" route will use its specific config,
-all other product routes use the wildcard config.
-
-@USAGE :
-
-Define top-level only:
-```ts
-"/dashboard/organizations/:orgId/products/*": [
-  { label: "Dashboard", hidden: true },
-  { label: (params) => params.orgId, isOrgSwitcher: true },
-  { label: "Products" },
-]
-  ```
-
-All these routes automatically use the same breadcrumb:
-```
-- /dashboard/organizations/123/products
-- /dashboard/organizations/123/products/new
-- /dashboard/organizations/123/products/456/edit
-- /dashboard/organizations/123/products/456/variants
-```
-
-NO NEED to define each nested route separately!
-*/
 
 export interface BreadcrumbSegment {
   label: string | ((params: Record<string, string>) => string);
@@ -198,12 +131,9 @@ export const breadcrumbsConfig: BreadcrumbConfig = {
   "/dashboard/org/:id/clients/*": [
     { label: "Dashboard", icon: Home, href: "/dashboard", hidden: true },
     {
-      label: (params) => params.id, // Will be replaced by org name
+      label: (params) => params.id,
       href: (params) => `/dashboard/org/${params.id}/home`,
-      isOrgSwitcher: true, // Renders as dropdown
-    },
-    {
-      label: "Clients",
+      isOrgSwitcher: true,
     },
   ],
 
