@@ -11,6 +11,7 @@ import {
   UserPlus,
   UserRound,
   Users,
+  Wallet,
   Warehouse,
 } from "lucide-react";
 import type { Role, SideItem } from "types";
@@ -133,6 +134,7 @@ const ORG_ROUTE_RULES: RouteRule[] = [
   },
   { test: (rest) => rest.startsWith("products"), permission: "products:crud" },
   { test: (rest) => rest.startsWith("inventory"), permission: "stock:movements" },
+  { test: (rest) => rest.startsWith("expenses"), permission: "expenses:view" },
 ];
 
 export function getOrgRoutePermission(
@@ -158,6 +160,7 @@ export const ORG_NAV_SEGMENTS = {
   invoices: "routes/dashboard/sales/index.tsx",
   clients: "routes/dashboard/clients/index.tsx",
   inventory: "routes/dashboard/inventory/index.tsx",
+  expenses: "routes/dashboard/expenses/index.tsx",
   team: "routes/dashboard/team/index.tsx",
 } as const;
 
@@ -200,6 +203,12 @@ export const SIDEBAR_NAV_SCHEMA: { [key: string]: SideItem[] } = {
       url: "inventory",
       icon: PackageSearch,
       permission: "stock:movements",
+    },
+    {
+      title: "Expenses",
+      url: "expenses",
+      icon: Wallet,
+      permission: "expenses:view",
     },
   ],
   secondary: [
@@ -301,6 +310,16 @@ export const ORG_QUICK_ACTIONS: readonly OrgQuickAction[] = [
     gradient: "from-orange-600 to-amber-600",
     shadow: "shadow-orange-500/25",
     permission: "stock:movements",
+  },
+  {
+    id: "expenses",
+    label: "Expenses",
+    desc: "Track spending",
+    icon: Wallet,
+    href: (id) => orgPath(id, "expenses"),
+    gradient: "from-orange-600 to-red-600",
+    shadow: "shadow-orange-500/25",
+    permission: "expenses:view",
   },
   {
     id: "team",

@@ -63,6 +63,7 @@ export default [
       route("clients", "routes/dashboard/clients/index.tsx"),
 
       route("inventory", "routes/dashboard/inventory/index.tsx"),
+      route("expenses", "routes/dashboard/expenses/index.tsx"),
     ]),
     route("*", "routes/dashboard/404.tsx"),
   ]),

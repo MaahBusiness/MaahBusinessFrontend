@@ -1,4 +1,5 @@
 import type { Locale } from "date-fns";
+import type { ExpenseFilters } from "@/lib/finance-types";
 import type {
   ClientFilters,
   InvoiceFilters,
@@ -272,6 +273,19 @@ export const clientFilterParsers = {
   customer_type: (v: string | null) => v || undefined,
   ...genericFiltersParsers,
 } satisfies Record<keyof ClientFilters, (v: string | null) => any>;
+
+export const expenseFilterParsers = {
+  expense_type: (v: string | null) => v || undefined,
+  start_date: (v: string | null) => v || undefined,
+  end_date: (v: string | null) => v || undefined,
+  payment_method: (v: string | null) => v || undefined,
+  payee_type: (v: string | null) => v || undefined,
+  min_amount: (v: string | null) => (v ? Number(v) : undefined),
+  max_amount: (v: string | null) => (v ? Number(v) : undefined),
+  is_approved: (v: string | null) =>
+    v === "true" ? true : v === "false" ? false : undefined,
+  ...genericFiltersParsers,
+} satisfies Record<keyof ExpenseFilters, (v: string | null) => any>;
 
 /**Parses only defined search params. Much like `cleanPayload` */
 export function parseSearchParams<T>(
