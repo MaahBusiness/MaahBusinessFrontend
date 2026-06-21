@@ -4,6 +4,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { ServerActionState } from "types";
 import { organisationKeys } from "@/lib/api/organisation";
+import { invalidateOrgDashboard } from "@/lib/api/dashboard";
+import { invalidateOrgInventory } from "@/lib/api/inventory";
 
 /** Shows backend messages once and invalidates product queries on success. */
 export function useProductActionFeedback(
@@ -36,6 +38,8 @@ export function useProductActionFeedback(
             queryKey: organisationKeys.product(actionData.data.id),
           });
         }
+        void invalidateOrgDashboard(queryClient, orgId);
+        void invalidateOrgInventory(queryClient, orgId);
       }
       return;
     }

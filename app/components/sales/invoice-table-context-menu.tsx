@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { EditInvoiceDrawer } from "@/components/sales/invoice-edit-drawer";
+import { InvoiceReceiptDialog } from "@/components/sales/invoice-receipt-dialog";
 import { InvoicePaymentFormContent } from "@/components/sales/single-invoice-actions";
 import {
   AlertDialog,

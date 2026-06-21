@@ -3,10 +3,13 @@
 // ============================================================================
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import { redirect, useLocation, useParams } from "react-router";
 import { useAuth } from "@/contexts/auth-context";
 import { toast } from "sonner";
 import { organisationKeys, organisationsApi } from "@/lib/api/organisation";
+import { invalidateOrgDashboard } from "@/lib/api/dashboard";
+import { invalidateOrgInventory } from "@/lib/api/inventory";
 import { useEffect, useMemo } from "react";
 import type {
   Barcode,
@@ -16,6 +19,15 @@ import type {
   ProductFilters,
 } from "types";
 import { normalizeRole } from "utils/permissions";
+
+function syncOrgAnalytics(
+  queryClient: QueryClient,
+  orgId: string,
+  opts?: { inventory?: boolean },
+) {
+  void invalidateOrgDashboard(queryClient, orgId);
+  if (opts?.inventory !== false) void invalidateOrgInventory(queryClient, orgId);
+}
 
 export function useOrganisation() {
   const { id: orgId } = useParams<{ id: string }>();
@@ -247,10 +259,10 @@ export function useOrganisation() {
     },
     onSuccess: (res) => {
       if (res.success) {
-        // Automatically refetch members
         queryClient.invalidateQueries({
           queryKey: organisationKeys.members(orgId),
         });
+        syncOrgAnalytics(queryClient, orgId, { inventory: false });
         toast.success("Member added!");
       } else toast.error(res.message);
     },
@@ -267,10 +279,10 @@ export function useOrganisation() {
     },
     onSuccess: (res) => {
       if (res.success) {
-        // Automatically refetch members
         queryClient.invalidateQueries({
           queryKey: organisationKeys.members(orgId),
         });
+        syncOrgAnalytics(queryClient, orgId, { inventory: false });
         toast.success("Team member has been removed!");
       } else toast.error(res.message);
     },
@@ -291,6 +303,7 @@ export function useOrganisation() {
         queryClient.invalidateQueries({
           queryKey: organisationKeys.core(orgId),
         });
+        syncOrgAnalytics(queryClient, orgId);
         toast.success(
           variables.sub
             ? "Subcategory deleted successfully!"
@@ -316,6 +329,7 @@ export function useOrganisation() {
         queryClient.invalidateQueries({
           queryKey: organisationKeys.product(res.data?.id ?? ""),
         });
+        syncOrgAnalytics(queryClient, orgId);
         toast.success(res.message ?? "Product removed successfully.");
       } else toast.error(res.message ?? "Could not remove product.");
     },
@@ -334,6 +348,7 @@ export function useOrganisation() {
         queryClient.invalidateQueries({
           queryKey: organisationKeys.clientList(orgId),
         });
+        syncOrgAnalytics(queryClient, orgId, { inventory: false });
         toast.success(res.message ?? "Customer removed successfully.");
       } else toast.error(res.message ?? "Could not remove customer.");
     },
@@ -349,13 +364,13 @@ export function useOrganisation() {
     },
     onSuccess: (res) => {
       if (res.success) {
-        // Automatically refetch product
         queryClient.invalidateQueries({
           queryKey: organisationKeys.invoiceList(orgId),
         });
         queryClient.invalidateQueries({
           queryKey: organisationKeys.invoice(res.data?.id ?? ""),
         });
+        syncOrgAnalytics(queryClient, orgId);
         toast.success("The invoice has been removed successfully!");
       } else toast.error(res.message);
     },
@@ -377,6 +392,7 @@ export function useOrganisation() {
         queryClient.invalidateQueries({
           queryKey: organisationKeys.invoices(orgId),
         });
+        syncOrgAnalytics(queryClient, orgId);
         toast.success("The invoice has been archived successfully!");
       } else toast.error(res.message);
     },
@@ -394,13 +410,13 @@ export function useOrganisation() {
     },
     onSuccess: (res) => {
       if (res.success) {
-        // Automatically refetch product
         queryClient.invalidateQueries({
           queryKey: organisationKeys.invoiceList(orgId),
         });
         queryClient.invalidateQueries({
           queryKey: organisationKeys.invoice(res.data?.id ?? ""),
         });
+        syncOrgAnalytics(queryClient, orgId);
         toast.success("The invoice has been removed from archives!");
       } else toast.error(res.message);
     },
@@ -416,13 +432,13 @@ export function useOrganisation() {
     },
     onSuccess: (res) => {
       if (res.success) {
-        // Automatically refetch product
         queryClient.invalidateQueries({
           queryKey: organisationKeys.invoiceList(orgId),
         });
         queryClient.invalidateQueries({
           queryKey: organisationKeys.invoice(res.data?.id ?? ""),
         });
+        syncOrgAnalytics(queryClient, orgId);
         toast.success("The invoice has been canceled successfully!");
       } else toast.error(res.message);
     },

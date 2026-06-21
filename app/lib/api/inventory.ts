@@ -1,6 +1,22 @@
+import type { QueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 import type { Product } from "types";
 import { INVENTORY_URL } from "utils/endpoints";
+
+export const inventoryKeys = {
+  all: ["inventory"] as const,
+  org: (orgId: string) => [...inventoryKeys.all, orgId] as const,
+  lowStock: (orgId: string) => [...inventoryKeys.org(orgId), "low-stock"] as const,
+  expired: (orgId: string) => [...inventoryKeys.org(orgId), "expired"] as const,
+};
+
+/** Invalidate low-stock and expired inventory alerts for an org. */
+export function invalidateOrgInventory(
+  queryClient: QueryClient,
+  orgId: string,
+) {
+  return queryClient.invalidateQueries({ queryKey: inventoryKeys.org(orgId) });
+}
 
 type StockMovementType = "ENTRY" | "EXIT" | "ADJUSTMENT";
 

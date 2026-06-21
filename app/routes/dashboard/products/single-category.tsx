@@ -8,6 +8,7 @@ import {
 } from "react-router";
 import { ChevronRight } from "lucide-react";
 import { organisationKeys, organisationsApi } from "@/lib/api/organisation";
+import { invalidateOrgDashboard } from "@/lib/api/dashboard";
 import { getSession } from "@/lib/session.server";
 import type {
   ServerActionState,
@@ -137,6 +138,7 @@ export default function SingleCatPage({ actionData }: Route.ComponentProps) {
         queryClient.invalidateQueries({
           queryKey: organisationKeys.core(id),
         });
+        void invalidateOrgDashboard(queryClient, id);
 
         if (intent === "update-category")
           toast.success(

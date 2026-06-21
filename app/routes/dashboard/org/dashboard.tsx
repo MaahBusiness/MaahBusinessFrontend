@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { addDays, format, parseISO } from "date-fns";
 import {
   Activity,
@@ -13,7 +13,7 @@ import {
   Wallet,
 } from "lucide-react";
 import type { DateRange } from "react-day-picker";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -40,7 +40,7 @@ import { DashboardEmptyHint } from "@/components/dashboard/empty-hint";
 import { DashboardReportsPanel } from "@/components/dashboard/reports-panel";
 import { useAuth } from "@/contexts/auth-context";
 import { useOrganisation } from "@/hooks/use-organisation";
-import { dashboardApi } from "@/lib/api/dashboard";
+import { dashboardApi, dashboardKeys, invalidateOrgDashboardViews } from "@/lib/api/dashboard";
 import type { DashboardInsights, DashboardSummary } from "@/lib/dashboard-types";
 import { RequestFailed } from "@/routes/404";
 import { formatDisplayAmount } from "utils";
@@ -112,6 +112,7 @@ export default function OrganisationDashboard() {
   const { organisation: res, isLoading, error, businessMember } =
     useOrganisation();
   const { accessToken } = useAuth();
+  const queryClient = useQueryClient();
   const orgId = res?.data?.id;
   const orgName = res?.data?.name;
 
@@ -125,18 +126,29 @@ export default function OrganisationDashboard() {
 
   const filters = useMemo(() => dateRangeToFilters(dateRange), [dateRange]);
 
+  useEffect(() => {
+    if (orgId) void invalidateOrgDashboardViews(queryClient, orgId);
+  }, [orgId, queryClient]);
+
   const isOwner = businessMember?.role === "owner";
 
+  const dashboardQueryOpts = {
+    staleTime: 60 * 1000,
+    refetchOnMount: "always" as const,
+  };
+
   const summaryQuery = useQuery({
-    queryKey: ["dashboard", orgId, "summary", filters],
+    queryKey: dashboardKeys.summary(orgId!, filters),
     queryFn: async () => dashboardApi.getSummary(accessToken!, orgId!, filters),
     enabled: !!orgId && !!accessToken && isOwner,
+    ...dashboardQueryOpts,
   });
 
   const insightsQuery = useQuery({
-    queryKey: ["dashboard", orgId, "insights", filters],
+    queryKey: dashboardKeys.insights(orgId!, filters),
     queryFn: async () => dashboardApi.getInsights(accessToken!, orgId!, filters),
     enabled: !!orgId && !!accessToken && isOwner,
+    ...dashboardQueryOpts,
   });
 
   const notificationsQuery = useQuery({

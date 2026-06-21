@@ -16,7 +16,7 @@ import { DashboardEmptyHint } from "@/components/dashboard/empty-hint";
 import { CashierHomeDashboard } from "@/components/dashboard/cashier-home-dashboard";
 import { useAuth } from "@/contexts/auth-context";
 import { useOrganisation } from "@/hooks/use-organisation";
-import { inventoryApi } from "@/lib/api/inventory";
+import { inventoryApi, inventoryKeys } from "@/lib/api/inventory";
 import { filterByRole } from "@/lib/dashboard-widgets";
 import { formatDisplayAmount } from "utils";
 import type { DashboardInsights } from "@/lib/dashboard-types";
@@ -85,7 +85,7 @@ export function StaffDashboard({
   const members = fetchMembers({ enabled: canViewTeam });
 
   const lowStockQuery = useQuery({
-    queryKey: ["inventory", orgId, "low-stock"],
+    queryKey: inventoryKeys.lowStock(orgId),
     queryFn: () => inventoryApi.getLowStockProducts(accessToken!, orgId),
     enabled: !!accessToken && !!orgId && canViewInventory,
   });

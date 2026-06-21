@@ -35,6 +35,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useOrganisation } from "@/hooks/use-organisation";
+import {
+  invalidateOrgDashboard,
+} from "@/lib/api/dashboard";
+import { invalidateOrgInventory } from "@/lib/api/inventory";
 import { organisationKeys } from "@/lib/api/organisation";
 import { orgPath } from "@/lib/org-navigation";
 import { cn } from "@/lib/utils";
@@ -357,9 +361,9 @@ export function InvoiceReceiptContent({
 
 function InvoiceReceiptPayments({ invoice }: { invoice: Invoice }) {
   const { fetchInvoicePayments } = useOrganisation();
-  const { data: res, isFetching, refetch } = fetchInvoicePayments(invoice.id);
+  const { data: res, isLoading, refetch } = fetchInvoicePayments(invoice.id);
 
-  if (isFetching) {
+  if (isLoading && !res) {
     return (
       <div className="border-t border-border/60 px-4 py-4 sm:px-6">
         <Skeleton className="mb-3 h-4 w-20" />
@@ -497,6 +501,8 @@ type InvoiceReceiptDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   trigger?: ReactNode;
+  /** Render above an already-open dialog (e.g. customer details). */
+  stacked?: boolean;
 };
 
 export function InvoiceReceiptDialog({
@@ -504,12 +510,13 @@ export function InvoiceReceiptDialog({
   open,
   onOpenChange,
   trigger,
+  stacked = false,
 }: InvoiceReceiptDialogProps) {
   const { id: orgId } = useParams();
   const { fetchSingleInvoice, organisation } = useOrganisation();
   const actionData = useActionData<ServerActionState & { data?: Invoice }>();
   const queryClient = useQueryClient();
-  const { data: res, isFetching, error, refetch } = fetchSingleInvoice(invoiceId, {
+  const { data: res, isLoading, error, refetch } = fetchSingleInvoice(invoiceId, {
     enabled: open,
   });
 
@@ -529,6 +536,8 @@ export function InvoiceReceiptDialog({
       queryClient.invalidateQueries({
         queryKey: organisationKeys.paymentList(orgId, { invoice: res.data.id }),
       });
+      void invalidateOrgDashboard(queryClient, orgId);
+      void invalidateOrgInventory(queryClient, orgId);
     }
   }, [actionData, orgId, res?.data, queryClient]);
 
@@ -537,8 +546,8 @@ export function InvoiceReceiptDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger ? <DialogTrigger asChild>{trigger}</DialogTrigger> : null}
-      <DialogContent className={receiptDialogClassName}>
-        {isFetching ? (
+      <DialogContent className={receiptDialogClassName} stacked={stacked}>
+        {isLoading && !res ? (
           <InvoiceReceiptSkeleton />
         ) : !res?.success || error ? (
           <div className="p-6">

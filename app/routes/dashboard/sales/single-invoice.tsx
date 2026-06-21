@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/empty";
 import { useOrganisation } from "@/hooks/use-organisation";
 import { organisationKeys } from "@/lib/api/organisation";
+import { invalidateOrgDashboard } from "@/lib/api/dashboard";
+import { invalidateOrgInventory } from "@/lib/api/inventory";
 import { orgPath } from "@/lib/org-navigation";
 import { getSession } from "@/lib/session.server";
 import { RequestFailed } from "@/routes/404";
@@ -50,7 +52,7 @@ export default function SingleInvoicepage({
   if (!invId) return <RequestFailed />;
 
   const intent = navigation.formData?.get("intent");
-  const { data: res, isFetching, error, refetch } = fetchSingleInvoice(invId);
+  const { data: res, isLoading, error, refetch } = fetchSingleInvoice(invId);
 
   useEffect(() => {
     if (actionData?.message) {
@@ -71,6 +73,9 @@ export default function SingleInvoicepage({
         queryClient.invalidateQueries({
           queryKey: organisationKeys.paymentList(id, { invoice: res.data.id }),
         });
+
+        void invalidateOrgDashboard(queryClient, id);
+        void invalidateOrgInventory(queryClient, id);
       }
 
       if (intent === "update-invoice")
@@ -88,7 +93,7 @@ export default function SingleInvoicepage({
     }
   }, [actionData]);
 
-  if (isFetching) {
+  if (isLoading && !res) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
         <div className="mx-4 w-full max-w-2xl">
