@@ -36,7 +36,7 @@ export function AddProductDrawer({ triggerClassName }: AddProductDrawerProps) {
 
   return (
     <Drawer open={open} onOpenChange={setOpen} direction="right">
-      <DrawerTrigger asChild>
+        <DrawerTrigger asChild>
         <Button
           size="sm"
           disabled={isAdding}
@@ -48,17 +48,17 @@ export function AddProductDrawer({ triggerClassName }: AddProductDrawerProps) {
             <PackagePlus className="size-4" />
           )}
           New product
-        </Button>
-      </DrawerTrigger>
+          </Button>
+        </DrawerTrigger>
 
       <DrawerContent className="data-[vaul-drawer-direction=right]:w-full data-[vaul-drawer-direction=right]:sm:max-w-xl">
-        <Form
-          method="POST"
-          encType="multipart/form-data"
+          <Form
+            method="POST"
+            encType="multipart/form-data"
           className="flex h-full flex-col"
           key={open ? "add-product-open" : "add-product-closed"}
         >
-          <input type="hidden" name="intent" value="add-product" />
+              <input type="hidden" name="intent" value="add-product" />
 
           <DrawerHeader className="border-b border-violet-500/20 bg-gradient-to-r from-violet-500/10 via-blue-500/5 to-transparent px-6 py-5">
             <div className="flex items-center gap-2 text-violet-600">
@@ -79,11 +79,11 @@ export function AddProductDrawer({ triggerClassName }: AddProductDrawerProps) {
           </div>
 
           <DrawerFooter className="border-t border-border bg-background/95 px-6 py-4">
-            <DrawerClose asChild>
+              <DrawerClose asChild>
               <Button type="button" variant="outline">
-                Cancel
-              </Button>
-            </DrawerClose>
+                  Cancel
+                </Button>
+              </DrawerClose>
             <Button
               type="submit"
               disabled={isAdding}
@@ -91,10 +91,10 @@ export function AddProductDrawer({ triggerClassName }: AddProductDrawerProps) {
             >
               {isAdding && <Spinner className="size-4" />}
               Save product
-            </Button>
-          </DrawerFooter>
-        </Form>
-      </DrawerContent>
-    </Drawer>
+              </Button>
+            </DrawerFooter>
+          </Form>
+        </DrawerContent>
+      </Drawer>
   );
 }
