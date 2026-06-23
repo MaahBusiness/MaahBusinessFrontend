@@ -14,6 +14,7 @@ import type {
   GenericResponse,
   ExtendedUser,
 } from "types";
+import { sanitizeRedirectPath } from "utils/safe-redirect";
 import {
   genericErrorState,
   expiryFromNowSeconds,
@@ -45,7 +46,9 @@ export async function signUpWithEmail(formData: FormData) {
   const name = formData.get("name") as string | undefined;
   const email = formData.get("email") as string | undefined;
   const password = formData.get("password") as string | undefined;
-  const redirectTo = formData.get("redirectTo") as string | undefined;
+  const redirectTo = sanitizeRedirectPath(
+    formData.get("redirectTo") as string | undefined,
+  );
 
   const errors: Record<string, string> = {};
 
@@ -216,7 +219,7 @@ export async function verifyOTP(
       );
     }
 
-    return redirect(otpSession.redirectTo || "/dashboard", {
+    return redirect(sanitizeRedirectPath(otpSession.redirectTo), {
       headers: {
         "Set-Cookie": await sessionCookie.serialize({
           accessToken,
@@ -449,7 +452,7 @@ export async function handleGoogleOAuthCallback(code: string, redirectTo?: strin
       );
     }
 
-    return redirect(redirectTo || "/dashboard", {
+    return redirect(sanitizeRedirectPath(redirectTo), {
       headers: {
         "Set-Cookie": await sessionCookie.serialize({
           accessToken,
@@ -475,7 +478,9 @@ export async function handleGoogleOAuthCallback(code: string, redirectTo?: strin
 export async function signInWithEmail(formData: FormData) {
   const email = formData.get("email") as string | undefined;
   const password = formData.get("password") as string | undefined;
-  const redirectTo = formData.get("redirectTo") as string | undefined;
+  const redirectTo = sanitizeRedirectPath(
+    formData.get("redirectTo") as string | undefined,
+  );
 
   const errors: Record<string, string> = {};
 

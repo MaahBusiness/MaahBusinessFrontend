@@ -4,8 +4,10 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { QueryClient } from "@tanstack/react-query";
-import { redirect, useLocation, useParams } from "react-router";
+import { useLocation, useNavigate, useParams } from "react-router";
 import { useAuth } from "@/contexts/auth-context";
+import { useAuthErrorRedirect } from "@/hooks/use-auth-error-redirect";
+import { assertAccessToken } from "@/lib/auth-errors";
 import { toast } from "sonner";
 import { organisationKeys, organisationsApi } from "@/lib/api/organisation";
 import { invalidateOrgDashboard } from "@/lib/api/dashboard";
@@ -32,12 +34,9 @@ function syncOrgAnalytics(
 export function useOrganisation() {
   const { id: orgId } = useParams<{ id: string }>();
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const { accessToken, user } = useAuth();
   const queryClient = useQueryClient();
-
-  const rdr = redirect(
-    `/auth/signin?redirectTo=${encodeURIComponent(pathname)}`,
-  );
 
   if (!orgId) {
     throw new Error("useOrganisation must be used within org routes");
@@ -47,7 +46,7 @@ export function useOrganisation() {
   const coreQuery = useQuery({
     queryKey: organisationKeys.core(orgId),
     queryFn: async () => {
-      if (!accessToken) throw rdr;
+      assertAccessToken(accessToken, pathname);
       return await organisationsApi.getById(accessToken, orgId);
     },
     enabled: !!accessToken,
@@ -60,7 +59,7 @@ export function useOrganisation() {
     useQuery({
       queryKey: organisationKeys.members(orgId),
       queryFn: async () => {
-        if (!accessToken) throw rdr;
+        assertAccessToken(accessToken, pathname);
         return await organisationsApi.getMembers(accessToken, orgId);
       },
       enabled: (opts?.enabled ?? true) && !!accessToken && !!coreQuery.data,
@@ -71,7 +70,7 @@ export function useOrganisation() {
     useQuery({
       queryKey: organisationKeys.prodlist(orgId, filters),
       queryFn: async () => {
-        if (!accessToken) throw rdr;
+        assertAccessToken(accessToken, pathname);
         return await organisationsApi.getFilteredProducts(
           accessToken,
           orgId,
@@ -86,7 +85,7 @@ export function useOrganisation() {
     useQuery({
       queryKey: organisationKeys.product(id),
       queryFn: async () => {
-        if (!accessToken) throw rdr;
+        assertAccessToken(accessToken, pathname);
         return await organisationsApi.getProduct(accessToken, id);
       },
       enabled: !!accessToken && !!id,
@@ -96,7 +95,7 @@ export function useOrganisation() {
     useQuery({
       queryKey: organisationKeys.invoiceList(orgId, filters),
       queryFn: async () => {
-        if (!accessToken) throw rdr;
+        assertAccessToken(accessToken, pathname);
         return await organisationsApi.getFilteredInvoices(
           accessToken,
           orgId,
@@ -111,7 +110,7 @@ export function useOrganisation() {
     useQuery({
       queryKey: organisationKeys.invoiceList(orgId + "archive", filters),
       queryFn: async () => {
-        if (!accessToken) throw rdr;
+        assertAccessToken(accessToken, pathname);
         return await organisationsApi.getFilteredArchivedInvoices(
           accessToken,
           orgId,
@@ -126,7 +125,7 @@ export function useOrganisation() {
     useQuery({
       queryKey: organisationKeys.paymentList(orgId, filters),
       queryFn: async () => {
-        if (!accessToken) throw rdr;
+        assertAccessToken(accessToken, pathname);
         return await organisationsApi.getFilteredPayments(
           accessToken,
           orgId,
@@ -141,7 +140,7 @@ export function useOrganisation() {
     useQuery({
       queryKey: organisationKeys.clientList(orgId, filters),
       queryFn: async () => {
-        if (!accessToken) throw rdr;
+        assertAccessToken(accessToken, pathname);
         return await organisationsApi.getFilteredClients(
           accessToken,
           orgId,
@@ -156,7 +155,7 @@ export function useOrganisation() {
     useQuery({
       queryKey: organisationKeys.client(id),
       queryFn: async () => {
-        if (!accessToken) throw rdr;
+        assertAccessToken(accessToken, pathname);
         return await organisationsApi.getSingleClient(accessToken, id);
       },
       enabled: (opts?.enabled ?? true) && !!accessToken && !!id,
@@ -166,7 +165,7 @@ export function useOrganisation() {
     useQuery({
       queryKey: organisationKeys.invoice(id),
       queryFn: async () => {
-        if (!accessToken) throw rdr;
+        assertAccessToken(accessToken, pathname);
         return await organisationsApi.getSingleInvoice(accessToken, id);
       },
       enabled: (opts?.enabled ?? true) && !!accessToken && !!id && !!coreQuery.data,
@@ -177,7 +176,7 @@ export function useOrganisation() {
     useQuery({
       queryKey: organisationKeys.payment(id),
       queryFn: async () => {
-        if (!accessToken) throw rdr;
+        assertAccessToken(accessToken, pathname);
         return await organisationsApi.getPayments(accessToken, id);
       },
       enabled: !!accessToken && !!coreQuery.data,
@@ -188,7 +187,7 @@ export function useOrganisation() {
     useQuery({
       queryKey: organisationKeys.paymentList(orgId, { invoice: id }),
       queryFn: async () => {
-        if (!accessToken) throw rdr;
+        assertAccessToken(accessToken, pathname);
         return await organisationsApi.getInvoicePayments(accessToken, id);
       },
       enabled: !!accessToken && !!coreQuery.data,
@@ -199,7 +198,7 @@ export function useOrganisation() {
   //   useQuery({
   //     queryKey: organisationKeys.receipt(id),
   //     queryFn: async () => {
-  //       if (!accessToken) throw rdr;
+  //       assertAccessToken(accessToken, pathname);
   //       return await organisationsApi.generateReceipt(accessToken, id, format);
   //     },
   //     enabled: !!accessToken && !!coreQuery.data,
@@ -210,7 +209,7 @@ export function useOrganisation() {
     useQuery({
       queryKey: organisationKeys.scanned(orgId, code),
       queryFn: async () => {
-        if (!accessToken) throw rdr;
+        assertAccessToken(accessToken, pathname);
         return await organisationsApi.scanBarcode(accessToken, orgId, code);
       },
       enabled: false,
@@ -220,7 +219,7 @@ export function useOrganisation() {
     useQuery({
       queryKey: organisationKeys.print(id),
       queryFn: async () => {
-        if (!accessToken) throw rdr;
+        assertAccessToken(accessToken, pathname);
         return await organisationsApi.generateReceipt(accessToken, id, format);
       },
       enabled: false,
@@ -236,7 +235,7 @@ export function useOrganisation() {
       phone_number?: string | undefined;
       logo_url?: string | undefined;
     }) => {
-      if (!accessToken) throw rdr;
+      assertAccessToken(accessToken, pathname);
       return organisationsApi.update(accessToken, orgId, data);
     },
     onSuccess: (response) => {
@@ -254,7 +253,7 @@ export function useOrganisation() {
   // Add member mutation
   const addMember = useMutation({
     mutationFn: async (data: { user_id: string; role: string }) => {
-      if (!accessToken) throw rdr;
+      assertAccessToken(accessToken, pathname);
       return organisationsApi.addMember(accessToken, orgId, data);
     },
     onSuccess: (res) => {
@@ -274,7 +273,7 @@ export function useOrganisation() {
   // Remove member mutation
   const removeMember = useMutation({
     mutationFn: async (memberId: string) => {
-      if (!accessToken) throw rdr;
+      assertAccessToken(accessToken, pathname);
       return organisationsApi.removeMember(accessToken, orgId, memberId);
     },
     onSuccess: (res) => {
@@ -293,7 +292,7 @@ export function useOrganisation() {
 
   const removeCategory = useMutation({
     mutationFn: async (data: { id: string; sub?: boolean }) => {
-      if (!accessToken) throw rdr;
+      assertAccessToken(accessToken, pathname);
       return data.sub
         ? organisationsApi.deleteSubcategory(accessToken, data.id)
         : organisationsApi.deleteCategory(accessToken, data.id);
@@ -318,7 +317,7 @@ export function useOrganisation() {
 
   const removeProduct = useMutation({
     mutationFn: async (id: string) => {
-      if (!accessToken) throw rdr;
+      assertAccessToken(accessToken, pathname);
       return organisationsApi.removeProduct(accessToken, id);
     },
     onSuccess: (res) => {
@@ -340,7 +339,7 @@ export function useOrganisation() {
 
   const removeClient = useMutation({
     mutationFn: async (clientId: string) => {
-      if (!accessToken) throw rdr;
+      assertAccessToken(accessToken, pathname);
       return organisationsApi.removeClient(accessToken, clientId);
     },
     onSuccess: (res) => {
@@ -359,7 +358,7 @@ export function useOrganisation() {
 
   const removeinvoice = useMutation({
     mutationFn: async (id: string) => {
-      if (!accessToken) throw rdr;
+      assertAccessToken(accessToken, pathname);
       return organisationsApi.deleteInvoice(accessToken, id);
     },
     onSuccess: (res) => {
@@ -381,7 +380,7 @@ export function useOrganisation() {
 
   const archiveInvoice = useMutation({
     mutationFn: async (id: string) => {
-      if (!accessToken) throw rdr;
+      assertAccessToken(accessToken, pathname);
       return organisationsApi.archiveInvoice(accessToken, id);
     },
     onSuccess: (res) => {
@@ -403,7 +402,7 @@ export function useOrganisation() {
 
   const unArchiveInvoice = useMutation({
     mutationFn: async (id: string) => {
-      if (!accessToken) throw rdr;
+      assertAccessToken(accessToken, pathname);
       return organisationsApi.updateInvoice(accessToken, id, {
         is_archived: false,
       });
@@ -427,7 +426,7 @@ export function useOrganisation() {
 
   const cancelInvoice = useMutation({
     mutationFn: async (id: string) => {
-      if (!accessToken) throw rdr;
+      assertAccessToken(accessToken, pathname);
       return organisationsApi.cancelInvoice(accessToken, id);
     },
     onSuccess: (res) => {
@@ -450,7 +449,7 @@ export function useOrganisation() {
   // Remove organisation mutation
   const removeOrganisation = useMutation({
     mutationFn: async () => {
-      if (!accessToken) throw rdr;
+      assertAccessToken(accessToken, pathname);
       return organisationsApi.delete(accessToken, orgId);
     },
     onSuccess: (response) => {
@@ -463,7 +462,7 @@ export function useOrganisation() {
           queryKey: organisationKeys.lists(),
         });
         toast.success("Organisation has been permanently deleted.");
-        redirect("/dashboard/organisations");
+        navigate("/dashboard/organisations");
       } else toast.error(response.message);
     },
     onError: (error: Error) => {
@@ -508,6 +507,8 @@ export function useOrganisation() {
 
     return undefined;
   }, [coreQuery.data?.data, membersListRes?.data, user?.id, user?.email, user?.name]);
+
+  useAuthErrorRedirect(coreQuery.error, pathname);
 
   useEffect(() => {
     if (coreQuery.data?.message) {

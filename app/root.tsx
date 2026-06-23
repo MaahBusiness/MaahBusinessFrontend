@@ -1,4 +1,5 @@
 import {
+  data,
   isRouteErrorResponse,
   Links,
   Meta,
@@ -19,8 +20,10 @@ import { ThemeProvider } from "@/contexts/theme-context";
 import { StyleGuard } from "@/components/layout/style-guard";
 import { Toaster } from "sonner";
 import { requireUserSession } from "@/lib/session.server";
+import { getSecurityHeaders } from "@/lib/security-headers.server";
 import { AuthProvider } from "@/contexts/auth-context";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { getQueryClient } from "@/lib/query-client";
 import { SITE_NAME } from "types/consts";
 import {
   CRITICAL_APP_CSS,
@@ -32,21 +35,14 @@ export function meta() {
   return [{ title: `${SITE_NAME}` }];
 }
 
-export async function loader({ request }: Route.LoaderArgs) {
-  const { session, headers } = await requireUserSession(request);
-  return { session, headers };
+export function headers({ request }: Route.HeadersArgs) {
+  return getSecurityHeaders(request);
 }
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 30 * 60 * 1000,
-      gcTime: 40 * 60 * 1000,
-      refetchOnWindowFocus: false,
-      retry: 1,
-    },
-  },
-});
+export async function loader({ request }: Route.LoaderArgs) {
+  const { session, headers } = await requireUserSession(request);
+  return data({ session }, headers ? { headers } : undefined);
+}
 
 function DocumentHeadAssets() {
   return (
@@ -101,6 +97,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function Root({ loaderData }: Route.ComponentProps) {
+  const queryClient = getQueryClient();
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider session={loaderData?.session}>

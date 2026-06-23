@@ -1,9 +1,15 @@
 // session.server.ts
-import { createCookie, redirect } from "react-router";
+import { createCookie } from "react-router";
 import type { BackendResponse, GenericResponse, SessionData } from "types";
 import { BASE_URL, REFRESH_TOKEN_URL } from "utils/endpoints";
 
 const REFRESH_THRESHOLD_MS = 2 * 60 * 1000; // 2 minutes
+
+const sessionSecret =
+  process.env.SESSION_SECRET ??
+  (process.env.NODE_ENV === "production"
+    ? undefined
+    : "dev-only-insecure-session-secret");
 
 // ------------------------------
 // Cookie configuration
@@ -14,6 +20,7 @@ export const sessionCookie = createCookie("rp-session", {
   sameSite: "lax",
   path: "/",
   maxAge: 60 * 60 * 24 * 7, // 7 days
+  secrets: sessionSecret ? [sessionSecret] : undefined,
 });
 
 // ------------------------------
@@ -63,8 +70,8 @@ async function refreshAccessToken(
       accessToken,
       refreshToken: newRefreshToken,
     };
-  } catch (error) {
-    throw redirect("/auth/signin");
+  } catch {
+    return null;
   }
 }
 
@@ -92,15 +99,17 @@ function getTokenStatus(token: string): "valid" | "refresh" | "expired" {
   }
 }
 
-let refreshPromise: Promise<SessionData | null> | null = null;
+const refreshPromises = new Map<string, Promise<SessionData | null>>();
 
 async function safeRefresh(refreshToken: string) {
-  if (!refreshPromise) {
-    refreshPromise = refreshAccessToken(refreshToken).finally(() => {
-      refreshPromise = null;
+  let promise = refreshPromises.get(refreshToken);
+  if (!promise) {
+    promise = refreshAccessToken(refreshToken).finally(() => {
+      refreshPromises.delete(refreshToken);
     });
+    refreshPromises.set(refreshToken, promise);
   }
-  return refreshPromise;
+  return promise;
 }
 
 // ------------------------------

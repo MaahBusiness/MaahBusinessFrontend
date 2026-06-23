@@ -1,13 +1,24 @@
 import { AppSidebar } from "@/components/app-sidebar";
+import { QueryHydration } from "@/components/layout/query-hydration";
 import { useOrganisation } from "@/hooks/use-organisation";
 import {
   getOrgRoutePermission,
   getPermissionFallbackPath,
 } from "@/lib/org-navigation";
+import {
+  createOrgPrefetchLoader,
+  prefetchOrgCoreData,
+} from "@/lib/query.server";
 import { SidebarInset } from "@/components/ui/sidebar";
+import type { Route } from ".react-router/types/app/routes/dashboard/+types/sidebar-layout";
 import { Navigate, Outlet, useLocation, useNavigate, useParams } from "react-router";
 import { matchesAnyPermission, normalizeRole } from "utils/permissions";
 import { useEffect } from "react";
+
+export async function loader({ request, params }: Route.LoaderArgs) {
+  const orgId = params.id;
+  return createOrgPrefetchLoader(request, orgId, prefetchOrgCoreData);
+}
 
 /**
  * Always render <Outlet /> so client-side navigation completes immediately.
@@ -48,7 +59,7 @@ function OrgPermissionGuard() {
   return <Outlet key={pathname} />;
 }
 
-export default function Layout() {
+export default function Layout({ loaderData }: Route.ComponentProps) {
   const { businessMember, isLoading, isMembersLoading } = useOrganisation();
 
   if (
@@ -60,11 +71,13 @@ export default function Layout() {
   }
 
   return (
-    <div className="flex min-h-[calc(100svh-var(--header-height))] w-full min-w-0 flex-1">
-      <AppSidebar />
-      <SidebarInset className="min-w-0 flex-1 overflow-x-hidden">
-        <OrgPermissionGuard />
-      </SidebarInset>
-    </div>
+    <QueryHydration state={loaderData?.dehydratedState}>
+      <div className="flex min-h-[calc(100svh-var(--header-height))] w-full min-w-0 flex-1">
+        <AppSidebar />
+        <SidebarInset className="min-w-0 flex-1 overflow-x-hidden">
+          <OrgPermissionGuard />
+        </SidebarInset>
+      </div>
+    </QueryHydration>
   );
 }

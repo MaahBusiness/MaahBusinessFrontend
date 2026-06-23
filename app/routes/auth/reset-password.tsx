@@ -3,6 +3,7 @@ import type { Route } from ".react-router/types/app/routes/auth/+types/reset-pas
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { requireUserSession } from "@/lib/session.server";
+import { sanitizeRedirectPath } from "utils/safe-redirect";
 import { redirect } from "react-router";
 import { resetPassword } from "@/lib/api/auth";
 import { SITE_NAME } from "types/consts";
@@ -14,7 +15,7 @@ export function meta() {
 export async function action({ request }: Route.ActionArgs) {
   const url = new URL(request.url);
   const token = url.searchParams.get("token");
-  const redirectTo = url.searchParams.get("redirectTo") || "/dashboard";
+  const redirectTo = sanitizeRedirectPath(url.searchParams.get("redirectTo"));
 
   if (!token)
     throw redirect(`/auth/signin?redirectTo=${encodeURIComponent(redirectTo)}`);
@@ -31,7 +32,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 
   if (session) {
     const url = new URL(request.url);
-    const redirectTo = url.searchParams.get("redirectTo") || "/dashboard";
+    const redirectTo = sanitizeRedirectPath(url.searchParams.get("redirectTo"));
     return redirect(redirectTo);
   }
 

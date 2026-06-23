@@ -20,6 +20,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { dateRangeToFilters } from "@/components/date-range-picker";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { QueryHydration } from "@/components/layout/query-hydration";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import {
   ProfitAnalyticsChart,
@@ -41,11 +42,30 @@ import { DashboardReportsPanel } from "@/components/dashboard/reports-panel";
 import { useAuth } from "@/contexts/auth-context";
 import { useOrganisation } from "@/hooks/use-organisation";
 import { dashboardApi, dashboardKeys, invalidateOrgDashboardViews } from "@/lib/api/dashboard";
+import {
+  createOrgPrefetchLoader,
+  prefetchDashboard,
+} from "@/lib/query.server";
 import type { DashboardInsights, DashboardSummary } from "@/lib/dashboard-types";
 import { RequestFailed } from "@/routes/404";
 import { formatDisplayAmount } from "utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { notificationsApi } from "@/lib/api/notifications";
+import type { Route } from ".react-router/types/app/routes/dashboard/org/+types/dashboard";
+
+function defaultDashboardFilters() {
+  return dateRangeToFilters({
+    from: startOfDay(addDays(new Date(), -6)),
+    to: endOfDay(new Date()),
+  });
+}
+
+export async function loader({ request, params }: Route.LoaderArgs) {
+  const filters = defaultDashboardFilters();
+  return createOrgPrefetchLoader(request, params.id, (queryClient, token, orgId) =>
+    prefetchDashboard(queryClient, token, orgId, filters),
+  );
+}
 
 function DashboardSkeleton() {
   return (
@@ -108,7 +128,9 @@ function ProductMarginsTable({
   );
 }
 
-export default function OrganisationDashboard() {
+export default function OrganisationDashboard({
+  loaderData,
+}: Route.ComponentProps) {
   const { organisation: res, isLoading, error, businessMember } =
     useOrganisation();
   const { accessToken } = useAuth();
@@ -188,16 +210,30 @@ export default function OrganisationDashboard() {
     enabled: !!accessToken && isOwner,
   });
 
-  if (isLoading || error || !res?.success) return <DashboardSkeleton />;
-  if (!orgId) return <RequestFailed />;
+  if (isLoading || error || !res?.success) {
+    return (
+      <QueryHydration state={loaderData?.dehydratedState}>
+        <DashboardSkeleton />
+      </QueryHydration>
+    );
+  }
+  if (!orgId) {
+    return (
+      <QueryHydration state={loaderData?.dehydratedState}>
+        <RequestFailed />
+      </QueryHydration>
+    );
+  }
 
   if (!isOwner) {
     return (
+      <QueryHydration state={loaderData?.dehydratedState}>
       <StaffDashboard
         orgId={orgId}
         orgName={orgName ?? "Organisation"}
         role={businessMember?.role ?? "cashier"}
       />
+      </QueryHydration>
     );
   }
 
@@ -205,16 +241,22 @@ export default function OrganisationDashboard() {
     (summaryQuery.isLoading && !summaryQuery.data) ||
     (insightsQuery.isLoading && !insightsQuery.data)
   ) {
-    return <DashboardSkeleton />;
+    return (
+      <QueryHydration state={loaderData?.dehydratedState}>
+        <DashboardSkeleton />
+      </QueryHydration>
+    );
   }
 
   if (!summaryQuery.data?.success || !insightsQuery.data?.success) {
     return (
-      <RequestFailed
-        refetch={async () => {
-          await Promise.all([summaryQuery.refetch(), insightsQuery.refetch()]);
-        }}
-      />
+      <QueryHydration state={loaderData?.dehydratedState}>
+        <RequestFailed
+          refetch={async () => {
+            await Promise.all([summaryQuery.refetch(), insightsQuery.refetch()]);
+          }}
+        />
+      </QueryHydration>
     );
   }
 
@@ -247,6 +289,7 @@ export default function OrganisationDashboard() {
   };
 
   return (
+    <QueryHydration state={loaderData?.dehydratedState}>
     <div className="dashboard-page relative min-h-full w-full">
       <div aria-hidden className="dashboard-orb dashboard-orb-violet" />
       <div aria-hidden className="dashboard-orb dashboard-orb-blue" />
@@ -530,5 +573,6 @@ export default function OrganisationDashboard() {
         </Tabs>
       </div>
     </div>
+    </QueryHydration>
   );
 }
