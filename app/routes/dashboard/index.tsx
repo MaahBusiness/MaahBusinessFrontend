@@ -1,18 +1,9 @@
-import { Navigate } from "react-router";
+import { redirect } from "react-router";
 
-// export async function loader({ request }: Route.LoaderArgs) {
-//   const { user, headers } = await requireUserSession(request);
-
-//   if (!user) {
-//     throw redirect("/auth/signup");
-//   }
-
-//   return data(
-//     { user },
-//     { headers } // <- important!
-//   );
-// }
+export function loader() {
+  return redirect("/dashboard/organisations");
+}
 
 export default function Dashboard() {
-  return <Navigate to="organisations" replace />;
+  return null;
 }

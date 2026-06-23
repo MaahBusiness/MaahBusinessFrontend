@@ -10,7 +10,7 @@ import {
 export const businessesApi = {
   getAll: (token: string) => apiClient.get<OrganisationCore[]>(BUSINESS_URL, token),
   getById: (token: string, id: string) =>
-    apiClient.get<OrganisationCore>(BUSINESS_URL + id, token),
+    apiClient.get<OrganisationCore>(`${BUSINESS_URL}${id}/`, token),
   create: (
     token: string,
     data: {
@@ -34,8 +34,9 @@ export const businessesApi = {
       phone_number?: string;
       logo_url?: string;
     },
-  ) => apiClient.put<OrganisationCore>(BUSINESS_URL + id, token, data),
-  delete: (token: string, id: string) => apiClient.delete<undefined>(BUSINESS_URL + id, token),
+  ) => apiClient.put<OrganisationCore>(`${BUSINESS_URL}${id}/`, token, data),
+  delete: (token: string, id: string) =>
+    apiClient.delete<undefined>(`${BUSINESS_URL}${id}/`, token),
   getMembers: (token: string, id: string) =>
     apiClient.get<OrganisationMember[]>(BUSINESS_URL + id + LIST_MEMBERS_URL, token),
   addMember: (

@@ -30,7 +30,7 @@ export const salesApi = {
     return apiClient.get<Invoice[]>(`${INVOICE_ARCHIVES_URL}${query}`, token);
   },
   getById: (token: string, id: string) =>
-    apiClient.get<Invoice>(INVOICE_URL + id, token),
+    apiClient.get<Invoice>(`${INVOICE_URL}${id}/`, token),
   create: (token: string, data: InvoiceCreateParams) =>
     apiClient.post<Invoice>(INVOICE_URL, token, cleanPayload(data)),
   update: (token: string, id: string, data: Partial<InvoiceUpdateParams>) =>
