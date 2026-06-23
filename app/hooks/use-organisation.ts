@@ -511,11 +511,10 @@ export function useOrganisation() {
   useAuthErrorRedirect(coreQuery.error, pathname);
 
   useEffect(() => {
-    if (coreQuery.data?.message) {
-      if (!coreQuery.data?.success) toast.error(coreQuery.data?.message);
-      // else toast.success(coreQuery.data?.message);
+    if (coreQuery.data?.message && !coreQuery.data?.success) {
+      toast.error(coreQuery.data.message, { id: `org-core-${orgId}` });
     }
-  }, [coreQuery.data]);
+  }, [coreQuery.data, orgId]);
 
   return {
     // Data

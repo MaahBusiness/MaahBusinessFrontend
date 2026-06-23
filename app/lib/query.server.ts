@@ -11,7 +11,7 @@ import { makeQueryClient } from "@/lib/query-client";
 import { requireUserSession } from "@/lib/session.server";
 import type { DashboardDateFilters } from "@/lib/dashboard-types";
 import type { ExpenseFilters } from "@/lib/finance-types";
-import type { ProductFilters } from "types";
+import type { InvoiceFilters, ProductFilters } from "types";
 
 export type DehydratedLoaderData = {
   dehydratedState: DehydratedState | null;
@@ -77,6 +77,18 @@ export async function prefetchProducts(
   await queryClient.prefetchQuery({
     queryKey: organisationKeys.prodlist(orgId, filters),
     queryFn: () => organisationsApi.getFilteredProducts(token, orgId, filters),
+  });
+}
+
+export async function prefetchInvoices(
+  queryClient: QueryClient,
+  token: string,
+  orgId: string,
+  filters?: InvoiceFilters,
+) {
+  await queryClient.prefetchQuery({
+    queryKey: organisationKeys.invoiceList(orgId, filters),
+    queryFn: () => organisationsApi.getFilteredInvoices(token, orgId, filters),
   });
 }
 
