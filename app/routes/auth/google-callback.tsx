@@ -1,10 +1,11 @@
 import { handleGoogleOAuthCallback } from "@/lib/api/auth";
+import { sanitizeRedirectPath } from "utils/safe-redirect";
 import { data } from "react-router";
 
 export async function loader({ request }: { request: Request }) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
-  const redirectTo = url.searchParams.get("state") || "/dashboard";
+  const redirectTo = sanitizeRedirectPath(url.searchParams.get("state"));
 
   if (!code) {
     return data(

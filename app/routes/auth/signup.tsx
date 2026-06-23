@@ -14,6 +14,7 @@ import { data, redirect } from "react-router";
 import { toast } from "sonner";
 import type { OTPSessionData, SignUpActionType } from "types";
 import { genericErrorState } from "utils";
+import { sanitizeRedirectPath } from "utils/safe-redirect";
 
 // export function meta({}: Route.MetaArgs) {
 export function meta() {
@@ -76,7 +77,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   const { session } = await requireUserSession(request);
 
   const url = new URL(request.url);
-  const redirectTo = url.searchParams.get("redirectTo") || "/dashboard";
+  const redirectTo = sanitizeRedirectPath(url.searchParams.get("redirectTo"));
 
   if (session) return redirect(redirectTo);
 

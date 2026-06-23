@@ -1,13 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useParams } from "react-router";
+import { useLocation, useParams } from "react-router";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/auth-context";
+import { useAuthErrorRedirect } from "@/hooks/use-auth-error-redirect";
+import { assertAccessToken } from "@/lib/auth-errors";
 import { invalidateOrgDashboard } from "@/lib/api/dashboard";
 import { financeApi, financeKeys } from "@/lib/api/finance";
 import type { Expense, ExpenseFilters } from "@/lib/finance-types";
 
 export function useExpenses(filters?: ExpenseFilters) {
   const { id: orgId } = useParams<{ id: string }>();
+  const { pathname } = useLocation();
   const { accessToken } = useAuth();
   const queryClient = useQueryClient();
 
@@ -20,7 +23,8 @@ export function useExpenses(filters?: ExpenseFilters) {
   const listQuery = useQuery({
     queryKey: financeKeys.list(orgId!, filters),
     queryFn: async () => {
-      if (!accessToken || !orgId) throw new Error("Unauthorized");
+      assertAccessToken(accessToken, pathname);
+      if (!orgId) throw new Error("Organisation context required");
       return financeApi.listExpenses(accessToken, orgId, filters);
     },
     enabled: !!accessToken && !!orgId,
@@ -32,7 +36,8 @@ export function useExpenses(filters?: ExpenseFilters) {
       end_date: filters?.end_date,
     }),
     queryFn: async () => {
-      if (!accessToken || !orgId) throw new Error("Unauthorized");
+      assertAccessToken(accessToken, pathname);
+      if (!orgId) throw new Error("Organisation context required");
       return financeApi.getSummary(accessToken, orgId, {
         start_date: filters?.start_date,
         end_date: filters?.end_date,
@@ -96,6 +101,8 @@ export function useExpenses(filters?: ExpenseFilters) {
     },
     onError: () => toast.error("Failed to approve expense"),
   });
+
+  useAuthErrorRedirect(listQuery.error, pathname);
 
   return {
     listQuery,

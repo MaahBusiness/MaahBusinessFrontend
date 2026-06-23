@@ -3,6 +3,7 @@ import { useEffect, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { redirect, useParams, useSearchParams } from "react-router";
 import { toast } from "sonner";
+import { QueryHydration } from "@/components/layout/query-hydration";
 import {
   Clock,
   DollarSign,
@@ -27,6 +28,10 @@ import { useExpenses } from "@/hooks/use-expenses";
 import { useOrganisation } from "@/hooks/use-organisation";
 import { financeKeys } from "@/lib/api/finance";
 import { invalidateOrgDashboard } from "@/lib/api/dashboard";
+import {
+  createOrgPrefetchLoader,
+  prefetchExpenses,
+} from "@/lib/query.server";
 import { getSession } from "@/lib/session.server";
 import { RequestFailed } from "@/routes/404";
 import { handleExpenseActions } from "services/api";
@@ -35,6 +40,18 @@ import type { ServerActionState } from "types";
 import { expenseFilterParsers, formatDisplayAmount, parseSearchParams } from "utils";
 import { hasPermission } from "utils/permissions";
 import type { ExpenseFilters } from "@/lib/finance-types";
+
+export async function loader({ request, params }: Route.LoaderArgs) {
+  const url = new URL(request.url);
+  const filters = parseSearchParams<ExpenseFilters>(
+    url.searchParams,
+    expenseFilterParsers,
+  );
+
+  return createOrgPrefetchLoader(request, params.id, (queryClient, token, orgId) =>
+    prefetchExpenses(queryClient, token, orgId, filters),
+  );
+}
 
 export async function action({ request, params }: Route.ActionArgs): Promise<
   ServerActionState & { data?: Expense }
@@ -48,7 +65,10 @@ export async function action({ request, params }: Route.ActionArgs): Promise<
   return handleExpenseActions({ formData, id, session });
 }
 
-export default function ExpensesPage({ actionData }: Route.ComponentProps) {
+export default function ExpensesPage({
+  actionData,
+  loaderData,
+}: Route.ComponentProps) {
   const { businessMember } = useOrganisation();
   const queryClient = useQueryClient();
   const { id } = useParams();
@@ -123,14 +143,27 @@ export default function ExpensesPage({ actionData }: Route.ComponentProps) {
   const hasActiveFilters = searchParams.toString().length > 0;
   const hasAnyExpenses = (summary?.total_count ?? listQuery.data?.meta?.count ?? 0) > 0;
 
-  if (listQuery.isLoading && !listQuery.data) return <DataTableSkeleton />;
-  if (!listQuery.data?.success) return <RequestFailed refetch={listQuery.refetch} />;
+  if (listQuery.isLoading && !listQuery.data) {
+    return (
+      <QueryHydration state={loaderData?.dehydratedState}>
+        <DataTableSkeleton />
+      </QueryHydration>
+    );
+  }
+  if (!listQuery.data?.success) {
+    return (
+      <QueryHydration state={loaderData?.dehydratedState}>
+        <RequestFailed refetch={listQuery.refetch} />
+      </QueryHydration>
+    );
+  }
 
   const canManage = hasPermission(businessMember?.role, "expenses:manage");
   const showOnboardingEmpty =
     expenses.length === 0 && !hasActiveFilters && !hasAnyExpenses;
 
   return (
+    <QueryHydration state={loaderData?.dehydratedState}>
     <OrgPageShell orbs={["violet", "emerald"]}>
       <div className="mb-1 min-w-0 space-y-4 sm:mb-2">
         <div className="min-w-0">
@@ -171,5 +204,6 @@ export default function ExpensesPage({ actionData }: Route.ComponentProps) {
         )}
       </div>
     </OrgPageShell>
+    </QueryHydration>
   );
 }

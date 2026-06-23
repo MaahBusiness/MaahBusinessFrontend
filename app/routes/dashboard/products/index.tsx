@@ -1,10 +1,15 @@
 import type { Route } from ".react-router/types/app/routes/dashboard/products/+types";
 import DataTableSkeleton from "@/components/data-table-skeleton";
+import { QueryHydration } from "@/components/layout/query-hydration";
 import { productCols } from "@/components/products/product-columns";
 import { ProductTableToolbar } from "@/components/products/product-table-toolbar";
 import { DataTable } from "@/components/ui/data-table";
 import { useOrganisation } from "@/hooks/use-organisation";
 import { useProductActionFeedback } from "@/hooks/use-product-action-feedback";
+import {
+  createOrgPrefetchLoader,
+  prefetchProducts,
+} from "@/lib/query.server";
 import { getSession } from "@/lib/session.server";
 import { RequestFailed } from "@/routes/404";
 import { redirect, useParams, useSearchParams } from "react-router";
@@ -16,6 +21,18 @@ import { useMemo } from "react";
 import { formatDisplayAmount } from "utils";
 import { ProductStatsGrid } from "@/components/products/product-stats-grid";
 import { OrgPageShell } from "@/components/layout/org-page-shell";
+
+export async function loader({ request, params }: Route.LoaderArgs) {
+  const url = new URL(request.url);
+  const filters = parseSearchParams<ProductFilters>(
+    url.searchParams,
+    productFilterParsers,
+  );
+
+  return createOrgPrefetchLoader(request, params.id, (queryClient, token, orgId) =>
+    prefetchProducts(queryClient, token, orgId, filters),
+  );
+}
 
 export async function action({ request, params }: Route.ActionArgs): Promise<
   ServerActionState & {
@@ -31,7 +48,10 @@ export async function action({ request, params }: Route.ActionArgs): Promise<
   return await handleProductActions({ formData, id, session });
 }
 
-export default function ProductsPage({ actionData }: Route.ComponentProps) {
+export default function ProductsPage({
+  actionData,
+  loaderData,
+}: Route.ComponentProps) {
   const { organisation: orgRes, fetchProducts } = useOrganisation();
   const { id } = useParams();
   const [searchParams] = useSearchParams();
@@ -90,16 +110,26 @@ export default function ProductsPage({ actionData }: Route.ComponentProps) {
     [products.length, stats],
   );
 
-  if (isLoading) return <DataTableSkeleton />;
-  if (!res?.success)
+  if (isLoading) {
     return (
-      <RequestFailed
-        refetch={refetch}
-        message={res?.message ?? genericErrorState().message}
-      />
+      <QueryHydration state={loaderData?.dehydratedState}>
+        <DataTableSkeleton />
+      </QueryHydration>
     );
+  }
+  if (!res?.success) {
+    return (
+      <QueryHydration state={loaderData?.dehydratedState}>
+        <RequestFailed
+          refetch={refetch}
+          message={res?.message ?? genericErrorState().message}
+        />
+      </QueryHydration>
+    );
+  }
 
   return (
+    <QueryHydration state={loaderData?.dehydratedState}>
     <OrgPageShell>
       <div className="mb-1 min-w-0 space-y-4 sm:mb-2">
         <div className="min-w-0">
@@ -124,5 +154,6 @@ export default function ProductsPage({ actionData }: Route.ComponentProps) {
         />
       </div>
     </OrgPageShell>
+    </QueryHydration>
   );
 }

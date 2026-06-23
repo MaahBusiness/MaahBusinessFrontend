@@ -10,11 +10,19 @@ import {
 } from "@/components/ui/empty";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { QueryHydration } from "@/components/layout/query-hydration";
+import { useAuthErrorRedirect } from "@/hooks/use-auth-error-redirect";
 import { useAuth } from "@/contexts/auth-context";
+import { assertAccessToken } from "@/lib/auth-errors";
 import { organisationKeys, organisationsApi } from "@/lib/api/organisation";
+import {
+  createAuthenticatedPrefetchLoader,
+  prefetchOrgList,
+} from "@/lib/query.server";
 import { RequestFailed } from "@/routes/404";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
+import type { Route } from ".react-router/types/app/routes/dashboard/organisations/+types/home";
 import {
   ArrowRight,
   Building2,
@@ -26,7 +34,7 @@ import {
   Users,
 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Link, redirect } from "react-router";
+import { Link } from "react-router";
 import type { OrganisationCore } from "types";
 import { extractImageUrl } from "utils";
 
@@ -57,18 +65,24 @@ const CARD_ACCENTS = [
   },
 ] as const;
 
-export default function Organisations() {
+export async function loader({ request }: Route.LoaderArgs) {
+  return createAuthenticatedPrefetchLoader(request, prefetchOrgList);
+}
+
+export default function Organisations({ loaderData }: Route.ComponentProps) {
   const { accessToken } = useAuth();
   const [search, setSearch] = useState("");
 
-  const { data: res, isLoading } = useQuery({
+  const { data: res, isLoading, error } = useQuery({
     queryKey: organisationKeys.lists(),
     queryFn: async () => {
-      if (!accessToken) throw redirect(`/auth/signin`);
+      assertAccessToken(accessToken, "/dashboard/organisations");
       return await organisationsApi.getAll(accessToken);
     },
     enabled: !!accessToken,
   });
+
+  useAuthErrorRedirect(error, "/dashboard/organisations");
 
   const filtered = useMemo(() => {
     if (!res?.data) return [];
@@ -77,11 +91,30 @@ export default function Organisations() {
     return res.data.filter((org) => org.name.toLowerCase().includes(q));
   }, [res?.data, search]);
 
-  if (isLoading) return <OrganisationsSkeleton />;
-  if (!res?.success) return <RequestFailed />;
-  if (!res.data?.length) return <OrgsNotFound />;
+  if (isLoading) {
+    return (
+      <QueryHydration state={loaderData?.dehydratedState}>
+        <OrganisationsSkeleton />
+      </QueryHydration>
+    );
+  }
+  if (!res?.success) {
+    return (
+      <QueryHydration state={loaderData?.dehydratedState}>
+        <RequestFailed />
+      </QueryHydration>
+    );
+  }
+  if (!res.data?.length) {
+    return (
+      <QueryHydration state={loaderData?.dehydratedState}>
+        <OrgsNotFound />
+      </QueryHydration>
+    );
+  }
 
   return (
+    <QueryHydration state={loaderData?.dehydratedState}>
     <div className="dashboard-page relative min-h-full">
       <div aria-hidden className="dashboard-orb dashboard-orb-violet" />
       <div aria-hidden className="dashboard-orb dashboard-orb-blue" />
@@ -142,6 +175,7 @@ export default function Organisations() {
         )}
       </div>
     </div>
+    </QueryHydration>
   );
 }
 
