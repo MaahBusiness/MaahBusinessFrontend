@@ -1,10 +1,47 @@
 const DEFAULT_API_ORIGIN = "https://maahbusiness.trustconsulting.tech";
 
-function getApiOrigin(): string | undefined {
-  const raw =
-    process.env.VITE_API_BASE_URL ??
-    (process.env.NODE_ENV === "production" ? `${DEFAULT_API_ORIGIN}/api/v1` : undefined);
+const LOCAL_API_ORIGINS = [
+  "http://localhost:8000",
+  "http://127.0.0.1:8000",
+  "http://0.0.0.0:8000",
+] as const;
 
+const LOCAL_WS_ORIGINS = [
+  "ws://localhost:3000",
+  "ws://127.0.0.1:3000",
+  "ws://localhost:5173",
+  "ws://127.0.0.1:5173",
+] as const;
+
+function viteEnv(): Record<string, string | boolean | undefined> | undefined {
+  try {
+    return import.meta.env as Record<string, string | boolean | undefined>;
+  } catch {
+    return undefined;
+  }
+}
+
+function readApiBaseUrl(): string | undefined {
+  const env = viteEnv();
+  const fromVite = env?.VITE_API_BASE_URL;
+  if (typeof fromVite === "string" && fromVite.length > 0) {
+    return fromVite;
+  }
+
+  const fromProcess = process.env.VITE_API_BASE_URL ?? process.env.API_BASE_URL;
+  if (typeof fromProcess === "string" && fromProcess.length > 0) {
+    return fromProcess;
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    return `${DEFAULT_API_ORIGIN}/api/v1`;
+  }
+
+  return undefined;
+}
+
+function getApiOrigin(): string | undefined {
+  const raw = readApiBaseUrl();
   if (!raw) return undefined;
 
   try {
@@ -14,9 +51,18 @@ function getApiOrigin(): string | undefined {
   }
 }
 
+function isLocalHostname(hostname: string): boolean {
+  return (
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "0.0.0.0" ||
+    hostname.endsWith(".localhost")
+  );
+}
+
 function isProductionRequest(request?: Request): boolean {
   if (process.env.NODE_ENV !== "production") return false;
-  if (!request) return true;
+  if (!request) return false;
 
   const host =
     request.headers.get("x-forwarded-host") ??
@@ -24,7 +70,7 @@ function isProductionRequest(request?: Request): boolean {
     "";
   const hostname = host.split(":")[0]?.toLowerCase() ?? "";
 
-  if (hostname === "localhost" || hostname === "127.0.0.1") {
+  if (isLocalHostname(hostname)) {
     return false;
   }
 
@@ -40,9 +86,35 @@ function isProductionRequest(request?: Request): boolean {
   }
 }
 
-function buildContentSecurityPolicy(apiOrigin?: string): string {
-  const connectSrc = ["'self'", apiOrigin].filter(Boolean).join(" ");
+function isLocalRequest(request?: Request): boolean {
+  if (!request) {
+    return viteEnv()?.DEV === true || process.env.NODE_ENV !== "production";
+  }
 
+  const host =
+    request.headers.get("x-forwarded-host") ??
+    request.headers.get("host") ??
+    "";
+  const hostname = host.split(":")[0]?.toLowerCase() ?? "";
+
+  return isLocalHostname(hostname);
+}
+
+function buildConnectSrc(request?: Request): string {
+  const origins = new Set<string>(["'self'"]);
+
+  const apiOrigin = getApiOrigin();
+  if (apiOrigin) origins.add(apiOrigin);
+
+  if (isLocalRequest(request) || viteEnv()?.DEV === true) {
+    for (const origin of LOCAL_API_ORIGINS) origins.add(origin);
+    for (const origin of LOCAL_WS_ORIGINS) origins.add(origin);
+  }
+
+  return [...origins].join(" ");
+}
+
+function buildContentSecurityPolicy(request?: Request): string {
   const directives = [
     "default-src 'self'",
     "base-uri 'self'",
@@ -53,12 +125,12 @@ function buildContentSecurityPolicy(apiOrigin?: string): string {
     `style-src 'self' 'unsafe-inline'`,
     "font-src 'self' data:",
     "img-src 'self' data: blob: https:",
-    `connect-src ${connectSrc}`,
+    `connect-src ${buildConnectSrc(request)}`,
     "worker-src 'self' blob:",
     "manifest-src 'self'",
   ];
 
-  if (process.env.NODE_ENV === "production") {
+  if (isProductionRequest(request)) {
     directives.push("upgrade-insecure-requests");
   }
 
@@ -73,11 +145,10 @@ export function getSecurityHeaders(request?: Request): SecurityHeaderMap {
     return {};
   }
 
-  const apiOrigin = getApiOrigin();
   const production = isProductionRequest(request);
 
   const headers: SecurityHeaderMap = {
-    "Content-Security-Policy": buildContentSecurityPolicy(apiOrigin),
+    "Content-Security-Policy": buildContentSecurityPolicy(request),
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",
     "Referrer-Policy": "strict-origin-when-cross-origin",
@@ -89,7 +160,8 @@ export function getSecurityHeaders(request?: Request): SecurityHeaderMap {
   };
 
   if (production) {
-    headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload";
+    headers["Strict-Transport-Security"] =
+      "max-age=31536000; includeSubDomains; preload";
   }
 
   return headers;

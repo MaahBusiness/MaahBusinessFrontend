@@ -1,7 +1,6 @@
-import { Navigate } from "react-router";
+import { redirect } from "react-router";
 import { SITE_NAME } from "types/consts";
 
-// export function meta({}: Route.MetaArgs) {
 export function meta() {
   return [
     { title: `${SITE_NAME}` },
@@ -9,6 +8,10 @@ export function meta() {
   ];
 }
 
+export function loader() {
+  return redirect("/dashboard");
+}
+
 export default function Home() {
-  return <Navigate to="dashboard" replace />;
+  return null;
 }
