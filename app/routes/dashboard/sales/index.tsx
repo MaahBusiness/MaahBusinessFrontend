@@ -5,6 +5,7 @@ import { CreateInvoiceDrawer } from "@/components/sales/invoice-add-new-drawer";
 import { InvoiceTableToolbar } from "@/components/sales/invoice-table-toolbar";
 import { ProductStatsGrid } from "@/components/products/product-stats-grid";
 import { OrgPageShell } from "@/components/layout/org-page-shell";
+import { QueryHydration } from "@/components/layout/query-hydration";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +17,10 @@ import {
 } from "@/components/ui/empty";
 import { useOrganisation } from "@/hooks/use-organisation";
 import { useSalesActionFeedback } from "@/hooks/use-sales-action-feedback";
+import {
+  createOrgPrefetchLoader,
+  prefetchInvoices,
+} from "@/lib/query.server";
 import { getSession } from "@/lib/session.server";
 import { RequestFailed } from "@/routes/404";
 import { redirect, useParams, useSearchParams } from "react-router";
@@ -29,6 +34,18 @@ import {
 import { hasPermission } from "utils/permissions";
 import { useEffect, useMemo, useState } from "react";
 import { CheckCircle2, Clock3, Plus, Receipt, Wallet } from "lucide-react";
+
+export async function loader({ request, params }: Route.LoaderArgs) {
+  const url = new URL(request.url);
+  const filters = parseSearchParams<InvoiceFilters>(
+    url.searchParams,
+    invoiceFilterParsers,
+  );
+
+  return createOrgPrefetchLoader(request, params.id, (queryClient, token, orgId) =>
+    prefetchInvoices(queryClient, token, orgId, filters),
+  );
+}
 
 export async function action({ request, params }: Route.ActionArgs): Promise<
   ServerActionState & {
@@ -44,7 +61,10 @@ export async function action({ request, params }: Route.ActionArgs): Promise<
   return await handleSalesActions({ formData, id, session });
 }
 
-export default function SalesPage({ actionData }: Route.ComponentProps) {
+export default function SalesPage({
+  actionData,
+  loaderData,
+}: Route.ComponentProps) {
   const { fetchInvoices, businessMember } = useOrganisation();
   const { id: orgId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -123,10 +143,23 @@ export default function SalesPage({ actionData }: Route.ComponentProps) {
     ];
   }, [invoices, res?.meta?.count, today]);
 
-  if (isLoading) return <DataTableSkeleton />;
-  if (!res?.success) return <RequestFailed />;
+  if (isLoading && !res) {
+    return (
+      <QueryHydration state={loaderData?.dehydratedState}>
+        <DataTableSkeleton />
+      </QueryHydration>
+    );
+  }
+  if (!res?.success) {
+    return (
+      <QueryHydration state={loaderData?.dehydratedState}>
+        <RequestFailed />
+      </QueryHydration>
+    );
+  }
 
   return (
+    <QueryHydration state={loaderData?.dehydratedState}>
     <OrgPageShell>
       <div className="mb-1 min-w-0 space-y-4 sm:mb-2">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -183,5 +216,6 @@ export default function SalesPage({ actionData }: Route.ComponentProps) {
         )}
       </div>
     </OrgPageShell>
+    </QueryHydration>
   );
 }

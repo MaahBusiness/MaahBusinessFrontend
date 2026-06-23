@@ -61,6 +61,20 @@ class ApiClient {
           return { success: false, message: error.message || "Invalid credentials." };
         }
 
+        if (error?.code === "PERMISSION_DENIED") {
+          return {
+            success: false,
+            message: error.message || "You do not have permission for this action.",
+          };
+        }
+
+        if (res.status === 401) {
+          return {
+            success: false,
+            message: "Your session has expired. Please sign in again.",
+          };
+        }
+
         return genericErrorState();
       }
 
