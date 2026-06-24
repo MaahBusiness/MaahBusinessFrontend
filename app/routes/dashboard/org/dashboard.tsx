@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { addDays, format, parseISO, startOfDay, endOfDay } from "date-fns";
 import {
   Activity,
@@ -41,7 +41,8 @@ import { DashboardEmptyHint } from "@/components/dashboard/empty-hint";
 import { DashboardReportsPanel } from "@/components/dashboard/reports-panel";
 import { useAuth } from "@/contexts/auth-context";
 import { useOrganisation } from "@/hooks/use-organisation";
-import { dashboardApi, dashboardKeys, invalidateOrgDashboardViews } from "@/lib/api/dashboard";
+import { dashboardApi, dashboardKeys } from "@/lib/api/dashboard";
+import { organisationKeys } from "@/lib/api/organisation";
 import {
   createOrgPrefetchLoader,
   prefetchDashboard,
@@ -131,6 +132,14 @@ function ProductMarginsTable({
 export default function OrganisationDashboard({
   loaderData,
 }: Route.ComponentProps) {
+  return (
+    <QueryHydration state={loaderData?.dehydratedState}>
+      <OrganisationDashboardContent />
+    </QueryHydration>
+  );
+}
+
+function OrganisationDashboardContent() {
   const { organisation: res, isLoading, error, businessMember } =
     useOrganisation();
   const { accessToken } = useAuth();
@@ -179,26 +188,18 @@ export default function OrganisationDashboard({
     [dateRange.from?.getTime(), dateRange.to?.getTime()],
   );
 
-  useEffect(() => {
-    if (orgId) void invalidateOrgDashboardViews(queryClient, orgId);
-  }, [orgId, queryClient]);
-
   const isOwner = businessMember?.role === "owner";
 
   const summaryQuery = useQuery({
-    queryKey: dashboardKeys.summary(orgId!, filters),
+    queryKey: dashboardKeys.summary(orgId ?? "", filters),
     queryFn: async () => dashboardApi.getSummary(accessToken!, orgId!, filters),
     enabled: !!orgId && !!accessToken && isOwner && !!filters.start_date,
-    staleTime: 0,
-    refetchOnMount: "always",
   });
 
   const insightsQuery = useQuery({
-    queryKey: dashboardKeys.insights(orgId!, filters),
+    queryKey: dashboardKeys.insights(orgId ?? "", filters),
     queryFn: async () => dashboardApi.getInsights(accessToken!, orgId!, filters),
     enabled: !!orgId && !!accessToken && isOwner && !!filters.start_date,
-    staleTime: 0,
-    refetchOnMount: "always",
   });
 
   const isDashboardFetching =
@@ -210,53 +211,53 @@ export default function OrganisationDashboard({
     enabled: !!accessToken && isOwner,
   });
 
-  if (isLoading || error || !res?.success) {
+  if (isLoading && !res) {
+    return <DashboardSkeleton />;
+  }
+
+  if (error || (res && !res.success)) {
     return (
-      <QueryHydration state={loaderData?.dehydratedState}>
-        <DashboardSkeleton />
-      </QueryHydration>
+      <RequestFailed
+        message={res?.message}
+        refetch={async () => {
+          await queryClient.invalidateQueries({
+            queryKey: organisationKeys.core(orgId ?? ""),
+          });
+        }}
+      />
     );
   }
+
   if (!orgId) {
-    return (
-      <QueryHydration state={loaderData?.dehydratedState}>
-        <RequestFailed />
-      </QueryHydration>
-    );
+    return <RequestFailed />;
   }
 
   if (!isOwner) {
     return (
-      <QueryHydration state={loaderData?.dehydratedState}>
       <StaffDashboard
         orgId={orgId}
         orgName={orgName ?? "Organisation"}
         role={businessMember?.role ?? "cashier"}
       />
-      </QueryHydration>
     );
   }
 
-  if (
-    (summaryQuery.isLoading && !summaryQuery.data) ||
-    (insightsQuery.isLoading && !insightsQuery.data)
-  ) {
-    return (
-      <QueryHydration state={loaderData?.dehydratedState}>
-        <DashboardSkeleton />
-      </QueryHydration>
-    );
+  const analyticsPending =
+    isOwner &&
+    (!summaryQuery.data || !insightsQuery.data) &&
+    (summaryQuery.isFetching || insightsQuery.isFetching);
+
+  if (analyticsPending) {
+    return <DashboardSkeleton />;
   }
 
   if (!summaryQuery.data?.success || !insightsQuery.data?.success) {
     return (
-      <QueryHydration state={loaderData?.dehydratedState}>
-        <RequestFailed
-          refetch={async () => {
-            await Promise.all([summaryQuery.refetch(), insightsQuery.refetch()]);
-          }}
-        />
-      </QueryHydration>
+      <RequestFailed
+        refetch={async () => {
+          await Promise.all([summaryQuery.refetch(), insightsQuery.refetch()]);
+        }}
+      />
     );
   }
 
@@ -289,7 +290,6 @@ export default function OrganisationDashboard({
   };
 
   return (
-    <QueryHydration state={loaderData?.dehydratedState}>
     <div className="dashboard-page relative min-h-full w-full">
       <div aria-hidden className="dashboard-orb dashboard-orb-violet" />
       <div aria-hidden className="dashboard-orb dashboard-orb-blue" />
@@ -466,15 +466,12 @@ export default function OrganisationDashboard({
               <ProfitAnalyticsChart dailyData={insights.daily_data} />
             </div>
 
-            <div className="grid gap-4 lg:grid-cols-7">
-              <div className="lg:col-span-4">
-                <SalesPerformanceAreaChart dailyData={insights.daily_data} />
-              </div>
-              <div className="flex flex-col gap-4 lg:col-span-3">
-                <SalesMixChart performance={insights.sales_performance} />
-                <SalesVolumeChart dailyData={insights.daily_data} />
-              </div>
+            <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
+              <SalesPerformanceAreaChart dailyData={insights.daily_data} />
+              <SalesMixChart performance={insights.sales_performance} />
             </div>
+
+            <SalesVolumeChart dailyData={insights.daily_data} />
 
             <div className="grid gap-4 lg:grid-cols-3">
               <TopProductsChart products={insights.top_products} />
@@ -573,6 +570,5 @@ export default function OrganisationDashboard({
         </Tabs>
       </div>
     </div>
-    </QueryHydration>
   );
 }

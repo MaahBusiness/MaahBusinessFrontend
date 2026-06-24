@@ -5,6 +5,8 @@ import {
   getOrgRoutePermission,
   getPermissionFallbackPath,
 } from "@/lib/org-navigation";
+import { useOrgAccessRedirect } from "@/hooks/use-org-access-redirect";
+import { isOrgAccessDenied } from "@/lib/org-access";
 import {
   createOrgPrefetchLoader,
   prefetchOrgCoreData,
@@ -34,8 +36,18 @@ function OrgPermissionGuard() {
   const membershipReady = !isLoading && !isMembersLoading;
   const role = normalizeRole(businessMember?.role);
 
+  useOrgAccessRedirect(organisation, { enabled: membershipReady });
+
   useEffect(() => {
     if (!membershipReady) return;
+
+    if (
+      organisation &&
+      !organisation.success &&
+      isOrgAccessDenied(organisation.message)
+    ) {
+      return;
+    }
 
     if (organisation?.success && !businessMember) {
       navigate("/dashboard/organisations", { replace: true });

@@ -54,7 +54,11 @@ export default function TeamSwitcher({ currentId }: TeamSwitcherProps) {
       if (!accessToken) return null;
       return await organisationsApi.getMembers(accessToken, currentId);
     },
-    enabled: !!accessToken && !!currentId,
+    enabled:
+      !!accessToken &&
+      !!currentId &&
+      !!res?.success &&
+      !!res.data?.some((business) => business.id === currentId),
   });
 
   if (isLoading && !res)
@@ -73,8 +77,17 @@ export default function TeamSwitcher({ currentId }: TeamSwitcherProps) {
       </div>
     );
 
-  const selected =
-    res?.data?.find((d) => d.id === currentId) || res?.data?.at(0);
+  if (!res.data?.length) {
+    return <Navigate to="/dashboard/organisations" replace />;
+  }
+
+  if (!res.data.some((business) => business.id === currentId)) {
+    return (
+      <Navigate to={`/dashboard/org/${res.data[0].id}/home`} replace />
+    );
+  }
+
+  const selected = res.data.find((d) => d.id === currentId);
 
   const businessUser =
     selected?.members?.find((m) => m.user?.id === user?.id) ??

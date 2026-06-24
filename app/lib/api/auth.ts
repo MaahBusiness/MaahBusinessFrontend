@@ -3,6 +3,7 @@
  */
 
 import { SERVER_ERROR_MESSAGES } from "@/lib/auth-error-state";
+import { resolvePostAuthRedirect } from "@/lib/org-access";
 import { destroySession, sessionCookie } from "@/lib/session.server";
 import { minutesToSeconds } from "date-fns";
 import { data, redirect } from "react-router";
@@ -219,15 +220,18 @@ export async function verifyOTP(
       );
     }
 
-    return redirect(sanitizeRedirectPath(otpSession.redirectTo), {
-      headers: {
-        "Set-Cookie": await sessionCookie.serialize({
-          accessToken,
-          refreshToken,
-          user,
-        }),
+    return redirect(
+      await resolvePostAuthRedirect(accessToken, otpSession.redirectTo ?? ""),
+      {
+        headers: {
+          "Set-Cookie": await sessionCookie.serialize({
+            accessToken,
+            refreshToken,
+            user,
+          }),
+        },
       },
-    });
+    );
   } catch (err) {
     return data<SignUpActionType>(
       {
@@ -452,15 +456,18 @@ export async function handleGoogleOAuthCallback(code: string, redirectTo?: strin
       );
     }
 
-    return redirect(sanitizeRedirectPath(redirectTo), {
-      headers: {
-        "Set-Cookie": await sessionCookie.serialize({
-          accessToken,
-          refreshToken,
-          user,
-        }),
+    return redirect(
+      await resolvePostAuthRedirect(accessToken, redirectTo ?? ""),
+      {
+        headers: {
+          "Set-Cookie": await sessionCookie.serialize({
+            accessToken,
+            refreshToken,
+            user,
+          }),
+        },
       },
-    });
+    );
   } catch (err) {
     return data<SignUpActionType>(
       {
