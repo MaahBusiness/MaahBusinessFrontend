@@ -7,7 +7,9 @@ import type { QueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate, useParams } from "react-router";
 import { useAuth } from "@/contexts/auth-context";
 import { useAuthErrorRedirect } from "@/hooks/use-auth-error-redirect";
+import { useOrgAccessRedirect } from "@/hooks/use-org-access-redirect";
 import { assertAccessToken } from "@/lib/auth-errors";
+import { isOrgAccessDenied } from "@/lib/org-access";
 import { toast } from "sonner";
 import { organisationKeys, organisationsApi } from "@/lib/api/organisation";
 import { invalidateOrgDashboard } from "@/lib/api/dashboard";
@@ -52,6 +54,8 @@ export function useOrganisation() {
     enabled: !!accessToken,
   });
 
+  const coreReady = coreQuery.data?.success === true;
+
   type QueryOpts = { enabled?: boolean };
 
   // Fetch members
@@ -62,7 +66,7 @@ export function useOrganisation() {
         assertAccessToken(accessToken, pathname);
         return await organisationsApi.getMembers(accessToken, orgId);
       },
-      enabled: (opts?.enabled ?? true) && !!accessToken && !!coreQuery.data,
+      enabled: (opts?.enabled ?? true) && !!accessToken && coreReady,
       // staleTime: 2 * 60 * 1000, // 2 minutes (more dynamic data)
     });
 
@@ -77,7 +81,7 @@ export function useOrganisation() {
           filters,
         );
       },
-      enabled: (opts?.enabled ?? true) && !!accessToken && !!coreQuery.data,
+      enabled: (opts?.enabled ?? true) && !!accessToken && coreReady,
       // staleTime: 2 * 60 * 1000, // 2 minutes (more dynamic data)
     });
 
@@ -102,7 +106,7 @@ export function useOrganisation() {
           filters,
         );
       },
-      enabled: (opts?.enabled ?? true) && !!accessToken && !!coreQuery.data,
+      enabled: (opts?.enabled ?? true) && !!accessToken && coreReady,
       // staleTime: 2 * 60 * 1000, // 2 minutes (more dynamic data)
     });
 
@@ -117,7 +121,7 @@ export function useOrganisation() {
           filters,
         );
       },
-      enabled: !!accessToken && !!coreQuery.data,
+      enabled: !!accessToken && coreReady,
       // staleTime: 2 * 60 * 1000, // 2 minutes (more dynamic data)
     });
 
@@ -132,7 +136,7 @@ export function useOrganisation() {
           filters,
         );
       },
-      enabled: !!accessToken && !!coreQuery.data,
+      enabled: !!accessToken && coreReady,
       // staleTime: 2 * 60 * 1000, // 2 minutes (more dynamic data)
     });
 
@@ -147,7 +151,7 @@ export function useOrganisation() {
           filters,
         );
       },
-      enabled: (opts?.enabled ?? true) && !!accessToken && !!coreQuery.data,
+      enabled: (opts?.enabled ?? true) && !!accessToken && coreReady,
       // staleTime: 2 * 60 * 1000, // 2 minutes (more dynamic data)
     });
 
@@ -168,7 +172,7 @@ export function useOrganisation() {
         assertAccessToken(accessToken, pathname);
         return await organisationsApi.getSingleInvoice(accessToken, id);
       },
-      enabled: (opts?.enabled ?? true) && !!accessToken && !!id && !!coreQuery.data,
+      enabled: (opts?.enabled ?? true) && !!accessToken && !!id && coreReady,
       // staleTime: 2 * 60 * 1000, // 2 minutes (more dynamic data)
     });
 
@@ -179,7 +183,7 @@ export function useOrganisation() {
         assertAccessToken(accessToken, pathname);
         return await organisationsApi.getPayments(accessToken, id);
       },
-      enabled: !!accessToken && !!coreQuery.data,
+      enabled: !!accessToken && coreReady,
       // staleTime: 2 * 60 * 1000, // 2 minutes (more dynamic data)
     });
 
@@ -190,7 +194,7 @@ export function useOrganisation() {
         assertAccessToken(accessToken, pathname);
         return await organisationsApi.getInvoicePayments(accessToken, id);
       },
-      enabled: !!accessToken && !!coreQuery.data,
+      enabled: !!accessToken && coreReady,
       // staleTime: 2 * 60 * 1000, // 2 minutes (more dynamic data)
     });
 
@@ -509,9 +513,14 @@ export function useOrganisation() {
   }, [coreQuery.data?.data, membersListRes?.data, user?.id, user?.email, user?.name]);
 
   useAuthErrorRedirect(coreQuery.error, pathname);
+  useOrgAccessRedirect(coreQuery.data);
 
   useEffect(() => {
-    if (coreQuery.data?.message && !coreQuery.data?.success) {
+    if (
+      coreQuery.data?.message &&
+      !coreQuery.data?.success &&
+      !isOrgAccessDenied(coreQuery.data.message)
+    ) {
       toast.error(coreQuery.data.message, { id: `org-core-${orgId}` });
     }
   }, [coreQuery.data, orgId]);

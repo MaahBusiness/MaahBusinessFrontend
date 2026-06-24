@@ -32,6 +32,7 @@ import {
   formatDisplayAmount,
 } from "utils";
 import { hasPermission } from "utils/permissions";
+import { isOrgAccessDenied } from "@/lib/org-access";
 import { useEffect, useMemo, useState } from "react";
 import { CheckCircle2, Clock3, Plus, Receipt, Wallet } from "lucide-react";
 
@@ -153,7 +154,13 @@ export default function SalesPage({
   if (!res?.success) {
     return (
       <QueryHydration state={loaderData?.dehydratedState}>
-        <RequestFailed />
+        <RequestFailed
+          message={
+            isOrgAccessDenied(res?.message)
+              ? undefined
+              : res?.message
+          }
+        />
       </QueryHydration>
     );
   }

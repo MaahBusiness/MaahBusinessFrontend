@@ -130,7 +130,7 @@ export default function ClientsPage({ actionData }: Route.ComponentProps) {
     ];
   }, [clients, res?.meta?.count]);
 
-  if (isLoading) return <DataTableSkeleton />;
+  if (isLoading && !res) return <DataTableSkeleton />;
   if (!res?.success) return <RequestFailed />;
 
   const canAddClient = hasPermission(businessMember?.role, "customers:crud");

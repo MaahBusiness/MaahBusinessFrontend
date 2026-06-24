@@ -3,15 +3,16 @@ import {
   type DehydratedState,
   type QueryClient,
 } from "@tanstack/react-query";
-import { data } from "react-router";
+import { data, redirect } from "react-router";
 import { dashboardApi, dashboardKeys } from "@/lib/api/dashboard";
 import { financeApi, financeKeys } from "@/lib/api/finance";
 import { organisationKeys, organisationsApi } from "@/lib/api/organisation";
+import { isOrgAccessDenied } from "@/lib/org-access";
 import { makeQueryClient } from "@/lib/query-client";
 import { requireUserSession } from "@/lib/session.server";
 import type { DashboardDateFilters } from "@/lib/dashboard-types";
 import type { ExpenseFilters } from "@/lib/finance-types";
-import type { InvoiceFilters, ProductFilters } from "types";
+import type { InvoiceFilters, ProductFilters, ServerActionState } from "types";
 
 export type DehydratedLoaderData = {
   dehydratedState: DehydratedState | null;
@@ -160,6 +161,13 @@ export async function createOrgPrefetchLoader(
 
   const queryClient = makeQueryClient();
   await prefetch(queryClient, session.accessToken, orgId);
+
+  const core = queryClient.getQueryData<ServerActionState>(
+    organisationKeys.core(orgId),
+  );
+  if (core && !core.success && isOrgAccessDenied(core.message)) {
+    return redirect("/dashboard/organisations", headers ? { headers } : undefined);
+  }
 
   return data<DehydratedLoaderData>(
     { dehydratedState: dehydrate(queryClient) },
